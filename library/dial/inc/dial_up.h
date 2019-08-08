@@ -19,23 +19,9 @@
 #include <signal.h>
 #include <sys/poll.h>
 #include <netinet/in.h>
-#include "agent_config.h"
-
-#if (PLATFORM == PLATFORM_9X07)
 #include "dsi_netctrl.h"
 #include "ds_util.h"
-#endif
-#include "agent.h"
 
-typedef enum NETWORK_STATE {
-    NETWORK_STATE_INIT = 0,
-    NETWORK_GET_IP,
-    NETWORK_CONNECTING,
-    NETWORK_DIS_CONNECTED,
-    NETWORK_USING
-} network_state_info;
-
-#if (PLATFORM == PLATFORM_9X07)
 extern in_addr_t inet_addr (const char *__cp);
 extern char *inet_ntoa (struct in_addr __in);
 
@@ -69,7 +55,6 @@ typedef struct {
 static void dsi_net_init_cb_func(void *user_data);
 static void dsi_net_cb_fcn( dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt, dsi_evt_payload_t *payload_ptr );
 void quit_dsi(dsi_call_info_t dsi_net_hndl);
-#endif
 
 int32_t create_dial_up_task(void);
 int32_t init_dial_up(void);
