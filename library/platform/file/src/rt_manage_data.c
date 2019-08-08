@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  * Copyright (c) redtea mobile.
  * File name   : rt_manage_data.c
@@ -9,8 +10,6 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
-#include <malloc.h>
-#include <dirent.h>
 
 #include "rt_manage_data.h"
 

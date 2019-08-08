@@ -20,55 +20,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <linux/reboot.h>
-
 #include "rt_os.h"
 
-#if 0
-//
-int32_t rt_mutex_init(pthread_mutex_t *mutex)
-{
-    int32_t ret = 0;
-    ret = pthread_mutex_init(mutex, NULL);
-    if(ret != 0){
-        MSG_WARN("create mutex error!!\n");
-        return RT_ERROR;
-    }
-    return RT_SUCCESS;
-}
-
-int32_t rt_mutex_lock(pthread_mutex_t *mutex)
-{
-    int32_t ret = 0;
-    ret = pthread_mutex_lock(mutex);
-    if(ret != 0){
-        MSG_WARN("lock mutex error!!\n");
-        return RT_ERROR;
-    }
-    return RT_SUCCESS;
-}
-
-int32_t rt_mutex_unlock(pthread_mutex_t *mutex)
-{
-    int32_t ret = 0;
-    ret = pthread_mutex_unlock(mutex);
-    if(ret != 0){
-        MSG_WARN("unlock mutex error!!\n");
-        return RT_ERROR;
-    }
-    return RT_SUCCESS;
-}
-
-int32_t rt_mutex_destroy(pthread_mutex_t *mutex)
-{
-    int32_t ret = 0;
-    ret = pthread_mutex_destroy(mutex);
-    if(ret != 0){
-        MSG_WARN("destroy mutex error!!\n");
-        return RT_ERROR;
-    }
-    return RT_SUCCESS;
-}
-#endif
 //message queue
 int32_t rt_creat_msg_queue(void)
 {

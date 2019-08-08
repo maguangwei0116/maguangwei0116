@@ -94,7 +94,7 @@ int32_t rt_qmi_init(void)
     qmi_wds_init();
 }
 
-/*****************************************************************************
+/**
  * FUNCTION
  *  rt_modify_profile
  * DESCRIPTION
@@ -112,20 +112,21 @@ int32_t rt_qmi_init(void)
 *       2: IPv4v6
  * RETURNS
  *  int
- *****************************************************************************/
+*/
+
 int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int8_t pdp_type)
 {
-    qmi_wds_profile_info_t info;
     uint8_t ii = 0;
     int32_t ret = RT_ERROR;
+    qmi_wds_profile_info_t info;
     info.apn_name = apn;
     info.pdp_type = pdp_type;
     info.profile_index = index;
     info.profile_type = profile_type;
-    while (ret!=0) {
+    while (ret != 0) {
         ret = qmi_modify_profile(&info);
         ii++;
-        if (ii>3) {
+        if (ii > 3) {
             break;
         }
     }

@@ -10,10 +10,9 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
+
 #ifndef __RT_OS_H__
 #define __RT_OS_H__
-
-#include "rt_type.h"
 
 #define RT_FILE_HANDLE      FILE *
 #define RT_SET              SEEK_SET
@@ -46,4 +45,5 @@ int32_t rt_os_rename(const int8_t *oldname, const int8_t *newname);
 void rt_os_reboot(void);
 void rt_os_sync(void);
 void rt_os_sleep(int32_t time);
+
 #endif // __RT_OS_H__

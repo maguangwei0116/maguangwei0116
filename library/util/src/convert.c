@@ -1,5 +1,17 @@
-#include "convert.h"
 
+/*******************************************************************************
+ * Copyright (c) redtea mobile.
+ * File name   : convert.c
+ * Date        : 2019.01.03
+ * Note        :
+ * Description :
+ * Contributors: RT - create the file
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Sublime text 2
+ *******************************************************************************/
+
+#include "convert.h"
 
 int8_t to_ascii(int8_t ch)
 {
