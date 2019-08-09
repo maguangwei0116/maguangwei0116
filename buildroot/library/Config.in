@@ -1,0 +1,26 @@
+
+menu "Library"
+
+comment "Library"
+
+config BR2_PACKAGE_LIBRARY
+	bool "Build library"
+	default y
+	help
+	  Enable this option if you want to build a library your embedded device
+
+if BR2_PACKAGE_LIBRARY
+
+config BR2_LIBRARY_SOURCE_PATH
+	string
+	default "$(WORKSPACE)/library"
+
+config BR2_LIBRARY_INSTALL_PATH
+	string "library install path"
+	default "$(BASE_DIR)/system/sdk"
+
+source ".config_wrapper/library_wrapper.in"
+
+endif
+
+endmenu

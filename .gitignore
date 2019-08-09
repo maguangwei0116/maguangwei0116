@@ -1,5 +1,9 @@
 # ignore file
 .*
+buildroot/.config_wrapper/*
+buildroot/.config*
+buildroot/..config.tmp
+output
 
 # not ignore
 !.gitignore

@@ -1,4 +1,6 @@
+#include "vsim_config.h"
 
+#if PLATFORM == PLATFORM_QCOM_9X07
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,6 +13,8 @@
 
 #include "trigger.h"
 #include "card.h"
+#include "prints.h"
+#include "filesystem.h"
 
 static qmi_client_type rm_uim_client;
 static char g_iccid[21] = {0};
@@ -336,3 +340,4 @@ int t9x07_send_card_error(  uim_remote_slot_type_enum_v01       slot,
 
     return rc;
 }
+#endif  // PLATFORM == PLATFORM_QCOM_9X07
