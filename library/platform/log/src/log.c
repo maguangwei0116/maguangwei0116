@@ -15,7 +15,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 #include "log.h"
+
+#define LOG_NAME            "/data/redtea/rt_log"
+#define LOG_FILE_SIZE       1024
 
 int32_t file_fd = -1;
 
@@ -42,7 +46,7 @@ int32_t write_log_fun(const int8_t *msg, ...)
     va_list vl_list;
     va_start(vl_list, msg);
 
-    vsnprintf((char *)content, (const char *)msg, vl_list);   //
+    vsnprintf((char *)content, sizeof(content), (const char *)msg, vl_list);   //
     va_end(vl_list);
 
     time_write = time(NULL);        //

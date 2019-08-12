@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include "dsi_netctrl.h"
 #include "ds_util.h"
+#include "rt_type.h"
 
 extern in_addr_t inet_addr (const char *__cp);
 extern char *inet_ntoa (struct in_addr __in);
@@ -55,12 +56,8 @@ typedef struct {
 static void dsi_net_init_cb_func(void *user_data);
 static void dsi_net_cb_fcn( dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt, dsi_evt_payload_t *payload_ptr );
 void quit_dsi(dsi_call_info_t dsi_net_hndl);
-
 int32_t create_dial_up_task(void);
 int32_t init_dial_up(void);
 void dial_up_task(void);
-network_state_info get_network_state(void);
-void set_network_state(network_state_info state);
-rt_bool get_ping_state(void);
 
 #endif  //__DIAL_UP_H__

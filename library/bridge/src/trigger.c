@@ -1,6 +1,4 @@
-#include "vsim_config.h"
 
-#if PLATFORM == PLATFORM_QCOM_9X07
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,11 +8,7 @@
 #include "qmi_idl_lib.h"
 #include "qmi_client.h"
 #include "qmi_cci_target_ext.h"
-
 #include "trigger.h"
-#include "card.h"
-#include "prints.h"
-#include "filesystem.h"
 
 static qmi_client_type rm_uim_client;
 static char g_iccid[21] = {0};
@@ -68,7 +62,7 @@ static int process_ind_connect(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
+    // RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
     MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
@@ -103,8 +97,8 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     // fill Response APDU
     req.response_apdu_segment_valid = true;
 
-    sw = card_cmd(ind_msg.command_apdu , ind_msg.command_apdu_len,
-                  req.response_apdu_segment, (uint16_t *)&req.response_apdu_segment_len);
+    //sw = card_cmd(ind_msg.command_apdu , ind_msg.command_apdu_len,
+    //              req.response_apdu_segment, (uint16_t *)&req.response_apdu_segment_len);
     req.response_apdu_segment[req.response_apdu_segment_len++] = (sw >> 8) & 0xFF;
     req.response_apdu_segment[req.response_apdu_segment_len++] = sw & 0xFF;
 
@@ -142,7 +136,7 @@ static int process_ind_pup(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
+    //RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
     MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(rm_uim_client, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
@@ -237,7 +231,7 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot, char *iccid)
 
     if(slot != UIM_REMOTE_SLOT_1_V01) {
         MSG_ERR("SLOT%d NOT SUPPORT CURRENTLY!\n", slot);
-        return RT_ERR_QMI_UNSUPPORTED_SLOT;
+        ////return RT_ERR_QMI_UNSUPPORTED_SLOT;
     }
 
     // TODO: Support multi-slot
@@ -251,7 +245,7 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot, char *iccid)
     MSG_INFO("uim_remote_get_service_object_v01\n");
     if(remote_uim_service_object == NULL) {
         MSG_ERR("no remote uim service object\n");
-        return RT_ERR_QMI_RUIM_SERVICE_OBJ;
+        ////return RT_ERR_QMI_RUIM_SERVICE_OBJ;
     }
 
     while(1) {     // TODO: try to remove dead loop
@@ -269,7 +263,7 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot, char *iccid)
     MSG_INFO("qmi_client_get_service_list rc: %d, num_entries: %d, num_services: %d\n", rc, num_entries, num_services);
     if(rc != RT_SUCCESS) {
         MSG_ERR("get service list failed\n");
-        return RT_ERR_QMI_GET_SERVICE_LIST;
+        ////return RT_ERR_QMI_GET_SERVICE_LIST;
     }
 
     rc = qmi_client_init(&info[0], remote_uim_service_object, remote_uim_ind_cb, NULL, NULL, &rm_uim_client);
@@ -340,4 +334,3 @@ int t9x07_send_card_error(  uim_remote_slot_type_enum_v01       slot,
 
     return rc;
 }
-#endif  // PLATFORM == PLATFORM_QCOM_9X07

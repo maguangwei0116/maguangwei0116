@@ -15,7 +15,6 @@
 #define __HTTP_H__
 
 #include "rt_type.h"
-#include "rt_log.h"
 #include "rt_os.h"
 
 #define MY_HTTP_DEFAULT_PORT       80

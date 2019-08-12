@@ -228,7 +228,7 @@ endif
 ifeq ($(BR2_TOOLCHAIN_BUILDROOT),y)
 BASE_TARGETS += uclibc-configured host-binutils cross_compiler uclibc-target-utils kernel-headers
 else
-BASE_TARGETS += 
+BASE_TARGETS +=
 endif
 TARGETS:=
 
@@ -415,14 +415,14 @@ $(BUILD_DIR)/buildroot-config/auto.conf: $(CONFIG_DIR)/.config
 
 prepare: $(BUILD_DIR)/buildroot-config/auto.conf
 #	@echo "---$@"
-	
+
 help_pre:
 	@echo "TARGETS=$(TARGETS)"
 	@echo "BASE_TARGETS=$(BASE_TARGETS)"
 	@echo "TARGETS_ALL=$(TARGETS_ALL)"
 	@echo "O=$(O)"
 	@echo "TAGETPATH=$(TAGETPATH)"
-	
+
 world: prepare dirs dependencies $(BASE_TARGETS) $(TARGETS_ALL)
 #	@echo "O=$(O)"
 #	@echo "TAGETPATH=$(TAGETPATH)"
@@ -479,7 +479,7 @@ endif
 STRIP_FIND_CMD += -type f -perm +111
 STRIP_FIND_CMD += -not \( $(call findfileclauses,libpthread*.so* $(call qstrip,$(BR2_STRIP_EXCLUDE_FILES))) \) -print
 
-target-finalize: 
+target-finalize:
 	@echo "*************************************"
 	@echo "**        Make World End           **"
 	@echo "*************************************"
@@ -642,7 +642,7 @@ allnopackageconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 	@rm -f $(CONFIG_DIR)/.config.nopkg
 
 silentoldconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config	
+	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< --silentoldconfig $(CONFIG_CONFIG_IN)
 
 defconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile

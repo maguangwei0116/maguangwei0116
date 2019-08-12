@@ -18,9 +18,9 @@
 #include "rt_type.h"
 
 typedef struct {
-        uint32_t count[2];
-        uint32_t state[4];
-        uint8_t  buffer[64];
+    uint32_t count[2];
+    uint32_t state[4];
+    uint8_t  buffer[64];
 } MD5_CTX, md5;
 
 #define F(x,y,z) ((x & y) | (~x & z))

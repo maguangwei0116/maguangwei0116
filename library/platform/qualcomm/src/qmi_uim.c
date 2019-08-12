@@ -14,7 +14,6 @@
 #include "qmi_uim.h"
 #include "qmi_control_point.h"
 #include <stdlib.h>
-#include "md5.h"
 
 static qmi_client_type g_uim_client;
 int qmi_wds_init(void)
@@ -54,7 +53,7 @@ int qmi_get_elementary_iccid_file(uint8_t *iccid)
             goto out;
         }
         if(resp.read_result_valid) {
-            get_ascii_data(resp.read_result.content,resp.read_result.content_len,iccid);
+            //get_ascii_data(resp.read_result.content,resp.read_result.content_len,iccid);
         }
     }
 out:
@@ -64,8 +63,6 @@ out:
 int qmi_get_elementary_imsi_file(uint8_t *imsi)
 {
     qmi_client_error_type err;
-
-
     uim_read_record_req_msg_v01 req = { 0 };
     uim_read_record_resp_msg_v01 resp = { 0 };
 
@@ -96,7 +93,7 @@ int qmi_get_elementary_imsi_file(uint8_t *imsi)
             int len;
             if(resp.read_result.content_len > 0) {
                 len = resp.read_result.content[0];
-                get_ascii_data(&resp.read_result.content[1],len,imsi);
+                //get_ascii_data(&resp.read_result.content[1],len,imsi);
                 strcpy(imsi, imsi + 1);
             }
         }

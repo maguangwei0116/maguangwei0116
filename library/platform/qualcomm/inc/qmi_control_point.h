@@ -25,7 +25,7 @@ qmi_client_error_type qmi_ctrl_point_init(
                 (void *)&_req, sizeof(_req), \
                 (void *)&_resp, sizeof(_resp), \
                 _tmo); \
-        if(_err != QMI_NO_ERR) LOG_ERR("qmi_client_send_msg_sync failed on request %s: %d\n", #_id, _err); \
+        if(_err != QMI_NO_ERR) MSG_ERR("qmi_client_send_msg_sync failed on request %s: %d\n", #_id, _err); \
     } while(0)
 
 #define QMI_CLIENT_SEND_SYNC(_err, _client, _id, _req, _resp) \

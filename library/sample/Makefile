@@ -5,8 +5,8 @@ LIB_SO_NAME = lib$(TARGET).so
 LIB_A_NAME  = lib$(TARGET).a
 
 # Config your resource header path and include header path
-SRC-PATH	= ./src/
-INC-PATH	= ./inc/
+SRC-PATH	= ./src
+INC-PATH	= ./inc
 
 # Config your resource file list by += xxx.c
 SRC-y 		+= $(SRC-PATH)/test.c

@@ -67,7 +67,7 @@ void qmi_network_scan_result_dump(qmi_network_scan_result *scan_result)
     int i;
     for(i = 0; i < scan_result->n_networks; i ++) {
         nas_3gpp_network_info_t *info = scan_result->network_info[i];
-        LOG_INFO("Scanned Network[%d] MCC:%03d MNC:%03d IN-USE:%d ROAMING:%d FORBIDDEN:%d PREFERRED:%d DESC:'%s'\n",
+        MSG_INFO("Scanned Network[%d] MCC:%03d MNC:%03d IN-USE:%d ROAMING:%d FORBIDDEN:%d PREFERRED:%d DESC:'%s'\n",
                 i + 1,
                 info->mobile_country_code,
                 info->mobile_network_code,
@@ -154,25 +154,25 @@ void qmi_serving_system_dump(qmi_serving_system_info_t *info)
             "TD-SCDMA",
     };
 
-    LOG_INFO("Registration State: %s\n",
+    MSG_WARN("Registration State: %s\n",
             info->serving_system.registration_state <= 4 ?
             register_str[info->serving_system.registration_state] : "Invalid value");
 
-    LOG_INFO("Circuit switch domain attach state: %s\n",
+    MSG_WARN("Circuit switch domain attach state: %s\n",
             info->serving_system.cs_attach_state <= 2 ?
             attach_str[info->serving_system.cs_attach_state] : "Invalid value");
 
-    LOG_INFO("Packet switch domain attach state: %s\n",
+    MSG_WARN("Packet switch domain attach state: %s\n",
             info->serving_system.ps_attach_state <= 2 ?
             attach_str[info->serving_system.ps_attach_state] : "Invalid value");
 
-    LOG_INFO("Registered Network: %s\n",
+    MSG_WARN("Registered Network: %s\n",
             info->serving_system.selected_network <= 2 ?
             selected_network_str[info->serving_system.selected_network] : "Invalid value");
 
     int i;
     for(i = 0; i < info->serving_system.radio_if_len; i ++) {
-        LOG_INFO("Radio Interface %d: %s\n", i + 1,
+        MSG_WARN("Radio Interface %d: %s\n", i + 1,
                 info->serving_system.radio_if[i] <= 9 ?
                 radio_str[info->serving_system.radio_if[i]] : "Invalid value");
     }
@@ -194,7 +194,7 @@ int qmi_get_signal_strength(qmi_signal_strength_info_t *info)
     QMI_CLIENT_SEND_SYNC(err, g_nas_client, QMI_NAS_GET_SIGNAL_STRENGTH_REQ_MSG_V01, req, resp);
     if(err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
-            LOG_ERR("get signal strength failed, result: %d, error code: %d\n", resp.resp.result, resp.resp.error);
+            MSG_ERR("get signal strength failed, result: %d, error code: %d\n", resp.resp.result, resp.resp.error);
             err = resp.resp.result;
             goto out;
         }

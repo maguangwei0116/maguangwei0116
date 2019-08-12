@@ -18,18 +18,6 @@
 #include "rt_type.h"
 #include <qmi-framework/qmi_client.h>
 
-#if RT_DEBUG
-#define LOG_INFO  TRACE_PRINT
-#else
-#define LOG_INFO  (format,...)
-#endif
-
-#if 1
-#define LOG_ERR  TRACE_ERROR
-#else
-#define LOG_ERR(format,...)
-#endif
-
 #if MANUFACTURE == MANUFACTURE_ZTE || MANUFACTURE ==  MANUFACTURE_GSW    // ZTE
 #define RT_DMS_V01_IDL_MINOR_VERS  0x37
 #else     // others

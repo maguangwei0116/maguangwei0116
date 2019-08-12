@@ -6,9 +6,7 @@ ifeq ($(BR2_PACKAGE_LIBRARY),y)
 LIBRARY_DIR=$(BUILD_DIR)/library
 LIBRARY_SOURCE_PATH=$(call qstrip,$(BR2_LIBRARY_SOURCE_PATH))
 LIBRARY_INSTALL_PATH=$(call qstrip,$(BR2_LIBRARY_INSTALL_PATH))
-LIB_NDK_PATH=$(BR2_TOOLCHAIN_INSTALL_PATH)/ndk
-LIBRARY_SUBDIR_LIST= teec $(shell ls $(LIBRARY_SOURCE_PATH) --hide=teec --hide=emv --hide=emv_test --hide=jni --hide=jnisys --hide=sdk_jni --hide=jniums --hide=GmSSL) \
-                     emv emv_test jnisys jni jniums sdk_jni GmSSL
+LIBRARY_SUBDIR_LIST= platform $(shell ls $(LIBRARY_SOURCE_PATH) --hide=platform)
 LIBRARY_CONFIG_SUBDIRS = $(foreach f,$(LIBRARY_SUBDIR_LIST),$(if $(BR2_CONFIG_LIBRARY_$(shell echo $f | tr a-z- A-Z_)),$(f),))
 
 LIBRARY_SUBDIR_ENV=SYSAPP_INSTALL_PATH=$(SYSAPP_INSTALL_PATH) \
@@ -23,7 +21,9 @@ LIBRARY_SUBDIR_ENV=SYSAPP_INSTALL_PATH=$(SYSAPP_INSTALL_PATH) \
 		   FIRMWARE_UPTS_COMPLY=$(FIRMWARE_UPTS_COMPLY) \
 		   PLATFORM_TYPE=$(SDK_PLATFORM_TYPE) \
 		   DEBUG_TYPE=$(SDK_FIRMWARE_TYPE) \
-		   SYSROOT=$(TARGET_SYSROOT)
+		   SYSROOT=$(TARGET_SYSROOT) \
+		   SYSINC=$(TARGET_SYSINC)
+
 
 SDK_VERSION=$(call qstrip,$(BR2_IMAGE_VERSION))
 SDK_PRODUCT_NAME=$(call qstrip,$(BR2_PRODUCT_NAME))

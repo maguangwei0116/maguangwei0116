@@ -16,21 +16,20 @@ $(TARGET): info $(O)/$(TARGET_FILE_NAME)
 info:
 	@echo "COBJS=$(COBJS)"
 	@echo "OBJS=$(OBJS)"
-	@echo "DEPS=$(DEPS)"	
+	@echo "DEPS=$(DEPS)"
 	@echo "CC=$(CC)" O=$(O) -DMACRO=$(MACRO)
 	@echo "CFLAGS=$(CFLAGS)"
 	@echo "LDFLAGS=$(LDFLAGS)"
 	@echo "SYSROOT=$(SYSROOT)"
 	@echo "TARGET=$(TARGET)"
-
 clean:
 	rm -rf $(O)
-	
+
 # Include sub comm makefiles
 -include ../../buildroot/support/redtea/tool.mk
 -include ../../buildroot/support/redtea/flags.mk
 -include ../../buildroot/support/redtea/object.mk
-		
+
 $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	$($(quiet)do_cc) $(MAIN_INCLUDES) -o "$@" $(OBJS) $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME)
 	$($(quiet)do_objdump) -l -x -d "$@" > $(O)/$(DMP_FILE_NAME)
@@ -50,7 +49,7 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 .PHONY: all clean info $(TARGET)
 
 # Include the dependency files, should be the last of the makefile
--include $(DEPS)	
+-include $(DEPS)
 
 ############################################################################################
 # Never modify end this line

@@ -11,11 +11,15 @@
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
 
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "rt_manage_data.h"
 
 int32_t rt_create_file(uint8_t *file_name)
 {
-    int8_t status=RT_ERROR;
+    int8_t status = RT_ERROR;
     FILE *fp = NULL;
     if ((fp = fopen(file_name, "w+")) == NULL) {
         MSG_WARN("open error \n");
@@ -28,7 +32,6 @@ int32_t rt_create_file(uint8_t *file_name)
     }
     return status;
 }
-
 
 int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer, uint32_t len)
 {
@@ -78,14 +81,15 @@ int32_t rt_truncate_data(uint8_t *filename, int32_t offset)
 
 int32_t rm_dir(const int8_t *dirpath)
 {
-    DIR* dirp = opendir(dirpath);
     int8_t sub_path[100];
+    DIR* dirp = NULL;
+    struct dirent *dir;
+    struct stat st;
+
+    opendir(dirpath);
     if(!dirp) {
         return RT_ERROR;
     }
-
-    struct dirent *dir;
-    struct stat st;
 
     while ((dir = readdir(dirp)) != NULL) {
         if (strcmp(dir->d_name,".") == 0

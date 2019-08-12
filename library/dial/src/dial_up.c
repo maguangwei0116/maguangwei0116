@@ -14,8 +14,6 @@
 #include "dial_up.h"
 #include "rt_os.h"
 
-extern uint8_t g_apn_name[MAX_APN_LENGTH + 1];
-
 #define DAIL_UP_WAIT      5
 #define has_more_argv() ((opt < argc) && (argv[opt][0] != '-'))
 
@@ -366,5 +364,3 @@ static int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     }
     return RT_SUCCESS;
 }
-
-#endif  // 1-e

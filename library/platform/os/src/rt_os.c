@@ -11,9 +11,6 @@
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
 
-#include "rt_os.h"
-#include "agent_config.h"
-
 #include <memory.h>
 #include <pthread.h>
 #include <sys/msg.h>
@@ -23,26 +20,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <linux/reboot.h>
-
-#if PLATFORM == PLATFORM_FIBCOM
-#include "fibo_mdc_interface.h"
-#endif
-
-int32_t rt_create_task(const uint8_t *task_name, rt_task *task_id, rt_taskfun task_fun, void *args)
-{
-    int32_t ret = RT_ERROR;
-
-#if PLATFORM == PLATFORM_9X07
-    ret = pthread_create(task_id, NULL, task_fun, args);
-    if (ret != 0) {
-        MSG_WARN("create task error!!\n");
-        return RT_ERROR;
-    }
-#else PLATFORM == PLATFORM_FIBCOM
-    fibo_thread_Start(fibo_thread_Create(task_name, task_fun, args));
-#endif
-    return RT_SUCCESS;
-}
+#include "rt_os.h"
 
 #if 0
 //

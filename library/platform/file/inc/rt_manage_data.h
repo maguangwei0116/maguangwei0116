@@ -13,9 +13,7 @@
 #define __RT_MANAGE_DATA_H__
 
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "rt_type.h"
 
 extern int32_t rt_write_data(uint8_t *addr,uint32_t offset,const uint8_t *data_buffer,uint32_t len);
 extern int32_t rt_read_data(uint8_t *addr,uint32_t offset,uint8_t *data_buffer,uint32_t len);
