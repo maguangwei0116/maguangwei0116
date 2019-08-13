@@ -5,7 +5,7 @@
 
 all: $(TARGET)
 
-$(TARGET): info liba libso
+$(TARGET): liba libso
 
 info:
 	@echo "COBJS=$(COBJS)"

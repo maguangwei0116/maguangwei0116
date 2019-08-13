@@ -11,7 +11,7 @@ BIN_FILE_NAME 		= $(TARGET).bin
 
 all: $(TARGET)
 
-$(TARGET): info $(O)/$(TARGET_FILE_NAME)
+$(TARGET): $(O)/$(TARGET_FILE_NAME)
 
 info:
 	@echo "COBJS=$(COBJS)"
