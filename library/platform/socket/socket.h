@@ -1,7 +1,7 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : socket.h
+ * File name   : socket.c
  * Date        : 2018.08.08
  * Note        :
  * Description :
@@ -11,8 +11,3 @@
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
 
-#ifndef __SOCKET_H__
-#define __SOCKET_H__
-
-
-#endif // __SOCKET_H__

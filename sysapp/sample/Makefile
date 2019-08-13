@@ -14,7 +14,7 @@ INC-y 		+= ./
 INC-y 		+= $(INC-PATH)
 
 # Config your libraries which should be linked
-LIB-y 		+= -lsample
+#LIB-y 		+= -lsample
 
 ############################################################################################
 # Never modify form this line

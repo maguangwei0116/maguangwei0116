@@ -2,10 +2,10 @@
 #include <stdio.h>
 
 #include "main_inner.h"
-#include "test.h"
+#include "rt_os.h"
 
 int main(void)
 {
-	printf("Hello world = %d\r\n", test_func());
+	printf("Hello world\r\n");
 	return 0;
 }
