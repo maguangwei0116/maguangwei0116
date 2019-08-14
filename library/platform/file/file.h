@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include "rt_type.h"
 
 typedef FILE *                      rt_fshandle_t;
 typedef const char *                rt_fsmode_t;

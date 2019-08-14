@@ -10,7 +10,7 @@
 
 #include <qmi-framework/qmi_client.h>
 #include <qmi/user_identity_module_v01.h>
-#include "rt_type.h"
+#include <stdint.h>
 
 int qmi_wds_init(void);
 int qmi_get_elementary_iccid_file(uint8_t *iccid);

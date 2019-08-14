@@ -22,8 +22,16 @@
 #include <linux/reboot.h>
 #include "rt_os.h"
 
-#if 0
-//
+int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun,void * args)
+{
+    int32_t ret = RT_ERROR;
+    ret = pthread_create(task_id, NULL, task_fun, args);
+    if (ret != 0) {
+        return RT_ERROR;
+    }
+    return RT_SUCCESS;
+}
+
 int32_t rt_mutex_init(pthread_mutex_t *mutex)
 {
     int32_t ret = 0;
@@ -67,15 +75,15 @@ int32_t rt_mutex_destroy(pthread_mutex_t *mutex)
     }
     return RT_SUCCESS;
 }
-#endif
+
 //message queue
-int32_t rt_creat_msg_queue(void)
+int32_t rt_creat_msg_queue(char *pathname, char proj_id)
 {
     int32_t msgid = -1;
     key_t q_key;
 
-    q_key = ftok(".", 168);
-    if (msgctl(q_key,IPC_RMID, NULL) == -1) {  //remove msg
+    q_key = ftok(pathname, proj_id);
+    if (msgctl(q_key, IPC_RMID, NULL) == -1) {  //remove msg
     }
     msgid = msgget(q_key, 0666 | IPC_CREAT);
     if (msgid == -1){
@@ -102,7 +110,6 @@ int32_t rt_send_queue_msg(int32_t msgid, void *buffer, int32_t len)
     return RT_SUCCESS;
 }
 
-//
 void *rt_os_malloc(uint32_t size)
 {
     return malloc(size);
@@ -267,7 +274,6 @@ int32_t rt_os_rename(const int8_t *oldname, const int8_t *newname)
     if(NULL == oldname || NULL == newname) {
         return RT_ERROR;
     }
-
     return rename(oldname, newname);
 }
 

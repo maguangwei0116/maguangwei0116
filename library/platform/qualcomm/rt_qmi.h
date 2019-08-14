@@ -14,9 +14,9 @@
 #ifndef __RT_QMI_H__
 #define __RT_QMI_H__
 
+#include <qmi-framework/qmi_client.h>
 #include "rt_os.h"
 #include "rt_type.h"
-#include <qmi-framework/qmi_client.h>
 
 #if MANUFACTURE == MANUFACTURE_ZTE || MANUFACTURE ==  MANUFACTURE_GSW    // ZTE
 #define RT_DMS_V01_IDL_MINOR_VERS  0x37

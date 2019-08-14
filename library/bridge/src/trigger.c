@@ -248,7 +248,7 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot, char *iccid)
         ////return RT_ERR_QMI_RUIM_SERVICE_OBJ;
     }
 
-    while(1) {     // TODO: try to remove dead loop
+    while (1) {     // TODO: try to remove dead loop
         rc = qmi_client_get_service_list(remote_uim_service_object, NULL, NULL, &num_services);
         MSG_INFO("rc: %d, num_services: %d\n", rc, num_services);
         if(QMI_NO_ERR == rc){
