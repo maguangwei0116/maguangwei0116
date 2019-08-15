@@ -216,7 +216,7 @@ void remote_uim_ind_cb( qmi_client_type       user_handle,
     }
 }
 
-int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot, char *iccid)
+int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot)
 {
     int rc;
     uim_remote_event_req_msg_v01 req = {0};
@@ -233,13 +233,6 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot, char *iccid)
         MSG_ERR("SLOT%d NOT SUPPORT CURRENTLY!\n", slot);
         ////return RT_ERR_QMI_UNSUPPORTED_SLOT;
     }
-
-    // TODO: Support multi-slot
-    strcpy(g_iccid, iccid);  // Copy iccid to g_iccid(Used in card_reset)
-
-    MSG_INFO("g_iccid:%s\n",g_iccid);
-
-    RT_CHECK(fs_init(g_iccid));
 
     remote_uim_service_object = uim_remote_get_service_object_v01();
     MSG_INFO("uim_remote_get_service_object_v01\n");
@@ -282,13 +275,12 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot, char *iccid)
     return rc;
 }
 
-int t9x07_swap_card(uim_remote_slot_type_enum_v01 slot, char *iccid)
+int t9x07_swap_card(uim_remote_slot_type_enum_v01 slot)
 {
     // TODO: figure out why swap not working...
     t9x07_remove_card(UIM_REMOTE_SLOT_1_V01);
     sleep(3);
-    RT_CHECK(t9x07_insert_card(UIM_REMOTE_SLOT_1_V01, iccid));
-
+    RT_CHECK(t9x07_insert_card(UIM_REMOTE_SLOT_1_V01));
     return RT_SUCCESS;
 }
 

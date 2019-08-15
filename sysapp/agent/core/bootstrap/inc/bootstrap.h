@@ -14,6 +14,7 @@
 #ifndef __BOOTSTRAP_H__
 #define __BOOTSTRAP_H__
 
+#include "rt_type.h"
 
 
 #endif // __BOOTSTRAP_H__

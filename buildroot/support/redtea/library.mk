@@ -7,6 +7,8 @@ all: $(TARGET)
 
 $(TARGET): liba libso
 
+LIB_ALL_SO_NAME = liball.so
+
 info:
 	@echo "COBJS=$(COBJS)"
 	@echo "OBJS=$(OBJS)"
