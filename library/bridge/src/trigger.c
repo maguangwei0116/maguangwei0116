@@ -63,7 +63,7 @@ static int process_ind_connect(qmi_client_type user_handle, unsigned int msg_id,
 
     // fill ATR
     // RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
-    MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
+    //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, txn);
@@ -92,7 +92,7 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     req.slot = ind_msg.slot;
     req.apdu_id = ind_msg.apdu_id;
 
-    MSG_DUMP_ARR2STR(">>>", ind_msg.command_apdu, ind_msg.command_apdu_len, 1);
+    //MSG_DUMP_ARR2STR(">>>", ind_msg.command_apdu, ind_msg.command_apdu_len, 1);
 
     // fill Response APDU
     req.response_apdu_segment_valid = true;
@@ -107,7 +107,7 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     req.response_apdu_info.total_response_apdu_size = req.response_apdu_segment_len;
     req.response_apdu_info.response_apdu_segment_offset = 0;
 
-    MSG_DUMP_ARR2STR("<<<", req.response_apdu_segment, req.response_apdu_segment_len, 1);
+    //MSG_DUMP_ARR2STR("<<<", req.response_apdu_segment, req.response_apdu_segment_len, 1);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_APDU_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, txn);
@@ -137,7 +137,7 @@ static int process_ind_pup(qmi_client_type user_handle, unsigned int msg_id,
 
     // fill ATR
     //RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
-    MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
+    //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(rm_uim_client, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, txn);
@@ -173,8 +173,8 @@ static int process_ind_reset(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
-    MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
+    //RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
+    //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, txn);
@@ -280,7 +280,7 @@ int t9x07_swap_card(uim_remote_slot_type_enum_v01 slot)
     // TODO: figure out why swap not working...
     t9x07_remove_card(UIM_REMOTE_SLOT_1_V01);
     sleep(3);
-    RT_CHECK(t9x07_insert_card(UIM_REMOTE_SLOT_1_V01));
+    t9x07_insert_card(UIM_REMOTE_SLOT_1_V01);
     return RT_SUCCESS;
 }
 

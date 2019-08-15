@@ -1,6 +1,9 @@
 
 # Config your target here !
 TARGET 		= $(shell pwd | sed 's/^\(.*\)[/]//')
+
+QMI-LIB = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
+COMM-LIB = asn.1 platform dial pthread bridge util
 ############################################################################
 ### path
 ############################################################################
@@ -16,7 +19,10 @@ INC-y 		+= ./
 INC-y 		+= $(INC-T)
 INC-y 		+= $(addsuffix inc, $(wildcard $(INC-T)))
 
-LIB-y 		+= -lasn.1
+# Config your lib
+LIB-y 		= -lm
+LIB-y 		+= $(patsubst %,-l%,$(COMM-LIB))
+LIB-y 		+= $(patsubst %,-l%,$(QMI-LIB))
 
 ############################################################################################
 # Never modify from this line

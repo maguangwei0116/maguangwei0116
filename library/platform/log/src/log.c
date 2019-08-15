@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
+#include <stdarg.h>
 #include "log.h"
 
 #define LOG_NAME            "/data/redtea/rt_log"

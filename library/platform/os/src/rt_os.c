@@ -15,14 +15,13 @@
 #include <pthread.h>
 #include <sys/msg.h>
 #include <sys/types.h>
-#include <malloc.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <linux/reboot.h>
 #include "rt_os.h"
 
-int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun,void * args)
+int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
 {
     int32_t ret = RT_ERROR;
     ret = pthread_create(task_id, NULL, task_fun, args);
