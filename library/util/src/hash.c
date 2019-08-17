@@ -11,6 +11,7 @@
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
 
+#include <string.h>
 #include "hash.h"
 
 // ROTATE_LEFT rotates x left n bits.
