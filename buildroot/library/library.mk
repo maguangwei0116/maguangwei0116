@@ -6,7 +6,7 @@ ifeq ($(BR2_PACKAGE_LIBRARY),y)
 LIBRARY_DIR=$(BUILD_DIR)/library
 LIBRARY_SOURCE_PATH=$(call qstrip,$(BR2_LIBRARY_SOURCE_PATH))
 LIBRARY_INSTALL_PATH=$(call qstrip,$(BR2_LIBRARY_INSTALL_PATH))
-LIBRARY_SUBDIR_LIST= platform $(shell ls $(LIBRARY_SOURCE_PATH) --hide=platform)
+LIBRARY_SUBDIR_LIST= platform $(shell ls $(LIBRARY_SOURCE_PATH) --hide=platform --hide=Makefile)
 LIBRARY_CONFIG_SUBDIRS = $(foreach f,$(LIBRARY_SUBDIR_LIST),$(if $(BR2_CONFIG_LIBRARY_$(shell echo $f | tr a-z- A-Z_)),$(f),))
 LIBRARY_CONFIG_ALL_TARGETS = $(addsuffix inc, $(wildcard $(INC-PATH)))
 
