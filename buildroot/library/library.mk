@@ -8,6 +8,7 @@ LIBRARY_SOURCE_PATH=$(call qstrip,$(BR2_LIBRARY_SOURCE_PATH))
 LIBRARY_INSTALL_PATH=$(call qstrip,$(BR2_LIBRARY_INSTALL_PATH))
 LIBRARY_SUBDIR_LIST= platform $(shell ls $(LIBRARY_SOURCE_PATH) --hide=platform)
 LIBRARY_CONFIG_SUBDIRS = $(foreach f,$(LIBRARY_SUBDIR_LIST),$(if $(BR2_CONFIG_LIBRARY_$(shell echo $f | tr a-z- A-Z_)),$(f),))
+LIBRARY_CONFIG_ALL_TARGETS = $(addsuffix inc, $(wildcard $(INC-PATH)))
 
 LIBRARY_SUBDIR_ENV=SYSAPP_INSTALL_PATH=$(SYSAPP_INSTALL_PATH) \
 		   LIBRARY_INSTALL_PATH=$(LIBRARY_INSTALL_PATH) \
@@ -45,6 +46,14 @@ define ALONE_LIBRARY_CLEAN
 	$(Q)$(TARGET_MAKE_ENV) $(LIBRARY_SUBDIR_ENV) $(MAKE) -C $(LIBRARY_SOURCE_PATH)/$(1) NDK_PATH=$(LIB_NDK_PATH) O=$(LIBRARY_DIR)/$(1) $(2)
 endef
 
+define ALL_LIBRARY_BUILD
+	$(Q)$(TARGET_MAKE_ENV) $(LIBRARY_SUBDIR_ENV) $(MAKE) -C $(LIBRARY_SOURCE_PATH) LIBRARY_ALL_TARGETS="$(1)" O=$(LIBRARY_DIR)
+endef
+
+define ALL_LIBRARY_CLEAN
+	$(Q)$(TARGET_MAKE_ENV) $(LIBRARY_SUBDIR_ENV) $(MAKE) -C $(LIBRARY_SOURCE_PATH)/$(1) NDK_PATH=$(LIB_NDK_PATH) O=$(LIBRARY_DIR)/$(1) $(2)
+endef
+
 TEE_IMPL_VERSION ?= $(shell svn info 2>/dev/null | grep '^Revision' | awk '{print $$NF}')
 DATE_STR = `date +'%Y-%m-%d %T'`
 COMPILER_BY = `whoami`
@@ -58,21 +67,6 @@ define SDK_LIBRARY_PACKED
 	$(Q)$(TAR) -cjf $(SDK_PATH)/../sdk-$(SDK_PRODUCT_NAME)-$(SDK_PLATFORM_TYPE)-$(SDK_FIRMWARE_TYPE)-$(PACKED_DATE)-svn$(TEE_IMPL_VERSION)-v$(SDK_VERSION).tar.bz2 $(SDK_PATH)/../sdk/ >/dev/null 2>&1
 endef
 
-define LIBRARY_EMV_COPYED
-	$(Q)if [ -x $(LIBRARY_SOURCE_PATH)/emv/libemv.a ]; then \
-		cp $(LIBRARY_SOURCE_PATH)/emv/libemv.a $(SDK_PATH)/lib/ ;\
-	fi
-	$(Q)if [ -n "`ls $(LIBRARY_SOURCE_PATH)/emv/include/*.h`" ]; then \
-		cp $(LIBRARY_SOURCE_PATH)/emv/include/*.h $(SDK_PATH)/include/ ;\
-	fi
-endef
-
-define SDK_DOC_COPYED
-	$(Q)if [ -x ../doc/sdk-doc/N58G-Application-Development-Guide.doc ]; then \
-		cp ../doc/sdk-doc/N58G-Application-Development-Guide.doc $(SDK_PATH)/doc/ ;\
-	fi
-endef
-
 .library_related_dir:
 	@test -d $(SYSAPP_INSTALL_PATH) || mkdir -p $(SYSAPP_INSTALL_PATH)
 	@test -d $(LIBRARY_DIR)         || mkdir -p $(LIBRARY_DIR)
@@ -84,8 +78,7 @@ endef
 library: .library_related_dir
 	@test -d $(LIBRARY_DIR) || mkdir -p $(LIBRARY_DIR)
 	$(foreach d,$(LIBRARY_CONFIG_SUBDIRS),$(call ALONE_LIBRARY_BUILD,$(d),)$(sep))
-#	$(call SDK_DOC_COPYED)
-#	$(call LIBRARY_EMV_COPYED)
+	$(call ALL_LIBRARY_BUILD,$(LIBRARY_CONFIG_SUBDIRS))
 #	$(call SDK_LIBRARY_VERSION_BUILD)
 #	$(call SDK_LIBRARY_PACKED)
 
