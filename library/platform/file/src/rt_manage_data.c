@@ -138,7 +138,7 @@ int32_t rm(const int8_t *file_name)
             return RT_ERROR;
         }
     } else if (S_ISDIR(st.st_mode)) {
-        if (file_name == "." || file_name == "..") {
+        if (!strcmp(file_name, ".") || !strcmp(file_name, "..")) {
             return RT_ERROR;
         }
 

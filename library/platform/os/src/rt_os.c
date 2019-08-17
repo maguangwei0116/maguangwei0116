@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <linux/reboot.h>
+#include <stdlib.h>
+#include <string.h>
 #include "rt_os.h"
 
 int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)

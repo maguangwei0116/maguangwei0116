@@ -29,16 +29,16 @@ SRC-y 		+= src/qmi_wds.c
 SRC-y 		+= src/rt_qmi.c
 
 # Config your include file path by += xxx-inc
-INC-PATH 		 = ./file/
-INC-PATH 		+= ./http/
-INC-PATH 		+= ./os/
-INC-PATH 		+= ./log/
-INC-PATH 		+= ./qualcomm/
-INC-PATH 		+= ./socket/
+INC-PATH 	+= ./file/
+INC-PATH 	+= ./http/
+INC-PATH 	+= ./os/
+INC-PATH 	+= ./log/
+INC-PATH 	+= ./qualcomm/
+INC-PATH 	+= ./socket/
 
 INC-y 		+= ./
-INC-y 		+= $(INC-PATH )
-INC-y 		+= $(addsuffix inc, $(wildcard $(INC-PATH )))
+INC-y 		+= $(INC-PATH)
+INC-y 		+= $(addsuffix inc, $(wildcard $(INC-PATH)))
 
 all:
 	-$(Q)$(CP) $(addsuffix *.h, $(wildcard $(INC-PATH))) $(SDK_INSTALL_PATH)/include

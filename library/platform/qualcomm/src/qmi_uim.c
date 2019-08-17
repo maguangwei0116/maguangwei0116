@@ -11,9 +11,11 @@
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "qmi_uim.h"
 #include "qmi_control_point.h"
-#include <stdlib.h>
 
 static qmi_client_type g_uim_client;
 int qmi_wds_init(void)

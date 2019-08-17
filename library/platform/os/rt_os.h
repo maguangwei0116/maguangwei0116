@@ -25,7 +25,7 @@ typedef void * (* rt_taskfun) (void *para);
 
 int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
 int32_t rt_os_memcmp(void *mem_des,void *mem_src,int32_t len);
-int32_t rt_creat_msg_queue(char *pathname, char proj_id);
+int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id);
 int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg);
 int32_t rt_send_queue_msg(int32_t msgid, void *buffer, int32_t len, int32_t msgflg);
 int32_t rt_os_access(const char *filenpath, int32_t mode);

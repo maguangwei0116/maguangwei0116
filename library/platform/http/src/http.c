@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
+#include <string.h>
 
 #include "http.h"
 

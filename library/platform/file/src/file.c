@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <string.h>
 #include "file.h"
 
 rt_fshandle_t rt_fopen(const char *filename, rt_fsmode_t mode)
