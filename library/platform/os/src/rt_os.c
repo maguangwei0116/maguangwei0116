@@ -76,7 +76,7 @@ int32_t rt_mutex_destroy(pthread_mutex_t *mutex)
 }
 
 //message queue
-int32_t rt_creat_msg_queue(char *pathname, char proj_id)
+int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id)
 {
     int32_t msgid = -1;
     key_t q_key;
@@ -91,18 +91,18 @@ int32_t rt_creat_msg_queue(char *pathname, char proj_id)
     return msgid;
 }
 
-int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len)
+int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg)
 {
-    if (msgrcv(msgid, buffer, len, 0, 0) == -1) {
+    if (msgrcv(msgid, buffer, len, msgtyp, msgflg) == -1) {
         MSG_WARN("no message data\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
 }
 
-int32_t rt_send_queue_msg(int32_t msgid, void *buffer, int32_t len)
+int32_t rt_send_queue_msg(int32_t msgid, void *buffer, int32_t len, int32_t msgflg)
 {
-    if (msgsnd(msgid, buffer, len, 0) == -1) {
+    if (msgsnd(msgid, buffer, len, msgflg) == -1) {
         MSG_WARN("send message data error\n");
         return RT_ERROR;
     }
@@ -133,7 +133,7 @@ void *rt_os_memset(void *mem, int8_t value, int32_t len)
 
 int32_t rt_os_memcmp(void *mem_des,void *mem_src,int32_t len)
 {
-    if ((NULL == mem_des)||(NULL == mem_src)) {
+    if ((NULL == mem_des) || (NULL == mem_src)) {
         MSG_WARN("memory is empty!\n");
         return RT_ERROR;
     }
@@ -151,7 +151,7 @@ uint32_t rt_os_strlen(void *string)
 
 void *rt_os_strcpy(char* dest, const char *src)
 {
-    if ((NULL == dest)||(NULL == src)) {
+    if ((NULL == dest) || (NULL == src)) {
         MSG_WARN("strcpy is empty!\n");
         return NULL;
     }
@@ -160,7 +160,7 @@ void *rt_os_strcpy(char* dest, const char *src)
 
 int32_t rt_os_strncmp(void *mem_des,void *mem_src,int32_t len)
 {
-    if ((NULL == mem_des)||(NULL == mem_src)) {
+    if ((NULL == mem_des) || (NULL == mem_src)) {
         MSG_WARN("memory is empty!\n");
         return RT_ERROR;
     }
@@ -169,7 +169,7 @@ int32_t rt_os_strncmp(void *mem_des,void *mem_src,int32_t len)
 
 int32_t rt_os_strcmp(void *mem_des,void *mem_src)
 {
-    if ((NULL == mem_des)||(NULL == mem_src)) {
+    if ((NULL == mem_des) || (NULL == mem_src)) {
         MSG_WARN("memory is empty!\n");
         return RT_ERROR;
     }
@@ -178,7 +178,7 @@ int32_t rt_os_strcmp(void *mem_des,void *mem_src)
 
 void *rt_os_memcpy(void *mem_des, void *mem_src, int32_t len)
 {
-    if ((NULL == mem_des)||(NULL == mem_src)) {
+    if ((NULL == mem_des) || (NULL == mem_src)) {
         MSG_WARN("memory is empty!\n");
         return NULL;
     }
@@ -198,7 +198,7 @@ int32_t rt_os_access(const char *filenpath, int32_t mode)
 
 int8_t *rt_os_strstr(int8_t *str1, const int8_t *str2)
 {
-    if ((NULL == str1)||(NULL == str2)) {
+    if ((NULL == str1) || (NULL == str2)) {
         MSG_WARN("strstr is empty!\n");
         return NULL;
     }
@@ -214,52 +214,6 @@ int8_t *rt_os_strchr(int8_t *str, const int8_t chr)
     return strchr(str, chr);
 }
 
-RT_FILE_HANDLE rt_os_open(const int8_t *filename, const int8_t *flags)
-{
-    if (NULL == filename) {
-        return NULL;
-    }
-
-    return fopen(filename, flags);
-
-}
-
-int32_t rt_os_read(void *ptr, int32_t len, int32_t num, RT_FILE_HANDLE handle)
-{
-    if (NULL == ptr || NULL == handle) {
-        return RT_ERROR;
-    }
-
-    return fread(ptr, (size_t)len, num, handle);
-}
-
-int32_t rt_os_write(const void *ptr, int32_t len, int32_t num, RT_FILE_HANDLE handle)
-{
-    if (NULL == ptr || NULL == handle) {
-        return RT_ERROR;
-    }
-
-    return fwrite(ptr, (size_t)len, num, handle);
-}
-
-int32_t rt_os_seek(RT_FILE_HANDLE handle, int32_t offset, int32_t whence)
-{
-    if (NULL == handle) {
-        return RT_ERROR;
-    }
-
-    return fseek(handle, offset, whence);
-}
-
-int32_t rt_os_close(RT_FILE_HANDLE handle)
-{
-    if (NULL == handle) {
-        return RT_ERROR;
-    }
-
-    return fclose(handle);
-}
-
 int32_t rt_os_unlink(const int8_t *pathname)
 {
     if (NULL == pathname) {
@@ -270,7 +224,7 @@ int32_t rt_os_unlink(const int8_t *pathname)
 
 int32_t rt_os_rename(const int8_t *oldname, const int8_t *newname)
 {
-    if(NULL == oldname || NULL == newname) {
+    if (NULL == oldname || NULL == newname) {
         return RT_ERROR;
     }
     return rename(oldname, newname);

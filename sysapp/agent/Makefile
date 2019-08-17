@@ -13,11 +13,11 @@ vpath %.c ./core/bootstrap
 SRC-y 		+= src/bootstrap.c
 
 # Config your include file path by += xxx-inc
-INC-T 		 = ./core/bootstrap/
+INC-PATH 		 = ./core/bootstrap/
 
 INC-y 		+= ./
-INC-y 		+= $(INC-T)
-INC-y 		+= $(addsuffix inc, $(wildcard $(INC-T)))
+INC-y 		+= $(INC-PATH)
+INC-y 		+= $(addsuffix inc, $(wildcard $(INC-PATH)))
 
 # Config your lib
 LIB-y 		= -lm
