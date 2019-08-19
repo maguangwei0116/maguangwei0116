@@ -9,7 +9,7 @@ MAP_FILE_NAME 		= $(TARGET).map
 DMP_FILE_NAME 		= $(TARGET).dmp
 BIN_FILE_NAME 		= $(TARGET).bin
 
-all: info $(TARGET)
+all: $(TARGET)
 
 $(TARGET): $(O)/$(TARGET_FILE_NAME)
 

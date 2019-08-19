@@ -40,8 +40,11 @@ INC-y 		+= ./
 INC-y 		+= $(INC-PATH)
 INC-y 		+= $(addsuffix inc, $(wildcard $(INC-PATH)))
 
-all:
-	-$(Q)$(CP) $(addsuffix *.h, $(wildcard $(INC-PATH))) $(SDK_INSTALL_PATH)/include
+# Config your extern header files
+EXTERN_HEADER_FILES += $(addsuffix *.h, $(wildcard $(INC-PATH)))
+
+#all:
+#	-$(Q)$(CP) $(addsuffix *.h, $(wildcard $(INC-PATH))) $(SDK_INSTALL_PATH)/include
 ############################################################################################
 # Never modify from this line
 ############################################################################################
