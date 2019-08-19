@@ -67,12 +67,7 @@ BR2_TOOLCHAIN_SYSINC="/opt/ql-oe/sysroots/mdm9607/usr/include/ /opt/ql-oe/sysroo
 # SDK
 #
 BR2_PACKAGE_SDK_BUILD=y
-BR2_SDK_URL=""
 BR2_SDK_INSTALL_PATH="$(BASE_DIR)/system/sdk"
-
-#
-# Library
-#
 
 #
 # Library
@@ -86,10 +81,6 @@ BR2_CONFIG_LIBRARY_DIAL=y
 BR2_CONFIG_LIBRARY_PLATFORM=y
 BR2_CONFIG_LIBRARY_SAMPLE=y
 BR2_CONFIG_LIBRARY_UTIL=y
-
-#
-# System Application
-#
 
 #
 # System Application
