@@ -21,14 +21,28 @@ typedef struct AGENT_QUEUE {
     void *data_buf;
 } agent_que_t;
 
-static int32_t g_queue_id = -1;
+typedef struct UPLOAD_QUEUE {
+    long msg_typ;
+    int32_t data_len;
+    void *data_buf;
+} upload_que_t;
 
-int32_t init_agent_queue(void)
+static int32_t g_queue_id = -1;
+static int32_t g_upload_queue_id = -1;
+
+int32_t init_queue(void *arg)
 {
     rt_task task_id = 0;
+    rt_task upload_task_id = 0;
     int32_t ret = RT_ERROR;
 
-    ret = rt_create_task(&task_id, (void *) agent_quectel_task, NULL);
+    ret = rt_create_task(&task_id, (void *) agent_queue_task, NULL);
+    if (ret != RT_SUCCESS) {
+        MSG_ERR("create task fail\n");
+        return RT_ERROR;
+    }
+
+    ret = rt_create_task(&upload_task_id, (void *) upload_queue_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_ERR("create task fail\n");
         return RT_ERROR;
@@ -36,6 +50,12 @@ int32_t init_agent_queue(void)
     g_queue_id = rt_creat_msg_queue("./", 168);
     if (g_queue_id < 0) {
         MSG_ERR("creat msg queue fail\n");
+        return RT_ERROR;
+    }
+
+    g_upload_queue_id = rt_creat_msg_queue("./", 169);
+    if (g_upload_queue_id < 0) {
+        MSG_ERR("creat upload msg queue fail\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
@@ -51,7 +71,8 @@ int32_t msg_send_agent_queue(int32_t msgid, void *buffer, int32_t len)
     return rt_send_queue_msg(g_queue_id, (void *)&que_t, len);
 }
 
-void agent_quectel_task(void)
+// agent queue, communication between modules
+void agent_queue_task(void)
 {
     agent_que_t que_t;
     int32_t len = 0;
@@ -61,10 +82,10 @@ void agent_quectel_task(void)
                 case MSG_ID_BOOT_STRAP:
 
                 break;
-                case MSG_ID_CARD_MANAGE:
+                case MSG_ID_CARD_MANAGER:
 
                 break;
-                case MSG_ID_LOG_MANAGE:
+                case MSG_ID_LOG_MANAGER:
 
                 break;
                 case MSG_ID_OTA_UPGRADE:
@@ -80,6 +101,18 @@ void agent_quectel_task(void)
                     break;
                 }
             }
+        }
+        rt_os_free(que_t.data_buf);
+    }
+}
+
+// upload queue, only deal with upload msg
+void upload_queue_task(void)
+{
+    upload_que_t que_t;
+    int32_t len = 0;
+    while (1) {
+        if (rt_receive_queue_msg(g_upload_queue_id, &que_t, len, 0, 0) == 0) {
         }
         rt_os_free(que_t.data_buf);
     }

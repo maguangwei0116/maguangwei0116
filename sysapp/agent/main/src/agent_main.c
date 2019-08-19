@@ -16,7 +16,7 @@
 
 int32_t main(int32_t argc, int8_t **argv)
 {
-    init_agent_queue();
+    init_queue(NULL);
     while (1) {
 
     }
