@@ -292,18 +292,6 @@ HOSTCC  := $(CCACHE) $(HOSTCC)
 HOSTCXX := $(CCACHE) $(HOSTCXX)
 endif
 
-ifeq ($(BR2_PCI_COMPLY),y)
-FIRMWARE_PCI_COMPLY=y
-else
-FIRMWARE_PCI_COMPLY=n
-endif
-
-ifeq ($(BR2_UPTS_COMPLY),y)
-FIRMWARE_UPTS_COMPLY=y
-else
-FIRMWARE_UPTS_COMPLY=n
-endif
-
 #############################################################
 #
 # You should probably leave this stuff alone unless you know
