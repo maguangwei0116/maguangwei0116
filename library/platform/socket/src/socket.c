@@ -20,7 +20,7 @@
 
 int32_t socket_create(void)
 {
-    return socket(AF_INET, SOCK_STREAM, 0);
+    return socket(AF_INET, SOCK_STREAM, 0); // AF_LOCAL
 }
 
 int32_t socket_connect(int32_t socket_id, uint8_t *addr, int32_t port)

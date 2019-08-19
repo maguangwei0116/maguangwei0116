@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : ipc_socket.c
- * Date        : 2019.08.07
+ * File name   : main.c
+ * Date        : 2019.08.19
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,4 +11,9 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#include "ipc_socket.h"
+#include "rt_type.h"
+
+int32_t main(void)
+{
+
+}

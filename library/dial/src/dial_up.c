@@ -271,7 +271,7 @@ rt_bool dial_up_reinit(dsi_call_info_t *dsi_net_hndl)
     return RT_TRUE;
 }
 
-static int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
+int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
 {
     dsi_ce_reason_t dsicallend;
     int32_t rval, signo;

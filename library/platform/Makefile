@@ -27,6 +27,7 @@ SRC-y 		+= src/qmi_nas.c
 SRC-y 		+= src/qmi_uim.c
 SRC-y 		+= src/qmi_wds.c
 SRC-y 		+= src/rt_qmi.c
+SRC-y 		+= src/socket.c
 
 # Config your include file path by += xxx-inc
 INC-PATH 	+= ./file/

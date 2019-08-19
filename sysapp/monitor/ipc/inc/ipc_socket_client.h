@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : agent_main.c
- * Date        : 2019.08.15
+ * File name   : ipc_socket.h
+ * Date        : 2019.08.07
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,14 +11,10 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
+#ifndef __IPC_SOCKET_CLIENT__
+#define __IPC_SOCKET_CLIENT__
+
 #include "rt_type.h"
-#include "agent_queue.h"
-#include "card_manager.h"
 
-int32_t main(int32_t argc, int8_t **argv)
-{
-    init_queue(NULL);
-    while (1) {
 
-    }
-}
+#endif // __IPC_SOCKET__

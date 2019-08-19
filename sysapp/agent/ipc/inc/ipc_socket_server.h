@@ -14,6 +14,8 @@
 #ifndef __IPC_SOCKET_SERVER__
 #define __IPC_SOCKET_SERVER__
 
+#include "rt_type.h"
 
+int32_t ipc_server(void);
 
 #endif // __IPC_SOCKET_SERVER__

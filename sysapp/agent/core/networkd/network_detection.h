@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : ipc_socket.h
- * Date        : 2019.08.07
+ * File name   : network_detection.h
+ * Date        : 2019.08.19
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,9 +11,11 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifndef __IPC_SOCKET__
-#define __IPC_SOCKET__
+#ifndef __NETWORK_DETECTION_H__
+#define __NETWORK_DETECTION_H__
+
+#include "rt_type.h"
 
 
+#endif // __NETWORK_DETECTION_H__
 
-#endif // __IPC_SOCKET__

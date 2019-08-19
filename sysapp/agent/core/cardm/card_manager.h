@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : agent_quectel.c
- * Date        : 2019.08.15
+ * File name   : card_manager.h
+ * Date        : 2019.08.19
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,3 +11,12 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
+#ifndef __CARD_MANAGER_H__
+#define __CARD_MANAGER_H__
+
+#include "rt_type.h"
+
+int32_t init_card_manager(void *arg);
+int32_t card_manager_event(uint8_t *buf, int32_t len);
+
+#endif // __CARD_MANAGER_H__

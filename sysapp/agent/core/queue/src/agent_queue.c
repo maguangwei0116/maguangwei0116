@@ -15,14 +15,14 @@
 #include "rt_type.h"
 
 typedef struct AGENT_QUEUE {
-    long msg_typ;
+    int64_t msg_typ;
     agent_msg_id_e msg_id;
     int32_t data_len;
     void *data_buf;
 } agent_que_t;
 
 typedef struct UPLOAD_QUEUE {
-    long msg_typ;
+    int64_t msg_typ;
     int32_t data_len;
     void *data_buf;
 } upload_que_t;

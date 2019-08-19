@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : agent_main.c
- * Date        : 2019.08.15
+ * File name   : card_manager.c
+ * Date        : 2019.08.19
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,14 +11,14 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#include "rt_type.h"
-#include "agent_queue.h"
 #include "card_manager.h"
 
-int32_t main(int32_t argc, int8_t **argv)
+int32_t init_card_manager(void *arg)
 {
-    init_queue(NULL);
-    while (1) {
 
-    }
+}
+
+int32_t card_manager_event(uint8_t *buf, int32_t len)
+{
+
 }
