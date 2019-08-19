@@ -31,7 +31,7 @@ libso: $(O)/$(LIB_SO_NAME)
 liba: $(O)/$(LIB_A_NAME)
 
 $(O)/$(LIB_SO_NAME): $(ALL_TARGETS)
-	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) $(OBJS) -o"$@"
+	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
 	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
 	@$(ECHO) ""
