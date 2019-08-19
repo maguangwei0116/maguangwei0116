@@ -18,7 +18,6 @@ LIBRARY_SUBDIR_ENV=LIBRARY_INSTALL_PATH=$(LIBRARY_INSTALL_PATH) \
 		   SYSROOT=$(TARGET_SYSROOT) \
 		   SYSINC=$(TARGET_SYSINC)
 
-SDK_VERSION=$(call qstrip,$(BR2_IMAGE_VERSION))
 SDK_PRODUCT_NAME=$(call qstrip,$(BR2_PRODUCT_NAME))
 SDK_PLATFORM_TYPE=$(call qstrip,$(BR2_PLATFORM_TYPE))
 SDK_FIRMWARE_TYPE=$(call qstrip,$(BR2_FIRMWARE_TYPE))
@@ -50,15 +49,6 @@ TEE_IMPL_VERSION ?= $(shell svn info 2>/dev/null | grep '^Revision' | awk '{prin
 DATE_STR = `date +'%Y-%m-%d %T'`
 COMPILER_BY = `whoami`
 
-define SDK_LIBRARY_VERSION_BUILD
-	$(Q)echo "SDK-Library: [$(SDK_PRODUCT_NAME)-$(SDK_PLATFORM_TYPE)-$(SDK_FIRMWARE_TYPE)] svn-$(TEE_IMPL_VERSION) v$(SDK_VERSION) compiled by \""$(COMPILER_BY)\"" @ $(DATE_STR)" > $(SDK_PATH)/sdk-version.txt
-endef
-
-PACKED_DATE = `date +'%Y%m%d'`
-define SDK_LIBRARY_PACKED
-	$(Q)$(TAR) -cjf $(SDK_PATH)/../sdk-$(SDK_PRODUCT_NAME)-$(SDK_PLATFORM_TYPE)-$(SDK_FIRMWARE_TYPE)-$(PACKED_DATE)-svn$(TEE_IMPL_VERSION)-v$(SDK_VERSION).tar.bz2 $(SDK_PATH)/../sdk/ >/dev/null 2>&1
-endef
-
 .library_related_dir:
 	@test -d $(LIBRARY_DIR)         || mkdir -p $(LIBRARY_DIR)
 	@test -d $(SDK_PATH)/lib        || mkdir -p $(SDK_PATH)/lib
@@ -70,8 +60,6 @@ library: .library_related_dir
 	@test -d $(LIBRARY_DIR) || mkdir -p $(LIBRARY_DIR)
 	$(foreach d,$(LIBRARY_CONFIG_SUBDIRS),$(call ALONE_LIBRARY_BUILD,$(d),)$(sep))
 	$(call ALL_LIBRARY_BUILD,$(LIBRARY_CONFIG_SUBDIRS))
-#	$(call SDK_LIBRARY_VERSION_BUILD)
-#	$(call SDK_LIBRARY_PACKED)
 
 library-clean: $(LIBRARY_JOIN_LIST_CLEAN)
 	rm -rf $(LIBRARY_DIR)

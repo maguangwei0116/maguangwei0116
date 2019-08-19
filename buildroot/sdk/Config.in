@@ -9,7 +9,7 @@ config BR2_PACKAGE_SDK_BUILD
 if BR2_PACKAGE_SDK_BUILD
 
 config BR2_SDK_INSTALL_PATH
-	string "sdk install path"
+	string "SDK Install Path"
 	default "$(BASE_DIR)/system/sdk"
 	help 
 		SDK install path configuration

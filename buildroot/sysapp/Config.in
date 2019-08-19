@@ -4,7 +4,7 @@ menu "System Application"
 comment "System Application"
 
 config BR2_PACKAGE_SYSAPP
-	bool "Build system application"
+	bool "Build System Application"
 	default y
 	help
 	  Enable this option if you want to build system application for your embedded device
@@ -16,7 +16,7 @@ config BR2_SYSAPP_SOURCE_PATH
 	default "$(WORKSPACE)/sysapp"
 
 config BR2_SYSAPP_INSTALL_PATH
-	string "system application install path"
+	string "System Application Install Path"
 	default "$(BASE_DIR)/system/bin"
 
 source ".config_wrapper/sysapp_wrapper.in"

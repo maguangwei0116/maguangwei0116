@@ -1,7 +1,7 @@
 menu "Product Options"
 
 config BR2_PRODUCT_NAME
-	string "product name"
+	string "Product Name"
 	default "smart"
 
 choice
@@ -26,7 +26,7 @@ config BR2_PLATFORM_TYPE
 	default "9x07"  if BR2_PLATFORM_9X07
 
 choice
-	prompt "firmware type"
+	prompt "Firmware Type"
 	default BR2_FIRMWARE_TYPE_RELEASE
 	help
 	  Select firmware type, Release, Debug ...
@@ -51,32 +51,12 @@ config BR2_FIRMWARE_TYPE
 	default "release"	if BR2_FIRMWARE_TYPE_RELEASE
 
 config BR2_OUTPUT_PATH
-	string "output path"
+	string "Output Path"
 	default "$(BR2_PRODUCT_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_FIRMWARE_TYPE)"
 
 config BR2_IMAGE_NAME
-	string "image name"
+	string "Image Name"
 	default "$(BR2_PRODUCT_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_FIRMWARE_TYPE)"
-
-config BR2_IMAGE_VERSION
-	string "image/firmware version (xx.xx.xx)"
-	default "01.00.00"
-
-config BR2_MS_SIGNATURE_IP
-	string "Signature IP for MS"
-	default "10.1.23.2"
-
-config BR2_MS_SIGNATURE_PORT
-	string "Signature Port for MS"
-	default "6789"
-
-config BR2_MF_SIGNATURE_IP
-	string "Signature IP for MF"
-	default "10.1.23.2"
-
-config BR2_MF_SIGNATURE_PORT
-	string "Signature Port for MF"
-	default "6789"
 
 endmenu
 
