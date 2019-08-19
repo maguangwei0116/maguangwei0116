@@ -8,8 +8,6 @@ TARGET_CROSS=$(TOOLCHAIN_PATH)/$(call qstrip,$(BR2_TOOLCHAIN_PREFIX))
 TARGET_SYSROOT=$(call qstrip,$(BR2_TOOLCHAIN_SYSROOT))
 TARGET_SYSINC="$(call qstrip,$(BR2_TOOLCHAIN_SYSINC))"
 TARGET_LIB_PATH=$(TOOLCHAIN_PATH)/$(dir $(call qstrip,$(BR2_TOOLCHAIN_PREFIX)))/../lib
-NDK_CFLAGS="-DTEXT_BASE=0x03000000 -DPREFER_SIZE_OVER_SPEED -DPLATFORM_FLAVOR=PLATFORM_FLAVOR_ID_360S -DTRACE_LEVEL= \
-				          -nostdinc -isystem $(shell $(TARGET_CROSS)gcc -print-file-name=include 2> /dev/null)"
 
 toolchain:
 	@echo "toolchain building $(TOOLCHAIN_PATH)"
