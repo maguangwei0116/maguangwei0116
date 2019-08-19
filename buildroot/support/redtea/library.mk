@@ -24,9 +24,9 @@ clean:
 	rm -rf $(O)
 
 # Include sub comm makefiles
--include ../../buildroot/support/redtea/tool.mk
--include ../../buildroot/support/redtea/flags.mk
--include ../../buildroot/support/redtea/object.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
 
 libso: $(O)/$(LIB_SO_NAME)
 liba: $(O)/$(LIB_A_NAME)

@@ -22,13 +22,16 @@ info:
 	@echo "LDFLAGS=$(LDFLAGS)"
 	@echo "SYSROOT=$(SYSROOT)"
 	@echo "TARGET=$(TARGET)"
+	@echo "REDTEA_SUPPORT_SCRIPTS_PATH=$(REDTEA_SUPPORT_SCRIPTS_PATH)"
+	@echo "SYSAPP_TARGET_NAME=$(SYSAPP_TARGET_NAME)"
+	
 clean:
 	rm -rf $(O)
 
 # Include sub comm makefiles
--include ../../buildroot/support/redtea/tool.mk
--include ../../buildroot/support/redtea/flags.mk
--include ../../buildroot/support/redtea/object.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
 
 $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	$($(quiet)do_cc) $(MAIN_INCLUDES) -o "$@" $(OBJS) $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME)
