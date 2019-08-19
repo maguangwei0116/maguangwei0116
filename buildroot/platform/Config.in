@@ -1,9 +1,17 @@
 menu "Product Options"
 
+config BR2_SYSTEM_NAME
+	string "System Name"
+	default "linux"
+
 config BR2_PRODUCT_NAME
 	string "Product Name"
-	default "smart"
-
+	default "euicc"	
+	
+config BR2_SOFTWARE_NAME
+	string "Software Name"
+	default "general"
+	
 choice
 	prompt "Build for Platform"
 	default BR2_PLATFORM_9X07
@@ -52,11 +60,11 @@ config BR2_SOFTWARE_TYPE
 
 config BR2_OUTPUT_PATH
 	string "Output Path"
-	default "$(BR2_PRODUCT_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
+	default "$(BR2_SOFTWARE_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
 
 config BR2_IMAGE_NAME
 	string "Image Name"
-	default "$(BR2_PRODUCT_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
+	default "$(BR2_SOFTWARE_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
 
 endmenu
 
