@@ -5,18 +5,14 @@ config BR2_PACKAGE_SDK_BUILD
 	default y
 	help
 		Build SDK for application developers.
-	  
-config BR2_SDK_URL
-	string "sdk update url"
-	default ""
-	help
-		The url for update sdk.
-	
+	  	
 if BR2_PACKAGE_SDK_BUILD
 
 config BR2_SDK_INSTALL_PATH
-        string 
-        default "$(BASE_DIR)/system/sdk"
+	string "sdk install path"
+	default "$(BASE_DIR)/system/sdk"
+	help 
+		SDK install path configuration
 
 endif
 
