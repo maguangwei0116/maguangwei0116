@@ -13,7 +13,7 @@ info:
 	@echo "COBJS=$(COBJS)"
 	@echo "OBJS=$(OBJS)"
 	@echo "DEPS=$(DEPS)"
-	@echo "CC=$(CC)" O=$(O) -DMACRO=$(MACRO)
+	@echo "CC=$(CC)" O=$(O)
 	@echo "CFLAGS=$(CFLAGS)"
 	@echo "LDFLAGS=$(LDFLAGS)"
 	@echo "SYSROOT=$(SYSROOT)"

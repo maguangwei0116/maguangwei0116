@@ -9,7 +9,7 @@ MAP_FILE_NAME 		= $(TARGET).map
 DMP_FILE_NAME 		= $(TARGET).dmp
 BIN_FILE_NAME 		= $(TARGET).bin
 
-all: $(TARGET)
+all: info $(TARGET)
 
 $(TARGET): $(O)/$(TARGET_FILE_NAME)
 
@@ -17,13 +17,14 @@ info:
 	@echo "COBJS=$(COBJS)"
 	@echo "OBJS=$(OBJS)"
 	@echo "DEPS=$(DEPS)"
-	@echo "CC=$(CC)" O=$(O) -DMACRO=$(MACRO)
+	@echo "CC=$(CC)" O=$(O)
 	@echo "CFLAGS=$(CFLAGS)"
 	@echo "LDFLAGS=$(LDFLAGS)"
 	@echo "SYSROOT=$(SYSROOT)"
 	@echo "TARGET=$(TARGET)"
 	@echo "REDTEA_SUPPORT_SCRIPTS_PATH=$(REDTEA_SUPPORT_SCRIPTS_PATH)"
 	@echo "SYSAPP_TARGET_NAME=$(SYSAPP_TARGET_NAME)"
+	@echo "RELEASE_TARGET=$(RELEASE_TARGET)"
 	
 clean:
 	rm -rf $(O)
@@ -40,7 +41,8 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	@$(CHMOD) +x "$@"
 	$($(quiet)do_strip) --strip-all "$@"
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(ELF_FILE_NAME)
-	-$(Q)$(CP) -rf $@ $(SYSAPP_INSTALL_PATH)/
+	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(RELEASE_TARGET)
+	-$(Q)$(CP) -rf $(O)/$(RELEASE_TARGET) $(SYSAPP_INSTALL_PATH)/
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"

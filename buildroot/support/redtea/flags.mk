@@ -10,6 +10,7 @@ INCDIR  		= $(patsubst %,-I%,$(INC-y))
 CFLAGS			+= $(INCDIR)
 CFLAGS			+= -I$(SDK_INSTALL_PATH)/include
 CFLAGS			+= $(patsubst %,-I%,$(SYSINC))
+CFLAGS			+= $(USER_CFLAGS)
 
 # Config link flags
 LDFLAGS			+= $(LIB-y)
