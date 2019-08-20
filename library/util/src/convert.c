@@ -8,7 +8,7 @@ int8_t to_ascii(int8_t ch)
     } else if (ch >= 0xA && ch <= 0xF) {
         ch += ('A' - 0xA);
     } else {
-        MSG_WARN("can not contert to a ascii,ch = %02x", (uint8_t)ch);
+        MSG_PRINTF(LOG_WARN, "can not contert to a ascii,ch = %02x", (uint8_t)ch);
         ch = 'F';
     }
     return ch;
@@ -22,7 +22,7 @@ rt_bool strncpy_case_insensitive(int8_t *src,int8_t *obj,int16_t len)
         if (src[i] == obj[i] || src[i] == (obj[i] + 'a' - 'A') || obj[i] == src[i] + 'a' - 'A') {
             continue;
         } else {
-            MSG_WARN("no.%d number is not equal,src:%c,obj:%c\n", i, src[i], obj[i]);
+            MSG_PRINTF(LOG_WARN, "no.%d number is not equal,src:%c,obj:%c\n", i, src[i], obj[i]);
             return RT_FALSE;
         }
     }

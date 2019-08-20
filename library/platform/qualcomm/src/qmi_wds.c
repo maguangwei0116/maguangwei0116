@@ -23,7 +23,7 @@ int qmi_modify_profile(qmi_wds_profile_info_t *info)
     wds_modify_profile_settings_resp_msg_v01 resp = { 0 };
     err = qmi_ctrl_point_init(wds_get_service_object_v01(), &wds_client, NULL, NULL);
     if(err != QMI_NO_ERR) {
-        MSG_WARN("failed to initialize control point of WDS: %d", err);
+        MSG_PRINTF(LOG_WARN, "failed to initialize control point of WDS: %d", err);
        return err;
     }
 
@@ -50,11 +50,11 @@ int qmi_modify_profile(qmi_wds_profile_info_t *info)
 
     if(err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
-            MSG_WARN("Failed to modify %d profile, result: %d, error code: %d\n",
+            MSG_PRINTF(LOG_WARN, "Failed to modify %d profile, result: %d, error code: %d\n",
                     info->profile_index,
                     resp.resp.result, resp.resp.error);
             if(resp.extended_error_code_valid == 1) {
-                MSG_WARN("extended_error_code : %d\n", resp.extended_error_code);
+                MSG_PRINTF(LOG_WARN, "extended_error_code : %d\n", resp.extended_error_code);
             }
             err = resp.resp.result;
             goto out;

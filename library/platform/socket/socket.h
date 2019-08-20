@@ -17,8 +17,8 @@
 #include "rt_type.h"
 
 int32_t socket_create(void);
-int32_t socket_connect(int32_t socket_id, uint8_t *addr, int32_t port);
-int32_t socket_bind(int32_t socket_id, uint8_t *addr, int32_t port);
+int32_t socket_connect(int32_t socket_id);
+int32_t socket_bind(int32_t socket_id);
 int32_t socket_listen(int32_t socket_id, int32_t num);
 int32_t socket_accept(int32_t socket_id);
 int32_t socket_recv(int32_t socket_id, uint8_t *buf, int32_t buf_size);

@@ -20,13 +20,17 @@ int32_t ipc_conect_server(void)
     int32_t ret = RT_ERROR;
 
     socket_id = socket_create();
+    MSG_PRINTF(LOG_INFO, "socket id %d\n", socket_id);
     if (socket_id <= 0) {
         return RT_ERROR;
     }
-    ret = socket_connect(socket_id, "0.0.0.0", 9000);
+    ret = socket_connect(socket_id);
     if (ret == -1) {
-
+        MSG_PRINTF(LOG_ERR, "connet server failed\n");
     }
     ret = socket_send(socket_id, "hello", sizeof("hello"));
+    if (ret == -1) {
+        MSG_PRINTF(LOG_ERR, "send data failed\n");
+    }
     socket_close(socket_id);
 }

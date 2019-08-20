@@ -33,7 +33,34 @@ int32_t log_file()
     return 0;
 }
 
-int32_t write_log_fun(const int8_t *msg, ...)
+static int32_t log_file_size(void)
+{
+    struct stat statbuf;
+    int32_t size;
+
+    stat(LOG_NAME, &statbuf);
+    size = statbuf.st_size;
+    return size;
+}
+
+static int32_t clear_file(void)
+{
+    int32_t ret = open(LOG_NAME, O_WRONLY | O_TRUNC);
+    if (ret == -1) {
+        MSG_PRINTF(LOG_WARN, "clear_file open file is fail!\n");
+        return -1;
+    }
+    close(ret);
+    log_file();
+    return 0;
+}
+
+static void close_file(void)
+{
+    close(file_fd);
+}
+
+int32_t write_log_fun(log_leve_e leve, const int8_t *msg, ...)
 {
     int32_t size = 0;
     int8_t content[200] = {0};
@@ -41,10 +68,6 @@ int32_t write_log_fun(const int8_t *msg, ...)
     time_t  time_write;
     struct tm tm_Log;
 
-    size = log_file_size();
-    if (size > LOG_FILE_SIZE) {
-        clear_file();
-    }
     va_list vl_list;
     va_start(vl_list, msg);
 
@@ -56,53 +79,14 @@ int32_t write_log_fun(const int8_t *msg, ...)
     strftime((char *)final, sizeof(final), "[%Y-%m-%d %H:%M:%S] ", &tm_Log);
 
     strncat((char *)final, (const char *)content, rt_os_strlen(content));
-    write(file_fd, final, rt_os_strlen(final));
-    return 0;
-}
-
-int32_t write_log(const int8_t *msg, ...)
-{
-    int32_t size = 0;
-    int8_t final[400] = {0};   //
-    va_list vl_list;
-    int8_t content[200] = {0};
-
+    printf("%s",final);
+#if 0
     size = log_file_size();
-    if (size > LOG_FILE_SIZE * 1024 * 1024) {
+    if (size > LOG_FILE_SIZE) {
         clear_file();
     }
-    va_start(vl_list, msg);
-    vsprintf((char *)content, (const char *)msg, vl_list);   //
-    va_end(vl_list);
-
-    strncat((char *)final, (const char *)content, rt_os_strlen(content));
     write(file_fd, final, rt_os_strlen(final));
+#endif
     return 0;
 }
 
-int32_t log_file_size(void)
-{
-    struct stat statbuf;
-    int32_t size;
-
-    stat(LOG_NAME, &statbuf);
-    size = statbuf.st_size;
-    return size;
-}
-
-int32_t clear_file(void)
-{
-    int32_t ret = open(LOG_NAME, O_WRONLY | O_TRUNC);
-    if (ret == -1) {
-        MSG_WARN("clear_file open file is fail!\n");
-        return -1;
-    }
-    close(ret);
-    log_file();
-    return 0;
-}
-
-void close_file(void)
-{
-    close(file_fd);
-}

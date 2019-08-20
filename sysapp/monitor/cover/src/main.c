@@ -12,8 +12,9 @@
  *******************************************************************************/
 
 #include "rt_type.h"
+#include "ipc_socket_client.h"
 
 int32_t main(void)
 {
-
+    ipc_conect_server();
 }

@@ -23,24 +23,30 @@ int32_t ipc_server(void)
     int32_t ret = RT_ERROR;
     int32_t new_fd = -1;
     char buffer[1024];
+
     socket_id = socket_create();
+    MSG_PRINTF(LOG_INFO, "socket is:%d\n", socket_id);
     if (socket_id <= 0) {
         return ret;
     }
-    ret = socket_bind(socket_id , "0.0.0.0", 9000);
+    ret = socket_bind(socket_id);
     if (ret == -1) {
+        MSG_PRINTF(LOG_ERR, "socket bind failed\n");
         goto end;
     }
     ret = socket_listen(socket_id, THE_MAX_CLIENT_NUM);
     if (ret == -1) {
+        MSG_PRINTF(LOG_ERR, "socket listen failed\n");
         goto end;
     }
     while (1) {
         new_fd = socket_accept(socket_id);
+        MSG_PRINTF(LOG_INFO, "client socket id:%d\n",new_fd);
         if (new_fd == -1) {
             break;
         }
         socket_recv(new_fd, buffer, 1024);
+        MSG_PRINTF(LOG_INFO, "buf:%s\n",buffer);
         //socket_send();
         close(new_fd);
     }

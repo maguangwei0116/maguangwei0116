@@ -52,14 +52,14 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 
     rval = dsi_get_device_name(phndl->handle, iface, DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 1);
     if (rval != DSI_SUCCESS) {
-        MSG_WARN ("Couldn't get ipv4 rmnet name. rval %d\n", rval);
+        MSG_PRINTF(LOG_WARN, "Couldn't get ipv4 rmnet name. rval %d\n", rval);
         strncpy((int8_t *)iface, "rmnet0", DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 1);
         return RT_ERROR;
     }
 
     rval = dsi_get_ip_addr(phndl->handle, &addr_info, num_entries);
     if (rval != DSI_SUCCESS) {
-        MSG_WARN("Couldn't get ipv4 ip address. rval %d\n", rval);
+        MSG_PRINTF(LOG_WARN, "Couldn't get ipv4 ip address. rval %d\n", rval);
         return RT_ERROR;
     }
 
@@ -89,23 +89,23 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
         sec_dns_addr.s_addr = inet_addr(ip_str);
     }
 
-    MSG_DBG("public_ip: %s\n", inet_ntoa(public_ip));
+    MSG_PRINTF(LOG_DBG, "public_ip: %s\n", inet_ntoa(public_ip));
 
 #if 0
     snprintf(command, sizeof(command), "ip route add default via %s dev %s", inet_ntoa(gw_addr), iface);
-    MSG_DBG("%s\n", command);
+    MSG_PRINTF(LOG_DBG, "%s\n", command);
     ds_system_call(command, strlen(command));
 #endif
 
 ///etc/iproute2/rt_tables
 #if 0
     snprintf(command, sizeof(command), "ip route del default dev %s table %s", iface, iface);
-    MSG_DBG("%s\n", command);
+    MSG_PRINTF(LOG_DBG, "%s\n", command);
     ds_system_call(command, strlen(command));
 
 
     snprintf(command, sizeof(command), "ip route add default via %s dev %s table %s", inet_ntoa(gw_addr), iface, iface);
-    MSG_DBG("%s\n", command);
+    MSG_PRINTF(LOG_DBG, "%s\n", command);
     ds_system_call(command, strlen(command));
 #endif
 
@@ -120,7 +120,7 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 
 #if (ROUTE_SET)
     snprintf(command, sizeof(command), "echo 1 > /proc/sys/net/ipv4/ip_forward");
-    MSG_DBG("%s\n", command);
+    MSG_PRINTF(LOG_DBG, "%s\n", command);
     ds_system_call(command, rt_os_strlen(command));
 
     snprintf(command, sizeof(command), "iptables -t nat -A POSTROUTING -o rmnet_data0 -j MASQUERADE --random");
@@ -212,7 +212,7 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
 
     dsi_net_hndl->handle = dsi_get_data_srvc_hndl(dsi_net_cb_fcn, (void*) dsi_net_hndl);
     if (dsi_net_hndl->handle == NULL){
-        MSG_WARN("dsi_get_data_srvc_hndl fail!!!\n");
+        MSG_PRINTF(LOG_WARN, "dsi_get_data_srvc_hndl fail!!!\n");
         dsi_release(DSI_MODE_GENERAL);
         return -3;
     }
@@ -294,7 +294,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
             rval = dsi_start_data_call(dsi_net_hndl->handle);
             if (DSI_SUCCESS != rval) {
-                MSG_WARN("dsi_start_data_call rval = %d\n", rval);
+                MSG_PRINTF(LOG_WARN, "dsi_start_data_call rval = %d\n", rval);
             } else {
                 dsi_net_hndl->call_state = DSI_STATE_CALL_CONNECTING;
             }
@@ -309,7 +309,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
             revents = pollfds[0].revents;
 
             if (revents & (POLLERR | POLLHUP | POLLNVAL)) {
-                MSG_DBG("epoll fd = %d, events = 0x%04x\n", fd, revents);
+                MSG_PRINTF(LOG_DBG, "epoll fd = %d, events = 0x%04x\n", fd, revents);
                 if (revents & POLLHUP){
                     break;
                 }
@@ -317,7 +317,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
             if ((revents & POLLIN) == 0) {
                 if (dsi_net_hndl->call_state == DSI_STATE_CALL_CONNECTING) {
                     ++count;
-                    MSG_DBG("call_count:%d\n",count);
+                    MSG_PRINTF(LOG_DBG, "call_count:%d\n",count);
                     if (count >= DAIL_UP_WAIT) {
                         count = 0;
                         return RT_ERROR;
@@ -330,28 +330,28 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                     switch (signo) {
                         case DSI_EVT_WDS_CONNECTED:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
-                                MSG_DBG("DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V4\n");
+                                MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V4\n");
                             } else if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V6){
-                                MSG_DBG("DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V6\n");
+                                MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V6\n");
                             } else {
-                                MSG_DBG("DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
+                                MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
                             }
                         break;
                         case DSI_EVT_NET_IS_CONN:
-                            MSG_DBG("DSI_EVT_NET_IS_CONN\n");
+                            MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_IS_CONN\n");
                             count = 0;
                             dsi_net_hndl->call_state = DSI_STATE_CALL_CONNECTED;
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
                                 get_ipv4_net_conf(dsi_net_hndl);
                             } else if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V6) {
-                                MSG_DBG("donot support DSI_IP_FAMILY_V6 by now!!!!\n");
+                                MSG_PRINTF(LOG_DBG, "donot support DSI_IP_FAMILY_V6 by now!!!!\n");
                             }
                         break;
                         case DSI_EVT_NET_NO_NET:
-                            MSG_DBG("DSI_EVT_NET_NO_NET\n");
+                            MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NO_NET\n");
                             dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
                             if (dsi_get_call_end_reason(dsi_net_hndl->handle, &dsicallend, dsi_net_hndl->ip_type) == DSI_SUCCESS) {
-                                MSG_DBG("dsi_get_call_end_reason handle＝％d type=%d reason code =%d \n",
+                                MSG_PRINTF(LOG_DBG, "dsi_get_call_end_reason handle＝％d type=%d reason code =%d \n",
                                     dsicallend.reason_type,dsicallend.reason_code);
                             }
                         break;

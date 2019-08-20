@@ -23,7 +23,7 @@ int qmi_wds_init(void)
     qmi_client_error_type err;
     err = qmi_ctrl_point_init(uim_get_service_object_v01(), &g_uim_client, NULL, NULL);
     if(err != QMI_NO_ERR) {
-        MSG_WARN("failed to initialize control point of UIM: %d\n", err);
+        MSG_PRINTF(LOG_WARN, "failed to initialize control point of UIM: %d\n", err);
     }
     return err;
 }
@@ -48,7 +48,7 @@ int qmi_get_elementary_iccid_file(uint8_t *iccid)
     QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_READ_RECORD_REQ_V01, req, resp);
     if(err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
-            MSG_WARN("Failed to get ICCID from Elementary File 0x%04x, result: %d, error code: %d\n",
+            MSG_PRINTF(LOG_WARN, "Failed to get ICCID from Elementary File 0x%04x, result: %d, error code: %d\n",
                     req.file_id.file_id,
                     resp.resp.result, resp.resp.error);
             err = resp.resp.result;
@@ -85,7 +85,7 @@ int qmi_get_elementary_imsi_file(uint8_t *imsi)
     QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_READ_RECORD_REQ_V01, req, resp);
     if (err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
-            MSG_WARN("Failed to get IMSI from Elementary File 0x%04x, result: %d, error code: %d\n",
+            MSG_PRINTF(LOG_WARN, "Failed to get IMSI from Elementary File 0x%04x, result: %d, error code: %d\n",
                     req.file_id.file_id,
                     resp.resp.result, resp.resp.error);
             err = resp.resp.result;
