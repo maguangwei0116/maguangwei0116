@@ -32,13 +32,14 @@ libso: $(O)/$(LIB_SO_NAME)
 liba: $(O)/$(LIB_A_NAME)
 
 define DIFF_INSTALL_LIBRARY_HEADER_FILE
-$(shell if ! [ -e $(2) ]; then\
-cp -rf $(1) $(2);\
-else\
-if [ -n "$(shell test -e $(2) && diff $(1) $(2))" ]; then\
-cp -rf $(1) $(2);\
-fi;\
-fi)
+    $(shell \
+    if ! [ -e $(2) ]; then\
+        cp -rf $(1) $(2);\
+    else\
+        if [ -n "$(shell test -e $(2) && diff $(1) $(2))" ]; then\
+            cp -rf $(1) $(2);\
+        fi;\
+    fi)
 endef
 
 define INSTALL_LIBRARY_HEADER_FILE
@@ -55,7 +56,6 @@ $(O)/$(LIB_SO_NAME): $(OBJS)
 	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) $(OBJS) -o"$@"
 	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
-#	-$(Q)$(CP) -rf ./*.h $(SDK_INSTALL_PATH)/include
 	-$(Q)$(call INSTALL_LIBRARY_HEADER_FILE,$(shell ls $(EXTERN_HEADER_FILES)),$(SDK_INSTALL_PATH)/include)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
@@ -69,7 +69,6 @@ $(O)/$(LIB_A_NAME): $(OBJS)
 	$($(quiet)do_ar) cru "$@" $^
 	$($(quiet)do_ranlib) "$@"
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
-#	-$(Q)$(CP) -rf ./*.h $(SDK_INSTALL_PATH)/include
 	-$(Q)$(call INSTALL_LIBRARY_HEADER_FILE,$(shell ls $(EXTERN_HEADER_FILES)),$(SDK_INSTALL_PATH)/include)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
