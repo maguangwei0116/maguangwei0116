@@ -18,8 +18,11 @@ endif
 # Config your final release target name
 RELEASE_TARGET 	= $(SYSAPP_TARGET_NAME)_v$(AGENT_LOCAL_VERSION)_$(PLATFORM_TYPE)_$(ENV_TYPE)_$(DEBUG_TYPE)
 
+# Config your application target version with git hash and build time
+RELEASE_TARGET_VERSION = $(RELEASE_TARGET)_$(SYSAPP_GIT_HASH)_$(shell date +%Y-%m-%d_%H:%M:%S)
+
 # Config your own CFLAGS
-USER_CFLAGS		+= -DRELEASE_TARGET=$(RELEASE_TARGET)
+USER_CFLAGS		+= -DRELEASE_TARGET_VERSION=$(RELEASE_TARGET_VERSION)
 
 # Config your own libraries
 QMI-LIB 		= dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
