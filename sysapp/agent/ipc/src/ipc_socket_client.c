@@ -1,7 +1,7 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : ipc_socket.c
+ * File name   : ipc_socket_server.c
  * Date        : 2019.08.07
  * Note        :
  * Description :
@@ -14,7 +14,7 @@
 #include "ipc_socket_client.h"
 #include "socket.h"
 
-int32_t ipc_conect_server(void)
+int32_t ipc_send_data(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
     int32_t socket_id = -1;
     int32_t ret = RT_ERROR;
@@ -32,5 +32,7 @@ int32_t ipc_conect_server(void)
     if (ret == -1) {
         MSG_PRINTF(LOG_ERR, "send data failed\n");
     }
+    socket_recv(socket_id, data, 1024);
+    MSG_PRINTF(LOG_INFO, "client data %s\n", data);
     socket_close(socket_id);
 }

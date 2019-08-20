@@ -21,7 +21,7 @@ SRC-y 		+= src/bootstrap.c
 SRC-y 		+= src/agent_main.c
 SRC-y 		+= src/agent_queue.c
 SRC-y 		+= src/card_manager.c
-SRC-y 		+= src/ipc_socket_server.c
+SRC-y 		+= src/ipc_socket_client.c
 
 # Config your include file path by += xxx-inc
 INC-PATH 		 = ./core/bootstrap/

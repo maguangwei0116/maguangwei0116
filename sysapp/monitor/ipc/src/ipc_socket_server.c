@@ -1,7 +1,7 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : ipc_socket_server.c
+ * File name   : ipc_socket.c
  * Date        : 2019.08.07
  * Note        :
  * Description :
@@ -11,18 +11,28 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifndef __IPC_SOCKET_SERVER__
-#define __IPC_SOCKET_SERVER__
-
+#include "ipc_socket_server.h"
 #include "socket.h"
 
 #define THE_MAX_CLIENT_NUM  2
-int32_t ipc_server(void)
+
+typedef uint16_t (*ipc_callback)(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
+ipc_callback ipc_cmd;
+
+void ipc_regist_callback(void *fun)
+{
+    ipc_cmd = (ipc_callback)fun;
+}
+
+int32_t ipc_socket_server(void)
 {
     int32_t socket_id = -1;
     int32_t ret = RT_ERROR;
     int32_t new_fd = -1;
-    char buffer[1024];
+    uint8_t buffer[512];
+    uint8_t rsp[512];
+    uint16_t rsp_len;
+    uint16_t rcv_len;
 
     socket_id = socket_create();
     MSG_PRINTF(LOG_INFO, "socket is:%d\n", socket_id);
@@ -45,13 +55,11 @@ int32_t ipc_server(void)
         if (new_fd == -1) {
             break;
         }
-        socket_recv(new_fd, buffer, 1024);
-        MSG_PRINTF(LOG_INFO, "buf:%s\n",buffer);
-        //socket_send();
+        rcv_len = socket_recv(new_fd, buffer, 1024);
+        ipc_cmd(buffer, rcv_len, rsp, &rsp_len);
+        socket_send(new_fd, rsp, rsp_len);
         close(new_fd);
     }
 end:
     socket_close(socket_id);
 }
-
-#endif // __IPC_SOCKET_SERVER__

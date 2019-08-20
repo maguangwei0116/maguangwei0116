@@ -11,11 +11,11 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifndef __IPC_SOCKET_SERVER__
-#define __IPC_SOCKET_SERVER__
+#ifndef __IPC_SOCKET_CLIENT__
+#define __IPC_SOCKET_CLIENT__
 
 #include "rt_type.h"
 
-int32_t ipc_server(void);
+int32_t ipc_send_data(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
 
-#endif // __IPC_SOCKET_SERVER__
+#endif // __IPC_SOCKET_CLIENT__
