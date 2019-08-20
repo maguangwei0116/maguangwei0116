@@ -34,6 +34,11 @@ clean:
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
 
+# Add SHA256 sum to the tail of a file
+define SYSAPP_ADD_SHA256SUM
+	sha256sum $(1) | awk '{ print $$1 }' | xargs echo -n >> $(1)
+endef
+
 $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	$($(quiet)do_cc) $(MAIN_INCLUDES) -o "$@" $(OBJS) $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME)
 	$($(quiet)do_objdump) -l -x -d "$@" > $(O)/$(DMP_FILE_NAME)
@@ -41,6 +46,7 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	@$(CHMOD) +x "$@"
 	$($(quiet)do_strip) --strip-all "$@"
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(ELF_FILE_NAME)
+	-$(Q)$(call SYSAPP_ADD_SHA256SUM,$(O)/$(TARGET_FILE_NAME))
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(RELEASE_TARGET)
 	-$(Q)$(CP) -rf $(O)/$(RELEASE_TARGET) $(SYSAPP_INSTALL_PATH)/
 	@$(ECHO) ""
