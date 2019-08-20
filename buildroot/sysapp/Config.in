@@ -21,6 +21,29 @@ config BR2_SYSAPP_INSTALL_PATH
 
 source ".config_wrapper/sysapp_wrapper.in"
 
+if BR2_CONFIG_SYSAPP_AGENT
+
+menu "Agent Config Options"
+
+config BR2_CFG_AGENT_OTA_ON
+	bool "BR2_CFG_AGENT_OTA_ON"
+	help
+	  Enable this option if you want to get OTA upgrade feature in agent.
+	  
+config BR2_CFG_AGENT_BOOTSRRAP_ON
+	bool "BR2_CFG_AGENT_BOOTSRRAP_ON"
+	help
+	  Enable this option if you want to get getbootstrap feature in agent.
+
+config BR2_CFG_AGENT_PERSONALISE_ON
+	bool "BR2_CFG_AGENT_PERSONALISE_ON"
+	help
+	  Enable this option if you want to get personalise feature in agent.
+	  
+endmenu
+
+endif
+
 endif
 
 endmenu
