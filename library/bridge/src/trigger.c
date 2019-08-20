@@ -13,6 +13,21 @@
 static qmi_client_type rm_uim_client;
 static char g_iccid[21] = {0};
 
+typedef uint16_t (*trigger_callback_cmd)(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
+typedef uint16_t (*trigger_callback_reset)(uint8_t *rsp, uint16_t *rsp_len);
+trigger_callback_cmd trigger_cmd;
+trigger_callback_reset trigger_reset;
+
+void trigegr_regist_cmd(void *fun)
+{
+    trigger_cmd = (trigger_callback_cmd)fun;
+}
+
+void trigegr_regist_reset(void *fun)
+{
+    trigger_reset = (trigger_callback_reset)fun;
+}
+
 void remote_uim_async_cb(   qmi_client_type         user_handle,
                             unsigned int            msg_id,
                             void                    *resp_c_struct,
@@ -62,7 +77,7 @@ static int process_ind_connect(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    // RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
+    trigger_reset(req.atr, (uint8_t *)&req.atr_len);
     //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
@@ -97,8 +112,8 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     // fill Response APDU
     req.response_apdu_segment_valid = true;
 
-    //sw = card_cmd(ind_msg.command_apdu , ind_msg.command_apdu_len,
-    //              req.response_apdu_segment, (uint16_t *)&req.response_apdu_segment_len);
+    sw = trigger_cmd(ind_msg.command_apdu , ind_msg.command_apdu_len,
+                  req.response_apdu_segment, (uint16_t *)&req.response_apdu_segment_len);
     req.response_apdu_segment[req.response_apdu_segment_len++] = (sw >> 8) & 0xFF;
     req.response_apdu_segment[req.response_apdu_segment_len++] = sw & 0xFF;
 
@@ -136,7 +151,7 @@ static int process_ind_pup(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    //RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
+    trigger_reset(req.atr, (uint8_t *)&req.atr_len);
     //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(rm_uim_client, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
@@ -173,7 +188,7 @@ static int process_ind_reset(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    //RT_CHECK(card_reset(g_iccid, req.atr, (uint8_t *)&req.atr_len));
+    trigger_reset(req.atr, (uint8_t *)&req.atr_len);
     //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
