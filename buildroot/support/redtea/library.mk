@@ -35,7 +35,7 @@ define DIFF_INSTALL_LIBRARY_HEADER_FILE
 $(shell if ! [ -e $(2) ]; then\
 cp -rf $(1) $(2);\
 else\
-if [ -n "$(shell diff $(1) $(2))" ]; then\
+if [ -n "$(shell test -e $(2) && diff $(1) $(2))" ]; then\
 cp -rf $(1) $(2);\
 fi;\
 fi)
