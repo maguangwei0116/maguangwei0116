@@ -25,11 +25,9 @@ void cfinish(int32_t sig)
 
 int32_t main(int32_t argc, int8_t **argv)
 {
-    uint8_t buf[1024];
     rt_os_signal(RT_SIGINT, cfinish);
     rt_os_signal(RT_SIGINT, cfinish);
     init_queue(NULL);
-    ipc_send_data(buf, 0, NULL, NULL);
     while (!toStop) {
         sleep(3);
     }
