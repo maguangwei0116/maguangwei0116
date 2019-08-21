@@ -40,12 +40,18 @@ COMM-LIB 		= asn.1 platform dial pthread bridge util
 ### path
 ############################################################################
 vpath %.c ./core/bootstrap
+vpath %.c ./core/ota
+vpath %.c ./core/personalise
 
 # Config your resource file list by += xxx.c
-SRC-$(CFG_AGENT_BOOTSRRAP_ON) 		+= src/bootstrap.c
+SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
+SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
 
 # Config your include file path by += xxx-inc
-INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)	+= ./core/bootstrap/
+INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)		+= ./core/bootstrap/
+INC-PATH-$(CFG_AGENT_OTA_ON)			+= ./core/ota/
+INC-PATH-$(CFG_AGENT_PERSONALISE_ON)	+= ./core/personalise/
 
 INC-y 			+= ./
 INC-y 			+= $(INC-PATH-y)
