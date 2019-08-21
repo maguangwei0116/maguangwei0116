@@ -9,7 +9,7 @@ MAP_FILE_NAME 		= $(TARGET).map
 DMP_FILE_NAME 		= $(TARGET).dmp
 BIN_FILE_NAME 		= $(TARGET).bin
 
-all: $(TARGET)
+all: gen-conf-file $(TARGET)
 
 $(TARGET): $(O)/$(TARGET_FILE_NAME)
 
@@ -25,6 +25,7 @@ info:
 	@echo "REDTEA_SUPPORT_SCRIPTS_PATH=$(REDTEA_SUPPORT_SCRIPTS_PATH)"
 	@echo "SYSAPP_TARGET_NAME=$(SYSAPP_TARGET_NAME)"
 	@echo "RELEASE_TARGET=$(RELEASE_TARGET)"
+	@echo "$(.VARIABLES)"
 	
 clean:
 	rm -rf $(O)
@@ -33,6 +34,7 @@ clean:
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/gen_conf.mk
 
 # Add SHA256 sum to the tail of a file
 define SYSAPP_ADD_SHA256SUM

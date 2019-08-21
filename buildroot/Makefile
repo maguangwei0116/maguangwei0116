@@ -76,6 +76,7 @@ ifneq ("$(origin O)", "command line")
 O:=$(WORKSPACE)/output/default
 CONFIG_DIR:=$(TOPDIR)
 NEED_WRAPPER=
+KCONFIG_AUTOHEADER_FILE=$(CONFIG_DIR)/../output/build/buildroot-config/autoconf.h
 else
 # other packages might also support Linux-style out of tree builds
 # with the O=<dir> syntax (E.G. Busybox does). As make automatically
@@ -92,6 +93,7 @@ CONFIG_DIR:=$(O)
 # we need to pass O= everywhere we call back into the toplevel makefile
 EXTRAMAKEARGS = O=$(O)
 NEED_WRAPPER=y
+KCONFIG_AUTOHEADER_FILE=$(CONFIG_DIR)/build/buildroot-config/autoconf.h
 endif
 
 # Pull in the user's configuration file
@@ -193,7 +195,6 @@ $(if $(BASE_DIR),, $(error output directory "$(O)" does not exist))
 
 BUILD_DIR:=$(BASE_DIR)/build
 WRAPPER_DIR=.config_wrapper
-
 ifeq ($(BR2_HAVE_DOT_CONFIG),y)
 
 #############################################################
@@ -402,7 +403,7 @@ $(BUILD_DIR)/buildroot-config/auto.conf: $(CONFIG_DIR)/.config
 	@$(MAKE) $(EXTRAMAKEARGS) HOSTCC="$(HOSTCC_NOCCACHE)" HOSTCXX="$(HOSTCXX_NOCCACHE)" silentoldconfig
 
 prepare: $(BUILD_DIR)/buildroot-config/auto.conf
-#	@echo "---$@"
+#	@echo "-------$@, $^"
 
 help_pre:
 	@echo "TARGETS=$(TARGETS)"
