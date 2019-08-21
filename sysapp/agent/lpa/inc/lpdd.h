@@ -1,8 +1,8 @@
 #ifndef __LPDD_H__
 #define __LPDD_H__
 
-#include <stdint.h>
 #include <stdbool.h>
+#include "rt_type.h"
 
 #define API_INITIATE_AUTHENTICATION             "/gsma/rsp2/es9plus/initiateAuthentication"
 #define API_AUTHENTICATE_CLIENT                 "/gsma/rsp2/es9plus/authenticateClient"

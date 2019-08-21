@@ -27,7 +27,9 @@ int32_t main(int32_t argc, int8_t **argv)
 {
     rt_os_signal(RT_SIGINT, cfinish);
     rt_os_signal(RT_SIGINT, cfinish);
+    rt_qmi_init();
     init_queue(NULL);
+    init_card_manager(NULL);
     while (!toStop) {
         sleep(3);
     }

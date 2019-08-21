@@ -1,47 +1,21 @@
+
 #include "lpa.h"
 #include "lpa_config.h"
 #include "lpdd.h"
 #include "luid.h"
-#include "converter.h"
+#include "convert.h"
 #include "stdio.h"
-
+#include "lpa_error_codes.h"
 #include "ProfileInfoListResponse.h"
 #include "ProfileInstallationResult.h"
 #include "MoreEIDOperateResponse.h"
 
-#if SEND_APDU_METHOD == QMI 
-#include "qmi_uim.h"
-#endif
 
 #define  BUFFER_SIZE          10*1024
 extern uint8_t *g_proxy_server_url;
 
-
 typedef int (*callback_printf)(const char *format,...);
 callback_printf lpa_printf;
-
-
-int lpa_init(void *fun, void *arg)
-{
-    lpa_printf = (callback_printf)fun;
-
-#if SEND_APDU_METHOD == QMI 
-    qmi_uim_init();
-#endif
-
-    return RT_SUCCESS; 
-}
-
-int lpa_get_version(uint8_t *ver, int32_t len)
-{
-    if (NULL == ver || len <= 0) {
-        return RT_ERR_UNKNOWN_ERROR;
-    }
-
-    snprintf(ver, len, "%s_%d_%d_%d [%s %s]", PROJECT_NAME, VSIM_VERSION_MAJOR, VSIM_VERSION_MINOR, VSIM_VERSION_PATCH
-                                          , PROJECT_BUILD_DATE, PROJECT_BUILD_TIME);
-    return RT_SUCCESS; 
-}
 
 int lpa_get_eid(uint8_t *eid)
 {

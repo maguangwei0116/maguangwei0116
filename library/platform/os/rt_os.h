@@ -25,6 +25,7 @@
 
 typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);
+typedef pthread_mutex_t    rt_pthread_mutex_t;
 
 int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
 int32_t rt_os_memcmp(void *mem_des,void *mem_src,int32_t len);

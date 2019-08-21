@@ -17,5 +17,6 @@
 #include "rt_type.h"
 
 int32_t ipc_socket_server(void);
-void ipc_regist_callback(void* fun);
+void ipc_regist_callback(void *fun);
+
 #endif // __IPC_SOCKET__

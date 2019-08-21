@@ -2,8 +2,8 @@
 # Config your target here !
 TARGET 		= $(shell pwd | sed 's/^\(.*\)[/]//')
 
-QMI-LIB = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices pthread
-COMM-LIB = comm
+QMI-LIB = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
+COMM-LIB = comm crypto ssl pthread
 ############################################################################
 ### path
 ############################################################################

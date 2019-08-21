@@ -1,6 +1,3 @@
-#include "luid.h"
-#include "lpa_config.h"
-#include "apdu.h"
 
 #include "EnableProfileRequest.h"
 #include "DisableProfileRequest.h"
@@ -10,6 +7,10 @@
 #include "SetNicknameRequest.h"
 #include "EuiccMemoryResetRequest.h"
 #include "MoreEIDOperateRequest.h"
+#include "luid.h"
+#include "lpa_config.h"
+#include "lpa_error_codes.h"
+#include "apdu.h"
 
 // Defined in lpdd.c
 extern int encode_cb(const void *buffer, size_t size, void *app_key);
@@ -147,7 +148,7 @@ int get_eid(uint8_t *eid, uint16_t *size)
     return RT_SUCCESS;
 }
 
-int switch_eid(const uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size)
+int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size)
 {
     asn_enc_rval_t ec;
     MoreEIDOperateRequest_t req = {0};

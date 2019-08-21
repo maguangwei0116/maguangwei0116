@@ -1,7 +1,7 @@
 #ifndef __APDU_H__
 #define __APDU_H__
 
-#include <stdint.h>
+#include "rt_type.h"
 #include "lpa_config.h"
 
 #define GET_HIGH_BYTE(x)                        ((x >> 8) & 0xFF)
@@ -51,17 +51,15 @@
 #define SW_INCONSISTENT_LC                      0x6A87
 #define SW_REF_DATA_NOT_FOUND                   0x6A88
 
+#define LPA_AT_BLOCK_BUF                        538
+
 typedef struct apdu_command {
     uint8_t cla;
     uint8_t ins;
     uint8_t p1;
     uint8_t p2;
     uint8_t lc;
-#if SEND_APDU_METHOD == AT || SEND_APDU_METHOD == FIBCOM
-    const uint8_t *data;
-#elif SEND_APDU_METHOD == QMI
     uint8_t data;
-#endif
     uint8_t le;
 } apdu_t;
 
@@ -71,7 +69,7 @@ typedef struct status_word {
 } sw_t;
 
 typedef enum channel_operation {
-    OPEN_CHANNEL,
+    OPEN_CHANNEL = 0,
     CLOSE_CHANNEL
 } channel_opt_t;
 

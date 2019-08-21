@@ -1,8 +1,8 @@
 #ifndef __LUID_H__
 #define __LUID_H__
 
-#include <stdint.h>
 #include <stdbool.h>
+#include "rt_type.h"
 
 typedef enum profile_identifier {
     PID_ISDP_AID,
@@ -31,5 +31,5 @@ int get_profiles_info(search_criteria_t sc, uint8_t *criteria, uint16_t c_size,
                     uint8_t *profile_info, uint16_t *size /* out */);
 int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t *out_size);
 int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size);
-int switch_eid(const uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size);
+int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size);
 #endif  // __LUID_H__

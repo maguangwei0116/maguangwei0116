@@ -1,6 +1,7 @@
 #include "ldsd.h"
 #include "apdu.h"
 #include "lpa_config.h"
+#include "lpa_error_codes.h"
 
 #include "EuiccConfiguredAddressesRequest.h"
 #include "SetDefaultDpAddressRequest.h"
@@ -30,7 +31,7 @@ int get_euicc_configured_address(uint8_t *addr, uint16_t *size)
     return RT_SUCCESS;
 }
 
-int set_default_dp_address(const char *addr, uint8_t *out, uint16_t *out_size)
+int set_default_dp_address(char *addr, uint8_t *out, uint16_t *out_size)
 {
     asn_enc_rval_t ec;
     SetDefaultDpAddressRequest_t req = {0};

@@ -77,7 +77,7 @@ static int process_ind_connect(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    trigger_reset(req.atr, (uint8_t *)&req.atr_len);
+    trigger_reset(req.atr, (uint16_t *)&req.atr_len);
     //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
@@ -151,7 +151,7 @@ static int process_ind_pup(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    trigger_reset(req.atr, (uint8_t *)&req.atr_len);
+    trigger_reset(req.atr, (uint16_t *)&req.atr_len);
     //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(rm_uim_client, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
@@ -188,7 +188,7 @@ static int process_ind_reset(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    trigger_reset(req.atr, (uint8_t *)&req.atr_len);
+    trigger_reset(req.atr, (uint16_t *)&req.atr_len);
     //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),

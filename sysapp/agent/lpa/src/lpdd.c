@@ -1,10 +1,4 @@
-#include "lpdd.h"
-#include "lpa_config.h"
-#include "apdu.h"
-#include "converter.h"
-#include "base64.h"
-#include "https.h"
-
+#include <openssl/sha.h>
 #include "ListNotificationRequest.h"
 #include "RetrieveNotificationsListRequest.h"
 #include "NotificationSentRequest.h"
@@ -20,10 +14,15 @@
 #include "ProfileInfoListRequest.h"
 #include "CancelSessionRequest.h"
 #include "LoadCRLRequest.h"
-
 #include "cJSON.h"
-
-#include <openssl/sha.h>
+#include "lpdd.h"
+#include "lpa_config.h"
+#include "apdu.h"
+#include "convert.h"
+#include "base64.h"
+#include "https.h"
+#include "hash.h"
+#include "lpa_error_codes.h"
 
 static uint8_t g_buf[1024*10];
 static uint16_t g_buf_size;
@@ -407,19 +406,16 @@ int initiate_authentication(const char *smdp_addr, char *auth_data, int *size)
     RT_CHECK_GO((ret = get_euicc_challenge(tmp)) == RT_SUCCESS, ret, end);
     MSG_INFO_ARRAY("euiccChallenge: ", tmp, 16);
     RT_CHECK_GO((ret = rt_base64_encode(tmp, 16, (char *)g_buf)) == RT_SUCCESS, ret, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "euiccChallenge", (char *)g_buf), RT_ERR_CJSON_ERROR, end);
+    cJSON_AddStringToObject(content, "euiccChallenge", (char *)g_buf);
 
     RT_CHECK_GO((ret = get_euicc_info(tmp, &tmp_size, NULL, NULL)) == RT_SUCCESS, ret, end);
     MSG_INFO_ARRAY("euiccInfo1: ", tmp, tmp_size);
     RT_CHECK_GO((ret = rt_base64_encode(tmp, tmp_size, (char *)g_buf)) == RT_SUCCESS, ret, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "euiccInfo1", (char *)g_buf), RT_ERR_CJSON_ERROR, end);
+    cJSON_AddStringToObject(content, "euiccInfo1", (char *)g_buf);
 
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "smdpAddress", smdp_addr), RT_ERR_CJSON_ERROR, end);
+    cJSON_AddStringToObject(content, "smdpAddress", smdp_addr);
 
-    data = (char *)g_buf;
-    ret = cJSON_PrintPreallocated(content, data, sizeof(g_buf), 1);
-    RT_CHECK_GO(ret == 1, RT_ERR_CJSON_ERROR, end);
-    MSG_INFO("content:\n%s\n", data);
+    data = cJSON_PrintUnformatted(content);
 
     ret = lpa_https_post(smdp_addr, API_INITIATE_AUTHENTICATION, data, auth_data, size);
     // RT_CHECK_GO(ret == 200, RT_ERR_HTTPS_POST_FAIL, end);
@@ -441,6 +437,7 @@ int initiate_authentication(const char *smdp_addr, char *auth_data, int *size)
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
 end:
+    free(data);
     cJSON_Delete(content);
     return ret;
 }
@@ -528,7 +525,7 @@ int gen_ctx_params1(const char *matching_id)
     return ret;
 }
 
-static int get_asn1_from_json(const cJSON *json, const char *key,
+static int get_asn1_from_json(cJSON *json, const char *key,
                     const struct asn_TYPE_descriptor_s *type_descriptor, void **req)
 {
     int ret = RT_SUCCESS;
@@ -561,7 +558,7 @@ end:
     return ret;
 }
 
-static int get_signature_from_json(const cJSON *json, const char *key, void **req)
+static int get_signature_from_json(cJSON *json, const char *key, void **req)
 {
     int ret = RT_SUCCESS;
     uint16_t len;
@@ -724,13 +721,10 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "transactionId", (char *)g_transaction_id), RT_ERR_CJSON_ERROR, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "authenticateServerResponse", b64_in), RT_ERR_CJSON_ERROR, end);
+    cJSON_AddStringToObject(content, "transactionId", (char *)g_transaction_id);
+    cJSON_AddStringToObject(content, "authenticateServerResponse", b64_in);
 
-    data = (char *)g_buf;
-    ret = cJSON_PrintPreallocated(content, data, sizeof(g_buf), 1);
-    RT_CHECK_GO(ret == 1, RT_ERR_CJSON_ERROR, end);
-    MSG_INFO("content:\n%s\n", data);
+    data = cJSON_PrintUnformatted(content);
 
     ret = lpa_https_post(smdp_addr, API_AUTHENTICATE_CLIENT, data, out, out_size);
     RT_CHECK_GO(ret == 200, RT_ERR_HTTPS_POST_FAIL, end);
@@ -744,6 +738,9 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
 end:
+    if (data != NULL) {
+        free(data);
+    }
     if (b64_in != NULL) { free(b64_in);}
     cJSON_Delete(content);
 
@@ -832,13 +829,10 @@ int get_bound_profile_package(const char *smdp_addr, const uint8_t *in, uint16_t
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "transactionId", (char *)g_transaction_id), RT_ERR_CJSON_ERROR, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "prepareDownloadResponse", b64_in), RT_ERR_CJSON_ERROR, end);
+    cJSON_AddStringToObject(content, "transactionId", (char *)g_transaction_id);
+    cJSON_AddStringToObject(content, "prepareDownloadResponse", b64_in);
 
-    data = (char *)g_buf;
-    ret = cJSON_PrintPreallocated(content, data, sizeof(g_buf), 1);
-    RT_CHECK_GO(ret == 1, RT_ERR_CJSON_ERROR, end);
-    MSG_INFO("content:\n%s\n", data);
+    data = cJSON_PrintUnformatted(content);
 
     ret = lpa_https_post(smdp_addr, API_GET_BOUND_PROFILE_PACKAGE, data, out, out_size);
     RT_CHECK_GO(ret == 200, RT_ERR_HTTPS_POST_FAIL, end);
@@ -852,6 +846,9 @@ int get_bound_profile_package(const char *smdp_addr, const uint8_t *in, uint16_t
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
 end:
+    if (data != NULL) {
+        free(data);
+    }
     if (b64_in != NULL) { free(b64_in);}
     cJSON_Delete(content);
 
@@ -1025,13 +1022,10 @@ int handle_notification(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "transactionId", (char *)g_transaction_id), RT_ERR_CJSON_ERROR, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "pendingNotification", b64_in), RT_ERR_CJSON_ERROR, end);
+    cJSON_AddStringToObject(content, "transactionId", (char *)g_transaction_id);
+    cJSON_AddStringToObject(content, "pendingNotification", b64_in);
 
-    data = (char *)g_buf;
-    ret = cJSON_PrintPreallocated(content, data, sizeof(g_buf), 1);
-    RT_CHECK_GO(ret == 1, RT_ERR_CJSON_ERROR, end);
-    MSG_INFO("content:\n%s\n", data);
+    data = cJSON_PrintUnformatted(content);
 
     ret = lpa_https_post(smdp_addr, API_HANDLE_NOTIFICATION, data, out, out_size);
     if (ret == 204) {
@@ -1042,6 +1036,9 @@ int handle_notification(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     }
 
 end:
+    if (!data) {
+        free(data);
+    }
     if (b64_in != NULL) { free(b64_in);}
     cJSON_Delete(content);
 
@@ -1069,13 +1066,10 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "transactionId", (char *)g_transaction_id), RT_ERR_CJSON_ERROR, end);
-    RT_CHECK_GO(cJSON_AddStringToObject(content, "cancelSessionResponse", b64_in), RT_ERR_CJSON_ERROR, end);
+    cJSON_AddStringToObject(content, "transactionId", (char *)g_transaction_id);
+    cJSON_AddStringToObject(content, "cancelSessionResponse", b64_in);
 
-    data = (char *)g_buf;
-    ret = cJSON_PrintPreallocated(content, data, sizeof(g_buf), 1);
-    RT_CHECK_GO(ret == 1, RT_ERR_CJSON_ERROR, end);
-    MSG_INFO("content:\n%s\n", data);
+    data = cJSON_PrintUnformatted(content);
 
     ret = lpa_https_post(smdp_addr, API_CANCEL_SESSION, data, out, out_size);
     if (ret == 200) {
@@ -1087,6 +1081,9 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     }
 
 end:
+    if (!data) {
+        free(data);
+    }
     if (b64_in != NULL) { free(b64_in);}
     cJSON_Delete(content);
 

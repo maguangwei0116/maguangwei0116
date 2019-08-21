@@ -19,6 +19,7 @@ vpath %.c ./socket
 SRC-y 		+= src/file.c
 SRC-y 		+= src/rt_manage_data.c
 SRC-y 		+= src/http.c
+SRC-y 		+= src/https.c
 SRC-y 		+= src/log.c
 SRC-y 		+= src/rt_os.c
 SRC-y 		+= src/qmi_control_point.c

@@ -18,7 +18,7 @@
 #include "qmi_control_point.h"
 
 static qmi_client_type g_uim_client;
-int qmi_wds_init(void)
+int qmi_uim_init(void)
 {
     qmi_client_error_type err;
     err = qmi_ctrl_point_init(uim_get_service_object_v01(), &g_uim_client, NULL, NULL);
@@ -101,5 +101,86 @@ int qmi_get_elementary_imsi_file(uint8_t *imsi)
         }
     }
 out:
+    return err;
+}
+
+int qmi_open_channel(uint8_t *aid, uint16_t aid_len, int *channel)
+{
+    qmi_client_error_type err;
+
+    uim_logical_channel_req_msg_v01 req = { 0 };
+    uim_logical_channel_resp_msg_v01 resp = { 0 };
+
+    memset(&resp, 0, sizeof(resp));
+    memset(&req, 0, sizeof(req));
+
+    req.slot=1;
+    req.aid_valid=1;
+    req.aid_len = aid_len;
+    memcpy(req.aid,aid,req.aid_len);
+    QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_LOGICAL_CHANNEL_REQ_V01, req, resp);
+    if(err == QMI_NO_ERR) {
+        if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
+            MSG_PRINTF(LOG_ERR, "Failed to open channel\n");
+            err = resp.resp.result;
+        }
+        if(resp.channel_id_valid) {     //analyse respose
+            *channel=resp.channel_id;
+        }
+    }
+    return err;
+}
+
+int qmi_close_channel(int channel)
+{
+    qmi_client_error_type err;
+
+    uim_logical_channel_req_msg_v01 req = { 0 };
+    uim_logical_channel_resp_msg_v01 resp = { 0 };
+    req.slot=1;
+    req.channel_id_valid=1;
+    req.channel_id = channel;
+
+    QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_LOGICAL_CHANNEL_REQ_V01, req, resp);
+    if(err == QMI_NO_ERR) {
+        if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
+             MSG_PRINTF(LOG_ERR, "Failed to close channel:0x%x\n",resp.resp.error);
+            if (resp.resp.error == QMI_ERR_INVALID_ARG_V01) {      //euicc already close the channel.
+                resp.resp.error = QMI_NO_ERR;
+            }
+            err = resp.resp.error;
+        }
+        if(resp.channel_id_valid) {     //analyse respose
+
+        }
+    }
+    return err;
+}
+
+int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int channel)
+{
+    qmi_client_error_type err;
+    uim_send_apdu_req_msg_v01 req = { 0 };
+    uim_send_apdu_resp_msg_v01 resp = { 0 };
+
+    req.slot=1;
+    req.apdu_len = data_len;
+    memcpy(req.apdu,data,data_len);
+    req.apdu[req.apdu_len] = '\0';
+    req.channel_id_valid = 1;
+    req.channel_id = channel;
+    MSG_INFO_ARRAY("APDU REQ:",req.apdu,req.apdu_len);
+    QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_SEND_APDU_REQ_V01, req, resp);
+    if(err == QMI_NO_ERR) {
+        if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
+            MSG_PRINTF(LOG_ERR, "Failed to send apdu\n");
+            err = resp.resp.error;
+        }
+        if(resp.apdu_valid) {        //analyse respose
+            *rsp_len = resp.apdu_len;
+            memcpy(rsp,resp.apdu,*rsp_len);
+            MSG_INFO_ARRAY("APDU RSP:",resp.apdu,resp.apdu_len);
+        }
+    }
     return err;
 }
