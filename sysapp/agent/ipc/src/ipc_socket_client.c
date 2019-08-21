@@ -27,12 +27,14 @@ int32_t ipc_send_data(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_l
     ret = socket_connect(socket_id);
     if (ret == -1) {
         MSG_PRINTF(LOG_ERR, "connet server failed\n");
+        goto end;
     }
-    ret = socket_send(socket_id, "hello", sizeof("hello"));
+    ret = socket_send(socket_id, data, len);
     if (ret == -1) {
         MSG_PRINTF(LOG_ERR, "send data failed\n");
     }
-    socket_recv(socket_id, data, 1024);
+    *rsp_len = socket_recv(socket_id, rsp, 1024);
     MSG_PRINTF(LOG_INFO, "client data %s\n", data);
+end:
     socket_close(socket_id);
 }

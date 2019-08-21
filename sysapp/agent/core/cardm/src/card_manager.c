@@ -21,6 +21,7 @@ int32_t init_card_manager(void *arg)
     uint8_t eid[32];
     uint8_t num = 0;
     int32_t ret = RT_ERROR;
+
     ret = lpa_get_eid(eid);
     MSG_PRINTF(LOG_INFO, "ret:%d\n", ret);
     lpa_get_profile_info(&g_p_info, &num);

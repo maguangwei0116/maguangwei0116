@@ -88,7 +88,7 @@ int32_t rt_qmi_get_imei(uint8_t *imei)
     return ret;
 }
 
-int32_t rt_qmi_init(void)
+int32_t rt_qmi_init(void *arg)
 {
     qmi_nas_init();
     qmi_uim_init();
