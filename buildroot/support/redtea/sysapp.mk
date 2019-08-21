@@ -25,7 +25,8 @@ info:
 	@echo "REDTEA_SUPPORT_SCRIPTS_PATH=$(REDTEA_SUPPORT_SCRIPTS_PATH)"
 	@echo "SYSAPP_TARGET_NAME=$(SYSAPP_TARGET_NAME)"
 	@echo "RELEASE_TARGET=$(RELEASE_TARGET)"
-	@echo "$(.VARIABLES)"
+#	@echo "$(.VARIABLES)"
+	@echo "BR2_CONF_MK=$(BR2_CONF_MK)"
 	
 clean:
 	rm -rf $(O)

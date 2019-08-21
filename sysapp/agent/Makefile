@@ -1,4 +1,12 @@
 
+############################################################################################
+# Never modify from this line
+############################################################################################
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/br2_conf.mk
+############################################################################################
+# Never modify end this line
+############################################################################################
+
 # Config your target here !
 TARGET 			= $(shell pwd | sed 's/^\(.*\)[/]//')
 
@@ -34,14 +42,14 @@ COMM-LIB 		= asn.1 platform dial pthread bridge util
 vpath %.c ./core/bootstrap
 
 # Config your resource file list by += xxx.c
-SRC-y 			+= src/bootstrap.c
+SRC-$(CFG_AGENT_BOOTSRRAP_ON) 		+= src/bootstrap.c
 
 # Config your include file path by += xxx-inc
-INC-PATH 		= ./core/bootstrap/
+INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)	+= ./core/bootstrap/
 
 INC-y 			+= ./
-INC-y 			+= $(INC-PATH)
-INC-y 			+= $(addsuffix inc, $(wildcard $(INC-PATH)))
+INC-y 			+= $(INC-PATH-y)
+INC-y 			+= $(addsuffix inc, $(wildcard $(INC-PATH-y)))
 
 # Config your lib
 LIB-y 			= -lm

@@ -38,9 +38,28 @@ SYSAPP_JOIN_LIST=$(patsubst %,sysapp-%,$(SYSAPP_CONFIG_SUBDIRS))
 SYSAPP_JOIN_LIST_CLEAN=$(patsubst %,%-clean,$(SYSAPP_JOIN_LIST))
 SYSAPP_JOIN_LIST_INSTALL=$(patsubst %,%-install,$(SYSAPP_JOIN_LIST))
 
+OUTPUT_BR2_CONF_MK=./include/generated/conf.mk
+
+define ECHO_BR2_CONF_MK_ITEM
+	echo "$(1)=$(2)" >> $(3);
+endef
+
+define AUTO_GEN_BR2_CONF_MK
+	$(foreach var,$(1),$(call ECHO_BR2_CONF_MK_ITEM,$(var),$($(var)),$(2)))
+	@sed -i 's/BR2_//' $(2)
+endef
+
+define AUTO_GEN_BR2_CFG_VARS
+	@test -e $(dir $(2)) || mkdir -p $(dir $(2))
+	@echo > $(2)
+	@$(call AUTO_GEN_BR2_CONF_MK,$(foreach var,$(1),$(filter $(var)%,$(.VARIABLES))),$(2))
+	@echo >> $(2)
+endef
+
 define ALONE_SYSAPP_BUILD
 	@test -d $(SYSAPP_DIR)/$(1) || mkdir -p $(SYSAPP_DIR)/$(1)
-	@$(TARGET_MAKE_ENV) $(SYSAPP_SUBDIR_ENV) $(MAKE) -C $(SYSAPP_SOURCE_PATH)/$(1) SYSAPP_TARGET_NAME=$(SYSAPP_SYSTEM_NAME)-$(SYSAPP_PRODUCT_NAME)-$(1)-$(SYSAPP_SOFTWARE_NAME) O=$(SYSAPP_DIR)/$(1) $(2)
+	@$(call AUTO_GEN_BR2_CFG_VARS,BR2_CFG,$(SYSAPP_DIR)/$(1)/$(OUTPUT_BR2_CONF_MK))
+	@$(TARGET_MAKE_ENV) $(SYSAPP_SUBDIR_ENV) $(MAKE) -C $(SYSAPP_SOURCE_PATH)/$(1) BR2_CONF_MK=$(SYSAPP_DIR)/$(1)/$(OUTPUT_BR2_CONF_MK) SYSAPP_TARGET_NAME=$(SYSAPP_SYSTEM_NAME)-$(SYSAPP_PRODUCT_NAME)-$(1)-$(SYSAPP_SOFTWARE_NAME) O=$(SYSAPP_DIR)/$(1) $(2)
 endef
 
 define ALONE_SYSAPP_CLEAN
