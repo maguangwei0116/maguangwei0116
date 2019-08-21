@@ -16,7 +16,15 @@
 
 #include "rt_type.h"
 
+typedef enum CARD_MSG_MODE {
+    CARD_MSG_SETING_KEY = 0,
+    CARD_MSG_SETING_PROFILE,
+    CARD_MSG_SETING_CERTIFICATE,
+    CARD_MSG_NETWORK_RECONNECTED,
+    CARD_MSG_FROM_MQTT
+} card_manager_mode_e;
+
 int32_t init_card_manager(void *arg);
-int32_t card_manager_event(uint8_t *buf, int32_t len);
+int32_t card_manager_event(uint8_t *buf, int32_t len, int32_t mode);
 
 #endif // __CARD_MANAGER_H__

@@ -17,7 +17,8 @@
 
 typedef struct AGENT_QUEUE {
     int64_t msg_typ;
-    agent_msg_id_e msg_id;
+    int32_t msg_id;
+    int32_t mode;
     int32_t data_len;
     void *data_buf;
 } agent_que_t;
@@ -43,7 +44,7 @@ static void agent_queue_task(void)
 
                 break;
                 case MSG_ID_CARD_MANAGER:
-
+                    card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 case MSG_ID_LOG_MANAGER:
 
@@ -117,4 +118,13 @@ int32_t msg_send_agent_queue(int32_t msgid, void *buffer, int32_t len)
     rt_os_memcpy(que_t.data_buf, buffer, len);
     que_t.data_len = len;
     return rt_send_queue_msg(g_queue_id, (void *)&que_t, len, 0);
+}
+
+int32_t msg_send_upload_queue(void *buffer, int32_t len)
+{
+    upload_que_t que_t;
+    que_t.data_buf = (void *)rt_os_malloc(len);
+    rt_os_memcpy(que_t.data_buf, buffer, len);
+    que_t.data_len = len;
+    return rt_send_queue_msg(g_upload_queue_id, (void *)&que_t, len, 0);
 }

@@ -28,7 +28,19 @@ int32_t init_card_manager(void *arg)
     MSG_PRINTF(LOG_INFO, "num:%d\n", num);
 }
 
-int32_t card_manager_event(uint8_t *buf, int32_t len)
+int32_t card_manager_event(uint8_t *buf, int32_t len, int32_t mode)
 {
-
+    switch (mode) {
+        case CARD_MSG_SETING_KEY:
+        break;
+        case CARD_MSG_SETING_PROFILE:
+        break;
+        case CARD_MSG_SETING_CERTIFICATE:
+        break;
+        case CARD_MSG_FROM_MQTT:
+        break;
+        default:
+            MSG_PRINTF(LOG_ERR, "unknow command\n");
+        break;
+    }
 }
