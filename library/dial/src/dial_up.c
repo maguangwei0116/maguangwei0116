@@ -209,11 +209,11 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
     dsi_net_hndl->apn = NULL;
     dsi_net_hndl->user = dsi_net_hndl->password = NULL;
     dsi_net_hndl->auth_pref = DSI_AUTH_PREF_PAP_CHAP_NOT_ALLOWED;
-
+    dsi_init(DSI_MODE_GENERAL);
+    rt_os_sleep(1);
     dsi_net_hndl->handle = dsi_get_data_srvc_hndl(dsi_net_cb_fcn, (void*) dsi_net_hndl);
     if (dsi_net_hndl->handle == NULL){
         MSG_PRINTF(LOG_WARN, "dsi_get_data_srvc_hndl fail!!!\n");
-        dsi_release(DSI_MODE_GENERAL);
         return -3;
     }
 
@@ -254,6 +254,7 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
 
 int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
 {
+    dsi_release(DSI_MODE_GENERAL);
     if (dsi_net_hndl->call_state!=DSI_STATE_CALL_IDLE) {
         dsi_stop_data_call(dsi_net_hndl->handle);
     }
