@@ -12,6 +12,7 @@ vpath %.c ./core/bootstrap
 vpath %.c ./core/queue
 vpath %.c ./core/cardm
 vpath %.c ./core/logm
+vpath %.c ./core/networkd
 vpath %.c ./main
 vpath %.c ./ipc
 vpath %.c ./lpa
@@ -22,6 +23,7 @@ SRC-y 			+= src/agent_main.c
 SRC-y 			+= src/agent_queue.c
 SRC-y 			+= src/card_manager.c
 SRC-y 			+= src/ipc_socket_client.c
+SRC-y 			+= src/network_detection.c
 SRC-y 			+= src/lpa.c
 SRC-y 			+= src/lpdd.c
 SRC-y 			+= src/luid.c
@@ -32,6 +34,7 @@ SRC-y 			+= src/apdu.c
 INC-PATH 		= ./core/bootstrap/
 INC-PATH 		+= ./core/queue/
 INC-PATH 		+= ./core/cardm/
+INC-PATH 		+= ./core/networkd/
 INC-PATH 		+= ./main/
 INC-PATH 		+= ./ipc/
 INC-PATH 		+= ./lpa/

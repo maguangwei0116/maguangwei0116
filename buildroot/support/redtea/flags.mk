@@ -9,7 +9,8 @@ endif
 INCDIR  		= $(patsubst %,-I%,$(INC-y))
 CFLAGS			+= $(INCDIR)
 CFLAGS			+= -I$(SDK_INSTALL_PATH)/include
-CFLAGS			+= $(patsubst %,-I%,$(SYSINC))
+INCTOOL			+= $(addprefix $(SYSROOT), $(SYSINC))
+CFLAGS			+= $(patsubst %,-I%,$(INCTOOL))
 
 # Config link flags
 LDFLAGS			+= $(LIB-y)

@@ -30,6 +30,7 @@ int32_t main(int32_t argc, int8_t **argv)
     rt_qmi_init();
     init_queue(NULL);
     init_card_manager(NULL);
+    init_network_detection(NULL);
     while (!toStop) {
         sleep(3);
     }

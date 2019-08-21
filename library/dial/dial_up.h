@@ -56,6 +56,6 @@ typedef struct {
 static void dsi_net_init_cb_func(void *user_data);
 static void dsi_net_cb_fcn( dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt, dsi_evt_payload_t *payload_ptr );
 int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl);
-static int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl);
+int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl);
 
 #endif  //__DIAL_UP_H__

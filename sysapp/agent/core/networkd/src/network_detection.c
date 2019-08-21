@@ -14,6 +14,15 @@
 #include "network_detection.h"
 #include "dial_up.h"
 
+static void network_detection_task(void)
+{
+    dsi_call_info_t dsi_net_hndl;
+    dial_up_init(&dsi_net_hndl);
+    while (1) {
+        dial_up_to_connect(&dsi_net_hndl);
+    }
+}
+
 int32_t init_network_detection(void *arg)
 {
     rt_task task_id = 0;
@@ -25,13 +34,4 @@ int32_t init_network_detection(void *arg)
         return RT_ERROR;
     }
     return RT_SUCCESS;
-}
-
-void network_detection_task(void)
-{
-    dsi_call_info_t dsi_net_hndl;
-    init_dial_up(&dsi_net_hndl);
-    while (1) {
-        dial_up_to_connect(&dsi_net_hndl);
-    }
 }

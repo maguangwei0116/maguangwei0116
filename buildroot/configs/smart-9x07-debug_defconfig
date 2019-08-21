@@ -58,10 +58,10 @@ BR2_PACKAGE_OVERRIDE_FILE="$(TOPDIR)/local.mk"
 # Toolchain
 #
 BR2_TOOLCHAIN_URL="none defined"
-BR2_TOOLCHAIN_INSTALL_PATH="/opt/ql-oe/"
-BR2_TOOLCHAIN_PREFIX="sysroots/x86_64-linux/usr/bin/arm-oe-linux-gnueabi/arm-oe-linux-gnueabi-"
-BR2_TOOLCHAIN_SYSROOT="/opt/ql-oe/sysroots/mdm9607/"
-BR2_TOOLCHAIN_SYSINC="/opt/ql-oe/sysroots/mdm9607/usr/include/ /opt/ql-oe/sysroots/mdm9607/usr/include/data /opt/ql-oe/sysroots/mdm9607/usr/include/dsutils /opt/ql-oe/sysroots/mdm9607/usr/include/qmi-framework /opt/ql-oe/sysroots/mdm9607/usr/include/qmi-manager /opt/ql-oe/sysroots/mdm9607/usr/include/qmi"
+BR2_TOOLCHAIN_INSTALL_PATH="/opt/ql-ol-sdk/ql-ol-crosstool"
+BR2_TOOLCHAIN_PREFIX="sysroots/x86_64-oesdk-linux/usr/bin/arm-oe-linux-gnueabi/arm-oe-linux-gnueabi-"
+BR2_TOOLCHAIN_SYSROOT="/opt/ql-ol-sdk/ql-ol-crosstool/sysroots/armv7a-vfp-neon-oe-linux-gnueabi"
+BR2_TOOLCHAIN_SYSINC="/usr/include/ /usr/include/data/ /usr/include/dsutils/ /usr/include/qmi-framework/ /usr/include/qmi-manager/ /usr/include/qmi/"
 
 #
 # SDK
