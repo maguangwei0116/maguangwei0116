@@ -103,7 +103,7 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
 
     dc = ber_decode(NULL, &asn_DEF_ProfileInfoListResponse, (void **)&rsp, buf, size);
     if (dc.code != RC_OK) {
-        MSG_ERR("Broken ProfileInfoListResponse decoding at byte %ld\n", (long)dc.consumed);
+        MSG_ERR("Broken ProfileInfoListmResponse decoding at byte %ld\n", (long)dc.consumed);
         ret = RT_ERR_ASN1_DECODE_FAIL;
         goto end;
     }
@@ -394,6 +394,16 @@ end:
     if (buf1 != NULL)       { free(buf1);}
     if (buf2 != NULL)       { free(buf2);}
     return ret;
+}
+
+int lpa_load_cert(const uint8_t *data, uint16_t data_len)
+{
+    return load_cert(data, data_len);
+}
+
+int lpa_load_profile(const uint8_t *data, uint16_t data_len)
+{
+    return load_profile(data, data_len);
 }
 
 void rt_lpa_printf(const char *format,...)

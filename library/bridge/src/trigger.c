@@ -116,7 +116,7 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
                   req.response_apdu_segment, (uint16_t *)&req.response_apdu_segment_len);
     req.response_apdu_segment[req.response_apdu_segment_len++] = (sw >> 8) & 0xFF;
     req.response_apdu_segment[req.response_apdu_segment_len++] = sw & 0xFF;
-
+    MSG_PRINTF(LOG_INFO, "process_ind_apdu\n");
     // false, no Response APDU Information
     req.response_apdu_info_valid = true;
     req.response_apdu_info.total_response_apdu_size = req.response_apdu_segment_len;

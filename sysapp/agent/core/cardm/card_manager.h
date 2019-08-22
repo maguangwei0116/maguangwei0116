@@ -25,6 +25,6 @@ typedef enum CARD_MSG_MODE {
 } card_manager_mode_e;
 
 int32_t init_card_manager(void *arg);
-int32_t card_manager_event(uint8_t *buf, int32_t len, int32_t mode);
+int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode);
 
 #endif // __CARD_MANAGER_H__

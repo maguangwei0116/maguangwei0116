@@ -70,4 +70,7 @@ int lpa_disable_profile(const char *iccid);
 */
 int lpa_download_profile(const char *ac, const char *cc, char iccid[21],uint8_t *server_url);
 
+int lpa_load_cert(const uint8_t *data, uint16_t data_len);
+
+int lpa_load_profile(const uint8_t *data, uint16_t data_len);
 #endif  // __LPA_H__

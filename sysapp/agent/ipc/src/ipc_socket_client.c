@@ -14,7 +14,7 @@
 #include "ipc_socket_client.h"
 #include "socket.h"
 
-int32_t ipc_send_data(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
+int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
     int32_t socket_id = -1;
     int32_t ret = RT_ERROR;
@@ -29,12 +29,14 @@ int32_t ipc_send_data(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_l
         MSG_PRINTF(LOG_ERR, "connet server failed\n");
         goto end;
     }
+    MSG_INFO_ARRAY("rsq>>>", data, len);
     ret = socket_send(socket_id, data, len);
     if (ret == -1) {
         MSG_PRINTF(LOG_ERR, "send data failed\n");
     }
     *rsp_len = socket_recv(socket_id, rsp, 1024);
-    MSG_PRINTF(LOG_INFO, "client data %s\n", data);
+    MSG_INFO_ARRAY("rsp<<<", rsp, *rsp_len);
+    MSG_PRINTF(LOG_INFO, "client data %d\n", *rsp_len);
 end:
     socket_close(socket_id);
 }

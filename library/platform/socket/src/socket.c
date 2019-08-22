@@ -64,7 +64,7 @@ int32_t socket_recv(int32_t socket_id, uint8_t *buf, int32_t buf_size)
     return recv(socket_id, buf, buf_size, 0);
 }
 
-int32_t socket_send(int32_t socket_id, uint8_t *buf, int32_t size)
+int32_t socket_send(int32_t socket_id, const uint8_t *buf, int32_t size)
 {
     return send(socket_id, buf, size, 0);
 }

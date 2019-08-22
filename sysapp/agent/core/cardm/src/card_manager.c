@@ -28,14 +28,16 @@ int32_t init_card_manager(void *arg)
     MSG_PRINTF(LOG_INFO, "num:%d\n", num);
 }
 
-int32_t card_manager_event(uint8_t *buf, int32_t len, int32_t mode)
+int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     switch (mode) {
         case CARD_MSG_SETTING_KEY:
         break;
         case CARD_MSG_SETTING_PROFILE:
+            lpa_load_profile(buf, len);
         break;
         case CARD_MSG_SETTING_CERTIFICATE:
+            lpa_load_cert(buf, len);
         break;
         case CARD_MSG_FROM_MQTT:
         break;

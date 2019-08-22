@@ -73,6 +73,11 @@ typedef enum channel_operation {
     CLOSE_CHANNEL
 } channel_opt_t;
 
+typedef enum channel_type {
+    CHANNEL_BY_IPC = 0,
+    CHANNEL_BY_QMI
+} channel_type_e;
+
 int cmd_manage_channel(channel_opt_t operation);
 int cmd_get_response(uint8_t channel, uint8_t size, char *rsp);
 int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);

@@ -47,4 +47,7 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
                         char *out, int *out_size /* out */);
 void close_session(void);
 
+// Additional
+int load_cert(const uint8_t *data, uint16_t data_len);
+int load_profile(const uint8_t *data, uint16_t data_len);
 #endif  // __LPDD_H__

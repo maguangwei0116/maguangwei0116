@@ -1090,6 +1090,24 @@ end:
     return ret;
 }
 
+int load_cert(const uint8_t *data, uint16_t data_len)
+{
+    int ret = RT_SUCCESS;
+    ret = cmd_store_data(data, data_len, g_buf, &g_buf_size);  // Should only contain 9000
+    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+end:
+    return ret;
+}
+
+int load_profile(const uint8_t *data, uint16_t data_len)
+{
+    int ret = RT_SUCCESS;
+    ret = cmd_store_data(data, data_len, g_buf, &g_buf_size);  // Should only contain 9000
+    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+end:
+    return ret;
+}
+
 void close_session(void)
 {
     lpa_https_close_socket();
