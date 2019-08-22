@@ -1,7 +1,7 @@
 /**
-* å¯¹é…ç½®æ–‡ä»¶è¿›è¡Œè¯»å†™æ“ä½œ
-* æ‰€æœ‰é…ç½®ä»¥ key - value pair çš„å½¢å¼å­˜å‚¨
-* å…·ä½“è¿æ¥ç¬¦å’Œæ³¨é‡Šæ ‡å·åœ¨ c æ–‡ä»¶ä¸­å®šä¹‰
+* ¶ÔÅäÖÃÎÄ¼ş½øĞĞ¶ÁĞ´²Ù×÷
+* ËùÓĞÅäÖÃÒÔ key - value pair µÄĞÎÊ½´æ´¢
+* ¾ßÌåÁ¬½Ó·ûºÍ×¢ÊÍ±êºÅÔÚ c ÎÄ¼şÖĞ¶¨Òå
 */
 
 #include <stdio.h>
@@ -13,10 +13,10 @@
 #include "rt_os.h"
 
 #define MAX_VALUE_SIZE                      30
-#define LINK_SYMBOL                         "="  // key - value pair ä¹‹é—´çš„è¿æ¥ç¬¦
-#define ANNOTATION_SYMBOL                   "#"  // æ³¨é‡Šæ ‡è¯†ç¬¦
+#define LINK_SYMBOL                         "="  // key - value pair Ö®¼äµÄÁ¬½Ó·û
+#define ANNOTATION_SYMBOL                   "#"  // ×¢ÊÍ±êÊ¶·û
 #define CONFIG_FILE_PATH                    "/data/rt_config.ini"
-#define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // åˆ¤å®šæ˜¯å¦ä¸ºç©ºç™½ç¬¦
+#define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // ÅĞ¶¨ÊÇ·ñÎª¿Õ°×·û
 
 /* The keyname of config item*/
 static const char *keys[] = {
@@ -38,35 +38,35 @@ static const char *annotations[] = {
         "The address of SMDP server stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)",
         "Whether the config MBN",
         "The max size of rt_log file (M)",
-        "The rules of the first boot option profile ï¼ˆ0ï¼šProvisioning 1:Operational 2:lastï¼‰",
+        "The rules of the first boot option profile £¨0£ºProvisioning 1:Operational 2:last£©",
         "Whether set the rplmn"
 };
 
 /* the keyvalue of config item */
 static int8_t *values[ARRAY_SIZE(keys)];
 
-int32_t DIS_CONNECT_WAIT_TIME = DEFAULT_DIS_CONNECT_WAIT_TIME;  // æ–­ç½‘ç›‘æµ‹æ—¶é—´ï¼Œé»˜è®¤5åˆ†é’Ÿ
-int8_t *OTI_ENVIRONMENT_ADDR = DEFAULT_OTI_ENVIRONMENT_ADDR;  // é»˜è®¤ç¯å¢ƒä¸ºprod
-int8_t *EMQ_SERVER_ADDR = DEFAULT_EMQ_SERVER_ADDR;  // é»˜è®¤prod emq 
-int8_t *PROXY_SERVER_ADDR = DEFAULT_PROXY_SERVER_ADDR;  // é»˜è®¤smdp address
-int32_t MBN_CONFIGURATION = DEFAULT_MBN_CONFIGURATION;  // MBNé…ç½®å¼€å…³
-int32_t LOG_FILE_SIZE = DEFAULT_LOG_FILE_SIZE;  // é»˜è®¤logæ–‡ä»¶çš„å¤§å°
-int32_t INIT_PROFILE_TYPE = DEFAULT_INIT_PROFILE_TYPE;  // é»˜è®¤ä½¿ç”¨ä¸Šä¸€å¼ å¡ç™»ç½‘
-int32_t RPLMN_ENABLE = DEFAULT_RPLMN_ENABLE;  //rplmné»˜è®¤æ‰“å¼€è®¾ç½®
+int32_t DIS_CONNECT_WAIT_TIME = DEFAULT_DIS_CONNECT_WAIT_TIME;  // ¶ÏÍø¼à²âÊ±¼ä£¬Ä¬ÈÏ5·ÖÖÓ
+int8_t *OTI_ENVIRONMENT_ADDR = DEFAULT_OTI_ENVIRONMENT_ADDR;  // Ä¬ÈÏ»·¾³Îªprod
+int8_t *EMQ_SERVER_ADDR = DEFAULT_EMQ_SERVER_ADDR;  // Ä¬ÈÏprod emq 
+int8_t *PROXY_SERVER_ADDR = DEFAULT_PROXY_SERVER_ADDR;  // Ä¬ÈÏsmdp address
+int32_t MBN_CONFIGURATION = DEFAULT_MBN_CONFIGURATION;  // MBNÅäÖÃ¿ª¹Ø
+int32_t LOG_FILE_SIZE = DEFAULT_LOG_FILE_SIZE;  // Ä¬ÈÏlogÎÄ¼şµÄ´óĞ¡
+int32_t INIT_PROFILE_TYPE = DEFAULT_INIT_PROFILE_TYPE;  // Ä¬ÈÏÊ¹ÓÃÉÏÒ»ÕÅ¿¨µÇÍø
+int32_t RPLMN_ENABLE = DEFAULT_RPLMN_ENABLE;  //rplmnÄ¬ÈÏ´ò¿ªÉèÖÃ
 
 
 /**
-* å†™é…ç½®æ–‡ä»¶ï¼Œå¦‚æœæ–‡ä»¶å·²å­˜åœ¨ä¼šæ¸…ç©ºåŸæœ‰æ•°æ®
-* æ•°æ®ä»¥ key - value pair çš„å½¢å¼å­˜å‚¨
-* æ ¼å¼ä¸º key=value
-* å¦‚æœéœ€è¦åœ¨æŸä¸€ key - value pair å‰æ·»åŠ æ³¨é‡Š
-* åˆ™åœ¨ annotation_array å¯¹åº”é¡¹é‡Œæ·»åŠ 
-* @params   file_path        é…ç½®æ–‡ä»¶è·¯å¾„
-* @params   key_array        å­˜æ”¾é”®çš„æ•°ç»„ï¼Œä¸ key_array ä¸€ä¸€å¯¹åº”
-* @params   value_array      å­˜æ”¾å€¼çš„æ•°ç»„ï¼Œä¸ value_array ä¸€ä¸€å¯¹åº”
-* @params   annotation_array å­˜æ”¾æ³¨é‡Šçš„æ•°ç»„ï¼Œä¸ key - value pair ä¸€ä¸€å¯¹åº”ï¼Œå¦‚æœè¯¥é”®å€¼å¯¹ä¸éœ€è¦æ³¨é‡Šï¼Œåˆ™å¯¹åº”é¡¹è¾“å…¥NULL
-* @params   pair_num         key - value pair çš„æ•°é‡
-* @return   æˆåŠŸè¿”å›0ï¼Œå¦åˆ™è¿”å›1
+* Ğ´ÅäÖÃÎÄ¼ş£¬Èç¹ûÎÄ¼şÒÑ´æÔÚ»áÇå¿ÕÔ­ÓĞÊı¾İ
+* Êı¾İÒÔ key - value pair µÄĞÎÊ½´æ´¢
+* ¸ñÊ½Îª key=value
+* Èç¹ûĞèÒªÔÚÄ³Ò» key - value pair Ç°Ìí¼Ó×¢ÊÍ
+* ÔòÔÚ annotation_array ¶ÔÓ¦ÏîÀïÌí¼Ó
+* @params   file_path        ÅäÖÃÎÄ¼şÂ·¾¶
+* @params   key_array        ´æ·Å¼üµÄÊı×é£¬Óë key_array Ò»Ò»¶ÔÓ¦
+* @params   value_array      ´æ·ÅÖµµÄÊı×é£¬Óë value_array Ò»Ò»¶ÔÓ¦
+* @params   annotation_array ´æ·Å×¢ÊÍµÄÊı×é£¬Óë key - value pair Ò»Ò»¶ÔÓ¦£¬Èç¹û¸Ã¼üÖµ¶Ô²»ĞèÒª×¢ÊÍ£¬Ôò¶ÔÓ¦ÏîÊäÈëNULL
+* @params   pair_num         key - value pair µÄÊıÁ¿
+* @return   ³É¹¦·µ»Ø0£¬·ñÔò·µ»Ø1
 */
 static int32_t write_config_file(int8_t *file_path, int8_t **key_array, int8_t **value_array, int8_t **annotation_array, int32_t pair_num)
 {
@@ -98,9 +98,9 @@ static int32_t write_config_file(int8_t *file_path, int8_t **key_array, int8_t *
 }
 
 /**
-* è·³è¿‡æ³¨é‡Šå’Œç©ºç™½
-* @params   fpp     æ–‡ä»¶æŒ‡é’ˆçš„æŒ‡é’ˆ
-* @return   æˆåŠŸè¿”å›0ï¼Œå¦åˆ™è¿”å›1
+* Ìø¹ı×¢ÊÍºÍ¿Õ°×
+* @params   fpp     ÎÄ¼şÖ¸ÕëµÄÖ¸Õë
+* @return   ³É¹¦·µ»Ø0£¬·ñÔò·µ»Ø1
 */
 static int32_t skip_annotation_and_spaces(FILE **fpp)
 {
@@ -167,16 +167,16 @@ static int32_t skip_annotation_and_spaces(FILE **fpp)
 
 
 /**
-* è¯»é…ç½®æ–‡ä»¶ï¼Œå°†é…ç½®ä¿å­˜ä¸ºå­—ç¬¦ä¸²å½¢å¼
-* è¯»å–å¦‚æœè¯»å–æ—¶ value é•¿åº¦è¶…å‡ºäº†å¯¹åº” bufsize - 1 ï¼Œåˆ™ä¼šè‡ªåŠ¨æˆªçŸ­
-* æœ€åä¿ç•™çš„æ˜¯ value å­—ç¬¦ä¸²
-* ä¼šè‡ªåŠ¨è·³è¿‡ç©ºç™½å’Œæ³¨é‡Š
-* @params   filePath        é…ç½®æ–‡ä»¶è·¯å¾„
-* @params   key_array        å­˜æ”¾é”®çš„æ•°ç»„ï¼Œä¸ value_array ä¸€ä¸€å¯¹åº”
-* @params   value_array      å­˜æ”¾å€¼çš„æ•°ç»„ï¼Œä¸ key_array ä¸€ä¸€å¯¹åº”
-* @params   buf_size_array    å­˜æ”¾æ¯ä¸ª value ç¼“å†²åŒºå¤§å°çš„æ•°ç»„
-* @params   pair_num         key - value pair çš„æ•°é‡
-* @return   æˆåŠŸè¿”å›0ï¼Œå¦åˆ™è¿”å›1
+* ¶ÁÅäÖÃÎÄ¼ş£¬½«ÅäÖÃ±£´æÎª×Ö·û´®ĞÎÊ½
+* ¶ÁÈ¡Èç¹û¶ÁÈ¡Ê± value ³¤¶È³¬³öÁË¶ÔÓ¦ bufsize - 1 £¬Ôò»á×Ô¶¯½Ø¶Ì
+* ×îºó±£ÁôµÄÊÇ value ×Ö·û´®
+* »á×Ô¶¯Ìø¹ı¿Õ°×ºÍ×¢ÊÍ
+* @params   filePath        ÅäÖÃÎÄ¼şÂ·¾¶
+* @params   key_array        ´æ·Å¼üµÄÊı×é£¬Óë value_array Ò»Ò»¶ÔÓ¦
+* @params   value_array      ´æ·ÅÖµµÄÊı×é£¬Óë key_array Ò»Ò»¶ÔÓ¦
+* @params   buf_size_array    ´æ·ÅÃ¿¸ö value »º³åÇø´óĞ¡µÄÊı×é
+* @params   pair_num         key - value pair µÄÊıÁ¿
+* @return   ³É¹¦·µ»Ø0£¬·ñÔò·µ»Ø1
 */
 static int32_t read_config_file(int8_t *file_path, int8_t **key_array, int8_t **value_array, int32_t buf_size_array, int32_t pair_num)
 {
@@ -205,7 +205,7 @@ static int32_t read_config_file(int8_t *file_path, int8_t **key_array, int8_t **
         return RT_ERROR;
     }
 
-    // æ¯ä¸€æ¬¡å¾ªç¯éƒ½æ‹¿è¯»åˆ°çš„keyä¸keyæ•°ç»„é‡Œæ‰€æœ‰çš„å€¼è¿›è¡Œæ¯”å¯¹ï¼Œç›´åˆ°è¯»å®Œæ•´ä¸ªæ–‡ä»¶
+    // Ã¿Ò»´ÎÑ­»·¶¼ÄÃ¶Áµ½µÄkeyÓëkeyÊı×éÀïËùÓĞµÄÖµ½øĞĞ±È¶Ô£¬Ö±µ½¶ÁÍêÕû¸öÎÄ¼ş
     while (!is_end) {
         skip_annotation_and_spaces(&fp);
         for (i = 0; i < pair_num; i++) {
@@ -224,7 +224,7 @@ static int32_t read_config_file(int8_t *file_path, int8_t **key_array, int8_t **
                 continue;
             }
 
-            // å¦‚æœç›¸ç­‰ï¼Œå°±è¦åˆ¤æ–­ä¸‹é¢æ˜¯å¦ä¸ºè¿æ¥ç¬¦ï¼Œé˜²æ­¢å‡ºç°åŒå‰ç¼€çš„æƒ…å†µ
+            // Èç¹ûÏàµÈ£¬¾ÍÒªÅĞ¶ÏÏÂÃæÊÇ·ñÎªÁ¬½Ó·û£¬·ÀÖ¹³öÏÖÍ¬Ç°×ºµÄÇé¿ö
             skip_annotation_and_spaces(&fp);
             iResult += rt_fread(temp_link_buf, char_size, linkSymbolLen, fp);
             temp_link_buf[linkSymbolLen] = '\0';
@@ -243,7 +243,7 @@ static int32_t read_config_file(int8_t *file_path, int8_t **key_array, int8_t **
                         break;
                 }
 
-                // å¦‚æœè¯»åˆ°äº†æ¢è¡Œå°±æŸ¥çœ‹å‰é¢æ˜¯å¦æœ‰å›è½¦ï¼Œå¦‚æœæœ‰å°±å°†å›è½¦è®¾ä¸ºç»“å°¾ï¼Œå¦åˆ™å°†æ¢è¡Œè®¾ä¸ºç»“å°¾
+                // Èç¹û¶Áµ½ÁË»»ĞĞ¾Í²é¿´Ç°ÃæÊÇ·ñÓĞ»Ø³µ£¬Èç¹ûÓĞ¾Í½«»Ø³µÉèÎª½áÎ²£¬·ñÔò½«»»ĞĞÉèÎª½áÎ²
                 if ('\n' == value_array[i][j]) {
                     line_end = 1;
                     if ('\r' == value_array[i][j - 1]) {
@@ -306,7 +306,7 @@ int32_t rt_config_init(void)
 
 
 /**
-* è¯»å–é…ç½®æ–‡ä»¶
+* ¶ÁÈ¡ÅäÖÃÎÄ¼ş
 */
 void parse_config_file(void)
 {
@@ -344,7 +344,7 @@ void parse_config_file(void)
 }
 
 /**
-* æ›´æ–°é…ç½®æ–‡ä»¶
+* ¸üĞÂÅäÖÃÎÄ¼ş
 */
 void modify_config_file(void)
 {
@@ -372,12 +372,12 @@ void modify_config_file(void)
 }
 
 /**
-* è·å–é…ç½®é¡¹çš„å€¼
-* å¦‚æœé…ç½®é¡¹å€¼ä¸ºæ•´å½¢ï¼Œé‚£ä¹ˆdataè¿”å›çš„æ˜¯é…ç½®é¡¹çš„å€¼ã€‚
-* å¦‚æœé…ç½®é¡¹çš„å€¼ä¸ºå­—ç¬¦å‹ï¼Œdataè¿”å›çš„æ˜¯é…ç½®é¡¹å€¼çš„åœ°å€
-* @params   config_type    é…ç½®ç±»å‹
-* @params   data                é…ç½®å€¼
-* @return   æˆåŠŸè¿”å› RT_SUCCESSï¼Œå¦åˆ™è¿”å› RT_ERROR
+* »ñÈ¡ÅäÖÃÏîµÄÖµ
+* Èç¹ûÅäÖÃÏîÖµÎªÕûĞÎ£¬ÄÇÃ´data·µ»ØµÄÊÇÅäÖÃÏîµÄÖµ¡£
+* Èç¹ûÅäÖÃÏîµÄÖµÎª×Ö·ûĞÍ£¬data·µ»ØµÄÊÇÅäÖÃÏîÖµµÄµØÖ·
+* @params   config_type    ÅäÖÃÀàĞÍ
+* @params   data                ÅäÖÃÖµ
+* @return   ³É¹¦·µ»Ø RT_SUCCESS£¬·ñÔò·µ»Ø RT_ERROR
 */
 int32_t get_config_data(config_type_e config_type, int8_t **data)
 {
@@ -393,10 +393,10 @@ int32_t get_config_data(config_type_e config_type, int8_t **data)
 }
 
 /**
-* ä¿®æ”¹é…ç½®é¡¹çš„å€¼
-* @params   config_type    é…ç½®ç±»å‹
-* @params   data                é…ç½®å€¼,ä¸ºstringç±»å‹
-* @return   æˆåŠŸè¿”å› RT_SUCCESSï¼Œå¦åˆ™è¿”å› RT_ERROR
+* ĞŞ¸ÄÅäÖÃÏîµÄÖµ
+* @params   config_type    ÅäÖÃÀàĞÍ
+* @params   data                ÅäÖÃÖµ,ÎªstringÀàĞÍ
+* @return   ³É¹¦·µ»Ø RT_SUCCESS£¬·ñÔò·µ»Ø RT_ERROR
 */
 int32_t set_config_data(config_type_e config_type, int8_t *data)
 {

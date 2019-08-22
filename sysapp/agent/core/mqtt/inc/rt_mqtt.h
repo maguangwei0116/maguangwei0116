@@ -12,7 +12,7 @@
 #define TICKET_SERVER_CACHE         "/data/redtea/ticket_server"
 #define MAX_CONNECT_SERVER_TIMER    3
 
-#define USE_ADAPTER_SERVER              1  // æ˜¯å¦ä½¿ç”¨mqtt ticket adapterä»£ç†æœåŠ¡å™¨
+#define USE_ADAPTER_SERVER              1  // ÊÇ·ñÊ¹ÓÃmqtt ticket adapter´úÀí·þÎñÆ÷
 
 #define GET_CID_FLAG(flag)             ((flag) & 0x01)
 #define GET_AGENT_FLAG(flag)           (((flag) >> 1) & 0x01)

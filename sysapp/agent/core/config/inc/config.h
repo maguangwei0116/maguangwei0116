@@ -15,20 +15,20 @@
 /************************************debug***********************************/
 
 /************************************fallback***********************************/
-#define DEFAULT_DIS_CONNECT_WAIT_TIME           100  // é»˜è®¤fallbackä¸º5åˆ†
-// #define DEFAULT_SEED_CARD_FIRST                 0  // é»˜è®¤ä¸æ‰“å¼€ç§å­å¡ä¼˜å…ˆ
+#define DEFAULT_DIS_CONNECT_WAIT_TIME           100  // Ä¬ÈÏfallbackÎª5·Ö
+// #define DEFAULT_SEED_CARD_FIRST                 0  // Ä¬ÈÏ²»´ò¿ªÖÖ×Ó¿¨ÓÅÏÈ
 
 /************************************general***********************************/
-#define DEFAULT_OTI_ENVIRONMENT_ADDR            "52.220.34.227"  // é»˜è®¤ç”Ÿäº§ç¯å¢ƒ
+#define DEFAULT_OTI_ENVIRONMENT_ADDR            "52.220.34.227"  // Ä¬ÈÏÉú²ú»·¾³
 #define DEFAULT_OTI_ENVIRONMENT_PORT            7082
-#define DEFAULT_EMQ_SERVER_ADDR                 "18.136.190.97"  // é»˜è®¤ç”Ÿäº§ç¯å¢ƒEMQåœ°å€
-#define DEFAULT_PROXY_SERVER_ADDR               "smdp.redtea.io"  //é»˜è®¤ç”Ÿäº§ç¯å¢ƒsmdpåœ°å€
-#define DEFAULT_CARD_TYPE_FLAG                  1  // æ˜¯å¦ç”Ÿæˆ/data/card_typeæ–‡ä»¶
-#define DEFAULT_MBN_CONFIGURATION               1  // é»˜è®¤å¼€å¯MBNé…ç½®åŠŸèƒ½
-#define DEFAULT_LOG_FILE_SIZE                   1  // é»˜è®¤logå¤§å°ä¸º1M
-#define DEFAULT_MBN_CONFIGURATION               1  // é»˜è®¤å¼€å¯MBNé…ç½®åŠŸèƒ½
-#define DEFAULT_INIT_PROFILE_TYPE               2  // é»˜è®¤å¯ç”¨ä¸Šä¸€å¼ å¡
-#define DEFAULT_RPLMN_ENABLE                    1  //é»˜è®¤å¼€å¯rplmné…ç½®åŠŸèƒ½
+#define DEFAULT_EMQ_SERVER_ADDR                 "18.136.190.97"  // Ä¬ÈÏÉú²ú»·¾³EMQµØÖ·
+#define DEFAULT_PROXY_SERVER_ADDR               "smdp.redtea.io"  //Ä¬ÈÏÉú²ú»·¾³smdpµØÖ·
+#define DEFAULT_CARD_TYPE_FLAG                  1  // ÊÇ·ñÉú³É/data/card_typeÎÄ¼ş
+#define DEFAULT_MBN_CONFIGURATION               1  // Ä¬ÈÏ¿ªÆôMBNÅäÖÃ¹¦ÄÜ
+#define DEFAULT_LOG_FILE_SIZE                   1  // Ä¬ÈÏlog´óĞ¡Îª1M
+#define DEFAULT_MBN_CONFIGURATION               1  // Ä¬ÈÏ¿ªÆôMBNÅäÖÃ¹¦ÄÜ
+#define DEFAULT_INIT_PROFILE_TYPE               2  // Ä¬ÈÏÆôÓÃÉÏÒ»ÕÅ¿¨
+#define DEFAULT_RPLMN_ENABLE                    1  //Ä¬ÈÏ¿ªÆôrplmnÅäÖÃ¹¦ÄÜ
 
 /********************************platform**************************************/
 
@@ -60,13 +60,13 @@ int32_t rt_config_init(void);
 void modify_config_file(void);
 void parse_config_file(void);
 /**
-* è·å–é…ç½®é¡¹çš„å€¼
-* å¦‚æœé…ç½®é¡¹å€¼ä¸ºæ•´å½¢ï¼Œé‚£ä¹ˆdataè¿”å›çš„æ˜¯é…ç½®é¡¹çš„å€¼ã€‚
-* å¦‚æœé…ç½®é¡¹çš„å€¼ä¸ºå­—ç¬¦å‹ï¼Œdataè¿”å›çš„æ˜¯é…ç½®é¡¹å€¼çš„åœ°å€
-* @params   config_type    é…ç½®ç±»å‹
-* @params   data                é…ç½®å€¼
-* @params   data_type       0è¡¨ç¤ºæ•´å½¢ï¼Œ1è¡¨ç¤ºå­—ç¬¦å‹
-* @return   æˆåŠŸè¿”å› RT_SUCCESSï¼Œå¦åˆ™è¿”å› RT_ERROR
+* »ñÈ¡ÅäÖÃÏîµÄÖµ
+* Èç¹ûÅäÖÃÏîÖµÎªÕûĞÎ£¬ÄÇÃ´data·µ»ØµÄÊÇÅäÖÃÏîµÄÖµ¡£
+* Èç¹ûÅäÖÃÏîµÄÖµÎª×Ö·ûĞÍ£¬data·µ»ØµÄÊÇÅäÖÃÏîÖµµÄµØÖ·
+* @params   config_type    ÅäÖÃÀàĞÍ
+* @params   data                ÅäÖÃÖµ
+* @params   data_type       0±íÊ¾ÕûĞÎ£¬1±íÊ¾×Ö·ûĞÍ
+* @return   ³É¹¦·µ»Ø RT_SUCCESS£¬·ñÔò·µ»Ø RT_ERROR
 */
 int32_t get_config_data(config_type_e config_type, int8_t **data);
 int32_t set_config_data(config_type_e config_type, int8_t *data);

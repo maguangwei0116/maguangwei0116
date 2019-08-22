@@ -1,4 +1,3 @@
-
 /*******************************************************************************
  * Copyright (c) redtea mobile.
  * File name   : rt_yunba.c
@@ -71,20 +70,20 @@ typedef enum BOOT_STATE {
 /************************************debug***********************************/
 
 /************************************fallback***********************************/
-#define DEFAULT_DIS_CONNECT_WAIT_TIME           100  // é»˜è®¤fallbackä¸º5åˆ†
-// #define DEFAULT_SEED_CARD_FIRST                 0  // é»˜è®¤ä¸æ‰“å¼€ç§å­å¡ä¼˜å…ˆ
+#define DEFAULT_DIS_CONNECT_WAIT_TIME           100  // Ä¬ÈÏfallbackÎª5·Ö
+// #define DEFAULT_SEED_CARD_FIRST                 0  // Ä¬ÈÏ²»´ò¿ªÖÖ×Ó¿¨ÓÅÏÈ
 
 /************************************general***********************************/
-#define DEFAULT_OTI_ENVIRONMENT_ADDR            "52.220.34.227"  // é»˜è®¤ç”Ÿäº§ç¯å¢ƒ
+#define DEFAULT_OTI_ENVIRONMENT_ADDR            "52.220.34.227"  // Ä¬ÈÏÉú²ú»·¾³
 #define DEFAULT_OTI_ENVIRONMENT_PORT            7082
-#define DEFAULT_EMQ_SERVER_ADDR                 "18.136.190.97"  // é»˜è®¤ç”Ÿäº§ç¯å¢ƒEMQåœ°å€
-#define DEFAULT_PROXY_SERVER_ADDR               "smdp.redtea.io"  //é»˜è®¤ç”Ÿäº§ç¯å¢ƒsmdpåœ°å€
-#define DEFAULT_CARD_TYPE_FLAG                  1  // æ˜¯å¦ç”Ÿæˆ/data/card_typeæ–‡ä»¶
-#define DEFAULT_MBN_CONFIGURATION               1  // é»˜è®¤å¼€å¯MBNé…ç½®åŠŸèƒ½
-#define DEFAULT_LOG_FILE_SIZE                   1  // é»˜è®¤logå¤§å°ä¸º1M
-#define DEFAULT_MBN_CONFIGURATION               1  // é»˜è®¤å¼€å¯MBNé…ç½®åŠŸèƒ½
-#define DEFAULT_INIT_PROFILE_TYPE               2  // é»˜è®¤å¯ç”¨ä¸Šä¸€å¼ å¡
-#define DEFAULT_RPLMN_ENABLE                    1  //é»˜è®¤å¼€å¯rplmné…ç½®åŠŸèƒ½
+#define DEFAULT_EMQ_SERVER_ADDR                 "18.136.190.97"  // Ä¬ÈÏÉú²ú»·¾³EMQµØÖ·
+#define DEFAULT_PROXY_SERVER_ADDR               "smdp.redtea.io"  //Ä¬ÈÏÉú²ú»·¾³smdpµØÖ·
+#define DEFAULT_CARD_TYPE_FLAG                  1  // ÊÇ·ñÉú³É/data/card_typeÎÄ¼ş
+#define DEFAULT_MBN_CONFIGURATION               1  // Ä¬ÈÏ¿ªÆôMBNÅäÖÃ¹¦ÄÜ
+#define DEFAULT_LOG_FILE_SIZE                   1  // Ä¬ÈÏlog´óĞ¡Îª1M
+#define DEFAULT_MBN_CONFIGURATION               1  // Ä¬ÈÏ¿ªÆôMBNÅäÖÃ¹¦ÄÜ
+#define DEFAULT_INIT_PROFILE_TYPE               2  // Ä¬ÈÏÆôÓÃÉÏÒ»ÕÅ¿¨
+#define DEFAULT_RPLMN_ENABLE                    1  //Ä¬ÈÏ¿ªÆôrplmnÅäÖÃ¹¦ÄÜ
 
 /********************************platform**************************************/
 
@@ -243,9 +242,10 @@ static void connection_lost(void *context, char *cause)
 
 /**********************************************************************************************************/
 
-/******************************************ticket setver procedd**********************************************************/
+/******************************************ticket setver procedd
+**********************************************************/
 
-//æœ¬åœ°ç¼“å­˜ä¹‹å‰çš„ä»adapterè·å–çš„ticket server
+//±¾µØ»º´æÖ®Ç°µÄ´Óadapter»ñÈ¡µÄticket server
 static rt_bool save_ticket_server()
 {
     cJSON   *obj = NULL;
@@ -285,7 +285,7 @@ static rt_bool save_ticket_server()
     return RT_TRUE;
 }
 
-//è·å–æœ¬åœ°ç¼“å­˜çš„ä»adapterè·å–çš„ticket server
+//»ñÈ¡±¾µØ»º´æµÄ´Óadapter»ñÈ¡µÄticket server
 static rt_bool get_ticket_server()
 {
     int8_t  *save_info;
@@ -343,7 +343,7 @@ static rt_bool rt_mqtt_connect_adapter(MQTTClient *c)
 
     set_reg_url(OTI_ENVIRONMENT_ADDR,ADAPTER_PORT);
 
-    //è¿æ¥æˆ‘ä»¬çº¢èŒ¶è‡ªå·±çš„ticket server adopter,æœ€å¤šå°è¯•3æ¬¡
+    //Á¬½ÓÎÒÃÇºì²è×Ô¼ºµÄticket server adopter,×î¶à³¢ÊÔ3´Î
     do {
         if (rt_mqtt_setup_with_appkey(ADAPTER_APPKEY, &opts) == 0) {
             break;
@@ -363,7 +363,7 @@ static rt_bool rt_mqtt_connect_adapter(MQTTClient *c)
         opts.client_id[rt_os_strlen(alias)] = '\0';
     }
 
-    //ä¿å­˜è·å–åˆ°çš„ticket server
+    //±£´æ»ñÈ¡µ½µÄticket server
     save_ticket_server();
     return RT_TRUE;
 }
@@ -387,7 +387,7 @@ static rt_bool rt_mqtt_connect_yunba(MQTTClient *c,int8_t *ticket_server)
         }
     }
 
-    //è¿æ¥yunba server æœ€å¤šå°è¯•3æ¬¡
+    //Á¬½Óyunba server ×î¶à³¢ÊÔ3´Î
     do {
         if (MQTTClient_setup_with_appkey_and_deviceid(YUNBA_APPKEY, (char *)opts.device_id, &opts) == 0) {
             break;
@@ -453,14 +453,16 @@ static rt_bool rt_mqtt_connect_emq(MQTTClient *c,int8_t *ticket_server)
 
 /**********************************************************************************************************/
 
-/*********************************************mqtt server process*******************************************************/
+/*********************************************mqtt server process
+*******************************************************/
 //connect mqtt server
 
 static rt_bool rt_mqtt_connect_server(MQTTClient *c)
 {
     int32_t ret = 0;
 
-    if (MQTTClient_create(c, (const char *)opts.rt_url, (const char *)opts.client_id, MQTTCLIENT_PERSISTENCE_NONE, NULL) != 0) {
+    if (MQTTClient_create(c, (const char *)opts.rt_url, (const char *)opts.client_id, MQTTCLIENT_PERSISTENCE_NONE, 
+NULL) != 0) {
         MSG_WARN("MQTTClient_create error\n");
         return RT_FALSE;
     }
@@ -531,7 +533,7 @@ static rt_bool mqtt_get_server_addr()
             }
             if (get_ticket_server() == RT_TRUE) {
 
-            //å¦‚æœä¹‹å‰è¿æ¥çš„æ˜¯yunbaçš„ticket serverï¼Œé‚£ä¹ˆå°è¯•è¿æ¥
+            //Èç¹ûÖ®Ç°Á¬½ÓµÄÊÇyunbaµÄticket server£¬ÄÇÃ´³¢ÊÔÁ¬½Ó
                 if ((get_network_state() != NETWORK_DIS_CONNECTED) &&
                       (rt_os_strncmp(opts.rt_channel, "YUNBA", 5) == 0) &&
                       (rt_mqtt_connect_yunba(&client, opts.ticket_server) == RT_TRUE)) {
@@ -539,7 +541,7 @@ static rt_bool mqtt_get_server_addr()
                     break;
                 }
 
-                //å¦‚æœä¹‹å‰è¿æ¥çš„æ˜¯EMQçš„ticket serverï¼Œé‚£ä¹ˆå°è¯•è¿æ¥
+                //Èç¹ûÖ®Ç°Á¬½ÓµÄÊÇEMQµÄticket server£¬ÄÇÃ´³¢ÊÔÁ¬½Ó
                 if ((get_network_state() != NETWORK_DIS_CONNECTED) &&
                       (rt_os_strncmp(opts.rt_channel, "EMQ", 3) == 0) &&
                       (rt_mqtt_connect_emq(&client, opts.ticket_server) == RT_TRUE)) {
@@ -549,7 +551,7 @@ static rt_bool mqtt_get_server_addr()
             }
         }
 
-//è‹¥æœadapter å’Œ ç³»ç»Ÿç¼“å­˜çš„ticket serveréƒ½æ— æ³•ä½¿ç”¨ï¼Œç”¨æœ¬åœ°å†™æ­»çš„ticket serveråœ°å€è¿›è¡Œè¿æ¥
+//Èô¹ûadapter ºÍ ÏµÍ³»º´æµÄticket server¶¼ÎŞ·¨Ê¹ÓÃ£¬ÓÃ±¾µØĞ´ËÀµÄticket serverµØÖ·½øĞĞÁ¬½Ó
 
         if ((get_network_state() != NETWORK_DIS_CONNECTED) &&
               (0 == rt_os_strncmp(opts.rt_channel, "YUNBA", 5))) {
@@ -587,27 +589,27 @@ static void rt_mqtt_task_process(void)
         if (get_network_state() == NETWORK_CONNECTING) {
             if(mqtt_flag == 0) {
 
-                //å¦‚æœæœ¬åœ°å·²ç»ç¼“å­˜äº†mqttåœ°å€ï¼Œä¸”åœ°å€å¯ç”¨ï¼Œå°±ä¸å†å»ticket serverè·å–mqttåœ°å€
+                //Èç¹û±¾µØÒÑ¾­»º´æÁËmqttµØÖ·£¬ÇÒµØÖ·¿ÉÓÃ£¬¾Í²»ÔÙÈ¥ticket server»ñÈ¡mqttµØÖ·
                 if (mqtt_get_addr == RT_FALSE) {
 
-                    //è¿™è¾¹ç”±äºé‡æ–°è¯·æ±‚mqttè¿æ¥æ‰€ä»¥éœ€è¦é‡æ–°è¿›è¡Œè®¢é˜…
+                    //Õâ±ßÓÉÓÚÖØĞÂÇëÇómqttÁ¬½ÓËùÒÔĞèÒªÖØĞÂ½øĞĞ¶©ÔÄ
                     if (mqtt_get_server_addr() == RT_FALSE) {
                         continue;
                     }
 
                 }
 
-                //è¿æ¥mqttæœåŠ¡å™¨ï¼Œè¿æ¥å‰å·²ç»ä»æœ¬åœ°ç¼“å­˜æˆ–è€…ticket server adapter è·å–mqttåœ°å€ã€‚
+                //Á¬½Ómqtt·şÎñÆ÷£¬Á¬½ÓÇ°ÒÑ¾­´Ó±¾µØ»º´æ»òÕßticket server adapter »ñÈ¡mqttµØÖ·¡£
                 if (rt_mqtt_connect_server(&client) == RT_TRUE) {
                     if (get_boot_flag() != BOOT_STRAP_PROCESS) {
                         //upload_set_values(REGISTER_PUSH_ID, NULL);
                     }
 
-                    //æˆåŠŸè¿æ¥æœåŠ¡å™¨åå°†ç½‘ç»œçŠ¶æ€ç½®ä¸ºå·²è¿æ¥
+                    //³É¹¦Á¬½Ó·şÎñÆ÷ºó½«ÍøÂç×´Ì¬ÖÃÎªÒÑÁ¬½Ó
                     set_network_state(NETWORK_USING);
                 } else {
 
-                    //å¦‚æœæœ¬åœ°ç¼“å­˜çš„mqtt serverå’Œhardcodeçš„mqtt serveréƒ½æ— æ³•ä½¿ç”¨ï¼Œé‚£ä¹ˆé‡æ–°å»è·ticket serverè·å–ä¸€ä¸‹mqtt server
+                    //Èç¹û±¾µØ»º´æµÄmqtt serverºÍhardcodeµÄmqtt server¶¼ÎŞ·¨Ê¹ÓÃ£¬ÄÇÃ´ÖØĞÂÈ¥»ñticket server»ñÈ¡Ò»ÏÂmqtt server
                     mqtt_get_addr = RT_FALSE;
                 }
             }
@@ -618,7 +620,7 @@ static void rt_mqtt_task_process(void)
                 MQTTClient_disconnect(client,0);
                 MSG_DBG("MQTTClient_disconnect\n");
                 mqtt_flag = 0;
-                subscribe_flag = 0;  // å¤ä½è®¢é˜…æ ‡å¿—  
+                subscribe_flag = 0;  // ¸´Î»¶©ÔÄ±êÖ¾  
             }
         }
         else if (get_network_state() == NETWORK_USING) {
@@ -636,7 +638,7 @@ static void rt_mqtt_task_process(void)
                 (GET_AGENT_FLAG(subscribe_flag) != 1)) {
                 if(alias != NULL) {
 
-                    // å¦‚æœaliasè¿˜æœªè®¢é˜…ï¼Œé‚£ä¹ˆè®¢é˜…alias
+                    // Èç¹ûalias»¹Î´¶©ÔÄ£¬ÄÇÃ´¶©ÔÄalias
                     if ((GET_CID_FLAG(subscribe_flag) != 1) && (MQTTClient_subscribe(client, (const char *)alias, 1) == 0)) {
                         MSG_DBG("MQTTClient_subscribe : %s\n", alias);
                         SET_CID_FLAG(subscribe_flag);
@@ -647,7 +649,7 @@ static void rt_mqtt_task_process(void)
                     MSG_WARN("alias is error\n");
                 }
 
-                //å¦‚æœagentçš„topicè¿˜æœªè®¢é˜…ï¼Œè®¢é˜…agent
+                //Èç¹ûagentµÄtopic»¹Î´¶©ÔÄ£¬¶©ÔÄagent
                 if ((GET_AGENT_FLAG(subscribe_flag) != 1) && (MQTTClient_subscribe(client, "agent", 1) == 0)) {
                     SET_AGENT_FLAG(subscribe_flag);
                 } else {
@@ -663,7 +665,8 @@ static void rt_mqtt_task_process(void)
 }
 
 
-/**********************************************External interface************************************************************/
+/**********************************************External interface
+************************************************************/
 
 // creat yunba task to connect yunba and receive data.
 int32_t rt_mqtt_task(void)
@@ -685,8 +688,8 @@ void rt_mqtt_set_alias(int8_t *obj)
     rt_os_memset(opts.device_id, 0,sizeof(opts.device_id));
     rt_os_memcpy(opts.device_id,obj, rt_os_strlen(obj));
     rt_os_memset(opts.client_id, 0, sizeof(opts.client_id));
-    rt_os_memcpy(opts.rt_channel, "YUNBA", 6);  // è®¾ç½®é»˜è®¤è¿æ¥åœ°å€ä¸ºäº‘å§
-    rc = 1;  // é‡æ–°è®¾ç½®åˆ«å
+    rt_os_memcpy(opts.rt_channel, "YUNBA", 6);  // ÉèÖÃÄ¬ÈÏÁ¬½ÓµØÖ·ÎªÔÆ°É
+    rc = 1;  // ÖØĞÂÉèÖÃ±ğÃû
 }
 
 int8_t *rt_mqtt_get_channel(void)
