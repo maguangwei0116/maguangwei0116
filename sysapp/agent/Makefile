@@ -34,7 +34,7 @@ USER_CFLAGS		+= -DRELEASE_TARGET_VERSION=$(RELEASE_TARGET_VERSION)
 
 # Config your own libraries
 QMI-LIB 		= dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
-COMM-LIB 		= asn.1 platform dial pthread bridge util
+COMM-LIB 		= comm crypto ssl pthread
 
 ############################################################################
 ### path
@@ -69,12 +69,12 @@ SRC-y 			+= src/apdu.c
 INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)		+= ./core/bootstrap/
 INC-PATH-$(CFG_AGENT_OTA_ON)			+= ./core/ota/
 INC-PATH-$(CFG_AGENT_PERSONALISE_ON)	+= ./core/personalise/
-INC-PATH 		+= ./core/queue/
-INC-PATH 		+= ./core/cardm/
-INC-PATH 		+= ./core/networkd/
-INC-PATH 		+= ./main/
-INC-PATH 		+= ./ipc/
-INC-PATH 		+= ./lpa/
+INC-PATH-y 		+= ./core/queue/
+INC-PATH-y 		+= ./core/cardm/
+INC-PATH-y 		+= ./core/networkd/
+INC-PATH-y 		+= ./main/
+INC-PATH-y 		+= ./ipc/
+INC-PATH-y 		+= ./lpa/
 
 INC-y 			+= ./
 INC-y 			+= $(INC-PATH-y)
