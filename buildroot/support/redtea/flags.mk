@@ -6,11 +6,10 @@ LDFLAGS			+= --sysroot=$(SYSROOT)
 endif
 
 # Config include path
-INCDIR  		= $(patsubst %,-I%,$(INC-y))
-CFLAGS			+= $(INCDIR)
+CFLAGS			+= $(patsubst %,-I%,$(INC-y))
 CFLAGS			+= -I$(SDK_INSTALL_PATH)/include
-INCTOOL			+= $(addprefix $(SYSROOT), $(SYSINC))
-CFLAGS			+= $(patsubst %,-I%,$(INCTOOL))
+CFLAGS			+= $(patsubst %,-I%,$(SYSINC))
+CFLAGS			+= $(USER_CFLAGS)
 
 # Config link flags
 LDFLAGS			+= $(LIB-y)

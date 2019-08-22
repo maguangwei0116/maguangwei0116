@@ -7,20 +7,18 @@ BR2_HAVE_DOT_CONFIG=y
 #
 # Product Options
 #
-BR2_PRODUCT_NAME="smart"
+BR2_SYSTEM_NAME="linux"
+BR2_PRODUCT_NAME="euicc"
+BR2_SOFTWARE_NAME="general"
 # BR2_PLATFORM_X86 is not set
 BR2_PLATFORM_9X07=y
 BR2_PLATFORM_TYPE="9x07"
-# BR2_FIRMWARE_TYPE_RELEASE is not set
-BR2_FIRMWARE_TYPE_DEBUG=y
-BR2_FIRMWARE_TYPE="debug"
-BR2_OUTPUT_PATH="$(BR2_PRODUCT_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_FIRMWARE_TYPE)"
-BR2_IMAGE_NAME="$(BR2_PRODUCT_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_FIRMWARE_TYPE)"
-BR2_IMAGE_VERSION="01.00.15"
-BR2_MS_SIGNATURE_IP="10.1.23.2"
-BR2_MS_SIGNATURE_PORT="6789"
-BR2_MF_SIGNATURE_IP="10.1.23.2"
-BR2_MF_SIGNATURE_PORT="6789"
+# BR2_SOFTWARE_TYPE_RELEASE is not set
+BR2_SOFTWARE_TYPE_DEBUG=y
+BR2_SOFTWARE_TYPE="debug"
+
+BR2_OUTPUT_PATH="$(BR2_SOFTWARE_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
+BR2_IMAGE_NAME="$(BR2_SOFTWARE_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
 BR2_WGET="wget --passive-ftp -nd -t 3"
 BR2_SVN="svn"
 BR2_BZR="bzr"
@@ -58,21 +56,16 @@ BR2_PACKAGE_OVERRIDE_FILE="$(TOPDIR)/local.mk"
 # Toolchain
 #
 BR2_TOOLCHAIN_URL="none defined"
-BR2_TOOLCHAIN_INSTALL_PATH="/opt/ql-ol-sdk/ql-ol-crosstool"
-BR2_TOOLCHAIN_PREFIX="sysroots/x86_64-oesdk-linux/usr/bin/arm-oe-linux-gnueabi/arm-oe-linux-gnueabi-"
-BR2_TOOLCHAIN_SYSROOT="/opt/ql-ol-sdk/ql-ol-crosstool/sysroots/armv7a-vfp-neon-oe-linux-gnueabi"
-BR2_TOOLCHAIN_SYSINC="/usr/include/ /usr/include/data/ /usr/include/dsutils/ /usr/include/qmi-framework/ /usr/include/qmi-manager/ /usr/include/qmi/"
+BR2_TOOLCHAIN_INSTALL_PATH="/opt/ql-oe/"
+BR2_TOOLCHAIN_PREFIX="sysroots/x86_64-linux/usr/bin/arm-oe-linux-gnueabi/arm-oe-linux-gnueabi-"
+BR2_TOOLCHAIN_SYSROOT="/opt/ql-oe/sysroots/mdm9607/"
+BR2_TOOLCHAIN_SYSINC="/opt/ql-oe/sysroots/mdm9607/usr/include/ /opt/ql-oe/sysroots/mdm9607/usr/include/data /opt/ql-oe/sysroots/mdm9607/usr/include/dsutils /opt/ql-oe/sysroots/mdm9607/usr/include/qmi-framework /opt/ql-oe/sysroots/mdm9607/usr/include/qmi-manager /opt/ql-oe/sysroots/mdm9607/usr/include/qmi"
 
 #
 # SDK
 #
 BR2_PACKAGE_SDK_BUILD=y
-BR2_SDK_URL="http://10.1.40.23/pub/sdk/n58g/sdk-lastest.tar.bz2"
 BR2_SDK_INSTALL_PATH="$(BASE_DIR)/system/sdk"
-
-#
-# Library
-#
 
 #
 # Library
@@ -90,10 +83,6 @@ BR2_CONFIG_LIBRARY_UTIL=y
 #
 # System Application
 #
-
-#
-# System Application
-#
 BR2_PACKAGE_SYSAPP=y
 BR2_SYSAPP_SOURCE_PATH="$(WORKSPACE)/sysapp"
 BR2_SYSAPP_INSTALL_PATH="$(BASE_DIR)/system/bin"
@@ -104,3 +93,10 @@ BR2_LEGACY_CHECK_2012_11=y
 # BR2_PACKAGE_GETTEXT_STATIC is not set
 # BR2_PACKAGE_LIBINTL is not set
 # BR2_PACKAGE_INPUT_TOOLS_EVTEST is not set
+
+#
+# Agent Configuration
+#
+BR2_CFG_AGENT_OTA_ON=y
+BR2_CFG_AGENT_BOOTSRRAP_ON=y
+BR2_CFG_AGENT_PERSONALISE_ON=y
