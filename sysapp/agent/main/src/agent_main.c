@@ -11,13 +11,27 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#include "rt_type.h"
 #include "agent_queue.h"
+#include "card_manager.h"
+#include "ipc_socket_client.h"
+
+volatile int32_t toStop = 0;
+
+void cfinish(int32_t sig)
+{
+    rt_os_signal(RT_SIGINT, NULL);
+    toStop = 1;
+}
 
 int32_t main(int32_t argc, int8_t **argv)
 {
-    init_agent_queue();
-    while (1) {
-
+    rt_os_signal(RT_SIGINT, cfinish);
+    rt_os_signal(RT_SIGINT, cfinish);
+    rt_qmi_init(NULL);
+    init_queue(NULL);
+    init_card_manager(NULL);
+    init_network_detection(NULL);
+    while (!toStop) {
+        sleep(3);
     }
 }

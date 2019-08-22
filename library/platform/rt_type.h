@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include "log.h"
+#include "rt_os.h"
 
 typedef enum RT_BOOL{
     RT_FALSE = 0,

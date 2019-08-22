@@ -97,12 +97,12 @@ static qmi_client_error_type dms_get_msisdn_req(qmi_client_type dms_client, qmi_
 
 void dump_device_info(qmi_device_info_t *devinfo)
 {
-    MSG_WARN("Manufacture  : %s\n", devinfo->device_manufacturer);
-    MSG_WARN("Modem ID     : %s\n", devinfo->device_model_id);
-    MSG_WARN("Revision ID  : %s\n", devinfo->boot_code_rev_valid ? devinfo->boot_code_rev : "N/A");
-    MSG_WARN("IMEI         : %s\n", devinfo->imei_valid ? devinfo->imei : "N/A");
-    MSG_WARN("Voice Number : %s\n", devinfo->mobile_id_number_valid ? devinfo->mobile_id_number : "N/A");
-    MSG_WARN("IMSI         : %s\n", devinfo->imsi_valid ? devinfo->imsi : "N/A");
+    MSG_PRINTF(LOG_WARN, "Manufacture  : %s\n", devinfo->device_manufacturer);
+    MSG_PRINTF(LOG_WARN, "Modem ID     : %s\n", devinfo->device_model_id);
+    MSG_PRINTF(LOG_WARN, "Revision ID  : %s\n", devinfo->boot_code_rev_valid ? devinfo->boot_code_rev : "N/A");
+    MSG_PRINTF(LOG_WARN, "IMEI         : %s\n", devinfo->imei_valid ? devinfo->imei : "N/A");
+    MSG_PRINTF(LOG_WARN, "Voice Number : %s\n", devinfo->mobile_id_number_valid ? devinfo->mobile_id_number : "N/A");
+    MSG_PRINTF(LOG_WARN, "IMSI         : %s\n", devinfo->imsi_valid ? devinfo->imsi : "N/A");
 }
 
 int qmi_query_device_info(qmi_device_info_t *devinfo)
@@ -112,7 +112,7 @@ int qmi_query_device_info(qmi_device_info_t *devinfo)
     qmi_idl_service_object_type idl_service_object = dms_get_service_object_internal_v01(DMS_V01_IDL_MAJOR_VERS,RT_DMS_V01_IDL_MINOR_VERS,DMS_V01_IDL_TOOL_VERS);
     err = qmi_ctrl_point_init(idl_service_object, &dms_client, NULL, NULL);
     if (err != QMI_NO_ERR) {
-        MSG_WARN("failed to initialize control point of DMS: %d\n", err);
+        MSG_PRINTF(LOG_WARN, "failed to initialize control point of DMS: %d\n", err);
         return err;
     }
 

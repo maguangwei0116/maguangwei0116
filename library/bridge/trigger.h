@@ -14,4 +14,7 @@ extern int t9x07_remove_card(uim_remote_slot_type_enum_v01 slot);
 #define trigger_swap_card(slot)                t9x07_swap_card(slot)
 #define trigger_remove_card(slot)              t9x07_remove_card(slot)
 
+void trigegr_regist_reset(void *fun);
+void trigegr_regist_cmd(void *fun);
+
 #endif  // __TRIGGER_H__

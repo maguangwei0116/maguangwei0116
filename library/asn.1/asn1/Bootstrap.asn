@@ -1,0 +1,37 @@
+Bootstrap DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+    BootstrapRequest ::= [PRIVATE 127] SEQUENCE { --Tag ‘FF7F’
+        tbhRequest TBHRequest,
+        hashCode [APPLICATION 1] OCTET STRING -- sha256
+    }
+
+    TBHRequest ::= SEQUENCE {
+        iccid OCTET STRING, -- ICCID为卡片文件存储格式，例：98680021436587092143, 20位
+        imsi OCTET STRING, -- IMSI为卡片文件存储格式，例如 084906001111212299，18 位
+        key OCTET STRING, -- 密文，32 位，Hex 格式
+        opc OCTET STRING, -- 密文，32 位，Hex 格式
+        rotation OCTET STRING OPTIONAL, -- optional，遵从 SIM 格式，默认 4000204060，
+        xoring OCTET STRING OPTIONAL, -- optional, 遵从 SIM 格式，默认 0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000020000000000000000000000000000000400000000000000000000000000000008
+        sqnFlag BOOLEAN OPTIONAL, -- optional, true 代表打开 SQN 校验并使用默认配置，false 表示关闭 SQN 校验，默认 false
+        rplmn OCTET STRING OPTIONAL, -- optional, 单个，SIM 卡片文件存储格式，64F010，默认 FFFFFF
+        fplmn OCTET STRING OPTIONAL, -- optional, 多个，同上
+        hplmn OCTET STRING OPTIONAL, -- optional, SIM 卡片文件存储格式，多个，例：64F0100000 64F000000，默认 FFFFFF0000
+        ehplmn OCTET STRING OPTIONAL, -- optional, 同上
+        oplmn OCTET STRING OPTIONAL -- optional, 同上
+    }
+
+    BootstrapResponse ::= [PRIVATE 127] SEQUENCE { -- Tag 'FF7F'
+        result INTEGER {
+            ok(0),
+            already-write-success(1),
+            data-format-error(2),
+            check-hash-error(3),
+            write-result-error(4),
+            isdp-not-supported(5),
+            undefined-error(127)
+        }
+    }
+
+
+
+END

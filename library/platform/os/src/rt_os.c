@@ -38,7 +38,7 @@ int32_t rt_mutex_init(pthread_mutex_t *mutex)
     int32_t ret = 0;
     ret = pthread_mutex_init(mutex, NULL);
     if(ret != 0){
-        MSG_WARN("create mutex error!!\n");
+        MSG_PRINTF(LOG_WARN, "create mutex error!!\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
@@ -49,7 +49,7 @@ int32_t rt_mutex_lock(pthread_mutex_t *mutex)
     int32_t ret = 0;
     ret = pthread_mutex_lock(mutex);
     if(ret != 0){
-        MSG_WARN("lock mutex error!!\n");
+        MSG_PRINTF(LOG_WARN, "lock mutex error!!\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
@@ -60,7 +60,7 @@ int32_t rt_mutex_unlock(pthread_mutex_t *mutex)
     int32_t ret = 0;
     ret = pthread_mutex_unlock(mutex);
     if(ret != 0){
-        MSG_WARN("unlock mutex error!!\n");
+        MSG_PRINTF(LOG_WARN, "unlock mutex error!!\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
@@ -71,7 +71,7 @@ int32_t rt_mutex_destroy(pthread_mutex_t *mutex)
     int32_t ret = 0;
     ret = pthread_mutex_destroy(mutex);
     if(ret != 0){
-        MSG_WARN("destroy mutex error!!\n");
+        MSG_PRINTF(LOG_WARN, "destroy mutex error!!\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
@@ -88,7 +88,7 @@ int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id)
     }
     msgid = msgget(q_key, 0666 | IPC_CREAT);
     if (msgid == -1){
-        MSG_WARN("messge id \n");
+        MSG_PRINTF(LOG_WARN, "messge id \n");
     }
     return msgid;
 }
@@ -96,7 +96,7 @@ int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id)
 int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg)
 {
     if (msgrcv(msgid, buffer, len, msgtyp, msgflg) == -1) {
-        MSG_WARN("no message data\n");
+        MSG_PRINTF(LOG_WARN, "no message data\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
@@ -105,7 +105,7 @@ int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t m
 int32_t rt_send_queue_msg(int32_t msgid, void *buffer, int32_t len, int32_t msgflg)
 {
     if (msgsnd(msgid, buffer, len, msgflg) == -1) {
-        MSG_WARN("send message data error\n");
+        MSG_PRINTF(LOG_WARN, "send message data error\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
@@ -136,7 +136,7 @@ void *rt_os_memset(void *mem, int8_t value, int32_t len)
 int32_t rt_os_memcmp(void *mem_des,void *mem_src,int32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
-        MSG_WARN("memory is empty!\n");
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
         return RT_ERROR;
     }
     return memcmp(mem_des, mem_src, len);
@@ -145,7 +145,7 @@ int32_t rt_os_memcmp(void *mem_des,void *mem_src,int32_t len)
 uint32_t rt_os_strlen(void *string)
 {
     if (NULL == string) {
-        MSG_WARN("memory is empty!\n");
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
         return 0;
     }
     return strlen(string);
@@ -154,7 +154,7 @@ uint32_t rt_os_strlen(void *string)
 void *rt_os_strcpy(char* dest, const char *src)
 {
     if ((NULL == dest) || (NULL == src)) {
-        MSG_WARN("strcpy is empty!\n");
+        MSG_PRINTF(LOG_WARN, "strcpy is empty!\n");
         return NULL;
     }
     return strcpy(dest,src);
@@ -163,7 +163,7 @@ void *rt_os_strcpy(char* dest, const char *src)
 int32_t rt_os_strncmp(void *mem_des,void *mem_src,int32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
-        MSG_WARN("memory is empty!\n");
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
         return RT_ERROR;
     }
     return strncmp(mem_des, mem_src, len);
@@ -172,7 +172,7 @@ int32_t rt_os_strncmp(void *mem_des,void *mem_src,int32_t len)
 int32_t rt_os_strcmp(void *mem_des,void *mem_src)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
-        MSG_WARN("memory is empty!\n");
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
         return RT_ERROR;
     }
     return strcmp(mem_des,mem_src);
@@ -181,7 +181,7 @@ int32_t rt_os_strcmp(void *mem_des,void *mem_src)
 void *rt_os_memcpy(void *mem_des, void *mem_src, int32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
-        MSG_WARN("memory is empty!\n");
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
         return NULL;
     }
     if (len <= 0) {
@@ -201,7 +201,7 @@ int32_t rt_os_access(const char *filenpath, int32_t mode)
 int8_t *rt_os_strstr(int8_t *str1, const int8_t *str2)
 {
     if ((NULL == str1) || (NULL == str2)) {
-        MSG_WARN("strstr is empty!\n");
+        MSG_PRINTF(LOG_WARN, "strstr is empty!\n");
         return NULL;
     }
     return strstr(str1, str2);
@@ -210,7 +210,7 @@ int8_t *rt_os_strstr(int8_t *str1, const int8_t *str2)
 int8_t *rt_os_strchr(int8_t *str, const int8_t chr)
 {
     if (NULL == str) {
-        MSG_WARN("strstr is empty!\n");
+        MSG_PRINTF(LOG_WARN, "strstr is empty!\n");
         return NULL;
     }
     return strchr(str, chr);
@@ -263,4 +263,9 @@ void rt_os_sync(void)
 void rt_os_sleep(int32_t time)
 {
     sleep(time);
+}
+
+void *rt_os_signal(int signum, void* handler)
+{
+    signal(signum, handler);
 }

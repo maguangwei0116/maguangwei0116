@@ -13,6 +13,7 @@ SRC-y 		+= $(SRC-PATH)/cJSON.c
 SRC-y 		+= $(SRC-PATH)/convert.c
 SRC-y 		+= $(SRC-PATH)/hash.c
 SRC-y 		+= $(SRC-PATH)/md5.c
+SRC-y 		+= $(SRC-PATH)/base64.c
 
 # Config your include file path by += xxx-inc
 INC-y 		+= ./

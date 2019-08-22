@@ -13,6 +13,9 @@
 #include <stdint.h>
 
 int qmi_wds_init(void);
+int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int channel);
+int qmi_close_channel(int channel);
+int qmi_open_channel(uint8_t *aid,uint16_t aid_len,int *channel);
 int qmi_get_elementary_iccid_file(uint8_t *iccid);
 int qmi_get_elementary_imsi_file(uint8_t *imsi);
 

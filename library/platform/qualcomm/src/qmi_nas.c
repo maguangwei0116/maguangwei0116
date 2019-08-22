@@ -10,7 +10,7 @@ int qmi_nas_init(void)
     qmi_client_error_type err;
     err = qmi_ctrl_point_init(nas_get_service_object_v01(), &g_nas_client, NULL, NULL);
     if(err != QMI_NO_ERR) {
-        MSG_WARN("failed to initialize control point of NAS: %d\n", err);
+        MSG_PRINTF(LOG_WARN, "failed to initialize control point of NAS: %d\n", err);
     }
     return err;
 }
@@ -29,18 +29,18 @@ int qmi_perform_network_scan(qmi_network_scan_result *scan_result, int timeout)
     QMI_CLIENT_SEND_SYNC_TMO(err, g_nas_client, QMI_NAS_PERFORM_NETWORK_SCAN_REQ_MSG_V01, req, resp, timeout);
     if(err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
-            MSG_WARN("network scan failed, result: %d, error code: %d\n", resp.resp.result, resp.resp.error);
+            MSG_PRINTF(LOG_WARN, "network scan failed, result: %d, error code: %d\n", resp.resp.result, resp.resp.error);
             err = resp.resp.result;
             goto out;
         }
         if(!resp.nas_3gpp_network_info_valid) {
-            MSG_WARN("network scan got none 3GPP network\n");
+            MSG_PRINTF(LOG_WARN, "network scan got none 3GPP network\n");
             err = QMI_NO_ERR;
             goto out;
         }
         n = resp.nas_3gpp_network_info_len;
         if(n < 0 || n > NAS_3GPP_NETWORK_INFO_LIST_MAX_V01) {
-            MSG_WARN("invalid network number: %d\n", n);
+            MSG_PRINTF(LOG_WARN, "invalid network number: %d\n", n);
             err = -100;
             goto out;
         }
@@ -67,7 +67,7 @@ void qmi_network_scan_result_dump(qmi_network_scan_result *scan_result)
     int i;
     for(i = 0; i < scan_result->n_networks; i ++) {
         nas_3gpp_network_info_t *info = scan_result->network_info[i];
-        MSG_INFO("Scanned Network[%d] MCC:%03d MNC:%03d IN-USE:%d ROAMING:%d FORBIDDEN:%d PREFERRED:%d DESC:'%s'\n",
+        MSG_PRINTF(LOG_INFO, "Scanned Network[%d] MCC:%03d MNC:%03d IN-USE:%d ROAMING:%d FORBIDDEN:%d PREFERRED:%d DESC:'%s'\n",
                 i + 1,
                 info->mobile_country_code,
                 info->mobile_network_code,
@@ -101,7 +101,7 @@ int qmi_get_serving_system(qmi_serving_system_info_t *info)
     QMI_CLIENT_SEND_SYNC(err, g_nas_client, QMI_NAS_GET_SERVING_SYSTEM_REQ_MSG_V01, req, resp);
     if(err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
-            MSG_WARN("get serving system failed, result: %d, error code: %d\n", resp.resp.result, resp.resp.error);
+            MSG_PRINTF(LOG_WARN, "get serving system failed, result: %d, error code: %d\n", resp.resp.result, resp.resp.error);
             err = resp.resp.result;
             goto out;
         }
@@ -154,25 +154,25 @@ void qmi_serving_system_dump(qmi_serving_system_info_t *info)
             "TD-SCDMA",
     };
 
-    MSG_WARN("Registration State: %s\n",
+    MSG_PRINTF(LOG_WARN, "Registration State: %s\n",
             info->serving_system.registration_state <= 4 ?
             register_str[info->serving_system.registration_state] : "Invalid value");
 
-    MSG_WARN("Circuit switch domain attach state: %s\n",
+    MSG_PRINTF(LOG_WARN, "Circuit switch domain attach state: %s\n",
             info->serving_system.cs_attach_state <= 2 ?
             attach_str[info->serving_system.cs_attach_state] : "Invalid value");
 
-    MSG_WARN("Packet switch domain attach state: %s\n",
+    MSG_PRINTF(LOG_WARN, "Packet switch domain attach state: %s\n",
             info->serving_system.ps_attach_state <= 2 ?
             attach_str[info->serving_system.ps_attach_state] : "Invalid value");
 
-    MSG_WARN("Registered Network: %s\n",
+    MSG_PRINTF(LOG_WARN, "Registered Network: %s\n",
             info->serving_system.selected_network <= 2 ?
             selected_network_str[info->serving_system.selected_network] : "Invalid value");
 
     int i;
     for(i = 0; i < info->serving_system.radio_if_len; i ++) {
-        MSG_WARN("Radio Interface %d: %s\n", i + 1,
+        MSG_PRINTF(LOG_WARN, "Radio Interface %d: %s\n", i + 1,
                 info->serving_system.radio_if[i] <= 9 ?
                 radio_str[info->serving_system.radio_if[i]] : "Invalid value");
     }
@@ -194,7 +194,7 @@ int qmi_get_signal_strength(qmi_signal_strength_info_t *info)
     QMI_CLIENT_SEND_SYNC(err, g_nas_client, QMI_NAS_GET_SIGNAL_STRENGTH_REQ_MSG_V01, req, resp);
     if(err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
-            MSG_ERR("get signal strength failed, result: %d, error code: %d\n", resp.resp.result, resp.resp.error);
+            MSG_PRINTF(LOG_ERR, "get signal strength failed, result: %d, error code: %d\n", resp.resp.result, resp.resp.error);
             err = resp.resp.result;
             goto out;
         }

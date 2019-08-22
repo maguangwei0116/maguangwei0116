@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  * Copyright (c) redtea mobile.
  * File name   : upload.c
@@ -58,7 +59,7 @@ static void upload_create_nw_info(cJSON *content)
     rt_get_network_info(mcc_mnc, net_type, leve, &dbm, iccid);
     network_info = cJSON_CreateObject();
     if (network_info == NULL) {
-        MSG_WARN("network_info error\n");
+        MSG_PRINTF(LOG_WARN, "network_info error\n");
         return;
     }
     cJSON_AddItemToObject(network_info, "iccid", cJSON_CreateString(iccid));
@@ -92,7 +93,7 @@ static void upload_create_all_profiles(cJSON *content, fallback_result_t *info)
 
     allProfile = cJSON_CreateArray();
     if (allProfile == NULL) {
-        MSG_WARN("allProfile error\n");
+        MSG_PRINTF(LOG_WARN, "allProfile error\n");
         return;
     }
     cJSON_AddItemToObject(content, "profiles", allProfile);
@@ -121,12 +122,12 @@ static void upload_create_all_profiles(cJSON *content, fallback_result_t *info)
     }
     firmware = cJSON_CreateObject();
     if (firmware == NULL) {
-        MSG_WARN("firmware error\n");
+        MSG_PRINTF(LOG_WARN, "firmware error\n");
     }
     snprintf(buf, 100, "%d.%d.%d", VERSION_MAJOR, VERSION_MINOR, VERSION_REVSION);
     components = cJSON_CreateArray();
     if (components == NULL) {
-        MSG_WARN("components error\n");
+        MSG_PRINTF(LOG_WARN, "components error\n");
     }
     record = cJSON_CreateObject();
     cJSON_AddItemToObject(record, "name", cJSON_CreateString(PROJECT_GIT_BRANCH));
@@ -191,12 +192,12 @@ static int32_t upload_deal_back_data(int8_t *msg)
 
     agent_msg = cJSON_Parse(msg);
     if (agent_msg == NULL) {
-        MSG_WARN("agent_msg error\n");
+        MSG_PRINTF(LOG_WARN, "agent_msg error\n");
         return RT_ERROR;
     }
     back_state = cJSON_GetObjectItem(agent_msg, "status");
     if (back_state == NULL) {
-        MSG_WARN("back_state error\n");
+        MSG_PRINTF(LOG_WARN, "back_state error\n");
     } else {
         if (back_state->valueint == 0) {
             state = RT_SUCCESS;
@@ -227,7 +228,7 @@ static void upload_wait_network(msg_que_t *que_info)
 
     msg_t *info = (msg_t *)que_info->msg_buf;
     if (que_info->msg_id == COMMAND_INIT) {
-        MSG_WARN("The command is error\n");
+        MSG_PRINTF(LOG_WARN, "The command is error\n");
         return;
     }
 
@@ -274,12 +275,12 @@ static int32_t upload_creat_json_pag(msg_que_t *que_info,cJSON *upload)
     fallback_result_t *r_info = NULL;
 
     if (que_info->msg_id == COMMAND_INIT) {
-        MSG_WARN("The command is error\n");
+        MSG_PRINTF(LOG_WARN, "The command is error\n");
         return RT_ERROR;
     }
     event_content = cJSON_CreateObject();
     if (event_content==NULL) {
-        MSG_WARN("The event_content is error\n");
+        MSG_PRINTF(LOG_WARN, "The event_content is error\n");
     }
 
     cJSON_AddItemToObject(upload, "eventContent", event_content);
@@ -290,14 +291,14 @@ static int32_t upload_creat_json_pag(msg_que_t *que_info,cJSON *upload)
     }
     switch (que_info->msg_id) {
         case REGISTER_PUSH_ID:
-            MSG_DBG("\n----------------->REGISTER_PUSH_ID\n");
+            MSG_PRINTF(LOG_DBG, ("\n----------------->REGISTER_PUSH_ID\n");
             cJSON_AddItemToObject(upload, "eventId", cJSON_CreateString("REGISTER_PUSH_ID"));
             cJSON_AddItemToObject(event_content, "pushId", cJSON_CreateString(g_eid));
             cJSON_AddItemToObject(event_content, "pushChannel", cJSON_CreateString((const char *)rt_mqtt_get_channel()));
             break;
 
         case ON_PUSH_ACTIVATION_CODE:
-            MSG_DBG("\n----------------->ON_PUSH_ACTIVATION_CODE\n");
+            MSG_PRINTF(LOG_DBG, ("\n----------------->ON_PUSH_ACTIVATION_CODE\n");
             info = (msg_t *)que_info->msg_buf;
 
             cJSON_AddItemToObject(command, "customId", cJSON_CreateString("ON_PUSH_ACTIVATION_CODE"));
@@ -309,7 +310,7 @@ static int32_t upload_creat_json_pag(msg_que_t *que_info,cJSON *upload)
             break;
 
         case ON_ENABLE_PROFILE:
-            MSG_DBG("\n----------------->ON_ENABLE_PROFILE\n");
+            MSG_PRINTF(LOG_DBG, ("\n----------------->ON_ENABLE_PROFILE\n");
             info = (msg_t *)que_info->msg_buf;
             cJSON_AddItemToObject(command, "customId", cJSON_CreateString("ON_ENABLE_PROFILE"));
             cJSON_AddItemToObject(command, "tranId", cJSON_CreateString(que_info->tranid));
@@ -322,7 +323,7 @@ static int32_t upload_creat_json_pag(msg_que_t *que_info,cJSON *upload)
             break;
 
         case ON_DISABLE_PROFILE:
-            MSG_DBG("\n----------------->ON_DISABLE_PROFILE\n");
+            MSG_PRINTF(LOG_DBG, ("\n----------------->ON_DISABLE_PROFILE\n");
             info = (msg_t *)que_info->msg_buf;
             cJSON_AddItemToObject(command, "customId", cJSON_CreateString("ON_DISABLE_PROFILE"));
             cJSON_AddItemToObject(command, "tranId", cJSON_CreateString(que_info->tranid));
@@ -334,7 +335,7 @@ static int32_t upload_creat_json_pag(msg_que_t *que_info,cJSON *upload)
             break;
 
         case ON_DELETE_PROFILE:
-            MSG_DBG("\n----------------->ON_DELETE_PROFILE\n");
+            MSG_PRINTF(LOG_DBG, ("\n----------------->ON_DELETE_PROFILE\n");
             info = (msg_t *)que_info->msg_buf;
             cJSON_AddItemToObject(command, "customId", cJSON_CreateString("ON_DELETE_PROFILE"));
             cJSON_AddItemToObject(command, "tranId", cJSON_CreateString(que_info->tranid));
@@ -346,12 +347,12 @@ static int32_t upload_creat_json_pag(msg_que_t *que_info,cJSON *upload)
             break;
 
         case DEVICE_REBOOTED:
-            MSG_DBG("\n----------------->DEVICE_REBOOTED\n");
+            MSG_PRINTF(LOG_DBG, ("\n----------------->DEVICE_REBOOTED\n");
             cJSON_AddItemToObject(command, "customId", cJSON_CreateString("DEVICE_REBOOTED"));
             break;
 
         case INTERNET_RECONNECTED:
-            MSG_DBG("\n----------------->INTERNET_RECONNECTED\n");
+            MSG_PRINTF(LOG_DBG, ("\n----------------->INTERNET_RECONNECTED\n");
             r_info = (fallback_result_t *)que_info->msg_buf;
             cJSON_AddItemToObject(command, "customId", cJSON_CreateString("INTERNET_RECONNECTED"));
             cJSON_AddItemToObject(command, "status", cJSON_CreateNumber(0));
@@ -361,7 +362,7 @@ static int32_t upload_creat_json_pag(msg_que_t *que_info,cJSON *upload)
             break;
 
         case ON_EUICC_LOOKUP:
-            MSG_DBG("\n----------------->ON_EUICC_LOOKUP\n");
+            MSG_PRINTF(LOG_DBG, ("\n----------------->ON_EUICC_LOOKUP\n");
             info = (msg_t *)que_info->msg_buf;
             cJSON_AddItemToObject(command, "customId", cJSON_CreateString("ON_EUICC_LOOKUP"));
             cJSON_AddItemToObject(command, "tranId", cJSON_CreateString(que_info->tranid));
@@ -371,7 +372,7 @@ static int32_t upload_creat_json_pag(msg_que_t *que_info,cJSON *upload)
             upload_create_all_profiles(all_profiles, NULL);
             break;
         case ON_UPGRADE:
-             MSG_DBG("\n----------------->ON_UPGRADE\n");
+             MSG_PRINTF(LOG_DBG, ("\n----------------->ON_UPGRADE\n");
              upgrade_struct_t *upgrade_info = (upgrade_struct_t *)que_info->msg_buf;
 
              cJSON_AddItemToObject(command, "customId", cJSON_CreateString("ON_UPGRADE"));
@@ -392,14 +393,14 @@ static int32_t upload_creat_json_pag(msg_que_t *que_info,cJSON *upload)
              cJSON_AddItemToObject(command,"customContent", upgrade);
             break;
         case ON_CONFIG:
-            MSG_DBG("\n----------------->ON_CONFIG\n");
+            MSG_PRINTF(LOG_DBG, ("\n----------------->ON_CONFIG\n");
             cJSON_AddItemToObject(command, "customId", cJSON_CreateString("ON_CONFIG"));
             cJSON_AddItemToObject(command, "tranId", cJSON_CreateString(que_info->tranid));
             cJSON_AddItemToObject(command, "status", cJSON_CreateNumber(que_info->state));
             upload_on_config(command, que_info);
             break;
         default:
-            MSG_WARN("command error\n");
+            MSG_PRINTF(LOG_WARN, "command error\n");
             break;
     }
     if (que_info->msg_id != REGISTER_PUSH_ID) {
@@ -430,7 +431,7 @@ static int32_t upload_send_request(int8_t *out)
     int8_t upload_url[MAX_OTI_URL_LEN + 1];
 
     if (out == NULL) {
-        MSG_WARN("out buffer error\n");
+        MSG_PRINTF(LOG_WARN, "out buffer error\n");
         return ret;
     }
 
@@ -454,13 +455,13 @@ static void upload_post_data(msg_que_t *info)
     http_result_e ret;
     upload = cJSON_CreateObject();
     if (upload == NULL) {
-        MSG_WARN("The upload is error\n");
+        MSG_PRINTF(LOG_WARN, "The upload is error\n");
         return;
     }
     upload_creat_json_pag(info, upload);
     upload_add_items(upload);
     json_pag = cJSON_PrintUnformatted(upload);
-    MSG_INFO("Upload:%s", json_pag);
+    MSG_PRINTF(LOG_INFO, "Upload:%s", json_pag);
     if (upload != NULL) {
         cJSON_Delete(upload);
     }
@@ -484,7 +485,7 @@ static void upload_post_data(msg_que_t *info)
                     rt_os_sleep(WAIT_TIME_BASIC * pow(2, count++));
                     continue;
                 } else {
-                    MSG_WARN("------Upload message false\n");
+                    MSG_PRINTF(LOG_WARN, "------Upload message false\n");
                     if (info->msg_id == REGISTER_PUSH_ID) {
                         set_push_state(PUSH_STATE_ERROR);
                     }
@@ -589,7 +590,7 @@ void msg_upload_data(const int8_t *tranid, up_command_e cmd, int32_t state, void
     len = sizeof(msg_que_t) - sizeof(int64_t);
     msg_data.msg_typ = 1;
     if (rt_send_queue_msg(g_queue_id, &msg_data, len) < 0) {
-        MSG_WARN("send queue data error\n");
+        MSG_PRINTF(LOG_WARN, "send queue data error\n");
     }
 }
 
@@ -609,11 +610,11 @@ int32_t init_upload(void)
     int32_t ret = 0;
     ret = rt_create_task("upload_task", &task_id,(void *) upload_task, NULL);
     if (ret != RT_SUCCESS) {
-        MSG_WARN("create upload task error\n");
+        MSG_PRINTF(LOG_WARN, "create upload task error\n");
     }
     g_queue_id = rt_creat_msg_queue();
     if (g_queue_id < RT_SUCCESS) {
-        MSG_WARN("creat msg queue error\n");
+        MSG_PRINTF(LOG_WARN, "creat msg queue error\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
