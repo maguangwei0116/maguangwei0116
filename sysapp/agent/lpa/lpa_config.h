@@ -17,17 +17,6 @@ Description:
 #define RT_PRINTF               printf
 #define __FILENAME__            (strrchr("/"__FILE__, '/') + 1)
 
-#define INNER_DUMP_ARRAY(tag, array, len)       \
-    do {                                        \
-        uint8_t *_p_ = (uint8_t *)array;        \
-        uint16_t i;                             \
-        RT_PRINTF("%s", tag);                   \
-        for (i = 0; i < len; i++) {             \
-            RT_PRINTF("%02X", _p_[i]);          \
-        }                                       \
-        RT_PRINTF("\n");                        \
-    } while(0)
-
 #define MSG_ERR(format, ...)    RT_PRINTF("ERR[%s-%d %s] "format,  __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define MSG_WARN(format, ...)   RT_PRINTF("WARN[%s-%d %s] "format, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define MSG_DBG(format, ...)    RT_PRINTF("DBG[%s-%d %s] "format,  __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)

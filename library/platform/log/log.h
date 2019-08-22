@@ -21,25 +21,30 @@ typedef enum LOG_LEVE {
     LOG_INFO
 } log_leve_e;
 
+typedef enum LOG_MODE {
+    LOG_PRINTF_TERMINAL = 0,
+    LOG_PRINTF_FILE
+} log_mode_e;
 
-int32_t write_log_fun(log_leve_e leve, const int8_t *msg, ...);
+typedef enum LOG_LEVE_FLAG {
+    LOG_HAVE_LEVE_PRINTF = 0,
+    LOG_NO_LEVE_PRINTF
+} log_leve_flag_e;
 
-#define MSG_PRINTF(LOG_LEVE, format,...)    write_log_fun(LOG_LEVE, "[ %d %s] "format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag,const int8_t *msg, ...);
 
-#define RT_PRINTF               printf
-#define __FILENAME__            (strrchr("/"__FILE__, '/') + 1)
-
-#define INNER_DUMP_ARRAY(tag, array, len)       \
-    do {                                        \
-        uint8_t *_p_ = (uint8_t *)array;        \
-        uint16_t i;                             \
-        RT_PRINTF("%s", tag);                   \
-        for (i = 0; i < len; i++) {             \
-            RT_PRINTF("%02X", _p_[i]);          \
-        }                                       \
-        RT_PRINTF("\n");                        \
+#define INNER_DUMP_ARRAY(tag, array, len)                                        \
+    do {                                                                         \
+        uint8_t *_p_ = (uint8_t *)array;                                         \
+        uint16_t i;                                                              \
+        write_log_fun(LOG_DBG, LOG_NO_LEVE_PRINTF,"%s", tag);                    \
+        for (i = 0; i < len; i++) {                                              \
+            write_log_fun(LOG_DBG, LOG_NO_LEVE_PRINTF, "%02X", _p_[i]);          \
+        }                                                                        \
+        write_log_fun(LOG_DBG, LOG_NO_LEVE_PRINTF, "\n");                        \
     } while(0)
 
 #define MSG_INFO_ARRAY(tag, array, len)         INNER_DUMP_ARRAY(tag, array, len)
+#define MSG_PRINTF(LOG_LEVE, format,...)        write_log_fun(LOG_LEVE, LOG_HAVE_LEVE_PRINTF,"[ %d %s] "format, __LINE__, __FILE__, ##__VA_ARGS__)
 
 #endif // __LOG_H__

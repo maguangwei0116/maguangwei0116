@@ -23,12 +23,13 @@
 #define LOG_NAME            "/data/redtea/rt_log"
 #define LOG_FILE_SIZE       1024
 
-int32_t file_fd = -1;
+static int32_t g_file_fd = -1;
+static int32_t g_log_printf_type = LOG_PRINTF_TERMINAL;
 
-int32_t log_file()
+int32_t log_file(void)
 {
-    file_fd = open(LOG_NAME, O_RDWR|O_CREAT|O_APPEND, 0666);
-    if(file_fd != -1) {
+    g_file_fd = open(LOG_NAME, O_RDWR|O_CREAT|O_APPEND, 0666);
+    if(g_file_fd != -1) {
     }
     return 0;
 }
@@ -57,36 +58,43 @@ static int32_t clear_file(void)
 
 static void close_file(void)
 {
-    close(file_fd);
+    close(g_file_fd);
 }
 
-int32_t write_log_fun(log_leve_e leve, const int8_t *msg, ...)
+static void printf_log(int8_t *data)
 {
     int32_t size = 0;
+    if (g_log_printf_type == LOG_PRINTF_TERMINAL) {
+        printf("%s", data);
+    } else {
+        size = log_file_size();
+        if (size > LOG_FILE_SIZE) {
+            clear_file();
+        }
+        write(g_file_fd, data, rt_os_strlen(data));
+    }
+}
+
+int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const int8_t *msg, ...)
+{
     int8_t content[200] = {0};
-    int8_t final[400] = {0};   //
+    int8_t final[400] = {0};
     time_t  time_write;
     struct tm tm_Log;
 
     va_list vl_list;
     va_start(vl_list, msg);
-
-    vsnprintf((char *)content, sizeof(content), (const char *)msg, vl_list);   //
+    vsnprintf((int8_t *)content, sizeof(content), (const int8_t *)msg, vl_list);   //
     va_end(vl_list);
-
-    time_write = time(NULL);        //
-    localtime_r(&time_write, &tm_Log);
-    strftime((char *)final, sizeof(final), "[%Y-%m-%d %H:%M:%S] ", &tm_Log);
-
-    strncat((char *)final, (const char *)content, rt_os_strlen(content));
-    printf("%s",final);
-#if 0
-    size = log_file_size();
-    if (size > LOG_FILE_SIZE) {
-        clear_file();
+    if (leve_flag == LOG_HAVE_LEVE_PRINTF) {
+        time_write = time(NULL);        //
+        localtime_r(&time_write, &tm_Log);
+        strftime((int8_t *)final, sizeof(final), "[%Y-%m-%d %H:%M:%S] ", &tm_Log);
+        strncat((int8_t *)final, (const int8_t *)content, rt_os_strlen(content));
+        printf_log(final);
+    } else {
+        printf_log(content);
     }
-    write(file_fd, final, rt_os_strlen(final));
-#endif
     return 0;
 }
 
