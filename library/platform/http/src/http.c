@@ -42,7 +42,7 @@ int32_t http_tcpclient_create(const int8_t *addr, int32_t port)
     server_addr.sin_addr   = ipAddr;
 
     if ((socket_fd = socket(AF_INET, SOCK_STREAM,0)) == -1) {
-        MSG_WARN("socket error\n");
+        MSG_PRINTF(LOG_WARN, "socket error\n");
         return RT_ERROR;
     }
     //rcv time out
@@ -50,7 +50,7 @@ int32_t http_tcpclient_create(const int8_t *addr, int32_t port)
     setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO,(char*)&timeout, sizeof(struct timeval));
 
     if (connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
-        MSG_WARN("connect error\n");
+        MSG_PRINTF(LOG_WARN, "connect error\n");
         return RT_ERROR;
     }
     return socket_fd;
@@ -70,7 +70,7 @@ int32_t http_parse_url(const int8_t *url,int8_t *host,int8_t *file,int32_t *port
     int8_t *ptr2 = NULL;
     int32_t len = 0;
     if (!url || !host || !file || !port) {
-        MSG_WARN("url/host/file/port error\n");
+        MSG_PRINTF(LOG_WARN, "url/host/file/port error\n");
         return RT_ERROR;
     }
 
@@ -82,7 +82,7 @@ int32_t http_parse_url(const int8_t *url,int8_t *host,int8_t *file,int32_t *port
     else if (!rt_os_strncmp(ptr1, "https://", 8)) {
         ptr1 += rt_os_strlen("https://");
     } else {
-        MSG_WARN("error\n");
+        MSG_PRINTF(LOG_WARN, "error\n");
         return RT_ERROR;
     }
 
@@ -145,7 +145,7 @@ int32_t http_tcpclient_send(int32_t socket,int8_t *buff,int32_t size)
     while (sent < size) {
         tmpres = write(socket, buff + sent, size - sent);
         if (tmpres == -1) {
-            MSG_WARN("tmpres is error\n");
+            MSG_PRINTF(LOG_WARN, "tmpres is error\n");
             return RT_ERROR;
         }
         sent += tmpres;
@@ -158,19 +158,19 @@ int32_t http_parse_result(int8_t *lpbuf)
     int8_t *ptmp = NULL;
     ptmp = rt_os_strstr(lpbuf, "HTTP/1.1");
     if (!ptmp) {
-        MSG_WARN("http/1.1 not faind\n");
+        MSG_PRINTF(LOG_WARN, "http/1.1 not faind\n");
         return RT_ERROR;
     }
     if (atoi(ptmp + 9) != 200)
     {
-        MSG_WARN("\n result:\n%s\n", lpbuf);
+        MSG_PRINTF(LOG_WARN, "\n result:\n%s\n", lpbuf);
         return RT_ERROR;
     }
 
     ptmp = (int8_t*)rt_os_strstr(lpbuf, "\r\n\r\n");
     if (!ptmp)
     {
-        MSG_WARN("ptmp is NULL\n");
+        MSG_PRINTF(LOG_WARN, "ptmp is NULL\n");
         return RT_ERROR;
     }
     if ((ptmp = rt_os_strstr(lpbuf, "{\"status\"")) == NULL) {
@@ -200,7 +200,7 @@ http_result_e http_post(const int8_t *url,int8_t *post_str,int8_t *header, socke
         lpbuf = (int8_t *)rt_os_malloc(BUFFER_SIZE * 4);
         if (lpbuf == NULL) {
             ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_WARN("lpbuf malloc error\n");
+            MSG_PRINTF(LOG_WARN, "lpbuf malloc error\n");
             break;
         }
         rt_os_memset(lpbuf, '0', BUFFER_SIZE * 4);
@@ -208,7 +208,7 @@ http_result_e http_post(const int8_t *url,int8_t *post_str,int8_t *header, socke
         host_addr = (int8_t *)rt_os_malloc(HOST_ADDRESS_LEN);
         if (host_addr == NULL) {
             ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_WARN("lpbuf malloc error\n");
+            MSG_PRINTF(LOG_WARN, "lpbuf malloc error\n");
             break;
         }
         rt_os_memset(host_addr, '0', HOST_ADDRESS_LEN);
@@ -216,32 +216,32 @@ http_result_e http_post(const int8_t *url,int8_t *post_str,int8_t *header, socke
         file = (int8_t *)rt_os_malloc(HOST_PATH_LEN);
         if (file == NULL) {
             ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_WARN("file malloc error\n");
+            MSG_PRINTF(LOG_WARN, "file malloc error\n");
             break;
         }
         rt_os_memset(file, '0', HOST_PATH_LEN);
 
         if (!url || !post_str) {
-            MSG_WARN("failed!\n");
+            MSG_PRINTF(LOG_WARN, "failed!\n");
             break;
         }
 
         if (http_parse_url(url, host_addr, file, &port)) {
-            MSG_WARN("http_parse_url failed!\n");
+            MSG_PRINTF(LOG_WARN, "http_parse_url failed!\n");
             ret = HTTP_PARAMETER_ERROR;
             break;
         }
         socket_fd = http_tcpclient_create(host_addr, port);       // connect network
         if (socket_fd < 0) {
             ret = HTTP_SOCKET_CONNECT_ERROR;
-            MSG_WARN("http_tcpclient_create failed\n");
+            MSG_PRINTF(LOG_WARN, "http_tcpclient_create failed\n");
             break;
         }
         snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, header, strlen(post_str), post_str);
 
         if (http_tcpclient_send(socket_fd,lpbuf, rt_os_strlen(lpbuf)) < 0) {      // send data
             ret = HTTP_SOCKET_SEND_ERROR;
-            MSG_WARN("http_tcpclient_send failed..\n");
+            MSG_PRINTF(LOG_WARN, "http_tcpclient_send failed..\n");
             break;
         }
         rt_os_memset(lpbuf, 0, BUFFER_SIZE * 4);
@@ -249,11 +249,11 @@ http_result_e http_post(const int8_t *url,int8_t *post_str,int8_t *header, socke
 
         if (http_tcpclient_recv(socket_fd, lpbuf, BUFFER_SIZE * 4) <= 0) {     // recv data
             ret = HTTP_SOCKET_RECV_ERROR;
-            MSG_WARN("http_tcpclient_recv failed\n");
+            MSG_PRINTF(LOG_WARN, "http_tcpclient_recv failed\n");
             break;
         } else {
              offset = http_parse_result(lpbuf);
-             MSG_DBG("%s\n", lpbuf + offset);
+             MSG_PRINTF(LOG_DBG, "%s\n", lpbuf + offset);
              if (cb(lpbuf + offset) != 0) {
                 ret = HTTP_RESPOND_ERROR;
              }

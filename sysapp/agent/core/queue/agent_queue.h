@@ -16,19 +16,16 @@
 
 #include "rt_type.h"
 
-typedef enum AGENT_MSG_ID_E {
+typedef enum AGENT_MSG_ID {
     MSG_ID_BOOT_STRAP = 0,
-    MSG_ID_CARD_MANAGE,
-    MSG_ID_LOG_MANAGE,
+    MSG_ID_CARD_MANAGER,
+    MSG_ID_LOG_MANAGER,
     MSG_ID_OTA_UPGRADE,
     MSG_ID_PERSONLLISE,
     MSG_ID_REMOTE_CONFIG
 } agent_msg_id_e;
 
-typedef enum AGENT_COMMAND_E {
-    MSG_ID_BOOT_STRAP = 0,
-} agent_command_e;
-
+int32_t init_queue(void *arg);
 int32_t msg_send_agent_queue(int32_t msgid, void *buffer, int32_t len);
-
+int32_t msg_send_upload_queue(void *buffer, int32_t len);
 #endif // __AGENT_QUEUE_H__

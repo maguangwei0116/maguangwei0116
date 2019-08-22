@@ -18,11 +18,11 @@
 #include "rt_os.h"
 #include "rt_type.h"
 
-#if MANUFACTURE == MANUFACTURE_ZTE || MANUFACTURE ==  MANUFACTURE_GSW    // ZTE
-#define RT_DMS_V01_IDL_MINOR_VERS  0x37
-#else     // others
 #define RT_DMS_V01_IDL_MINOR_VERS  0x39
-#endif
+
+#define rt_qmi_send_apdu(data, data_len, rsp, rsp_len, channel)    qmi_send_apdu(data, data_len, rsp, rsp_len, channel)
+#define rt_qmi_close_channel(channel)    qmi_close_channel(channel)
+#define rt_qmi_open_channel(aid, aid_len, channel)     qmi_open_channel(aid, aid_len, channel)
 
 int32_t rt_qmi_get_register_state(int32_t *register_state);
 int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc);
@@ -31,6 +31,6 @@ int32_t rt_qmi_get_current_imsi(uint8_t *imsi);
 int32_t rt_qmi_get_signal(int32_t *strength);
 int32_t rt_qmi_get_imei(uint8_t *imei);
 int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int8_t pdp_type);
-int32_t rt_qmi_init(void);
+int32_t rt_qmi_init(void *arg);
 
 #endif   // __RT_QMI_H__

@@ -24,20 +24,20 @@ qmi_client_error_type qmi_ctrl_point_init(
     static error_time = 0;
 
     if (idl_service_object == NULL) {
-        MSG_WARN("Invalid IDL_SERVICE_OBJECT\n");
+        MSG_PRINTF(LOG_WARN, "Invalid IDL_SERVICE_OBJECT\n");
         return -1;
     }
 
     err = qmi_client_get_service_list(idl_service_object, NULL, NULL, &num_services);
     if (err != QMI_NO_ERR) {
-        MSG_WARN("qmi_client_get_service_list failed: %d\n", err);
+        MSG_PRINTF(LOG_WARN, "qmi_client_get_service_list failed: %d\n", err);
         return err;
     }
     //Populate service info
     num_entries = num_services;
     err = qmi_client_get_service_list(idl_service_object, &service_info, &num_entries, &num_services);
     if (err != QMI_NO_ERR) {
-        MSG_WARN("qmi_client_get_service_list failed: %d\n", err);
+        MSG_PRINTF(LOG_WARN, "qmi_client_get_service_list failed: %d\n", err);
         return err;
     }
     //Initialize qmi_client
@@ -49,7 +49,7 @@ qmi_client_error_type qmi_ctrl_point_init(
         if (error_time>=10) {
             rt_os_reboot();
         }
-        MSG_WARN("qmi_client_init result %d\n", err);
+        MSG_PRINTF(LOG_WARN, "qmi_client_init result %d\n", err);
     } else {
         error_time = 0;
     }

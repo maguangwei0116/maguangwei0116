@@ -22,7 +22,7 @@ int32_t rt_create_file(uint8_t *file_name)
     int8_t status = RT_ERROR;
     FILE *fp = NULL;
     if ((fp = fopen(file_name, "w+")) == NULL) {
-        MSG_WARN("open error \n");
+        MSG_PRINTF(LOG_WARN, "open error \n");
     } else {
         status = RT_SUCCESS;
     }
@@ -39,11 +39,11 @@ int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer
     int32_t status = RT_ERROR;
     fp = fopen(addr, "rb+");
     if (fp == NULL) {
-        MSG_WARN("open config error\n");
+        MSG_PRINTF(LOG_WARN, "open config error\n");
     } else {
         fseek(fp,offset,SEEK_SET);
         if (fwrite(data_buffer,len, 1, fp) != 1) {
-            MSG_WARN("write error\n");
+            MSG_PRINTF(LOG_WARN, "write error\n");
         } else {
             status = 0;
         }
@@ -60,7 +60,7 @@ int32_t rt_read_data(uint8_t *addr, uint32_t offset, uint8_t *data_buffer, uint3
 
     fp = fopen(addr, "r");
     if (NULL == fp) {
-        MSG_WARN("open config file error\n");
+        MSG_PRINTF(LOG_WARN, "open config file error\n");
     } else {
         fseek(fp, offset, SEEK_SET);
         if (fread(data_buffer, len, 1, fp) != 1) {
@@ -100,7 +100,7 @@ int32_t rm_dir(const int8_t *dirpath)
         snprintf(sub_path, 100, "%s/%s", dirpath, dir->d_name);
 
         if (lstat(sub_path, &st) == -1) {
-            MSG_WARN("rm_dir:lstat %s error\n", sub_path);
+            MSG_PRINTF(LOG_WARN, "rm_dir:lstat %s error\n", sub_path);
             continue;
         }
 
@@ -113,7 +113,7 @@ int32_t rm_dir(const int8_t *dirpath)
         } else if(S_ISREG(st.st_mode)) {
             rt_os_unlink(sub_path);
         } else {
-            MSG_WARN("rm_dir:lstat %s error\n", sub_path);
+            MSG_PRINTF(LOG_WARN, "rm_dir:lstat %s error\n", sub_path);
             continue;
         }
     }

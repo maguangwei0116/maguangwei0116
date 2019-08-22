@@ -34,7 +34,7 @@ USER_CFLAGS		+= -DRELEASE_TARGET_VERSION=$(RELEASE_TARGET_VERSION)
 
 # Config your own libraries
 QMI-LIB 		= dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
-COMM-LIB 		= asn.1 platform dial pthread bridge util
+COMM-LIB 		= comm crypto ssl pthread
 
 ############################################################################
 ### path
@@ -44,6 +44,15 @@ vpath %.c ./core/ota
 vpath %.c ./core/personalise
 vpath %.c ./core/mqtt
 vpath %.c ./core/config
+vpath %.c ./core/queue
+vpath %.c ./core/cardm
+vpath %.c ./core/logm
+vpath %.c ./core/networkd
+vpath %.c ./main
+vpath %.c ./ipc
+vpath %.c ./lpa
+vpath %.c ./core/ota
+vpath %.c ./core/personalise
 
 # Config your resource file list by += xxx.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
@@ -52,12 +61,29 @@ SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= $(wildcard ./core/mqtt/src/*.c)
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/config.c
 
+SRC-y 			+= src/agent_main.c
+SRC-y 			+= src/agent_queue.c
+SRC-y 			+= src/card_manager.c
+SRC-y 			+= src/ipc_socket_client.c
+SRC-y 			+= src/network_detection.c
+SRC-y 			+= src/lpa.c
+SRC-y 			+= src/lpdd.c
+SRC-y 			+= src/luid.c
+SRC-y 			+= src/ldsd.c
+SRC-y 			+= src/apdu.c
+
 # Config your include file path by += xxx-inc
 INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)		+= ./core/bootstrap/
 INC-PATH-$(CFG_AGENT_OTA_ON)			+= ./core/ota/
 INC-PATH-$(CFG_AGENT_PERSONALISE_ON)	+= ./core/personalise/
 INC-PATH-y								+= ./core/mqtt/
 INC-PATH-y								+= ./core/config/
+INC-PATH-y 		+= ./core/queue/
+INC-PATH-y 		+= ./core/cardm/
+INC-PATH-y 		+= ./core/networkd/
+INC-PATH-y 		+= ./main/
+INC-PATH-y 		+= ./ipc/
+INC-PATH-y 		+= ./lpa/
 
 INC-y 			+= ./
 INC-y 			+= $(INC-PATH-y)

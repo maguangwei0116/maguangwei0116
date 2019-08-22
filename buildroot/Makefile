@@ -403,8 +403,8 @@ $(BUILD_DIR)/buildroot-config/auto.conf: $(CONFIG_DIR)/.config
 	@$(MAKE) $(EXTRAMAKEARGS) HOSTCC="$(HOSTCC_NOCCACHE)" HOSTCXX="$(HOSTCXX_NOCCACHE)" silentoldconfig
 
 prepare: $(BUILD_DIR)/buildroot-config/auto.conf
-#	@echo "-------$@, $^"
 
+#	@echo "-------$@, $^"
 help_pre:
 	@echo "TARGETS=$(TARGETS)"
 	@echo "BASE_TARGETS=$(BASE_TARGETS)"

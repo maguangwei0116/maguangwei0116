@@ -14,5 +14,6 @@
 #ifndef __AGENT_MAIN_H__
 #define __AGENT_MAIN_H__
 
+#include "rt_type.h"
 
 #endif // __AGENT_MAIN_H__

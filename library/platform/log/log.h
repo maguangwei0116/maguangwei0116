@@ -14,72 +14,37 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
-#if VERSION_TYPE == DEBUG
-#define TRACE_PRINT(format,...) \
-    do {\
-        printf(format,##__VA_ARGS__); \
-    } while(0);
+typedef enum LOG_LEVE {
+    LOG_ERR = 0,
+    LOG_WARN,
+    LOG_DBG,
+    LOG_INFO
+} log_leve_e;
 
-#define TRACE_ERROR(format,...) \
-    do {\
-        printf(format,##__VA_ARGS__); \
-    } while(0);
+typedef enum LOG_MODE {
+    LOG_PRINTF_TERMINAL = 0,
+    LOG_PRINTF_FILE
+} log_mode_e;
 
-#elif VERSION_TYPE == RELEASE
-#define TRACE_PRINT(format,...) \
-    do {\
-        //write_log_fun((int8_t *)format,##__VA_ARGS__); \
-    } while(0);
+typedef enum LOG_LEVE_FLAG {
+    LOG_HAVE_LEVE_PRINTF = 0,
+    LOG_NO_LEVE_PRINTF
+} log_leve_flag_e;
 
-#define TRACE_ERROR(format,...) \
-    do {\
-        //write_log_fun((int8_t *)format,##__VA_ARGS__); \
-    } while(0);
-#endif
+int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag,const int8_t *msg, ...);
 
+#define INNER_DUMP_ARRAY(tag, array, len)                                        \
+    do {                                                                         \
+        uint8_t *_p_ = (uint8_t *)array;                                         \
+        uint16_t i;                                                              \
+        write_log_fun(LOG_DBG, LOG_NO_LEVE_PRINTF,"%s", tag);                    \
+        for (i = 0; i < len; i++) {                                              \
+            write_log_fun(LOG_DBG, LOG_NO_LEVE_PRINTF, "%02X", _p_[i]);          \
+        }                                                                        \
+        write_log_fun(LOG_DBG, LOG_NO_LEVE_PRINTF, "\n");                        \
+    } while(0)
 
+#define MSG_INFO_ARRAY(tag, array, len)         INNER_DUMP_ARRAY(tag, array, len)
+#define MSG_PRINTF(LOG_LEVE, format,...)        write_log_fun(LOG_LEVE, LOG_HAVE_LEVE_PRINTF,"[ %d %s] "format, __LINE__, __FILE__, ##__VA_ARGS__)
 
-#define LOG_ERR                 0x01
-#define LOG_WARN                0x02
-#define LOG_DBG                 0x03
-#define LOG_INFO                0x04
-
-#define LOG_LEVEL               LOG_ERR
-/******************************************************************************
- * 以下为log level的定义
- * MSG_INFO:开放协议交互消息的log
- * MSG_DBG：输出必要的调试信息
- * MSG_WARN：输出警告信息
- * MSG_ERR：输出错误信息
- *******************************************************************************/
-
-// LOG_INFO
-#if  LOG_LEVEL > LOG_DBG
-#define MSG_ERR(format, ...)    TRACE_PRINT("ERR[ %d %s] "format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_WARN(format, ...)   TRACE_PRINT("WARN[ %d %s] "format,__LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_DBG(format, ...)    TRACE_PRINT("DBG[ %d %s] "format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_INFO(format, ...)    TRACE_PRINT("INFO[%d %s] "format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-
-// LOG_DBG
-#elif  LOG_LEVEL > LOG_WARN
-#define MSG_ERR(format, ...)    TRACE_PRINT("ERR[ %d %s] "format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_WARN(format, ...)   TRACE_PRINT("WARN[ %d %s] "format,__LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_DBG(format, ...)    TRACE_PRINT("DBG[ %d %s] "format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_INFO(format, ...)
-
-// LOG_WARN
-#elif  LOG_LEVEL > LOG_ERR
-#define MSG_ERR(format, ...)    TRACE_PRINT("ERR[ %d %s] "format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_WARN(format, ...)   TRACE_PRINT("WARN[ %d %s] "format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_DBG(format, ...)
-#define MSG_INFO(format, ...)
-
-// LOG_ERR
-#elif LOG_LEVEL > LOG_NONE
-#define MSG_ERR(format, ...)    TRACE_PRINT("ERR[%d %s] "format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_WARN(format, ...)
-#define MSG_DBG(format, ...)
-#define MSG_INFO(format, ...)
-
-#endif
 #endif // __LOG_H__

@@ -8,7 +8,8 @@ endif
 # Config include path
 CFLAGS			+= $(patsubst %,-I%,$(INC-y))
 CFLAGS			+= -I$(SDK_INSTALL_PATH)/include
-CFLAGS			+= $(patsubst %,-I%,$(SYSINC))
+INCTOOL			+= $(addprefix $(SYSROOT), $(SYSINC))
+CFLAGS			+= $(patsubst %,-I%,$(INCTOOL))
 CFLAGS			+= $(USER_CFLAGS)
 
 # Config link flags
