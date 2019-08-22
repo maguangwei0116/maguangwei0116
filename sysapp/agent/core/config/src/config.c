@@ -315,32 +315,32 @@ void parse_config_file(void)
     read_config_file(CONFIG_FILE_PATH, keys, values, MAX_VALUE_SIZE, ARRAY_SIZE(keys));
     if (get_config_data(_DIS_CONNECT_WAIT_TIME, &value_p) == RT_SUCCESS)
         DIS_CONNECT_WAIT_TIME = msg_string_to_int(value_p);
-    MSG_DBG("DIS_CONNECT_WAIT_TIME:%d\n", DIS_CONNECT_WAIT_TIME);
+    MSG_PRINTF(LOG_DBG, "DIS_CONNECT_WAIT_TIME:%d\n", DIS_CONNECT_WAIT_TIME);
 
     get_config_data(_OTI_ENVIRONMENT_ADDR, &OTI_ENVIRONMENT_ADDR);
-    MSG_DBG("RT_ENVIRONMENT_ADDR:%s\n", OTI_ENVIRONMENT_ADDR);
+    MSG_PRINTF(LOG_DBG, "RT_ENVIRONMENT_ADDR:%s\n", OTI_ENVIRONMENT_ADDR);
 
     get_config_data(_EMQ_SERVER_ADDR, &EMQ_SERVER_ADDR);
-    MSG_DBG("EMQ_SERVER_ADDR:%s\n", EMQ_SERVER_ADDR);
+    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR:%s\n", EMQ_SERVER_ADDR);
 
     get_config_data(_PROXY_SERVER_ADDR, &PROXY_SERVER_ADDR);
-    MSG_DBG("EMQ_SERVER_ADDR:%s\n", PROXY_SERVER_ADDR);
+    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR:%s\n", PROXY_SERVER_ADDR);
 
     if (get_config_data(_LOG_FILE_SIZE, &value_p) == RT_SUCCESS)
         LOG_FILE_SIZE = msg_string_to_int(value_p);
-    MSG_DBG("LOG_FILE_SIZE:%d\n", LOG_FILE_SIZE);
+    MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE:%d\n", LOG_FILE_SIZE);
 
     if (get_config_data(_MBN_CONFIGURATION, &value_p) == RT_SUCCESS)
         MBN_CONFIGURATION = msg_string_to_int(value_p);
-    MSG_DBG("MBN_CONFIGURATION:%d\n", MBN_CONFIGURATION);
+    MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION:%d\n", MBN_CONFIGURATION);
 
     if (get_config_data(_INIT_PROFILE_TYPE, &value_p) == RT_SUCCESS)
         INIT_PROFILE_TYPE = msg_string_to_int(value_p);
-    MSG_DBG("INIT_PROFILE_TYPE:%d\n", INIT_PROFILE_TYPE);
+    MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE:%d\n", INIT_PROFILE_TYPE);
 
     if (get_config_data(_RPLMN_ENABLE, &value_p) == RT_SUCCESS)
         RPLMN_ENABLE = msg_string_to_int(value_p);
-    MSG_DBG("RPLMN_ENABLE:%d\n", RPLMN_ENABLE);
+    MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE:%d\n", RPLMN_ENABLE);
 }
 
 /**

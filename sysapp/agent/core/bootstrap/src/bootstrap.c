@@ -18,7 +18,7 @@
 #warning AGENT_BOOTSRRAP_ON on ...
 #endif
 
-int32_t main(void)
+int32_t bootstrap_main(void)
 {
     rt_fshandle_t fp;
     fp = rt_fopen("/data/redtea/rt_log", 0);
