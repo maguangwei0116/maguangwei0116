@@ -4,6 +4,7 @@ TARGET 		= $(shell pwd | sed 's/^\(.*\)[/]//')
 
 QMI-LIB = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
 COMM-LIB = comm crypto ssl pthread
+VUICC-LIB = libvuicc.a
 ############################################################################
 ### path
 ############################################################################
@@ -21,9 +22,12 @@ SRC-y 		+= $(SRC-PATH)/main.c
 # Config your include file path by += xxx-inc
 INC-y 		+= ./ipc/
 INC-y 		+= ./ipc/$(INC-PATH)
+INC-y 		+= ./vuicc/
+INC-y 		+= ./vuicc/$(INC-PATH)
 
 # Config your lib
 LIB-y 		= -lm
+LIB-y 		+= -l$(shell pwd)/vuicc/lib/$(VUICC-LIB)
 LIB-y 		+= $(patsubst %,-l%,$(COMM-LIB))
 LIB-y 		+= $(patsubst %,-l%,$(QMI-LIB))
 

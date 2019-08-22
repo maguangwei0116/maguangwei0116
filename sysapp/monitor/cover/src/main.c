@@ -13,16 +13,20 @@
 
 #include "rt_type.h"
 #include "ipc_socket_server.h"
+#include "trigger.h"
+#include "card.h"
 
 uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
-    MSG_PRINTF(LOG_INFO, "data:%s\n", data);
-    *rsp_len = 10;
-    rt_os_memcpy(rsp, "helloworld", *rsp_len);
+    card_cmd(data, len, rsp, rsp_len);
 }
 
 int32_t main(void)
 {
+    printf("I am monitor\n");
+    trigger_insert_card(1);
+    trigegr_regist_reset(card_reset);
+    trigegr_regist_cmd(card_cmd);
     ipc_regist_callback(monitor_cmd);
     ipc_socket_server();
 }

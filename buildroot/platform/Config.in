@@ -1,9 +1,17 @@
 menu "Product Options"
 
-config BR2_PRODUCT_NAME
-	string "product name"
-	default "smart"
+config BR2_SYSTEM_NAME
+	string "System Name"
+	default "linux"
 
+config BR2_PRODUCT_NAME
+	string "Product Name"
+	default "euicc"	
+	
+config BR2_SOFTWARE_NAME
+	string "Software Name"
+	default "general"
+	
 choice
 	prompt "Build for Platform"
 	default BR2_PLATFORM_9X07
@@ -26,57 +34,37 @@ config BR2_PLATFORM_TYPE
 	default "9x07"  if BR2_PLATFORM_9X07
 
 choice
-	prompt "firmware type"
-	default BR2_FIRMWARE_TYPE_RELEASE
+	prompt "Software Type"
+	default BR2_SOFTWARE_TYPE_RELEASE
 	help
-	  Select firmware type, Release, Debug ...
+	  Select software type, Release, Debug ...
 
-config BR2_FIRMWARE_TYPE_RELEASE
+config BR2_SOFTWARE_TYPE_RELEASE
 	bool "Release"
 	help
-	  Compile firmware with Signature/Authentication.
+	  Compile software with Signature/Authentication.
 	  This version used for final release.
 
-config BR2_FIRMWARE_TYPE_DEBUG
+config BR2_SOFTWARE_TYPE_DEBUG
 	bool "Debug"
 	help
-	  Compile firmware debug version.
+	  Compile software debug version.
 	  This version used for development stage.
 
 endchoice
 
-config BR2_FIRMWARE_TYPE
+config BR2_SOFTWARE_TYPE
 	string
-	default "debug"		if BR2_FIRMWARE_TYPE_DEBUG
-	default "release"	if BR2_FIRMWARE_TYPE_RELEASE
+	default "debug"		if BR2_SOFTWARE_TYPE_DEBUG
+	default "release"	if BR2_SOFTWARE_TYPE_RELEASE
 
 config BR2_OUTPUT_PATH
-	string "output path"
-	default "$(BR2_PRODUCT_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_FIRMWARE_TYPE)"
+	string "Output Path"
+	default "$(BR2_SOFTWARE_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
 
 config BR2_IMAGE_NAME
-	string "image name"
-	default "$(BR2_PRODUCT_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_FIRMWARE_TYPE)"
-
-config BR2_IMAGE_VERSION
-	string "image/firmware version (xx.xx.xx)"
-	default "01.00.00"
-
-config BR2_MS_SIGNATURE_IP
-	string "Signature IP for MS"
-	default "10.1.23.2"
-
-config BR2_MS_SIGNATURE_PORT
-	string "Signature Port for MS"
-	default "6789"
-
-config BR2_MF_SIGNATURE_IP
-	string "Signature IP for MF"
-	default "10.1.23.2"
-
-config BR2_MF_SIGNATURE_PORT
-	string "Signature Port for MF"
-	default "6789"
+	string "Image Name"
+	default "$(BR2_SOFTWARE_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
 
 endmenu
 
