@@ -34,10 +34,11 @@ $(O)/$(LIB_SO_NAME): $(ALL_TARGETS)
 	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
 	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
+	-$(Q)$(CD) $(SDK_INSTALL_PATH)/lib/; $(LN) -s $(LIB_SO_NAME) $(RELEASE_SHARED_TARGET)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"
-	@$(ECHO) "|   Finished building target: $(LIB_SO_NAME)"
+	@$(ECHO) "|   Finished building target: $(RELEASE_SHARED_TARGET)"
 	@$(ECHO) "|"
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
@@ -46,10 +47,11 @@ $(O)/$(LIB_A_NAME): $(ALL_TARGETS)
 	$($(quiet)do_ar) cru "$@" $^
 	$($(quiet)do_ranlib) "$@"
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
+	-$(Q)$(CD) $(SDK_INSTALL_PATH)/lib/; $(LN) -s $(LIB_A_NAME) $(RELEASE_STATIC_TARGET)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"
-	@$(ECHO) "|   Finished building target: $(LIB_A_NAME)"
+	@$(ECHO) "|   Finished building target: $(RELEASE_STATIC_TARGET)"
 	@$(ECHO) "|"
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""

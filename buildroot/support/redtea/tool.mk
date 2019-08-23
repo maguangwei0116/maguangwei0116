@@ -16,6 +16,8 @@ ECHO				= echo
 DEL					= rm
 CHMOD				= chmod
 CP					= cp
+LN					= ln
+CD					= cd
 
 # Config for quite tool
 quiet_do_cc        	= $(Q)$(ECHO)	"  CC       $<" && $(CC)
