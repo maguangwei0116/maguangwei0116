@@ -16,5 +16,4 @@
 
 #include "rt_type.h"
 
-
 #endif // __BOOTSTRAP_H__
