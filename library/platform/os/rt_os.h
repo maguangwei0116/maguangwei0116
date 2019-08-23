@@ -22,6 +22,7 @@
 #define  RT_END                             SEEK_END
 #define  RT_SIGINT                          SIGINT
 #define  RT_SIGTERM                         SIGTERM
+#define  RT_SIGALRM                         SIGALRM
 
 typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);

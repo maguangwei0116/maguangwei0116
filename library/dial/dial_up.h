@@ -32,17 +32,17 @@ extern char *inet_ntoa (struct in_addr __in);
 #define SASTORAGE_DATA(addr)    (addr).__ss_padding
 
 typedef enum {
-    DSI_STATE_CALL_IDLE,
+    DSI_STATE_CALL_IDLE = 0,
     DSI_STATE_CALL_CONNECTING,
     DSI_STATE_CALL_CONNECTED,
     DSI_STATE_CALL_DISCONNECTING,
     DSI_STATE_CALL_MAX
-} dsi_state_call_state_t;
+} dsi_state_call_state_e;
 
 typedef struct {
     dsi_hndl_t handle;
     volatile boolean dsi_inited;
-    dsi_state_call_state_t call_state;
+    dsi_state_call_state_e call_state;
     int32_t cdma_profile_index;
     int32_t umts_profile_index;
     int32_t ip_version;
@@ -57,5 +57,5 @@ static void dsi_net_init_cb_func(void *user_data);
 static void dsi_net_cb_fcn( dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt, dsi_evt_payload_t *payload_ptr );
 int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl);
 int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl);
-
+void regist_dial_callback(void *fun);
 #endif  //__DIAL_UP_H__

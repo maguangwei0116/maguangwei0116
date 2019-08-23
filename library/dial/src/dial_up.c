@@ -17,6 +17,9 @@
 #define DAIL_UP_WAIT      5
 #define has_more_argv() ((opt < argc) && (argv[opt][0] != '-'))
 
+typedef void (*dial_callback)(int32_t state);
+dial_callback dial_state;
+
 static int signal_event_fd[2];
 static int dsi_event_fd[2];
 
@@ -359,9 +362,15 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                         default:
                         break;
                     }
+                    dial_state(dsi_net_hndl->call_state);
                 }
             }
         }
     }
     return RT_SUCCESS;
+}
+
+void regist_dial_callback(void* fun)
+{
+    dial_state = (dial_callback)fun;
 }
