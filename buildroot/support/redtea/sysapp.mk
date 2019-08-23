@@ -55,7 +55,7 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"
-	@$(ECHO) "|   Finished building target: $(TARGET_FILE_NAME)"
+	@$(ECHO) "|   Finished building target: $(RELEASE_TARGET)"
 	@$(ECHO) "|"
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
