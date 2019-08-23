@@ -42,8 +42,8 @@ define SYSAPP_ADD_SHA256SUM
 	sha256sum $(1) | awk '{ print $$1 }' | xargs echo -n >> $(1)
 endef
 
-# Every obejct file depend on conf-file
-$(OBJS): gen-conf-file
+# Every object file depend on conf-file
+$(OBJS): $(conf-file)
 
 $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	$($(quiet)do_cc) $(MAIN_INCLUDES) -o "$@" $(OBJS) $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME)
@@ -63,7 +63,7 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
-.PHONY: all clean info $(TARGET) gen-conf-file
+.PHONY: all clean info $(TARGET) FORCE
 
 # Include the dependency files, should be the last of the makefile
 -include $(DEPS)
