@@ -13,7 +13,7 @@ info:
 	@echo "COBJS=$(COBJS)"
 	@echo "OBJS=$(OBJS)"
 	@echo "DEPS=$(DEPS)"
-	@echo "CC=$(CC)" O=$(O) -DMACRO=$(MACRO)
+	@echo "CC=$(CC)" O=$(O)
 	@echo "CFLAGS=$(CFLAGS)"
 	@echo "LDFLAGS=$(LDFLAGS)"
 	@echo "SYSROOT=$(SYSROOT)"
@@ -24,18 +24,39 @@ clean:
 	rm -rf $(O)
 
 # Include sub comm makefiles
--include ../../buildroot/support/redtea/tool.mk
--include ../../buildroot/support/redtea/flags.mk
--include ../../buildroot/support/redtea/object.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
 
 libso: $(O)/$(LIB_SO_NAME)
 liba: $(O)/$(LIB_A_NAME)
+
+define DIFF_INSTALL_LIBRARY_HEADER_FILE
+    $(shell \
+    if ! [ -e $(2) ]; then\
+        cp -rf $(1) $(2);\
+    else\
+        if [ -n "$(shell test -e $(2) && diff $(1) $(2))" ]; then\
+            cp -rf $(1) $(2);\
+        fi;\
+    fi)
+endef
+
+define INSTALL_LIBRARY_HEADER_FILE
+	$(foreach file,$(1),$(call DIFF_INSTALL_LIBRARY_HEADER_FILE,$(file),$(2)/$(notdir $(file))))
+endef
+
+ifdef EXTERN_HEADER_FILES
+EXTERN_HEADER_FILES += ./*.h
+else
+EXTERN_HEADER_FILES = ./*.h
+endif
 
 $(O)/$(LIB_SO_NAME): $(OBJS)
 	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) $(OBJS) -o"$@"
 	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
-	-$(Q)$(CP) -rf ./*.h $(SDK_INSTALL_PATH)/include
+	-$(Q)$(call INSTALL_LIBRARY_HEADER_FILE,$(shell ls $(EXTERN_HEADER_FILES)),$(SDK_INSTALL_PATH)/include)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"
@@ -48,7 +69,7 @@ $(O)/$(LIB_A_NAME): $(OBJS)
 	$($(quiet)do_ar) cru "$@" $^
 	$($(quiet)do_ranlib) "$@"
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
-	-$(Q)$(CP) -rf ./*.h $(SDK_INSTALL_PATH)/include
+	-$(Q)$(call INSTALL_LIBRARY_HEADER_FILE,$(shell ls $(EXTERN_HEADER_FILES)),$(SDK_INSTALL_PATH)/include)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"

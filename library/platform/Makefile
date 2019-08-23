@@ -42,12 +42,15 @@ INC-y 		+= ./
 INC-y 		+= $(INC-PATH)
 INC-y 		+= $(addsuffix inc, $(wildcard $(INC-PATH)))
 
-all:
-	-$(Q)$(CP) $(addsuffix *.h, $(wildcard $(INC-PATH))) $(SDK_INSTALL_PATH)/include
+# Config your extern header files
+EXTERN_HEADER_FILES += $(addsuffix *.h, $(wildcard $(INC-PATH)))
+
+#all:
+#	-$(Q)$(CP) $(addsuffix *.h, $(wildcard $(INC-PATH))) $(SDK_INSTALL_PATH)/include
 ############################################################################################
 # Never modify from this line
 ############################################################################################
--include ../../buildroot/support/redtea/library.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/library.mk
 ############################################################################################
 # Never modify end this line
 ############################################################################################

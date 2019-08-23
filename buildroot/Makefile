@@ -76,6 +76,7 @@ ifneq ("$(origin O)", "command line")
 O:=$(WORKSPACE)/output/default
 CONFIG_DIR:=$(TOPDIR)
 NEED_WRAPPER=
+KCONFIG_AUTOHEADER_FILE=$(CONFIG_DIR)/../output/build/buildroot-config/autoconf.h
 else
 # other packages might also support Linux-style out of tree builds
 # with the O=<dir> syntax (E.G. Busybox does). As make automatically
@@ -92,6 +93,7 @@ CONFIG_DIR:=$(O)
 # we need to pass O= everywhere we call back into the toplevel makefile
 EXTRAMAKEARGS = O=$(O)
 NEED_WRAPPER=y
+KCONFIG_AUTOHEADER_FILE=$(CONFIG_DIR)/build/buildroot-config/autoconf.h
 endif
 
 # Pull in the user's configuration file
@@ -193,7 +195,6 @@ $(if $(BASE_DIR),, $(error output directory "$(O)" does not exist))
 
 BUILD_DIR:=$(BASE_DIR)/build
 WRAPPER_DIR=.config_wrapper
-
 ifeq ($(BR2_HAVE_DOT_CONFIG),y)
 
 #############################################################
@@ -228,7 +229,7 @@ endif
 ifeq ($(BR2_TOOLCHAIN_BUILDROOT),y)
 BASE_TARGETS += uclibc-configured host-binutils cross_compiler uclibc-target-utils kernel-headers
 else
-BASE_TARGETS += 
+BASE_TARGETS +=
 endif
 TARGETS:=
 
@@ -290,18 +291,6 @@ BUILDROOT_CACHE_DIR = $(call qstrip,$(BR2_CCACHE_DIR))
 export BUILDROOT_CACHE_DIR
 HOSTCC  := $(CCACHE) $(HOSTCC)
 HOSTCXX := $(CCACHE) $(HOSTCXX)
-endif
-
-ifeq ($(BR2_PCI_COMPLY),y)
-FIRMWARE_PCI_COMPLY=y
-else
-FIRMWARE_PCI_COMPLY=n
-endif
-
-ifeq ($(BR2_UPTS_COMPLY),y)
-FIRMWARE_UPTS_COMPLY=y
-else
-FIRMWARE_UPTS_COMPLY=n
 endif
 
 #############################################################
@@ -414,15 +403,15 @@ $(BUILD_DIR)/buildroot-config/auto.conf: $(CONFIG_DIR)/.config
 	@$(MAKE) $(EXTRAMAKEARGS) HOSTCC="$(HOSTCC_NOCCACHE)" HOSTCXX="$(HOSTCXX_NOCCACHE)" silentoldconfig
 
 prepare: $(BUILD_DIR)/buildroot-config/auto.conf
-#	@echo "---$@"
-	
+
+#	@echo "-------$@, $^"
 help_pre:
 	@echo "TARGETS=$(TARGETS)"
 	@echo "BASE_TARGETS=$(BASE_TARGETS)"
 	@echo "TARGETS_ALL=$(TARGETS_ALL)"
 	@echo "O=$(O)"
 	@echo "TAGETPATH=$(TAGETPATH)"
-	
+
 world: prepare dirs dependencies $(BASE_TARGETS) $(TARGETS_ALL)
 #	@echo "O=$(O)"
 #	@echo "TAGETPATH=$(TAGETPATH)"
@@ -479,7 +468,7 @@ endif
 STRIP_FIND_CMD += -type f -perm +111
 STRIP_FIND_CMD += -not \( $(call findfileclauses,libpthread*.so* $(call qstrip,$(BR2_STRIP_EXCLUDE_FILES))) \) -print
 
-target-finalize: 
+target-finalize:
 	@echo "*************************************"
 	@echo "**        Make World End           **"
 	@echo "*************************************"
@@ -642,7 +631,7 @@ allnopackageconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 	@rm -f $(CONFIG_DIR)/.config.nopkg
 
 silentoldconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config	
+	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< --silentoldconfig $(CONFIG_CONFIG_IN)
 
 defconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile

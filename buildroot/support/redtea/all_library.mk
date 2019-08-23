@@ -11,7 +11,7 @@ info:
 	@echo "OBJS=$(OBJS)"
 	@echo "ALL_TARGETS=$(ALL_TARGETS)"
 	@echo "DEPS=$(DEPS)"
-	@echo "CC=$(CC)" O=$(O) -DMACRO=$(MACRO)
+	@echo "CC=$(CC)" O=$(O)
 	@echo "CFLAGS=$(CFLAGS)"
 	@echo "LDFLAGS=$(LDFLAGS)"
 	@echo "SYSROOT=$(SYSROOT)"
@@ -23,33 +23,59 @@ clean:
 	rm -rf $(O)
 
 # Include sub comm makefiles
--include ../buildroot/support/redtea/tool.mk
--include ../buildroot/support/redtea/flags.mk
--include ../buildroot/support/redtea/object.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
 
 libso: $(O)/$(LIB_SO_NAME)
 liba: $(O)/$(LIB_A_NAME)
 
-$(O)/$(LIB_SO_NAME): $(ALL_TARGETS)
+# Fucntion to generate version C file
+define GEN_LIBRARY_VERSION_C
+    echo "/* Auto-generated configuration version file, never modify it ! */" >$(1);\
+    echo -e -n "#include <stdio.h>\n\n" >>$(1);\
+    echo -e -n "int libcomm_get_version(char *version, int size)\n" >>$(1);\
+    echo -e -n "{\n" >>$(1);\
+    echo -e -n "    snprintf(version, size, \"libcomm version: v%s\", RELEASE_TARGET_VERSION);\n" >>$(1);\
+    echo -e -n "}\n" >>$(1)
+endef
+
+# Generate version C file
+VERSION_FILE 	= $(O)/lib$(TARGET)_version.c
+SRC-y        	+= $(VERSION_FILE)
+
+# Config your own CFLAGS
+USER_CFLAGS  	= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
+
+$(VERSION_FILE):
+	$(Q)$(call GEN_LIBRARY_VERSION_C,$@)
+
+$(OBJS): $(VERSION_FILE)
+
+$(O)/$(LIB_SO_NAME): $(ALL_TARGETS) $(OBJS)
 	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
 	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
+	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib/$(LIBRARY_SHARED_TARGET_NAME)
+	-$(Q)$(CD) $(SDK_INSTALL_PATH)/lib/; $(RM) -rf $(RELEASE_SHARED_TARGET); $(LN) -s $(LIB_SO_NAME) $(RELEASE_SHARED_TARGET)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"
-	@$(ECHO) "|   Finished building target: $(LIB_SO_NAME)"
+	@$(ECHO) "|   Finished building target: $(LIBRARY_SHARED_TARGET_NAME)"
 	@$(ECHO) "|"
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
-$(O)/$(LIB_A_NAME): $(ALL_TARGETS)
+$(O)/$(LIB_A_NAME): $(ALL_TARGETS) $(OBJS)
 	$($(quiet)do_ar) cru "$@" $^
 	$($(quiet)do_ranlib) "$@"
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
+	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib/$(LIBRARY_STATIC_TARGET_NAME)
+	-$(Q)$(CD) $(SDK_INSTALL_PATH)/lib/; $(RM) -rf $(RELEASE_STATIC_TARGET); $(LN) -s $(LIB_A_NAME) $(RELEASE_STATIC_TARGET)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"
-	@$(ECHO) "|   Finished building target: $(LIB_A_NAME)"
+	@$(ECHO) "|   Finished building target: $(LIBRARY_STATIC_TARGET_NAME)"
 	@$(ECHO) "|"
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""

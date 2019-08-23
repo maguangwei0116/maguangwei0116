@@ -35,8 +35,8 @@ include "LinkedList"
 BE*/
 
 #ifndef __TIME_T
-#define __TIME_T     /* é¿å…é‡å¤å®šä¹‰ time_t */
-typedef long     time_t;    /* æ—¶é—´å€¼time_t ä¸ºé•¿æ•´å‹çš„åˆ«å*/
+#define __TIME_T     /* ±ÜÃâÖØ¸´¶¨Òå time_t */
+typedef long     time_t;    /* Ê±¼äÖµtime_t Îª³¤ÕûĞÍµÄ±ğÃû*/
 #endif
 
 /*BE

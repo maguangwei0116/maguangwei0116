@@ -128,7 +128,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
             RT_MQTT_COMMAN_DEBUG("setsockopt error\n");
             break;
         }
-        //TODO: Ë∂ÖÊó∂Â§ÑÁêÜ.
+        //TODO: ≥¨ ±¥¶¿Ì.
         RT_MQTT_COMMAN_DEBUG("sockfd:%d\n",sockfd);
         if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
         {
@@ -155,7 +155,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         strcat(buf, json_data);
 
         RT_MQTT_COMMAN_DEBUG("json data len:%d\n",strlen(json_data));
-        //TODO:„ÄÄÂèØËÉΩÊ≤°ÂÜôÂÆåÔºü
+        //TODO:°°ø…ƒ‹√ª–¥ÕÍ£ø
         RT_MQTT_COMMAN_DEBUG("send buf:%s\n",buf);
     #if defined(WIN32) || defined(WIN64)
         ret = send(sockfd, buf, strlen(buf), 0);
@@ -180,7 +180,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
     #else
             ssize_t  i= read(sockfd, buf, sizeof(buf));
     #endif
-            //Âèñbody
+            //»°body
             RT_MQTT_COMMAN_DEBUG("rcv buff:%s\n",buf);
             char *temp = strstr(buf, "\r\n\r\n");
             //printf("temp:%s\n",temp);
@@ -192,7 +192,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
                     temp = strstr(temp,"\r\n");
                 }
                 ret = cb(temp);
-                RT_MQTT_COMMAN_DEBUG("cb retÔºö%d\n",ret);
+                RT_MQTT_COMMAN_DEBUG("cb ret£∫%d\n",ret);
                 break;
             }
             else
@@ -204,7 +204,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         }
         else
         {
-            RT_MQTT_COMMAN_DEBUG("retÔºö%d\n",ret);
+            RT_MQTT_COMMAN_DEBUG("ret£∫%d\n",ret);
             ret = -1;
             break;
         }
@@ -224,7 +224,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
 }
 
 
-//EMQÁöÑticiet serverÂõûË∞ÉÂ§ÑÁêÜ
+//EMQµƒticiet serverªÿµ˜¥¶¿Ì
 static int rt_reg_cb(const char *json_data) {
     int ret = -1;
     char buf[500];
@@ -263,7 +263,7 @@ static int rt_reg_cb(const char *json_data) {
 }
 
 
-//‰∫ëÂêßÁöÑticket serverÂõûË∞ÉÂ§ÑÁêÜ
+//‘∆∞…µƒticket serverªÿµ˜¥¶¿Ì
 static int reg_cb(const char *json_data) {
     int ret = -1;
     char buf[500];
@@ -293,7 +293,7 @@ static int reg_cb(const char *json_data) {
 }
 
 
-//Áî®‰∫éÁ∫¢Ëå∂adopter serverÂõûË∞ÉÂ§ÑÁêÜ
+//”√”⁄∫Ï≤Ëadopter serverªÿµ˜¥¶¿Ì
 static int reg_cb1(const char *json_data) {
     int ret = -1;
     char buf[500];
@@ -334,7 +334,7 @@ static int reg_cb1(const char *json_data) {
     return ret;
 }
 
-//  ‰∫ëÂêßËé∑ÂèñmqttËøûÊé•ÂèÇÊï∞Êé•Âè£
+//  ‘∆∞…ªÒ»°mqtt¡¨Ω”≤Œ ˝Ω”ø⁄
 int MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_info *info)
 {
     char *json_data = (char *)rt_os_malloc(1024);
@@ -360,7 +360,7 @@ int MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *de
     return 0;
 }
 
-//EMQËé∑ÂèñMQTTËøûÊé•ÂèÇÊï∞Êé•Âè£
+//EMQªÒ»°MQTT¡¨Ω”≤Œ ˝Ω”ø⁄
 int MQTTClient_setup_with_appkey(char* appkey, mqtt_info *info)
 {
     char json_data[1024];
@@ -382,7 +382,7 @@ int MQTTClient_setup_with_appkey(char* appkey, mqtt_info *info)
 }
 
 
-//Á∫¢Ëå∂adapterÊúçÂä°Âô®Ëé∑Âèñ
+//∫Ï≤Ëadapter∑˛ŒÒ∆˜ªÒ»°
 int rt_mqtt_setup_with_appkey(char *appkey,mqtt_info *info)
 {
     char json_data[1024];

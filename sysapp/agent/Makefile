@@ -40,6 +40,10 @@ COMM-LIB 		= comm crypto ssl pthread
 ### path
 ############################################################################
 vpath %.c ./core/bootstrap
+vpath %.c ./core/ota
+vpath %.c ./core/personalise
+vpath %.c ./core/mqtt
+vpath %.c ./core/config
 vpath %.c ./core/queue
 vpath %.c ./core/cardm
 vpath %.c ./core/logm
@@ -54,6 +58,9 @@ vpath %.c ./core/personalise
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= $(wildcard ./core/mqtt/src/*.c)
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/config.c
+
 SRC-y 			+= src/agent_main.c
 SRC-y 			+= src/agent_queue.c
 SRC-y 			+= src/card_manager.c
@@ -69,6 +76,8 @@ SRC-y 			+= src/apdu.c
 INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)		+= ./core/bootstrap/
 INC-PATH-$(CFG_AGENT_OTA_ON)			+= ./core/ota/
 INC-PATH-$(CFG_AGENT_PERSONALISE_ON)	+= ./core/personalise/
+INC-PATH-y								+= ./core/mqtt/
+INC-PATH-y								+= ./core/config/
 INC-PATH-y 		+= ./core/queue/
 INC-PATH-y 		+= ./core/cardm/
 INC-PATH-y 		+= ./core/networkd/

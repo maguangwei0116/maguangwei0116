@@ -17,18 +17,33 @@ info:
 	@echo "COBJS=$(COBJS)"
 	@echo "OBJS=$(OBJS)"
 	@echo "DEPS=$(DEPS)"
-	@echo "CC=$(CC)" O=$(O) -DMACRO=$(MACRO)
+	@echo "CC=$(CC)" O=$(O)
 	@echo "CFLAGS=$(CFLAGS)"
 	@echo "LDFLAGS=$(LDFLAGS)"
 	@echo "SYSROOT=$(SYSROOT)"
 	@echo "TARGET=$(TARGET)"
+	@echo "REDTEA_SUPPORT_SCRIPTS_PATH=$(REDTEA_SUPPORT_SCRIPTS_PATH)"
+	@echo "SYSAPP_TARGET_NAME=$(SYSAPP_TARGET_NAME)"
+	@echo "RELEASE_TARGET=$(RELEASE_TARGET)"
+#	@echo "$(.VARIABLES)"
+	@echo "BR2_CONF_MK=$(BR2_CONF_MK)"
+	
 clean:
 	rm -rf $(O)
 
 # Include sub comm makefiles
--include ../../buildroot/support/redtea/tool.mk
--include ../../buildroot/support/redtea/flags.mk
--include ../../buildroot/support/redtea/object.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/gen_conf.mk
+
+# Add SHA256 sum to the tail of a file
+define SYSAPP_ADD_SHA256SUM
+	sha256sum $(1) | awk '{ print $$1 }' | xargs echo -n >> $(1)
+endef
+
+# Every obejct file depend on conf-file
+$(OBJS): gen-conf-file
 
 $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	$($(quiet)do_cc) $(MAIN_INCLUDES) -o "$@" $(OBJS) $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME)
@@ -37,16 +52,18 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	@$(CHMOD) +x "$@"
 	$($(quiet)do_strip) --strip-all "$@"
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(ELF_FILE_NAME)
-	-$(Q)$(CP) -rf $@ $(SYSAPP_INSTALL_PATH)/
+	-$(Q)$(call SYSAPP_ADD_SHA256SUM,$(O)/$(TARGET_FILE_NAME))
+	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(RELEASE_TARGET)
+	-$(Q)$(CP) -rf $(O)/$(RELEASE_TARGET) $(SYSAPP_INSTALL_PATH)/
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"
-	@$(ECHO) "|   Finished building target: $(TARGET_FILE_NAME)"
+	@$(ECHO) "|   Finished building target: $(RELEASE_TARGET)"
 	@$(ECHO) "|"
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
-.PHONY: all clean info $(TARGET)
+.PHONY: all clean info $(TARGET) gen-conf-file
 
 # Include the dependency files, should be the last of the makefile
 -include $(DEPS)

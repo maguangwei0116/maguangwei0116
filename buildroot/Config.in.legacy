@@ -32,7 +32,7 @@ comment "Legacy detected: check the content of the menu below"
 # This option should get a new name with every buildroot release, so it defaults
 # to y again for people who upgrade.
 menuconfig BR2_LEGACY_CHECK_2012_11
-	bool "Check for legacy config options"
+	bool "Check for Legacy Config Options"
 	default y
 	help
 	  Select this option to see the config options that are present in your

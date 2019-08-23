@@ -1,31 +1,27 @@
 menu "Toolchain"
 
-config BR2_TOOLCHAIN_URL
-	string "Toolchain"
-	default "http://10.1.40.23/pub/toolchain/gcc/ndk-gcc-allin1-x86.tar.bz2"
-	help
-	  Enable this option if you want to build sp.
-
 config BR2_TOOLCHAIN_INSTALL_PATH
-        string "toolchain mcore install PATH"
-        default "$(WORKSPACE)/toolchain/"
-        help
-            local path of the custom toolchain tarball to install.
+	string "Toolchain Install Path"
+	default "$(WORKSPACE)/toolchain/"
+	help
+		local path of the custom toolchain tarball to install.
 
 config BR2_TOOLCHAIN_PREFIX
-	string "Broadcom mcorex Toolchain prefix for cross compile"
+	string "Toolchain Prefix for Cross Compile"
 	default "ndk/toolchains/mcore-elf-ccore/prebuilt/linux-x86/bin/mcore-elf-"
 	help
 	  Enable this option if you want to build sp.
 
 config BR2_TOOLCHAIN_SYSROOT
-	string "sysroot config"
+	string "Sysroot Config"
 	default "ndk/toolchains/mcore-elf-ccore/prebuilt/linux-x86/bin/mcore-elf-"
 	help
 	  Enable this option if you want to build with --sysroot=xxx.
 
 config BR2_TOOLCHAIN_SYSINC
-	string "sysinc config"
+	string "Sysinc Config"
+	default "ndk/toolchains/mcore-elf-ccore/prebuilt/linux-x86/bin/mcore-elf-"
 	help
 	  Enable this option if you want to build with --sysinc=xxx.
+	  
 endmenu
