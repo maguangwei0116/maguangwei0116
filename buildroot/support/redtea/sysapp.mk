@@ -9,7 +9,7 @@ MAP_FILE_NAME 		= $(TARGET).map
 DMP_FILE_NAME 		= $(TARGET).dmp
 BIN_FILE_NAME 		= $(TARGET).bin
 
-all: gen-conf-file $(TARGET)
+all: $(TARGET)
 
 $(TARGET): $(O)/$(TARGET_FILE_NAME)
 
@@ -42,6 +42,9 @@ define SYSAPP_ADD_SHA256SUM
 	sha256sum $(1) | awk '{ print $$1 }' | xargs echo -n >> $(1)
 endef
 
+# Every obejct file depend on conf-file
+$(OBJS): gen-conf-file
+
 $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	$($(quiet)do_cc) $(MAIN_INCLUDES) -o "$@" $(OBJS) $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME)
 	$($(quiet)do_objdump) -l -x -d "$@" > $(O)/$(DMP_FILE_NAME)
@@ -60,7 +63,7 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
-.PHONY: all clean info $(TARGET)
+.PHONY: all clean info $(TARGET) gen-conf-file
 
 # Include the dependency files, should be the last of the makefile
 -include $(DEPS)
