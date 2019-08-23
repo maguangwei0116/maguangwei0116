@@ -19,6 +19,9 @@ CP					= cp
 LN					= ln
 CD					= cd
 
+# Force to config SHELL, or [echo -e] will be a problem !
+SHELL				= /bin/bash 
+
 # Config for quite tool
 quiet_do_cc        	= $(Q)$(ECHO)	"  CC       $<" && $(CC)
 quiet_do_cxx       	= $(Q)$(ECHO)	"  CXX      $<" && $(CXX)
