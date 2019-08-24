@@ -15,6 +15,6 @@
 #define __BOOTSTRAP_H__
 
 #include "rt_type.h"
-
+void boot_strap_event(const uint8_t *buf, int32_t len, int32_t mode);
 
 #endif // __BOOTSTRAP_H__

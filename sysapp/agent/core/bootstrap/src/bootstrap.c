@@ -25,3 +25,8 @@ int32_t bootstrap_main(void)
     printf("Hello world\r\n");
     return 0;
 }
+
+void boot_strap_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    MSG_PRINTF(LOG_INFO, "Help us choose the card\n");
+}
