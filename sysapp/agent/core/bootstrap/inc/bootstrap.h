@@ -16,4 +16,6 @@
 
 #include "rt_type.h"
 
+int32_t bootstrap_enable_profile(int32_t *arg);
+
 #endif // __BOOTSTRAP_H__

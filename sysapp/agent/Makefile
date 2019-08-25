@@ -92,7 +92,7 @@ INC-y 			+= $(INC-PATH-y)
 INC-y 			+= $(addsuffix inc, $(wildcard $(INC-PATH-y)))
 
 # Config your lib
-LIB-y 			= -lm
+LIB-y 			= -lm -lcomm
 LIB-y 			+= $(patsubst %,-l%,$(COMM-LIB))
 LIB-y 			+= $(patsubst %,-l%,$(QMI-LIB))
 

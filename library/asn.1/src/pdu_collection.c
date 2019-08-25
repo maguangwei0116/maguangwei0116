@@ -4,6 +4,9 @@
 
 struct asn_TYPE_descriptor_s;	/* Forward declaration */
 
+extern struct asn_TYPE_descriptor_s asn_DEF_Bootstrap_BootstrapRequest;
+extern struct asn_TYPE_descriptor_s asn_DEF_BootstrapResponse;
+extern struct asn_TYPE_descriptor_s asn_DEF_Credential;
 extern struct asn_TYPE_descriptor_s asn_DEF_ProfileElement;
 extern struct asn_TYPE_descriptor_s asn_DEF_EUICCResponse;
 extern struct asn_TYPE_descriptor_s asn_DEF_X520name;
@@ -117,9 +120,16 @@ extern struct asn_TYPE_descriptor_s asn_DEF_SetDefaultDpAddressRequest;
 extern struct asn_TYPE_descriptor_s asn_DEF_SetDefaultDpAddressResponse;
 extern struct asn_TYPE_descriptor_s asn_DEF_MoreEIDOperateRequest;
 extern struct asn_TYPE_descriptor_s asn_DEF_MoreEIDOperateResponse;
+extern struct asn_TYPE_descriptor_s asn_DEF_ProfileFile;
+extern struct asn_TYPE_descriptor_s asn_DEF_BootstrapRequest_BootstrapRequest;
 
 
 struct asn_TYPE_descriptor_s *asn_pdu_collection[] = {
+	/* From module Bootstrap in Bootstrap.asn */
+	&asn_DEF_Bootstrap_BootstrapRequest,	
+	&asn_DEF_BootstrapResponse,	
+	/* From module Credential in Credential.asn */
+	&asn_DEF_Credential,	
 	/* From module PEDefinitions in PEDefinitionsV2.2.asn */
 	&asn_DEF_ProfileElement,	
 	&asn_DEF_EUICCResponse,	
@@ -186,7 +196,7 @@ struct asn_TYPE_descriptor_s *asn_pdu_collection[] = {
 	&asn_DEF_CertificateIssuer,	
 	&asn_DEF_HoldInstructionCode,	
 	&asn_DEF_InvalidityDate,	
-	/* From module RSPDefinitions in RSPDefinitionsV2.1.asn */
+	/* From module RSPDefinitions in RSPDefinitionsV2.2.asn */
 	&asn_DEF_Octet2,	
 	&asn_DEF_GetEuiccInfo1Request,	
 	&asn_DEF_GetEuiccInfo2Request,	
@@ -237,6 +247,10 @@ struct asn_TYPE_descriptor_s *asn_pdu_collection[] = {
 	&asn_DEF_SetDefaultDpAddressResponse,	
 	&asn_DEF_MoreEIDOperateRequest,	
 	&asn_DEF_MoreEIDOperateResponse,	
+	/* From module PROFILE in ShareProfile.asn */
+	&asn_DEF_ProfileFile,	
+	/* From module BootstrapRequest in ShareProfile.asn */
+	&asn_DEF_BootstrapRequest_BootstrapRequest,	
 	0
 };
 

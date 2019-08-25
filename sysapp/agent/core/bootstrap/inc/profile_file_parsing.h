@@ -96,4 +96,6 @@ PROFILE DEFINITIONS AUTOMATIC TAGS ::= BEGIN
 
 int32_t init_profile_file(int32_t *arg);
 
+int32_t selected_profile(int random,int enable_num);
+
 #endif //SMART_PROFILE_PARSING_H

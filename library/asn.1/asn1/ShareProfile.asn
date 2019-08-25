@@ -1,0 +1,78 @@
+PROFILE DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+    ProfileFile ::= SEQUENCE {  -- Tag '30'
+            sharedProfile  SharedProfile,                                                     -- Tag '30'
+            hashCode  [APPLICATION 1] OCTET STRING (SIZE (32))         -- Tag '41'
+    }
+
+    SharedProfile ::= SEQUENCE {
+            fileInfo FileInfo,                                                                             -- Tag 'A0'
+            rootSk OCTET STRING,                                                               -- Tag '81'
+            profileKey OCTET STRING,                                                         -- Tag '82'
+            optProfiles SEQUENCE OF OperatorProfile                              -- Tag 'A3'
+    }
+
+    -- 文件属性信息
+    FileInfo ::= SEQUENCE {
+            operatorNum INTEGER,              --Tag '80'
+            version OCTET STRING    				    --Tag '81'
+    }
+
+    -- profile和profile info的信息
+    OperatorProfile ::= SEQUENCE {
+            profileInfo ProfileInfo1,                                 		      --Tag '30'
+            content  OCTET STRING                                       		      --Tag '81'
+    }
+
+    -- profileInfo 信息
+    ProfileInfo1 ::= SEQUENCE {				--Tag 'A0'
+            apn SEQUENCE OF ApnList,          		 --Tag 'A0'
+            totalNum INTEGER,            			--Tag '81'
+            sequential BOOLEAN,        		--Tag '82'
+            preferredInfo SEQUENCE OF PreferredInfo OPTIONAL     		--Tag 'A1'
+    }
+
+   ApnList ::= SEQUENCE {                                          		--Tag '30'
+            apnName  OCTET STRING,				--Tag '80'
+            mccMnc  OCTET STRING				--Tag '81'
+   }
+
+    -- 优选网络信息
+    PreferredInfo ::= SEQUENCE {
+            mcc OCTET STRING,
+            plmn SEQUENCE OF Plmn
+    }
+
+    Plmn ::= SEQUENCE {
+            rplmn  OCTET STRING OPTIONAL,
+            fplmn  OCTET STRING OPTIONAL,
+            hplmn  OCTET STRING OPTIONAL,
+            ehplmn  OCTET STRING OPTIONAL,
+            oplmn  OCTET STRING OPTIONAL
+    }
+
+
+    END
+
+
+   BootstrapRequest DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+   BootstrapRequest ::= [PRIVATE 127] SEQUENCE { --Tag ‘FF7F’
+        tbhRequest TBHRequest,					-- Tag '30'
+        hashCode [APPLICATION 1] OCTET STRING                                   	 -- Tag '41'
+    }
+
+
+    TBHRequest ::= SEQUENCE {
+        iccid OCTET STRING,     	-- Tag '80'
+        imsi OCTET STRING,      	-- Tag '81'
+        key OCTET STRING, 			-- Tag '82'
+        opc OCTET STRING, 			-- Tag '83'
+        rotation OCTET STRING,      	-- Tag '84'
+        xoring OCTET STRING,        		-- Tag '85'
+        sqnFlag OCTET STRING,					-- Tag '86'
+        rplmn OCTET STRING OPTIONAL,  				-- Tag '87'
+        fplmn OCTET STRING OPTIONAL,				-- Tag '88'
+        hplmn OCTET STRING OPTIONAL, 							-- Tag '89'
+        ehplmn OCTET STRING OPTIONAL, 		-- Tag '8A'
+        oplmn OCTET STRING OPTIONAL  			-- Tag '8B'
+    }
+END
