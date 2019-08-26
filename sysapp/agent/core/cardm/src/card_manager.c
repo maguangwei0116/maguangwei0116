@@ -17,6 +17,8 @@
 
 static profile_info_t g_p_info;
 
+uint8_t g_buf[] = {0x01,0x02,0x03,0x04,0x05};
+
 static int32_t card_load_profile(const uint8_t *buf, int32_t len)
 {
     return lpa_load_profile(buf, len);

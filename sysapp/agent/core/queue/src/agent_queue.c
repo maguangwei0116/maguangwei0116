@@ -19,15 +19,15 @@
 #define  AGENT_QUEUE_MSG_TYPE    1
 
 typedef struct AGENT_QUEUE {
-    int64_t msg_typ;
+    long msg_typ;
     int32_t msg_id;
     int32_t mode;
-    int32_t data_len;
     void *data_buf;
+    int32_t data_len;
 } agent_que_t;
 
 typedef struct UPLOAD_QUEUE {
-    int64_t msg_typ;
+    long msg_typ;
     int32_t data_len;
     void *data_buf;
 } upload_que_t;
@@ -39,11 +39,13 @@ static int32_t g_upload_queue_id = -1;
 static void agent_queue_task(void)
 {
     agent_que_t que_t;
-    int32_t len = sizeof(agent_que_t)-sizeof(long);
+    int32_t len = sizeof(agent_que_t) - sizeof(long);
     while (1) {
         if (rt_receive_queue_msg(g_queue_id, &que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
             switch (que_t.msg_id) {
                 case MSG_ID_BOOT_STRAP:
+                    MSG_PRINTF(LOG_INFO, "que_t.data_buf:%p, len:%d\n", que_t.data_buf, que_t.data_len);
+                    MSG_INFO_ARRAY("name:", que_t.data_buf, que_t.data_len);
                     boot_strap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 case MSG_ID_CARD_MANAGER:
@@ -134,7 +136,7 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
     }
     MSG_PRINTF(LOG_INFO, "len:%d\n", len);
     que_t.data_len = len;
-    len = sizeof(agent_que_t) - sizeof(int64_t);
+    len = sizeof(agent_que_t) - sizeof(long);
     MSG_PRINTF(LOG_INFO, "len:%d\n", len);
     return rt_send_queue_msg(g_queue_id, (void *)&que_t, len, 0);
 }
