@@ -19,7 +19,12 @@
 
 uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
+    uint16_t cmd = 0;
     softsim_logic_command(1, data, len, rsp, rsp_len);
+    cmd = (data[5] << 8) + data[6];
+    if (cmd == 0xBF31) {
+        trigger_insert_card(1);
+    }
 }
 
 int32_t main(void)

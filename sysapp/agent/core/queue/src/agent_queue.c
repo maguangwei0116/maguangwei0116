@@ -44,8 +44,6 @@ static void agent_queue_task(void)
         if (rt_receive_queue_msg(g_queue_id, &que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
             switch (que_t.msg_id) {
                 case MSG_ID_BOOT_STRAP:
-                    MSG_PRINTF(LOG_INFO, "que_t.data_buf:%p, len:%d\n", que_t.data_buf, que_t.data_len);
-                    MSG_INFO_ARRAY("name:", que_t.data_buf, que_t.data_len);
                     boot_strap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 case MSG_ID_CARD_MANAGER:
@@ -137,7 +135,6 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
     MSG_PRINTF(LOG_INFO, "len:%d\n", len);
     que_t.data_len = len;
     len = sizeof(agent_que_t) - sizeof(long);
-    MSG_PRINTF(LOG_INFO, "len:%d\n", len);
     return rt_send_queue_msg(g_queue_id, (void *)&que_t, len, 0);
 }
 
