@@ -63,7 +63,7 @@ static void agent_queue_task(void)
                 break;
 
                 case MSG_ID_NETWORK_DECTION:
-
+                    network_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 default: {
                     break;

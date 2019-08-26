@@ -17,6 +17,27 @@
 
 static profile_info_t g_p_info;
 
+static int32_t card_load_profile(const uint8_t *buf, int32_t len)
+{
+    return lpa_load_profile(buf, len);
+}
+
+static int32_t card_enabele_profile(const int8_t *iccid)
+{
+    int32_t ret = RT_ERROR;
+    ret = lpa_enable_profile(iccid);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n",ret);
+    }
+    msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_ALL_SWITCH_CARD, NULL, 0);
+    return ret;
+}
+
+static int32_t card_load_cert(const uint8_t *buf, int32_t len)
+{
+    return lpa_load_cert(buf, len);
+}
+
 int32_t init_card_manager(void *arg)
 {
     uint8_t eid[32];
@@ -27,17 +48,12 @@ int32_t init_card_manager(void *arg)
     ret = lpa_get_profile_info(&g_p_info, &num);
     if (ret == RT_SUCCESS) {
         if ((g_p_info.class == 1) && (num == 1)) {
+            card_enabele_profile(g_p_info.iccid);
             msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
         }
     }
-    MSG_PRINTF(LOG_INFO, "num:%d, g_p_info.class:%d\n", num, g_p_info.class);
+    MSG_PRINTF(LOG_INFO, "num:%d, g_p_info.class:%d, state:%d\n", num, g_p_info.class, g_p_info.state);
     return ret;
-}
-
-
-static int32_t card_load_profile(const uint8_t *buf, int32_t len)
-{
-    return lpa_load_profile(buf, len);
 }
 
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
@@ -50,7 +66,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             ret = card_load_profile(buf, len);
         break;
         case MSG_CARD_SETTING_CERTIFICATE:
-            ret = lpa_load_cert(buf, len);
+            ret = card_load_cert(buf, len);
         break;
         case MSG_CARD_FROM_MQTT:
         break;

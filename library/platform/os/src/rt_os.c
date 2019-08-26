@@ -267,11 +267,6 @@ void *rt_os_signal(int signum, void* handler)
     signal(signum, handler);
 }
 
-void *rt_os_signal(int signum, void* handler)
-{
-    signal(signum, handler);
-}
-
 uint32_t rt_os_alarm(uint32_t seconds)
 {
     return alarm(seconds);

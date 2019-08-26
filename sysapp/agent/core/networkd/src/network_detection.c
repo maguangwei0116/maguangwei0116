@@ -23,6 +23,11 @@ static void network_detection_task(void)
     }
 }
 
+int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+
+}
+
 void network_state(int32_t state)
 {
     MSG_PRINTF(LOG_INFO, "state:%d\n", state);
