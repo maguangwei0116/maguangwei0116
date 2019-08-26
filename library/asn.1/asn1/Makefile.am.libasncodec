@@ -1,7 +1,4 @@
 ASN_MODULE_SRCS=	\
-	Bootstrap_BootstrapRequest.c	\
-	Bootstrap_TBHRequest.c	\
-	BootstrapResponse.c	\
 	Credential.c	\
 	TBHCredential.c	\
 	CustomCertInfo.c	\
@@ -323,13 +320,11 @@ ASN_MODULE_SRCS=	\
 	ApnList.c	\
 	PreferredInfo.c	\
 	Plmn.c	\
-	BootstrapRequest_BootstrapRequest.c	\
-	BootstrapRequest_TBHRequest.c
+	BootstrapRequest.c	\
+	TBHRequest.c	\
+	BootstrapResponse.c
 
 ASN_MODULE_HDRS=	\
-	Bootstrap_BootstrapRequest.h	\
-	Bootstrap_TBHRequest.h	\
-	BootstrapResponse.h	\
 	Credential.h	\
 	TBHCredential.h	\
 	CustomCertInfo.h	\
@@ -651,8 +646,9 @@ ASN_MODULE_HDRS=	\
 	ApnList.h	\
 	PreferredInfo.h	\
 	Plmn.h	\
-	BootstrapRequest_BootstrapRequest.h	\
-	BootstrapRequest_TBHRequest.h
+	BootstrapRequest.h	\
+	TBHRequest.h	\
+	BootstrapResponse.h
 
 ASN_MODULE_HDRS+=ANY.h
 ASN_MODULE_SRCS+=ANY.c

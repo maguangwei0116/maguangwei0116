@@ -6,31 +6,29 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include "rt_rplmn.h"
-#include "TBHRequest.h"
-#include "der_encoder.h"
-#include "ber_decoder.h"
 #include "file.h"
 #include "profile_file_parsing.h"
 #include "ProfileInfo1.h"
-#include "Bootstrap_TBHRequest.h"
-#include "Bootstrap_BootstrapRequest.h"
+#include "FileInfo.h"
+#include "TBHRequest.h"
+#include "BootstrapRequest.h"
 #include "tlv.h"
+#include "agent_queue.h"
+#include "convert.h"
 
-typedef struct profile_offset {
-    uint16_t file_info;
-    uint16_t root_sk;
-    uint16_t aes_key;
-    uint16_t operator_info;
-    uint16_t hash_code;
-} profile_offset_t;
+#define SHARE_PROFILE "continuous_profile.der"
 
-int32_t share_profile_num;  // share_profile数目
-uint16_t share_profile_length;  // share_profile长度
-int16_t share_profile_sequential;  // 是否连续为share_profile
-int16_t profile_offset;  // profile偏移量
+typedef struct profile_data {
+    uint16_t file_info_offset;
+    uint16_t root_sk_offset;
+    uint16_t aes_key_offset;
+    uint16_t operator_info_offset;
+    int32_t priority;
+    int32_t operator_num;
+    uint16_t hash_code_offset;
+} profile_data_t;
 
-profile_offset_t offset;
-ProfileInfo1_t *request;
+profile_data_t data;
 
 static uint16_t get_offset(rt_fshandle_t fp, uint8_t type, uint8_t *asset, uint16_t *size) {
     int ret = 0;
@@ -97,7 +95,7 @@ static uint16_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint8_t *sk, ui
 static uint16_t rt_get_hash_code_offset(rt_fshandle_t fp) {
     uint8_t buf[4];
     uint16_t off = 0;
-    off = offset.operator_info;
+    off = data.operator_info_offset;
     rt_fseek(fp, off, RT_FS_SEEK_SET);
 
     rt_fread(buf, 1, 4, fp);
@@ -130,17 +128,114 @@ static uint8_t *get_profile_info(uint8_t *buffer, uint16_t len, uint16_t *tag_le
     return p;
 }
 
-static int decode_profile_info(rt_fshandle_t fp, uint16_t off) {
+static int decode_file_info(rt_fshandle_t fp) {
     uint8_t buf[100];
     int size;
+    FileInfo_t *request;
+
+    rt_fseek(fp, data.file_info_offset, RT_FS_SEEK_SET);
+    rt_fread(buf, 1, 100, fp);
+    asn_dec_rval_t dc;
+    size = get_length(buf, 0) + get_length(buf, 1);
+    buf[0] = 0x30;
+    dc = ber_decode(NULL, &asn_DEF_FileInfo, (void **) &request, buf, size);
+
+    if (dc.code != RC_OK) {
+        printf("\n%ld\n", dc.consumed);
+        return 0;// 报错
+    }
+    printf("\n------num:%d\n", request->operatorNum);
+    if (request != NULL) {
+        ASN_STRUCT_FREE(asn_DEF_FileInfo, request);
+    }
+
+    return 0;
+}
+
+static uint8_t decode_profile(rt_fshandle_t fp, uint16_t off, int length) {
+    BootstrapRequest_t *request = NULL;
+    asn_dec_rval_t dc;
+    uint8_t buf[length];
+
+    rt_fseek(fp, off, RT_FS_SEEK_SET);
+    rt_fread(buf, 1, length, fp);
+    dc = ber_decode(NULL, &asn_DEF_BootstrapRequest, (void **) &request, buf, length);
+    if (dc.code != RC_OK) {
+        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
+        return RT_ERROR;// 报错
+    }
+    MSG_PRINTF(LOG_INFO, "size:%d\n", request->tbhRequest.imsi.size);
+    MSG_INFO_ARRAY("imsi:", request->tbhRequest.imsi.buf, request->tbhRequest.imsi.size);
+    if (request != NULL) {
+        ASN_STRUCT_FREE(asn_DEF_BootstrapRequest, request);
+    }
+    return RT_SUCCESS;
+}
+
+uint8_t profile_buffer1[300];
+uint16_t g_buf_size = 0;
+
+static int encode_cb_fun(const void *buffer, size_t size, void *app_key) {
+    rt_os_memcpy(profile_buffer1 + g_buf_size, buffer, size);
+    g_buf_size += size;
+    return 0;
+}
+
+static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index) {
+    BootstrapRequest_t *bootstrap_request = NULL;
+    asn_dec_rval_t dc;
+    asn_enc_rval_t ec;
+
+    dc = ber_decode(NULL, &asn_DEF_BootstrapRequest, (void **) &bootstrap_request, profile_buffer, profile_len);
+    if (dc.code != RC_OK) {
+        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
+        return RT_ERROR;// 报错
+    }
+    uint8_t imsi_buffer[2];
+    imsi_buffer[0] = bootstrap_request->tbhRequest.imsi.buf[7];
+    imsi_buffer[1] = bootstrap_request->tbhRequest.imsi.buf[8];
+    swap_nibble(imsi_buffer, 2);
+    char imsi_buf[5] = {0};
+    bytes2hexstring(imsi_buffer, 2, imsi_buf);
+    uint16_t imsi_len = sizeof(imsi_buffer);
+
+    int32_t imsi = selected_profile_index + atoi(imsi_buf);
+    snprintf(imsi_buf, sizeof(imsi_buf), "%04d", imsi);
+    hexstring2bytes(imsi_buf, imsi_buffer, &imsi_len);
+    swap_nibble(imsi_buffer, 2);
+
+    bootstrap_request->tbhRequest.imsi.buf[7] = imsi_buffer[0];
+    bootstrap_request->tbhRequest.imsi.buf[8] = imsi_buffer[1];
+    ec = der_encode(&asn_DEF_BootstrapRequest, bootstrap_request, encode_cb_fun, NULL);
+
+    if (ec.encoded == -1) {
+        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
+        return RT_ERROR;// 报错
+    }
+
+    if (bootstrap_request != NULL) {
+        ASN_STRUCT_FREE(asn_DEF_BootstrapRequest, bootstrap_request);
+    }
+
+    MSG_INFO_ARRAY("profile:", profile_buffer1, profile_len);
+    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer1, profile_len);
+    return RT_SUCCESS;
+}
+
+static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t random) {
+    int32_t selected_profile_index, profile_len, size;
+    uint8_t buf[300];
+    ProfileInfo1_t *request = NULL;
+    asn_dec_rval_t dc;
+
+    rt_fseek(fp, off, RT_FS_SEEK_SET);
+    rt_fread(buf, 1, 300, fp);
+    off += get_length(buf, 1);
 
     rt_fseek(fp, off, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 100, fp);
 
-    asn_dec_rval_t dc;
-
     size = get_length(buf, 0) + get_length(buf, 1);
-
     // 如果tag为A0则与子项tag重名导致无法解析
     if (buf[0] == 0xA0) {
         buf[0] = 0x30;
@@ -151,91 +246,67 @@ static int decode_profile_info(rt_fshandle_t fp, uint16_t off) {
         printf("\n%ld\n", dc.consumed);
         return 0;// 报错
     }
-
     if (request != NULL) {
         ASN_STRUCT_FREE(asn_DEF_ProfileInfo1, request);
     }
-
-    return 0;
-}
-
-static uint16_t get_profile_offset(rt_fshandle_t fp, uint16_t off) {
-    uint8_t *p;
-    uint16_t tag_len = 0;
-    uint16_t left_len = 0;
-    uint8_t buf[300];
-
+    off += size;
     rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 300, fp);
-
+    rt_fread(buf, 1, 4, fp);
     off += get_length(buf, 1);
-    decode_profile_info(fp, off);
 
-    p = get_profile_info(buf, 300, &tag_len, &left_len);
-    off += get_length(p, 1);
-    off += tag_len;
-    return off;
-}
+    selected_profile_index = random % request->totalNum;
+    if (request->sequential == 0xFF) {
+        profile_len = get_length(buf, 0);
+    } else {
+        profile_len = get_length(buf, 0) / request->totalNum;
+    }
 
-static uint8_t decode_profile(rt_fshandle_t fp, uint16_t off, int length) {
-    uint8_t buf[length];
+    uint8_t profile_buffer[profile_len];
 
     rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, length, fp);
+    rt_fread(profile_buffer, 1, profile_len, fp);
 
-    Bootstrap_BootstrapRequest_t *request = NULL;
-    asn_dec_rval_t dc;
-
-    dc = ber_decode(NULL, &asn_DEF_Bootstrap_BootstrapRequest, (void **) &request, buf, length);
-
-    if (dc.code != RC_OK) {
-        printf("\nconsumed:%ld\n", dc.consumed);
-        return 0;// 报错
+    if (request->sequential == 0xFF) {
+        profile_len = get_length(buf, 0);
+        build_profile(profile_buffer, profile_len, selected_profile_index);
+    } else {
+        // todo 计算偏移量抽选
     }
 
-    if (request != NULL) {
-        ASN_STRUCT_FREE(asn_DEF_Bootstrap_BootstrapRequest, request);
-    }
-
-    printf("size:%d\n", request->tbhRequest.imsi.size);
-    return buf;
+    return RT_SUCCESS;
 }
 
-int num = 1;
-int priority = 0;
-int operator_num = 2;
-
-int32_t selected_profile(int random,int enable_num) {
+int32_t selected_profile(int32_t random) {
     rt_fshandle_t fp;
-    uint8_t buf[4];
-    uint16_t off = offset.operator_info;
+    uint8_t buf[8];
+    uint16_t off = data.operator_info_offset;
     uint16_t profile_len, selected_profile_index;
-    int i;
+    int32_t i = 0;
 
-    fp = rt_fopen("continuous_profile.der", RT_FS_READ);
+    fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
     if (fp == NULL) {
-        return 100;
+        MSG_PRINTF(LOG_ERR, "Open file failed\n");
+        return RT_ERROR;
     }
 
     rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 4, fp);
+    rt_fread(buf, 1, 8, fp);
+    MSG_INFO_ARRAY("opt:", buf, 8);
     if (buf[0] != 0xA3) {
-        return -1;
+        MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
+        return RT_ERROR;
     }
-
-    rt_fread(buf, 1, 4, fp);
-    if (buf[0] != 0x30) {
-        return -1;
+    if (buf[4] != 0x30) {
+        MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
+        return RT_ERROR;
     }
-
     off += 4;
-
     // 启卡次数大于运营商个数则重置
-    if (num >= operator_num) {
-        num = 0;
+    if (data.priority >= data.operator_num) {
+        data.priority = 0;
     }
     // 根据启卡次数计算应选运营商的偏移量
-    for (i = 0; i < num; i++) {
+    for (i = 0; i < data.priority; i++) {
         off += 4;
         if (buf[1] == ASN1_LENGTH_2BYTES) {
             off += ((uint16_t) buf[2] << 8) + buf[3];
@@ -246,45 +317,36 @@ int32_t selected_profile(int random,int enable_num) {
         }
     }
 
-    // todo：off已为选中运营商的偏移量
-    off = get_profile_offset(fp, off);
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 4, fp);
-    off += get_length(buf, 1);
-
-    selected_profile_index = random % request->totalNum;
-    if (request->sequential == 0xFF) {
-        profile_len = get_length(buf, 0);
-
-    } else {
-        profile_len = get_length(buf, 0) / request->totalNum;
-    }
-    decode_profile(fp, off, profile_len);
+    decode_profile_info(fp, off, random);
 
     if (fp != NULL) {
         rt_fclose(fp);
     }
+    data.priority++;// todo 选卡成功后更改运营商
+    return RT_SUCCESS;
 }
 
 int32_t init_profile_file(int32_t *arg) {
-    int ret;
+    int32_t ret = RT_SUCCESS;
     uint8_t buf[500];
     uint16_t len = 0;
     rt_fshandle_t fp;
 
-    fp = rt_fopen("continuous_profile.der", RT_FS_READ);
+    fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
     if (fp == NULL) {
-        return -1;
+        return RT_ERROR;
     }
-
-    offset.file_info = rt_get_file_info_offset(fp, buf, &len);
-    offset.root_sk = rt_get_root_sk_offset(fp, buf, &len);
-    offset.aes_key = rt_get_aes_key_offset(fp, buf, &len);
-    offset.operator_info = rt_get_operator_profile_offset(fp, buf, &len);
-    offset.hash_code = rt_get_hash_code_offset(fp);
+    data.file_info_offset = rt_get_file_info_offset(fp, buf, &len);
+    data.root_sk_offset = rt_get_root_sk_offset(fp, buf, &len);
+    data.aes_key_offset = rt_get_aes_key_offset(fp, buf, &len);
+    data.operator_info_offset = rt_get_operator_profile_offset(fp, buf, &len);
+    data.hash_code_offset = rt_get_hash_code_offset(fp);
 
     if (fp != NULL) {
         rt_fclose(fp);
     }
+
+    data.priority = 0;
+    data.operator_num = 2;
     return ret;
 }

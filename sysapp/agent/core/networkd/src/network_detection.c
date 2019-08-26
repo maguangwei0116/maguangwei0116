@@ -23,11 +23,16 @@ static void network_detection_task(void)
     }
 }
 
+void network_state(int32_t state)
+{
+    MSG_PRINTF(LOG_INFO, "state:%d\n", state);
+}
+
 int32_t init_network_detection(void *arg)
 {
     rt_task task_id = 0;
     int32_t ret = RT_ERROR;
-
+    regist_dial_callback((void *)network_state);
     ret = rt_create_task(&task_id, (void *) network_detection_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");

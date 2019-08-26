@@ -29,5 +29,5 @@ clean:
 regen: regenerate-from-asn1-source
 
 regenerate-from-asn1-source:
-	asn1c -fcompound-names Bootstrap.asn Credential.asn PEDefinitionsV2.2.asn PKIX1Explicit88.asn PKIX1Implicit88.asn RSPDefinitionsV2.2.asn ShareProfile.asn
+	asn1c -fcompound-names Credential.asn PEDefinitionsV2.2.asn PKIX1Explicit88.asn PKIX1Implicit88.asn RSPDefinitionsV2.2.asn ShareProfile.asn
 

@@ -14,7 +14,6 @@
 #include "agent_queue.h"
 #include "card_manager.h"
 #include "ipc_socket_client.h"
-#include "profile_file_parsing.h"
 #include "bootstrap.h"
 
 volatile int32_t toStop = 0;
@@ -31,10 +30,9 @@ int32_t main(int32_t argc, int8_t **argv)
     rt_os_signal(RT_SIGINT, cfinish);
     rt_qmi_init(NULL);
     init_queue(NULL);
+    init_bootstrap(NULL);
     init_card_manager(NULL);
     init_network_detection(NULL);
-    init_profile_file(NULL);
-    bootstrap_enable_profile(NULL);
     while (!toStop) {
         sleep(3);
     }

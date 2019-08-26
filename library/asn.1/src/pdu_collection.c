@@ -4,8 +4,6 @@
 
 struct asn_TYPE_descriptor_s;	/* Forward declaration */
 
-extern struct asn_TYPE_descriptor_s asn_DEF_Bootstrap_BootstrapRequest;
-extern struct asn_TYPE_descriptor_s asn_DEF_BootstrapResponse;
 extern struct asn_TYPE_descriptor_s asn_DEF_Credential;
 extern struct asn_TYPE_descriptor_s asn_DEF_ProfileElement;
 extern struct asn_TYPE_descriptor_s asn_DEF_EUICCResponse;
@@ -121,13 +119,11 @@ extern struct asn_TYPE_descriptor_s asn_DEF_SetDefaultDpAddressResponse;
 extern struct asn_TYPE_descriptor_s asn_DEF_MoreEIDOperateRequest;
 extern struct asn_TYPE_descriptor_s asn_DEF_MoreEIDOperateResponse;
 extern struct asn_TYPE_descriptor_s asn_DEF_ProfileFile;
-extern struct asn_TYPE_descriptor_s asn_DEF_BootstrapRequest_BootstrapRequest;
+extern struct asn_TYPE_descriptor_s asn_DEF_BootstrapRequest;
+extern struct asn_TYPE_descriptor_s asn_DEF_BootstrapResponse;
 
 
 struct asn_TYPE_descriptor_s *asn_pdu_collection[] = {
-	/* From module Bootstrap in Bootstrap.asn */
-	&asn_DEF_Bootstrap_BootstrapRequest,	
-	&asn_DEF_BootstrapResponse,	
 	/* From module Credential in Credential.asn */
 	&asn_DEF_Credential,	
 	/* From module PEDefinitions in PEDefinitionsV2.2.asn */
@@ -249,8 +245,8 @@ struct asn_TYPE_descriptor_s *asn_pdu_collection[] = {
 	&asn_DEF_MoreEIDOperateResponse,	
 	/* From module PROFILE in ShareProfile.asn */
 	&asn_DEF_ProfileFile,	
-	/* From module BootstrapRequest in ShareProfile.asn */
-	&asn_DEF_BootstrapRequest_BootstrapRequest,	
+	&asn_DEF_BootstrapRequest,	
+	&asn_DEF_BootstrapResponse,	
 	0
 };
 
