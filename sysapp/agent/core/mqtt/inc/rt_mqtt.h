@@ -5,12 +5,12 @@
 #include "rt_type.h"
 //#include "agent.h"
 
-#define MQTT_CONNECT_YUNBA_ERROR         -1
-#define MQTT_CONNECT_EMQ_ERROR              1
-#define MQTT_CONNECT_SUCCESS                  0
+#define MQTT_CONNECT_YUNBA_ERROR        -1
+#define MQTT_CONNECT_EMQ_ERROR          1
+#define MQTT_CONNECT_SUCCESS            0
 
-#define TICKET_SERVER_CACHE         "/data/redtea/ticket_server"
-#define MAX_CONNECT_SERVER_TIMER    3
+#define TICKET_SERVER_CACHE             "/data/redtea/ticket_server"
+#define MAX_CONNECT_SERVER_TIMER        3
 
 #define USE_ADAPTER_SERVER              1  // 是否使用mqtt ticket adapter代理服务器
 

@@ -34,19 +34,18 @@
 
 #include "rt_mqtt_common.h"
 
-
 #if (0)
     #define RT_MQTT_COMMAN_DEBUG  TRACE_ERROR
 #else
     #define RT_MQTT_COMMAN_DEBUG
 #endif
 
-
 REG_info reg_info;
 static char reg_url[40];
 static int reg_port = 8383;
 
 typedef int (*YUNBA_CALLBACK)(char *p);
+
 int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, PCALLBACK cb)
 {
     int ret = -1;
@@ -59,8 +58,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
     char md5_out[32+1];
 
     do{
-        if(NULL == json_data || NULL == hostname || NULL == path)
-        {
+        if(!json_data || !hostname || !path) {
             RT_MQTT_COMMAN_DEBUG("path json data error\n");
             break;
         }
@@ -88,75 +86,71 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         servaddr.sin_family = AF_INET;
         servaddr.sin_port = htons(port);
 
-        if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) <= 0)
-        {
+        if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) <= 0) {
             RT_MQTT_COMMAN_DEBUG("create socket error\n");
             break;
         }
 
         struct hostent *host_entry = gethostbyname(hostname);
 
-        if(NULL == host_entry)
-        {
+        if(NULL == host_entry) {
             break;
         }
 
         char* p = inet_ntoa(*((struct in_addr *)host_entry->h_addr));
-        if(p == NULL)
-        {
+        if(!p) {
             RT_MQTT_COMMAN_DEBUG("11p error\n");
             break;
         }
 
-        if (inet_pton(AF_INET, p, &servaddr.sin_addr) <= 0)
-        {
+        if (inet_pton(AF_INET, p, &servaddr.sin_addr) <= 0) {
             RT_MQTT_COMMAN_DEBUG("22p error\n");
             break;
         }
+        
         RT_MQTT_COMMAN_DEBUG("servaddr.sin_addr:%x\n",servaddr.sin_addr);
         struct timeval timeout;
         timeout.tv_sec = 10;
         timeout.tv_usec = 0;
-        if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
-        {
+        if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
             RT_MQTT_COMMAN_DEBUG("setsockopt0 error\n");
             break;
         }
 
-        if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
-        {
+        if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
             RT_MQTT_COMMAN_DEBUG("setsockopt error\n");
             break;
         }
+        
         //TODO: 超时处理.
         RT_MQTT_COMMAN_DEBUG("sockfd:%d\n",sockfd);
-        if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
-        {
-            RT_MQTT_COMMAN_DEBUG("connect error %s errno: %d\n",strerror(errno),errno);
+        if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
+            RT_MQTT_COMMAN_DEBUG("connect error %s errno: %d\n", strerror(errno), errno);
             break;
         }
 
         char temp[128];
-        sprintf(temp, "POST %s HTTP/1.1", path);
+        snprintf(temp, sizeof(temp), "POST %s HTTP/1.1", path);
         strcat(buf, temp);
         strcat(buf, "\r\n");
-        sprintf(temp, "Host: %s:%d", hostname, port),
+        snprintf(temp, sizeof(temp), "Host: %s:%d", hostname, port),
         strcat(buf, temp);
         strcat(buf, "\r\n");
         strcat(buf, "Accept: */*\r\n");
         strcat(buf, "Content-Type: application/json;charset=UTF-8\r\n");
         strcat(buf, "md5sum:");
-        sprintf(temp, "%s\r\n", md5_out);
+        snprintf(temp, sizeof(temp), "%s\r\n", md5_out);
         strcat(buf, temp);
         strcat(buf, "Content-Length: ");
-        sprintf(temp, "%d", strlen(json_data)),
+        snprintf(temp, sizeof(temp), "%d", strlen(json_data)),
         strcat(buf, temp);
         strcat(buf, "\r\n\r\n");
         strcat(buf, json_data);
 
-        RT_MQTT_COMMAN_DEBUG("json data len:%d\n",strlen(json_data));
+        RT_MQTT_COMMAN_DEBUG("json data len:%d\n", strlen(json_data));
         //TODO:　可能没写完？
-        RT_MQTT_COMMAN_DEBUG("send buf:%s\n",buf);
+        RT_MQTT_COMMAN_DEBUG("send buf:%s\n", buf);
+        
     #if defined(WIN32) || defined(WIN64)
         ret = send(sockfd, buf, strlen(buf), 0);
     #else
@@ -187,23 +181,18 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
             if (temp) {
                 temp += 4;
                 char *tran = rt_os_strstr(buf,"Transfer-Encoding");
-                if(tran)
-                {
+                if(tran) {
                     temp = strstr(temp,"\r\n");
                 }
                 ret = cb(temp);
                 RT_MQTT_COMMAN_DEBUG("cb ret：%d\n",ret);
                 break;
-            }
-            else
-            {
+            } else {
                 RT_MQTT_COMMAN_DEBUG("ret:%d\n",ret);
                 ret = -1;
                 break;
             }
-        }
-        else
-        {
+        } else {
             RT_MQTT_COMMAN_DEBUG("ret：%d\n",ret);
             ret = -1;
             break;
@@ -223,37 +212,37 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
     return ret;
 }
 
-
 //EMQ的ticiet server回调处理
-static int rt_reg_cb(const char *json_data) {
+static int rt_reg_cb(const char *json_data) 
+{
     int ret = -1;
     char buf[500];
     char *str = NULL;
-    memset(buf, 0, sizeof(buf));
-    memcpy(buf, json_data, strlen(json_data));
-
+    cJSON *root;
+    
+    snprintf(buf, sizeof(buf), "%s", json_data);
     RT_MQTT_COMMAN_DEBUG("buf:%s\n",buf);
-    cJSON *root = cJSON_Parse(buf);
+    
+    root = cJSON_Parse(buf);
     if(root == NULL){
         return -1;
     }
+    
     str = cJSON_Print(root);
-    RT_MQTT_COMMAN_DEBUG("%s\n",str);
-    rt_os_free(str);
+    if (str) {
+        RT_MQTT_COMMAN_DEBUG("%s\n",str);
+        rt_os_free(str);
+    }
+    
     if (root) {
         cJSON *obj = cJSON_GetObjectItem(root, "obj");
         if(obj){
-            // cJSON * pClientId = cJSON_GetObjectItem(root,"c");
             cJSON * pUsername = cJSON_GetObjectItem(obj,"username");
             cJSON * pPassword = cJSON_GetObjectItem(obj,"password");
-            //cJSON * pDevId = cJSON_GetObjectItem(root,"d");
-            //if (pClientId != NULL && pUsername != NULL &&
-             //       pPassword != NULL && pDevId != NULL) {
-            if(pUsername != NULL && pPassword != NULL){
-                // strcpy(reg_info.client_id, pClientId->valuestring);
-                strcpy(reg_info.username, pUsername->valuestring);
-                strcpy(reg_info.password, pPassword->valuestring);
-                //strcpy(reg_info.device_id, pDevId->valuestring);
+            
+            if(pUsername && pPassword){
+                snprintf(reg_info.username, sizeof(reg_info.username), "%s", pUsername->valuestring);
+                snprintf(reg_info.password, sizeof(reg_info.password), "%s", pPassword->valuestring);
                 ret = 0;
             }
         }
@@ -261,29 +250,30 @@ static int rt_reg_cb(const char *json_data) {
     }
     return ret;
 }
-
 
 //云吧的ticket server回调处理
-static int reg_cb(const char *json_data) {
+static int reg_cb(const char *json_data) 
+{
     int ret = -1;
     char buf[500];
-    memset(buf, 0, sizeof(buf));
-    memcpy(buf, json_data, strlen(json_data));
+    cJSON *root;
+    
+    snprintf(buf, sizeof(buf), "%s", json_data);
 
-    cJSON *root = cJSON_Parse(buf);
+    root = cJSON_Parse(buf);
     if (root) {
         int ret_size = cJSON_GetArraySize(root);
         if (ret_size >= 4) {
-            cJSON * pClientId = cJSON_GetObjectItem(root,"c");
-            cJSON * pUsername = cJSON_GetObjectItem(root,"u");
-            cJSON * pPassword = cJSON_GetObjectItem(root,"p");
-            cJSON * pDevId = cJSON_GetObjectItem(root,"d");
-            if (pClientId != NULL && pUsername != NULL &&
-                    pPassword != NULL && pDevId != NULL) {
-                strcpy(reg_info.client_id, pClientId->valuestring);
-                strcpy(reg_info.username, pUsername->valuestring);
-                strcpy(reg_info.password, pPassword->valuestring);
-                strcpy(reg_info.device_id, pDevId->valuestring);
+            cJSON * pClientId   = cJSON_GetObjectItem(root, "c");
+            cJSON * pUsername   = cJSON_GetObjectItem(root, "u");
+            cJSON * pPassword   = cJSON_GetObjectItem(root, "p");
+            cJSON * pDevId      = cJSON_GetObjectItem(root, "d");
+            
+            if (pClientId && pUsername && pPassword && pDevId) {
+                snprintf(reg_info.client_id, sizeof(reg_info.client_id), "%s", pClientId->valuestring);
+                snprintf(reg_info.username, sizeof(reg_info.username), "%s", pUsername->valuestring);
+                snprintf(reg_info.password, sizeof(reg_info.password), "%s", pPassword->valuestring);
+                snprintf(reg_info.device_id, sizeof(reg_info.device_id), "%s", pDevId->valuestring);
                 ret = 0;
             }
         }
@@ -292,112 +282,136 @@ static int reg_cb(const char *json_data) {
     return ret;
 }
 
-
-//用于红茶adopter server回调处理
-static int reg_cb1(const char *json_data) {
+//用于红茶adapter server回调处理
+static int reg_cb1(const char *json_data) 
+{
     int ret = -1;
     char buf[500];
-    memset(buf, 0, sizeof(buf));
-    memcpy(buf, json_data, strlen(json_data));
+    cJSON *data;
+    cJSON *root;
+    
+    snprintf(buf, sizeof(buf), "%s", json_data);
 
-    cJSON *data = cJSON_Parse(buf);
-    cJSON *root = cJSON_GetObjectItem(data,"data");
+    data = cJSON_Parse(buf);
+    root = cJSON_GetObjectItem(data, "data");
     if (root) {
         int ret_size = cJSON_GetArraySize(root);
         if (ret_size >= 4) {
-            cJSON * charnel = cJSON_GetObjectItem(root,"s");
-            cJSON * pUsername = cJSON_GetObjectItem(root,"u");
-            cJSON * pPassword = cJSON_GetObjectItem(root,"p");
-            cJSON * pClientId = cJSON_GetObjectItem(root,"c");
-            cJSON * host = cJSON_GetObjectItem(root,"h");
-            cJSON * port = cJSON_GetObjectItem(root,"o");
-            cJSON * ticket_url = cJSON_GetObjectItem(root,"r");
-            if (charnel != NULL && pUsername != NULL &&
-                    pPassword != NULL && host != NULL
-                    && port != NULL && ticket_url != NULL) {
-                strcpy(reg_info.username, pUsername->valuestring);
-                strcpy(reg_info.password, pPassword->valuestring);
-                strcpy(reg_info.rt_channel, charnel->valuestring);
-                strcpy(reg_info.ticket_server, ticket_url->valuestring);
-                sprintf(reg_info.rt_url,"%s:%d",host->valuestring,port->valueint);
+            cJSON * charnel     = cJSON_GetObjectItem(root, "s");
+            cJSON * pUsername   = cJSON_GetObjectItem(root, "u");
+            cJSON * pPassword   = cJSON_GetObjectItem(root, "p");
+            cJSON * pClientId   = cJSON_GetObjectItem(root, "c");
+            cJSON * host        = cJSON_GetObjectItem(root, "h");
+            cJSON * port        = cJSON_GetObjectItem(root, "o");
+            cJSON * ticket_url  = cJSON_GetObjectItem(root, "r");
+            
+            if (pUsername && pPassword && charnel && ticket_url && host && port ) {
+                snprintf(reg_info.username, sizeof(reg_info.username), "%s", pUsername->valuestring);
+                snprintf(reg_info.password, sizeof(reg_info.password), pPassword->valuestring);
+                snprintf(reg_info.rt_channel, sizeof(reg_info.rt_channel), charnel->valuestring);
+                snprintf(reg_info.ticket_server, sizeof(reg_info.ticket_server), ticket_url->valuestring);
+                snprintf(reg_info.rt_url, sizeof(reg_info.rt_url), "%s:%d", host->valuestring, port->valueint);
                 ret = 0;
             }
 
-            if((rt_os_strncmp(reg_info.rt_channel, "YUNBA", 5) == 0) &&
-               (pClientId != NULL)){
-                strcpy(reg_info.client_id,pClientId->valuestring);
+            if(!rt_os_strncmp(reg_info.rt_channel, "YUNBA", 5) && pClientId){
+                snprintf(reg_info.client_id, sizeof(reg_info.client_id), pClientId->valuestring);
             }
         }
 
         cJSON_Delete(data);
     }
+    
     return ret;
 }
 
 //  云吧获取mqtt连接参数接口
 int MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_info *info)
 {
-    char *json_data = (char *)rt_os_malloc(1024);
+    int ret;
+    char *json_data = NULL;
 
-    if (appkey == NULL || json_data == NULL)
-        return -1;
+    if (!appkey || !json_data) {
+        ret = -1;
+        goto exit_entry;
+    }
 
-    if (deviceid == NULL)
-        sprintf(json_data, "{\"a\": \"%s\", \"p\":4}", appkey);
-    else
-        sprintf(json_data, "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
-
-    int ret = http_post_json(json_data, reg_url, reg_port, "/device/reg/", reg_cb);
-    if (ret < 0)
-        return -1;
+    json_data = (char *)rt_os_malloc(1024);
+    if (!json_data) {
+        ret = -2;
+        goto exit_entry;
+    }
+    
+    if (deviceid == NULL) {
+        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\", \"p\":4}", appkey);
+    } else {
+        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
+    }
+    
+    ret = http_post_json(json_data, reg_url, reg_port, "/device/reg/", (PCALLBACK)reg_cb);
+    if (ret < 0) {
+        ret = -3;
+        goto exit_entry;
+    }
 
     strcpy(info->client_id, reg_info.client_id);
     strcpy(info->username, reg_info.username);
     strcpy(info->password, reg_info.password);
     strcpy(info->device_id, reg_info.device_id);
 
-    rt_os_free(json_data);
-    return 0;
+    ret = 0;
+    
+exit_entry:
+    if (json_data) {
+        rt_os_free(json_data);
+    }
+    
+    return ret;
 }
 
 //EMQ获取MQTT连接参数接口
 int MQTTClient_setup_with_appkey(char* appkey, mqtt_info *info)
 {
+    int ret;
     char json_data[1024];
 
-    if (appkey == NULL)
+    if (!appkey) {
         return -1;
+    }
 
-    sprintf(json_data, "{\"appKey\":\"%s\"}", appkey);
+    snprintf(json_data, sizeof(json_data), "{\"appKey\":\"%s\"}", appkey);
 
-    int ret = http_post_json(json_data, reg_url, reg_port, "/clientService/getEmqUser", rt_reg_cb);
-
-    if (ret < 0)
+    ret = http_post_json(json_data, reg_url, reg_port, "/clientService/getEmqUser", (PCALLBACK)rt_reg_cb);
+    if (ret < 0) {
         return -1;
+    }
 
     strcpy(info->client_id, reg_info.client_id);
     strcpy(info->username, reg_info.username);
     strcpy(info->password, reg_info.password);
+    
     return 0;
 }
 
 
 //红茶adapter服务器获取
-int rt_mqtt_setup_with_appkey(char *appkey,mqtt_info *info)
+int rt_mqtt_setup_with_appkey(char *appkey, mqtt_info *info)
 {
     char json_data[1024];
+    int ret;
 
     if (appkey == NULL){
         RT_MQTT_COMMAN_DEBUG("appkey is NULL\n");
         return -1;
     }
 
-    if (info->device_id == NULL)
-        sprintf(json_data, "{\"a\": \"%s\"}", appkey);
-    else
-        sprintf(json_data, "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", appkey, info->device_id, NULL, info->last_connect_status);
-
-    int ret = http_post_json(json_data, reg_url, reg_port, "/api/v1/ticket", reg_cb1);
+    if (info->device_id == NULL) {
+        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\"}", appkey);
+    } else {
+        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", appkey, info->device_id, NULL, info->last_connect_status);
+    }
+    
+    ret = http_post_json(json_data, reg_url, reg_port, "/api/v1/ticket", (PCALLBACK)reg_cb1);
     if (ret < 0){
         RT_MQTT_COMMAN_DEBUG("http_post_json error\n");
         return -1;
@@ -408,6 +422,7 @@ int rt_mqtt_setup_with_appkey(char *appkey,mqtt_info *info)
     strcpy(info->rt_channel, reg_info.rt_channel);
     strcpy(info->ticket_server, reg_info.ticket_server);
     strcpy(info->rt_url, reg_info.rt_url);
+    
     return 0;
 }
 
@@ -418,16 +433,17 @@ static size_t rt_get_broker_cb(const char *json_data)
 {
     int ret = -1;
     char buf[500];
-
-    memset(buf, 0, sizeof(buf));
-    memcpy(buf, json_data, strlen(json_data));
-
-    cJSON *root = cJSON_Parse(buf);
-    RT_MQTT_COMMAN_DEBUG("buf:%s\n",buf);
+    cJSON *root;
     char *str = NULL;
+
+    snprintf(buf, sizeof(buf), "%s", json_data);
+    RT_MQTT_COMMAN_DEBUG("buf:%s\n",buf);
+
+    root = cJSON_Parse(buf);    
     str = cJSON_Print(root);
     RT_MQTT_COMMAN_DEBUG("%s\n",str);
     rt_os_free(str);
+    
     if (root) {
         cJSON *obj = cJSON_GetObjectItem(root, "obj");
         if(obj){
@@ -472,21 +488,23 @@ void set_reg_url(const char url[20], int port)
     reg_port = port;
 }
 
-int MQTTClient_get_host(char *nodeName, char *url,const char *appkey)
+int MQTTClient_get_host(char *nodeName, char *url, const char *appkey)
 {
     int ret = -1;
     char json_data[1024];
-    if(nodeName == NULL){
-        sprintf(json_data, "{\"appKey\":\"%s\"}",appkey);
-    }
-    else{
-        sprintf(json_data, "{\"nodeName\":\"%s\",\"appKey\":\"%s\"}",nodeName,appkey);
+    
+    if(!nodeName){
+        snprintf(json_data, sizeof(json_data), "{\"appKey\":\"%s\"}", appkey);
+    } else {
+        snprintf(json_data, sizeof(json_data), "{\"nodeName\":\"%s\",\"appKey\":\"%s\"}", nodeName, appkey);
     }
 
-    ret = http_post_json(json_data, reg_url, reg_port, "/clientService/getNodes", rt_get_broker_cb);
-    if (ret < 0)
+    ret = http_post_json(json_data, reg_url, reg_port, "/clientService/getNodes", (PCALLBACK)rt_get_broker_cb);
+    if (ret < 0) {
         return -1;
-    sprintf(url,"%s:%s",url_host,url_port);
+    }
+    
+    sprintf(url, "%s:%s", url_host, url_port);
     return 0;
 }
 
