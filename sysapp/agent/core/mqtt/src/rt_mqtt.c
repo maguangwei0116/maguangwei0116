@@ -505,7 +505,7 @@ static void mqtt_process_task(void)
 {
     while(1) {
         if (get_network_state() == NETWORK_CONNECTING) {
-            if(g_mqtt_param.mqtt_flag == 0) {
+            if(g_mqtt_param.mqtt_flag == RT_FALSE) {
                 //如果本地已经缓存了mqtt地址，且地址可用，就不再去ticket server获取mqtt地址
                 if (g_mqtt_param.mqtt_get_addr == RT_FALSE) {
                     //这边由于重新请求mqtt连接所以需要重新进行订阅
@@ -595,6 +595,7 @@ static int32_t mqtt_create_task(void)
 //init parameter
 static void mqtt_init_param(void)
 {
+    rt_os_memeset(&g_mqtt_param, 0, sizeof(g_mqtt_param));
     g_mqtt_param.opts.nodelimiter           = 0;
     g_mqtt_param.opts.qos                   = 1;
     g_mqtt_param.opts.port                  = 0;
