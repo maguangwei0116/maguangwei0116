@@ -109,7 +109,7 @@ int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const int8_t *
     }
 
     va_start(vl_list, msg);
-    vsnprintf((int8_t *)&content[len], LOG_BUF_SIZE - len, (const int8_t *)msg, vl_list);   //
+    vsnprintf((int8_t *)&content[len + 4], LOG_BUF_SIZE - len, (const int8_t *)msg, vl_list);   //
     va_end(vl_list);
     printf_log(content);
     return 0;
