@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdint.h>
+#include <string.h>
 #include "log.h"
 #include "rt_os.h"
 

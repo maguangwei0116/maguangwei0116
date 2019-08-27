@@ -267,14 +267,6 @@ int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
     return RT_SUCCESS;
 }
 
-rt_bool dial_up_reinit(dsi_call_info_t *dsi_net_hndl)
-{
-    dial_up_stop(dsi_net_hndl);
-    rt_os_sleep(15);
-    dial_up_init(dsi_net_hndl);
-    return RT_TRUE;
-}
-
 int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
 {
     dsi_ce_reason_t dsicallend;

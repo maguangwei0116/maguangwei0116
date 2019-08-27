@@ -22,6 +22,7 @@
 
 #define LOG_NAME            "/data/redtea/rt_log"
 #define LOG_FILE_SIZE       1024
+#define LOG_BUF_SIZE        600
 
 static int32_t g_file_fd = -1;
 static int32_t g_log_printf_type = LOG_PRINTF_TERMINAL;
@@ -77,24 +78,39 @@ static void printf_log(int8_t *data)
 
 int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const int8_t *msg, ...)
 {
-    int8_t content[200] = {0};
-    int8_t final[400] = {0};
+    int8_t content[LOG_BUF_SIZE] = {0};
     time_t  time_write;
     struct tm tm_Log;
-
+    int32_t len = 0;
     va_list vl_list;
-    va_start(vl_list, msg);
-    vsnprintf((int8_t *)content, sizeof(content), (const int8_t *)msg, vl_list);   //
-    va_end(vl_list);
+
     if (leve_flag == LOG_HAVE_LEVE_PRINTF) {
+        switch(leve) {
+            case LOG_ERR:
+                rt_os_memcpy(content, "ERR ", 4);
+            break;
+            case LOG_WARN:
+                rt_os_memcpy(content, "WARN", 4);
+            break;
+            case LOG_DBG:
+                rt_os_memcpy(content, "DBG ", 4);
+            break;
+            case LOG_INFO:
+                rt_os_memcpy(content, "INFO", 4);
+            break;
+        }
+        len = 4;
+        content[4] = 0;
         time_write = time(NULL);        //
         localtime_r(&time_write, &tm_Log);
-        strftime((int8_t *)final, sizeof(final), "[%Y-%m-%d %H:%M:%S] ", &tm_Log);
-        strncat((int8_t *)final, (const int8_t *)content, rt_os_strlen(content));
-        printf_log(final);
-    } else {
-        printf_log(content);
+        strftime((int8_t *)&content[len], LOG_BUF_SIZE, "[%Y-%m-%d %H:%M:%S] ", &tm_Log);
+        len = rt_os_strlen(&content[len]);
     }
+
+    va_start(vl_list, msg);
+    vsnprintf((int8_t *)&content[len], LOG_HAVE_LEVE_PRINTF - len, (const int8_t *)msg, vl_list);   //
+    va_end(vl_list);
+    printf_log(content);
     return 0;
 }
 

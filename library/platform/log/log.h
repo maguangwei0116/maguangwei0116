@@ -33,6 +33,7 @@ typedef enum LOG_LEVE_FLAG {
 
 int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag,const int8_t *msg, ...);
 
+#define __FILENAME__            (strrchr("/"__FILE__, '/') + 1)
 #define INNER_DUMP_ARRAY(tag, array, len)                                        \
     do {                                                                         \
         uint8_t *_p_ = (uint8_t *)array;                                         \
@@ -45,6 +46,6 @@ int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag,const int8_t *m
     } while(0)
 
 #define MSG_INFO_ARRAY(tag, array, len)         INNER_DUMP_ARRAY(tag, array, len)
-#define MSG_PRINTF(LOG_LEVE, format,...)        write_log_fun(LOG_LEVE, LOG_HAVE_LEVE_PRINTF,"[ %d %s] "format, __LINE__, __FILE__, ##__VA_ARGS__)
+#define MSG_PRINTF(LOG_LEVE, format,...)        write_log_fun(LOG_LEVE, LOG_HAVE_LEVE_PRINTF,"[ %d %s ] "format, __LINE__, __FILENAME__, ##__VA_ARGS__)
 
 #endif // __LOG_H__

@@ -323,6 +323,30 @@ int t9x07_remove_card(uim_remote_slot_type_enum_v01 slot)
     return rc;
 }
 
+int t9x07_reset_card(uim_remote_slot_type_enum_v01 slot)
+{
+    int rc;
+    uim_remote_event_req_msg_v01 req = {0};
+    uim_remote_event_resp_msg_v01 resp = {0};
+    qmi_txn_handle txn;
+
+    MSG_PRINTF(LOG_INFO,"t9x07_reset_card\n");
+    req.event_info.event = UIM_REMOTE_CARD_RESET_V01;
+    req.event_info.slot = UIM_REMOTE_SLOT_1_V01;
+    req.atr_valid = true;
+
+    // fill ATR
+    MSG_PRINTF(LOG_INFO, "process_ind_reset\n");
+    trigger_reset(req.atr, (uint16_t *)&req.atr_len);
+    MSG_INFO_ARRAY("ATR", req.atr, req.atr_len);
+
+    rc = qmi_client_send_msg_async(rm_uim_client, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
+                                    &resp, sizeof(resp), remote_uim_async_cb, NULL, &txn);
+    MSG_PRINTF(LOG_INFO,"UIM_REMOTE_CARD_RESET_V01 slot:%d, rc:%d\n", slot, rc);
+
+    return rc;
+}
+
 int t9x07_send_card_error(  uim_remote_slot_type_enum_v01       slot,
                                 uint8_t                             error_cause_valid,
                                 uim_remote_card_error_type_enum_v01 error_cause)

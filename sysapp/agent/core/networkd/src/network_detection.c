@@ -20,6 +20,7 @@ static void network_detection_task(void)
     dial_up_init(&dsi_net_hndl);
     while (1) {
         dial_up_to_connect(&dsi_net_hndl);
+        dial_up_stop(dsi_net_hndl);
     }
 }
 
