@@ -16,8 +16,9 @@
 #include "agent_queue.h"
 #include "convert.h"
 #include "hash.h"
+#include "rt_qmi.h"
 
-#define SHARE_PROFILE "continuous_profile.der"
+#define SHARE_PROFILE "profile_list.der"
 
 typedef struct profile_data {
     uint16_t file_info_offset;
@@ -265,14 +266,12 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
     uint8_t buf[300];
     ProfileInfo1_t *request = NULL;
     asn_dec_rval_t dc;
-
     rt_fseek(fp, off, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 300, fp);
     off += get_length(buf, 1);
 
     rt_fseek(fp, off, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 100, fp);
-
     size = get_length(buf, 0) + get_length(buf, 1);
     // 如果tag为A0则与子项tag重名导致无法解析
     if (buf[0] == 0xA0) {
@@ -284,20 +283,22 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
         printf("\n%ld\n", dc.consumed);
         return 0;// 报错
     }
-    if (request != NULL) {
-        ASN_STRUCT_FREE(asn_DEF_ProfileInfo1, request);
-    }
     off += size;
     rt_fseek(fp, off, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 4, fp);
     off += get_length(buf, 1);
+
+    rt_qmi_modify_profile(1, 0, request->apn.list.array[0]->apnName.buf, 0);
 
     selected_profile_index = random % request->totalNum;
     if (request->sequential == 0xFF) {
         profile_len = get_length(buf, 0);
     } else {
         profile_len = get_length(buf, 0) / request->totalNum;
-        off = selected_profile_index * profile_len;
+        off += selected_profile_index * profile_len;
+    }
+    if (request != NULL) {
+        ASN_STRUCT_FREE(asn_DEF_ProfileInfo1, request);
     }
 
     uint8_t profile_buffer[profile_len];
@@ -305,6 +306,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
     rt_fseek(fp, off, RT_FS_SEEK_SET);
     rt_fread(profile_buffer, 1, profile_len, fp);
 
+    MSG_PRINTF(LOG_ERR, "selected_profile_index:%d  off:%d\n", selected_profile_index, off);
     if (request->sequential == 0xFF) { // 连号profile处理
         build_profile(profile_buffer, profile_len, selected_profile_index);
     } else { // 非连号profile处理
@@ -327,19 +329,26 @@ int32_t selected_profile(int32_t random) {
         MSG_PRINTF(LOG_ERR, "Open file failed\n");
         return RT_ERROR;
     }
-
+    printf("1.off:%d\n", off);
     rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
+    rt_fread(buf, 1, 4, fp);
     MSG_INFO_ARRAY("opt:", buf, 8);
     if (buf[0] != 0xA3) {
         MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
         return RT_ERROR;
     }
-    if (buf[4] != 0x30) {
+    off += 4;
+
+    rt_fseek(fp, off, RT_FS_SEEK_SET);
+    rt_fread(buf, 1, 4, fp);
+    if (buf[0] != 0x30) {
         MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
         return RT_ERROR;
     }
-    off += 4;
+    printf("2.off:%d\n", off);
+    printf("data.priority:%d\n", data.priority);
+    printf("data.operator_num:%d\n", data.operator_num);
+
     // 启卡次数大于运营商个数则重置
     if (data.priority >= data.operator_num) {
         data.priority = 0;
@@ -347,6 +356,7 @@ int32_t selected_profile(int32_t random) {
     // 根据启卡次数计算应选运营商的偏移量
     for (i = 0; i < data.priority; i++) {
         off += 4;
+        printf("buf:%02X%02X%02X%02X\n", buf[0], buf[1], buf[2], buf[3]);
         if (buf[1] == ASN1_LENGTH_2BYTES) {
             off += ((uint16_t) buf[2] << 8) + buf[3];
         } else if (buf[1] == ASN1_LENGTH_1BYTES) {
@@ -354,8 +364,8 @@ int32_t selected_profile(int32_t random) {
         } else if ((buf[1] & 0x80) == 0) {
             off += buf[1] - 2;
         }
+        printf("3.off:%d\n", off);
     }
-
     decode_profile_info(fp, off, random);
 
     if (fp != NULL) {

@@ -21,10 +21,10 @@
 
 #define RANDOM_FILE                     "/dev/urandom"
 
-uint32_t g_default_single_interval_time = 60; // 激活失败单次间隔时间
-uint32_t default_max_enable_num = 7; // 最大重试次数
-uint32_t default_sleep_time = 24 * 60 * 60; // 休眠时长
-uint32_t enable_num = 1; // 第几次激活
+uint32_t g_default_single_interval_time = 10; // 激活失败单次间隔时间
+uint32_t g_default_max_retry_num = 7; // 最大重试次数
+uint32_t g_default_sleep_time = 24 * 60 * 60; // 休眠时长
+uint32_t g_retry_num = 1; // 第几次激活
 
 static uint16_t get_random(void)
 {
@@ -42,20 +42,22 @@ static uint16_t get_random(void)
 
 static int32_t bootstrap_select_profile(void)
 {
+    rt_os_alarm(g_default_single_interval_time);
     selected_profile(get_random());
     // todo 激活profile
-    g_default_single_interval_time *= enable_num;
-    enable_num++;
+    g_default_single_interval_time *= g_retry_num;
+    g_retry_num++;
 
     return 0;
 }
 
-static uint32_t enable_profile_fail(void)
+static void enable_profile_fail(void)
 {
-    if (enable_num > default_max_enable_num) {
-        enable_num = 0;
+    MSG_PRINTF(LOG_ERR, "enable_profile_fail---------->num:%d\n",g_retry_num);
+    if (g_retry_num > g_default_max_retry_num) {
+        g_retry_num = 0;
         // todo 开始休眠
-        rt_os_alarm(default_sleep_time);
+        rt_os_alarm(g_default_sleep_time);
     } else {
         bootstrap_select_profile();
     }
@@ -63,7 +65,7 @@ static uint32_t enable_profile_fail(void)
 }
 
 int32_t init_bootstrap(int32_t *arg) {
-    rt_os_signal(RT_SIGINT, enable_profile_fail);
+    rt_os_signal(RT_SIGALRM, enable_profile_fail);
     return init_profile_file(NULL);
 }
 
