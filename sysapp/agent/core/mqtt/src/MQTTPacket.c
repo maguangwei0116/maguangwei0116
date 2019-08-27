@@ -529,7 +529,7 @@ int MQTTPacket_send_disconnect(networkHandles *net, const char* clientID)
 
 void* MQTTPacket_get_ext_cmd_package(
         unsigned char aHeader, char* data,
-        int datalen, networkHandles* handler)
+        size_t datalen, networkHandles* handler)
 {
     Ext_ack* pack = malloc(sizeof(Ext_ack));
     char* curdata = data;
@@ -908,7 +908,7 @@ void MQTTPacket_free_packet(MQTTPacket* pack)
     if (pack->header.bits.type == PUBLISH)
         MQTTPacket_freePublish((Publish*)pack);
     if (pack->header.bits.type == GET)
-        MQTTPacket_freeGet((Get*)pack);
+        MQTTPacket_freeGet((Getack*)pack);
     /*else if (pack->header.type == SUBSCRIBE)
         MQTTPacket_freeSubscribe((Subscribe*)pack, 1);
     else if (pack->header.type == UNSUBSCRIBE)
