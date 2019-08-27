@@ -16,6 +16,7 @@
 #include "ipc_socket_client.h"
 #include "network_detection.h"
 #include "rt_mqtt.h"
+#include "config.h"
 
 #include "rt_qmi.h"
 
@@ -54,6 +55,7 @@ List your init call here !
 static const init_obj_t g_init_objs[] = 
 {
     INIT_OBJ(init_system_signal,        NULL), 
+    INIT_OBJ(rt_config_init,            NULL),
     INIT_OBJ(rt_qmi_init,               NULL),  
     INIT_OBJ(init_queue,                NULL), 
     INIT_OBJ(init_card_manager,         NULL), 
