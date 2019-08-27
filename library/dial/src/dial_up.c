@@ -13,9 +13,13 @@
 
 #include "dial_up.h"
 #include "rt_os.h"
+#include "rt_qmi.h"
 
 #define DAIL_UP_WAIT      5
 #define has_more_argv() ((opt < argc) && (argv[opt][0] != '-'))
+
+typedef void (*dial_callback)(int32_t state);
+dial_callback dial_state;
 
 static int signal_event_fd[2];
 static int dsi_event_fd[2];
@@ -143,7 +147,7 @@ static int32_t usage(const int8_t *progname)
     return 0;
 }
 
-int32_t set_dsi_net_info(dsi_call_info_t *dsi_net_hndl)
+static int32_t set_dsi_net_info(dsi_call_info_t *dsi_net_hndl)
 {
     int32_t argc = 10;
     int8_t *argv[10];
@@ -201,6 +205,8 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
 {
     dsi_call_param_value_t param_info;
     int32_t rval = 0;
+
+    dsi_init(DSI_MODE_GENERAL);
     dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
     set_dsi_net_info(dsi_net_hndl);
     rt_os_memset(dsi_net_hndl, 0x00, sizeof(dsi_call_info_t));
@@ -209,12 +215,11 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
     dsi_net_hndl->apn = NULL;
     dsi_net_hndl->user = dsi_net_hndl->password = NULL;
     dsi_net_hndl->auth_pref = DSI_AUTH_PREF_PAP_CHAP_NOT_ALLOWED;
-    dsi_init(DSI_MODE_GENERAL);
     rt_os_sleep(1);
     dsi_net_hndl->handle = dsi_get_data_srvc_hndl(dsi_net_cb_fcn, (void*) dsi_net_hndl);
     if (dsi_net_hndl->handle == NULL){
-        MSG_PRINTF(LOG_WARN, "dsi_get_data_srvc_hndl fail!!!\n");
-        return -3;
+        MSG_PRINTF(LOG_ERR, "dsi_get_data_srvc_hndl fail!!!\n");
+        return RT_ERROR;
     }
 
     param_info.buf_val = NULL;
@@ -236,40 +241,33 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
         param_info.buf_val = dsi_net_hndl->apn;
         param_info.num_val = strlen(param_info.buf_val);
         dsi_set_data_call_param(dsi_net_hndl->handle, DSI_CALL_INFO_APN_NAME, &param_info);
-#if 0
-        param_info.buf_val = strdup(dsi_net_hndl.user);
-        param_info.num_val = strlen(param_info.buf_val);
-        dsi_set_data_call_param(dsi_net_hndl.handle, DSI_CALL_INFO_USERNAME, &param_info);
-
-        param_info.buf_val = strdup(dsi_net_hndl.password);
-        param_info.num_val = strlen(param_info.buf_val);
-        dsi_set_data_call_param(dsi_net_hndl.handle, DSI_CALL_INFO_PASSWORD, &param_info);
-#endif
         param_info.buf_val = NULL;
         param_info.num_val = dsi_net_hndl->auth_pref;
         dsi_set_data_call_param(dsi_net_hndl->handle, DSI_CALL_INFO_AUTH_PREF, &param_info);
     }
-    return 1;
+    return RT_SUCCESS;
+}
+
+static rt_bool get_regist_state(void)
+{
+    int32_t regist_state = 0;
+    rt_qmi_get_register_state(&regist_state);
+    if (regist_state == 1) {
+        MSG_PRINTF(LOG_INFO, "regist state:%d\n", regist_state);
+        return RT_TRUE;
+    }
+    return RT_FALSE;
 }
 
 int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
 {
-    dsi_release(DSI_MODE_GENERAL);
-    if (dsi_net_hndl->call_state!=DSI_STATE_CALL_IDLE) {
+    if (dsi_net_hndl->call_state != DSI_STATE_CALL_IDLE) {
         dsi_stop_data_call(dsi_net_hndl->handle);
     }
     dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);
     close(dsi_event_fd[0]);
     close(dsi_event_fd[1]);
     return RT_SUCCESS;
-}
-
-rt_bool dial_up_reinit(dsi_call_info_t *dsi_net_hndl)
-{
-    dial_up_stop(dsi_net_hndl);
-    rt_os_sleep(15);
-    dial_up_init(dsi_net_hndl);
-    return RT_TRUE;
 }
 
 int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
@@ -285,14 +283,18 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     int16_t revents = 0;
 
     socketpair( AF_LOCAL, SOCK_STREAM, 0, dsi_event_fd);
-    dial_up_init(dsi_net_hndl);
 
     pollfds[0].fd = dsi_event_fd[1];
     pollfds[0].events = POLLIN;
     pollfds[0].revents = 0;
     nevents = sizeof(pollfds)/sizeof(pollfds[0]);
+    MSG_PRINTF(LOG_INFO, "Start dial up\n");
     while (1) {
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
+            if (get_regist_state() != RT_TRUE) {
+                rt_os_sleep(2);
+                break;
+            }
             rval = dsi_start_data_call(dsi_net_hndl->handle);
             if (DSI_SUCCESS != rval) {
                 MSG_PRINTF(LOG_WARN, "dsi_start_data_call rval = %d\n", rval);
@@ -359,9 +361,15 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                         default:
                         break;
                     }
+                    dial_state(dsi_net_hndl->call_state);
                 }
             }
         }
     }
     return RT_SUCCESS;
+}
+
+void regist_dial_callback(void* fun)
+{
+    dial_state = (dial_callback)fun;
 }

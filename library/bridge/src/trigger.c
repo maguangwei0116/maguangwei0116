@@ -11,7 +11,6 @@
 #include "trigger.h"
 
 static qmi_client_type rm_uim_client;
-static char g_iccid[21] = {0};
 
 typedef uint16_t (*trigger_callback_cmd)(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
 typedef uint16_t (*trigger_callback_reset)(uint8_t *rsp, uint16_t *rsp_len);
@@ -117,7 +116,6 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     req.response_apdu_segment[req.response_apdu_segment_len++] = (sw >> 8) & 0xFF;
     req.response_apdu_segment[req.response_apdu_segment_len++] = sw & 0xFF;
     MSG_PRINTF(LOG_INFO, "process_ind_apdu\n");
-    // false, no Response APDU Information
     req.response_apdu_info_valid = true;
     req.response_apdu_info.total_response_apdu_size = req.response_apdu_segment_len;
     req.response_apdu_info.response_apdu_segment_offset = 0;
@@ -319,6 +317,30 @@ int t9x07_remove_card(uim_remote_slot_type_enum_v01 slot)
 
     rc = qmi_client_release(rm_uim_client);
     MSG_PRINTF(LOG_INFO,"qmi_client_release client rc: %d\n", rc);
+
+    return rc;
+}
+
+int t9x07_reset_card(uim_remote_slot_type_enum_v01 slot)
+{
+    int rc;
+    uim_remote_event_req_msg_v01 req = {0};
+    uim_remote_event_resp_msg_v01 resp = {0};
+    qmi_txn_handle txn;
+
+    MSG_PRINTF(LOG_INFO,"t9x07_reset_card\n");
+    req.event_info.event = UIM_REMOTE_CARD_RESET_V01;
+    req.event_info.slot = UIM_REMOTE_SLOT_1_V01;
+    req.atr_valid = true;
+
+    // fill ATR
+    MSG_PRINTF(LOG_INFO, "process_ind_reset\n");
+    trigger_reset(req.atr, (uint16_t *)&req.atr_len);
+    MSG_INFO_ARRAY("ATR", req.atr, req.atr_len);
+
+    rc = qmi_client_send_msg_async(rm_uim_client, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
+                                    &resp, sizeof(resp), remote_uim_async_cb, NULL, &txn);
+    MSG_PRINTF(LOG_INFO,"UIM_REMOTE_CARD_RESET_V01 slot:%d, rc:%d\n", slot, rc);
 
     return rc;
 }

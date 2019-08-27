@@ -22,6 +22,7 @@
 #define  RT_END                             SEEK_END
 #define  RT_SIGINT                          SIGINT
 #define  RT_SIGTERM                         SIGTERM
+#define  RT_SIGALRM                         SIGALRM
 
 typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);
@@ -50,5 +51,6 @@ void  rt_os_sleep(int32_t time);
 void  rt_os_free(void *mem);
 void *rt_os_signal(int32_t signum, void *handler);
 RT_FILE_HANDLE rt_os_open(const int8_t *filename, const int8_t *flags);
+uint32_t rt_os_alarm(uint32_t seconds);
 
 #endif // __RT_OS_H__

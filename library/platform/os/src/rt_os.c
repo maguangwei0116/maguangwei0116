@@ -96,7 +96,6 @@ int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id)
 int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg)
 {
     if (msgrcv(msgid, buffer, len, msgtyp, msgflg) == -1) {
-        MSG_PRINTF(LOG_WARN, "no message data\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
@@ -105,7 +104,6 @@ int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t m
 int32_t rt_send_queue_msg(int32_t msgid, void *buffer, int32_t len, int32_t msgflg)
 {
     if (msgsnd(msgid, buffer, len, msgflg) == -1) {
-        MSG_PRINTF(LOG_WARN, "send message data error\n");
         return RT_ERROR;
     }
     return RT_SUCCESS;
@@ -181,7 +179,6 @@ int32_t rt_os_strcmp(void *mem_des,void *mem_src)
 void *rt_os_memcpy(void *mem_des, void *mem_src, int32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
-        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
         return NULL;
     }
     if (len <= 0) {
@@ -269,3 +266,9 @@ void *rt_os_signal(int signum, void* handler)
 {
     signal(signum, handler);
 }
+
+uint32_t rt_os_alarm(uint32_t seconds)
+{
+    return alarm(seconds);
+}
+
