@@ -10,6 +10,7 @@
 
 #include "config.h"
 #include "rt_type.h"
+#include "file.h"
 #include "rt_os.h"
 
 #define MAX_VALUE_SIZE                      30
@@ -54,6 +55,31 @@ int32_t LOG_FILE_SIZE = DEFAULT_LOG_FILE_SIZE;  // 默认log文件的大小
 int32_t INIT_PROFILE_TYPE = DEFAULT_INIT_PROFILE_TYPE;  // 默认使用上一张卡登网
 int32_t RPLMN_ENABLE = DEFAULT_RPLMN_ENABLE;  //rplmn默认打开设置
 
+/*****************************************************************************
+ * FUNCTION
+ *  msg_string_to_int
+ * DESCRIPTION
+ *  input string output int value.
+ * PARAMETERS
+ *  str
+ * RETURNS
+ *  int
+ *****************************************************************************/
+static uint32_t msg_string_to_int(uint8_t* str)
+{
+    uint32_t length = 0;
+    if (str == NULL) {
+        MSG_PRINTF(LOG_WARN, "The string is error\n");
+        return 0;
+    }
+    while (*str != '\0') {
+        if ((*str >= '0') && (*str <= '9')) {
+            length = length * 10 + *str - '0';
+        }
+        str++;
+    }
+    return length;
+}
 
 /**
 * 写配置文件，如果文件已存在会清空原有数据
@@ -68,22 +94,24 @@ int32_t RPLMN_ENABLE = DEFAULT_RPLMN_ENABLE;  //rplmn默认打开设置
 * @params   pair_num         key - value pair 的数量
 * @return   成功返回0，否则返回1
 */
-static int32_t write_config_file(int8_t *file_path, int8_t **key_array, int8_t **value_array, int8_t **annotation_array, int32_t pair_num)
+static int32_t write_config_file(int8_t *file_path, const char **key_array, int8_t **value_array, const char **annotation_array, int32_t pair_num)
 {
-    RT_FILE_HANDLE fp = rt_fopen(file_path, "w");
+    int32_t i = 0;
+    rt_fshandle_t fp;
+
+    fp = rt_fopen(file_path, "w");
     if (NULL == fp) {
         return RT_ERROR;
     }
-    int32_t i = 0;
 
     for (; i < pair_num; i++) {
         if (NULL != key_array[i]) {
             if (NULL != annotation_array[i]) {
                 rt_fwrite(ANNOTATION_SYMBOL, sizeof(int8_t), rt_os_strlen(ANNOTATION_SYMBOL), fp);
-                rt_fwrite(annotation_array[i], sizeof(int8_t), rt_os_strlen(annotation_array[i]), fp);
+                rt_fwrite(annotation_array[i], sizeof(int8_t), rt_os_strlen((void *)annotation_array[i]), fp);
                 rt_fwrite("\n", sizeof(int8_t), 1, fp);
             }
-            rt_fwrite(key_array[i], sizeof(int8_t), rt_os_strlen(key_array[i]), fp);
+            rt_fwrite(key_array[i], sizeof(int8_t), rt_os_strlen((void *)key_array[i]), fp);
             rt_fwrite(" ", sizeof(int8_t), 1, fp);
             rt_fwrite(LINK_SYMBOL, sizeof(int8_t), rt_os_strlen(LINK_SYMBOL), fp);
             rt_fwrite(" ", sizeof(int8_t), 1, fp);
@@ -102,53 +130,48 @@ static int32_t write_config_file(int8_t *file_path, int8_t **key_array, int8_t *
 * @params   fpp     文件指针的指针
 * @return   成功返回0，否则返回1
 */
-static int32_t skip_annotation_and_spaces(FILE **fpp)
+static int32_t skip_annotation_and_spaces(rt_fshandle_t *fpp)
 {
     int8_t temp[1] = {' '};
     int32_t char_size = sizeof(int8_t);
-    int32_t annotation_head_len = rt_os_strlen(ANNOTATION_SYMBOL);
-    int8_t *annotation_head = rt_os_malloc(annotation_head_len + 1);
-    if (NULL == annotation_head) {
-        return RT_ERROR;
-    }
+    int32_t annotation_head_len;
+    int8_t *annotation_head = NULL;
     int32_t iResult;
     int32_t count = 0;
+
+    annotation_head_len = rt_os_strlen(ANNOTATION_SYMBOL);
+    annotation_head = rt_os_malloc(annotation_head_len + 1);
+    if (NULL == annotation_head) {
+        goto exit_entry;
+    }
 
     while (1) {
         while (IS_SPACES(temp[0])) {
             iResult = rt_fread(temp, char_size, 1, *fpp);
             if (0 == iResult) {
-                rt_os_free(annotation_head);
-                annotation_head = NULL;
-                return count;
+                goto exit_entry;
             }
             count += 1;
         }
-        rt_fseek(*fpp, 0 - char_size, RT_CUR);
+        rt_fseek(*fpp, 0 - char_size, RT_FS_SEEK_CUR);
         count -= 1;
         iResult = rt_fread(annotation_head, char_size, annotation_head_len, *fpp);
         if (annotation_head_len != iResult) {
-            rt_fseek(*fpp, 0 - iResult*char_size, SEEK_CUR);
-            rt_os_free(annotation_head);
-            annotation_head = NULL;
-            return count;
+            rt_fseek(*fpp, 0 - iResult*char_size, RT_FS_SEEK_CUR);
+            goto exit_entry;
         }
         annotation_head[annotation_head_len] = '\0';
 
         if (0 != rt_os_strcmp(annotation_head, ANNOTATION_SYMBOL)){
-            rt_fseek(*fpp, 0 - iResult*char_size, SEEK_CUR);
-            rt_os_free(annotation_head);
-            annotation_head = NULL;
-            return count;
+            rt_fseek(*fpp, 0 - iResult*char_size, RT_FS_SEEK_CUR);
+            goto exit_entry;
         }
         count += iResult;
 
         while (1) {
             iResult = rt_fread(temp, char_size, 1, *fpp);
             if (0 == iResult) {
-                rt_os_free(annotation_head);
-                annotation_head = NULL;
-                return count;
+                goto exit_entry;
             }
             count += 1;
             if ('\n' == temp[0]) {
@@ -157,12 +180,19 @@ static int32_t skip_annotation_and_spaces(FILE **fpp)
         }
         iResult = rt_fread(temp, char_size, 1, *fpp);
         if (0 == iResult){
-            rt_os_free(annotation_head);
-            annotation_head = NULL;
-            return count;
+            goto exit_entry;;
         }
         count += 1;
     }
+
+exit_entry:
+
+    if (annotation_head) {
+        rt_os_free(annotation_head);
+        annotation_head = NULL;
+    }
+
+    return count;
 }
 
 
@@ -178,12 +208,9 @@ static int32_t skip_annotation_and_spaces(FILE **fpp)
 * @params   pair_num         key - value pair 的数量
 * @return   成功返回0，否则返回1
 */
-static int32_t read_config_file(int8_t *file_path, int8_t **key_array, int8_t **value_array, int32_t buf_size_array, int32_t pair_num)
+static int32_t read_config_file(int8_t *file_path, const char **key_array, int8_t **value_array, int32_t buf_size_array, int32_t pair_num)
 {
-    RT_FILE_HANDLE fp = rt_fopen(file_path, "rb");
-    if (NULL == fp) {
-        return RT_ERROR;
-    }
+    rt_fshandle_t fp;    
     int32_t char_size = sizeof(int8_t);
     int32_t linkSymbolLen = rt_os_strlen(LINK_SYMBOL);
     int32_t i = 0;
@@ -195,6 +222,11 @@ static int32_t read_config_file(int8_t *file_path, int8_t **key_array, int8_t **
     int32_t tempLen;
     int8_t *temp_key_buf;
     int8_t *temp_link_buf;
+
+    fp = rt_fopen(file_path, "rb");
+    if (NULL == fp) {
+        return RT_ERROR;
+    }
 
     temp_key_buf = rt_os_malloc(buf_size_array + 1);
     temp_link_buf = rt_os_malloc(linkSymbolLen + 1);
@@ -219,7 +251,7 @@ static int32_t read_config_file(int8_t *file_path, int8_t **key_array, int8_t **
                 break;
             }
             temp_key_buf[iResult] = '\0';
-            if (rt_os_strlen(key_array[i]) != iResult || 0 != rt_os_strcmp(temp_key_buf, key_array[i])) {
+            if (rt_os_strlen((void *)key_array[i]) != iResult || 0 != rt_os_strcmp((void *)temp_key_buf, (void *)key_array[i])) {
                 rt_fseek(fp, 0 - char_size*iResult, SEEK_CUR);
                 continue;
             }
@@ -303,7 +335,6 @@ int32_t rt_config_init(void)
 
     return RT_SUCCESS;
 }
-
 
 /**
 * 读取配置文件
