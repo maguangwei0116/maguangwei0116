@@ -177,12 +177,12 @@ uint8_t *get_simple_tag_tlv(uint16_t tag, uint8_t *ba_buffer, uint16_t s_length,
 
     while (ba_buffer < the_end) {
         check_tag = ba_buffer[0];
-        printf("0ck-tag=%04X\r\n", check_tag);
+        //printf("0ck-tag=%04X\r\n", check_tag);
         if ((check_tag & 0x1F) == 0x1F) {
             check_tag <<= 8;
             check_tag |= ba_buffer[1];
         }
-        printf("1ck-tag=%04X\r\n", check_tag);
+        //printf("1ck-tag=%04X\r\n", check_tag);
         if (check_tag == tag) {
             counter++;
             if (counter == sOccurence) {
@@ -210,7 +210,7 @@ uint8_t *get_simple_tlv(uint16_t tag, uint8_t *buffer, uint16_t len, uint16_t *t
     if (p) {
         *tag_len = get_length(p, 0);
         *left_len = len - get_length(p, 1);
-        printf("==> tag: %X, p[0]=%02X, tag_len=%d, len_in=%d, left_len=%d\r\n", tag, p[0], *tag_len, len, *left_len);
+        //printf("==> tag: %X, p[0]=%02X, tag_len=%d, len_in=%d, left_len=%d\r\n", tag, p[0], *tag_len, len, *left_len);
         p = get_value_buffer(p);
     }
 
