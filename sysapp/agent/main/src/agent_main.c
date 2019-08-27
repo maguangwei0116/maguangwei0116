@@ -59,6 +59,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(rt_config_init,            NULL),
     INIT_OBJ(rt_qmi_init,               NULL),  
     INIT_OBJ(init_queue,                NULL), 
+    INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_card_manager,         NULL), 
     INIT_OBJ(init_network_detection,    NULL), 
 //    INIT_OBJ(init_mqtt,                 NULL),
