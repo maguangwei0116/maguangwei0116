@@ -58,19 +58,18 @@ vpath %.c ./core/personalise
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= $(wildcard ./core/mqtt/src/*.c)
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/config.c
-
-SRC-y 			+= src/agent_main.c
-SRC-y 			+= src/agent_queue.c
-SRC-y 			+= src/card_manager.c
-SRC-y 			+= src/ipc_socket_client.c
-SRC-y 			+= src/network_detection.c
-SRC-y 			+= src/lpa.c
-SRC-y 			+= src/lpdd.c
-SRC-y 			+= src/luid.c
-SRC-y 			+= src/ldsd.c
-SRC-y 			+= src/apdu.c
+SRC-y 		                            += $(wildcard ./core/mqtt/src/*.c)
+SRC-y 		                            += src/config.c
+SRC-y 			                        += src/agent_main.c
+SRC-y 			                        += src/agent_queue.c
+SRC-y 			                        += src/card_manager.c
+SRC-y 			                        += src/ipc_socket_client.c
+SRC-y 			                        += src/network_detection.c
+SRC-y 			                        += src/lpa.c
+SRC-y 			                        += src/lpdd.c
+SRC-y 			                        += src/luid.c
+SRC-y 			                        += src/ldsd.c
+SRC-y 			                        += src/apdu.c
 
 # Config your include file path by += xxx-inc
 INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)		+= ./core/bootstrap/
@@ -78,21 +77,21 @@ INC-PATH-$(CFG_AGENT_OTA_ON)			+= ./core/ota/
 INC-PATH-$(CFG_AGENT_PERSONALISE_ON)	+= ./core/personalise/
 INC-PATH-y								+= ./core/mqtt/
 INC-PATH-y								+= ./core/config/
-INC-PATH-y 		+= ./core/queue/
-INC-PATH-y 		+= ./core/cardm/
-INC-PATH-y 		+= ./core/networkd/
-INC-PATH-y 		+= ./main/
-INC-PATH-y 		+= ./ipc/
-INC-PATH-y 		+= ./lpa/
+INC-PATH-y 		                        += ./core/queue/
+INC-PATH-y 		                        += ./core/cardm/
+INC-PATH-y 		                        += ./core/networkd/
+INC-PATH-y 		                        += ./main/
+INC-PATH-y 		                        += ./ipc/
+INC-PATH-y 		                        += ./lpa/
 
-INC-y 			+= ./
-INC-y 			+= $(INC-PATH-y)
-INC-y 			+= $(addsuffix inc, $(wildcard $(INC-PATH-y)))
+INC-y 			                        += ./
+INC-y 			                        += $(INC-PATH-y)
+INC-y 			                        += $(addsuffix inc, $(wildcard $(INC-PATH-y)))
 
 # Config your lib
-LIB-y 			= -lm
-LIB-y 			+= $(patsubst %,-l%,$(COMM-LIB))
-LIB-y 			+= $(patsubst %,-l%,$(QMI-LIB))
+LIB-y 			                        += -lm
+LIB-y 			                        += $(patsubst %,-l%,$(COMM-LIB))
+LIB-y 			                        += $(patsubst %,-l%,$(QMI-LIB))
 
 ############################################################################################
 # Never modify from this line
