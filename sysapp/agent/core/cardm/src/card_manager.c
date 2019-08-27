@@ -15,16 +15,15 @@
 #include "agent_queue.h"
 #include "lpa.h"
 
-static profile_info_t g_p_info;
+#define THE_MAX_CARD_NUM         20
 
-uint8_t g_buf[] = {0x01,0x02,0x03,0x04,0x05};
+typedef struct {
+    profile_info_t info[THE_MAX_CARD_NUM];
+    uint8_t num;
+} info_t;
+static info_t g_p_info;
 
-static int32_t card_load_profile(const uint8_t *buf, int32_t len)
-{
-    return lpa_load_profile(buf, len);
-}
-
-static int32_t card_enabele_profile(const int8_t *iccid)
+static int32_t card_enable_profile(const int8_t *iccid)
 {
     int32_t ret = RT_ERROR;
     ret = lpa_enable_profile(iccid);
@@ -32,6 +31,18 @@ static int32_t card_enabele_profile(const int8_t *iccid)
         MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n",ret);
     }
     msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_ALL_SWITCH_CARD, NULL, 0);
+    return ret;
+}
+
+static int32_t card_load_profile(const uint8_t *buf, int32_t len)
+{
+    int32_t ret = RT_SUCCESS;
+    if (g_p_info.info[0].state != 1) {
+        ret = card_enable_profile(g_p_info.info[0].iccid);
+    }
+    if (ret == RT_SUCCESS) {
+        ret = lpa_load_profile(buf, len);
+    }
     return ret;
 }
 
@@ -43,18 +54,16 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 int32_t init_card_manager(void *arg)
 {
     uint8_t eid[32];
-    uint8_t num = 0;
     int32_t ret = RT_ERROR;
 
     lpa_get_eid(eid);
-    ret = lpa_get_profile_info(&g_p_info, &num);
+    ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     if (ret == RT_SUCCESS) {
-        if ((g_p_info.class == 1) && (num == 1)) {
-            card_enabele_profile(g_p_info.iccid);
+        if ((g_p_info.info[0].class == 1) && (g_p_info.num == 1)) {
             msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
         }
     }
-    MSG_PRINTF(LOG_INFO, "num:%d, g_p_info.class:%d, state:%d\n", num, g_p_info.class, g_p_info.state);
+    MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
     return ret;
 }
 

@@ -22,7 +22,6 @@ Description:
 #define MSG_DBG(format, ...)    RT_PRINTF("DBG[%s-%d %s] "format,  __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define MSG_INFO(format, ...)   RT_PRINTF("INFO[%s-%d %s] "format, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define MSG_DUMP_ARRAY(tag, array, len)
-#define MSG_INFO_ARRAY(tag, array, len)
 /**************************************************************************************************
                                     Configure CHECK
 **************************************************************************************************/

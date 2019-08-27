@@ -11,7 +11,6 @@
 #include "trigger.h"
 
 static qmi_client_type rm_uim_client;
-static char g_iccid[21] = {0};
 
 typedef uint16_t (*trigger_callback_cmd)(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
 typedef uint16_t (*trigger_callback_reset)(uint8_t *rsp, uint16_t *rsp_len);
@@ -117,7 +116,6 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     req.response_apdu_segment[req.response_apdu_segment_len++] = (sw >> 8) & 0xFF;
     req.response_apdu_segment[req.response_apdu_segment_len++] = sw & 0xFF;
     MSG_PRINTF(LOG_INFO, "process_ind_apdu\n");
-    // false, no Response APDU Information
     req.response_apdu_info_valid = true;
     req.response_apdu_info.total_response_apdu_size = req.response_apdu_segment_len;
     req.response_apdu_info.response_apdu_segment_offset = 0;

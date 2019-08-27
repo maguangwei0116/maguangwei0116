@@ -12,8 +12,10 @@
  *******************************************************************************/
 
 #include "network_detection.h"
+#include "agent_queue.h"
 #include "dial_up.h"
 
+static int32_t g_network_state = 0;
 static void network_detection_task(void)
 {
     dsi_call_info_t dsi_net_hndl;
@@ -26,12 +28,15 @@ static void network_detection_task(void)
 
 int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
-
+    if (mode == MSG_ALL_SWITCH_CARD) {
+        MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
+    }
 }
 
 void network_state(int32_t state)
 {
-    MSG_PRINTF(LOG_INFO, "state:%d\n", state);
+    g_network_state = state;
+    MSG_PRINTF(LOG_INFO, "state:%d\n", g_network_state);
 }
 
 int32_t init_network_detection(void *arg)
