@@ -41,12 +41,14 @@ static void agent_queue_task(void)
     agent_que_t que_t;
     int32_t len = sizeof(agent_que_t) - sizeof(long);
     while (1) {
-        if (rt_receive_queue_msg(g_queue_id, &que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
+        if (rt_receive_queue_msg(g_queue_id, (void *)&que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
             switch (que_t.msg_id) {
                 case MSG_ID_BOOT_STRAP:
-                    boot_strap_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 case MSG_ID_CARD_MANAGER:
+                    MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, %p\n", que_t.data_len, que_t.data_buf);
+                    MSG_INFO_ARRAY("2.que_t.data_buf:", (uint8_t *)que_t.data_buf, que_t.data_len);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 case MSG_ID_LOG_MANAGER:
@@ -66,7 +68,7 @@ static void agent_queue_task(void)
                     network_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 case MSG_ID_BROAD_CAST_NETWORK:
-
+                    bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 default: {
                     break;
@@ -132,10 +134,11 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
     if (len > 0) {
         que_t.data_buf = (void *)rt_os_malloc(len);
         rt_os_memcpy(que_t.data_buf, buffer, len);
+        MSG_INFO_ARRAY("1.que_t.data_buf:", que_t.data_buf, len);
     } else {
         que_t.data_buf = NULL;
     }
-    MSG_PRINTF(LOG_INFO, "len:%d\n", len);
+    MSG_PRINTF(LOG_INFO, "len:%d, %p\n", len, que_t.data_buf);
     que_t.data_len = len;
     len = sizeof(agent_que_t) - sizeof(long);
     return rt_send_queue_msg(g_queue_id, (void *)&que_t, len, 0);
@@ -147,6 +150,6 @@ int32_t msg_send_upload_queue(void *buffer, int32_t len)
     que_t.data_buf = (void *)rt_os_malloc(len);
     rt_os_memcpy(que_t.data_buf, buffer, len);
     que_t.data_len = len;
-    len = sizeof(upload_que_t) - sizeof(int64_t);
+    len = sizeof(upload_que_t) - sizeof(long);
     return rt_send_queue_msg(g_upload_queue_id, (void *)&que_t, len, 0);
 }

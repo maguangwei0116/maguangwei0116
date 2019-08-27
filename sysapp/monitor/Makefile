@@ -56,7 +56,7 @@ INC-y 		+= ./vuicc/
 INC-y 		+= ./vuicc/$(INC-PATH)
 
 # Config your lib
-LIB-y 		= -lm
+LIB-y 		= -lm -lcomm
 LIB-y 		+= -l$(shell pwd)/vuicc/lib/$(VUICC-LIB)
 LIB-y 		+= $(patsubst %,-l%,$(COMM-LIB))
 LIB-y 		+= $(patsubst %,-l%,$(QMI-LIB))

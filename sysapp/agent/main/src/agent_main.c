@@ -17,6 +17,7 @@
 #include "network_detection.h"
 #include "rt_mqtt.h"
 #include "config.h"
+#include "bootstrap.h"
 
 #include "rt_qmi.h"
 
@@ -80,7 +81,7 @@ int32_t main(int32_t argc, int8_t **argv)
 {
     init_timer();
     agent_init_call();
-    
+
     while (!toStop) {
         rt_os_sleep(3);
     }

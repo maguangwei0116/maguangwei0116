@@ -1,4 +1,3 @@
-
 # Config your target here !
 TARGET 		= $(shell pwd | sed 's/^\(.*\)[/]//')
 LIB_SO_NAME = lib$(TARGET).so

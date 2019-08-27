@@ -32,7 +32,7 @@ typedef enum File__Member_PR {
 	File__Member_PR_fillFileOffset,
 	File__Member_PR_fillFileContent
 	/* Extensions may appear below */
-
+	
 } File__Member_PR;
 
 /* Forward definitions */
@@ -48,7 +48,7 @@ typedef struct File__Member {
 		 * possible extensions are below.
 		 */
 	} choice;
-
+	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } File__Member;
@@ -56,7 +56,7 @@ typedef struct File__Member {
 /* File */
 typedef struct File {
 	A_SEQUENCE_OF(File__Member) list;
-
+	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
 } File_t;
