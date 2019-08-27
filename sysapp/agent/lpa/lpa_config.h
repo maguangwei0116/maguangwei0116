@@ -14,14 +14,26 @@ Description:
 /**************************************************************************************************
                                     Configure LOGGING
 **************************************************************************************************/
+#if 0
 #define RT_PRINTF               printf
 #define __FILENAME__            (strrchr("/"__FILE__, '/') + 1)
 
-#define MSG_ERR(format, ...)    RT_PRINTF("ERR[%s-%d %s] "format,  __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define MSG_ERR(format, ...)    RT_PRINTF("ERR [%s-%d %s] "format,  __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define MSG_WARN(format, ...)   RT_PRINTF("WARN[%s-%d %s] "format, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define MSG_DBG(format, ...)    RT_PRINTF("DBG[%s-%d %s] "format,  __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define MSG_DBG(format, ...)    RT_PRINTF("DBG [%s-%d %s] "format,  __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define MSG_INFO(format, ...)   RT_PRINTF("INFO[%s-%d %s] "format, __FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define MSG_DUMP_ARRAY(tag, array, len)
+#else
+#include "log.h"
+
+#define MSG_ERR(format, ...)                MSG_PRINTF(LOG_ERR, "[%s] "format, __FUNCTION__, ##__VA_ARGS__)  
+#define MSG_WARN(format, ...)               MSG_PRINTF(LOG_WARN, "[%s] "format, __FUNCTION__, ##__VA_ARGS__)
+#define MSG_DBG(format, ...)                MSG_PRINTF(LOG_DBG, "[%s] "format, __FUNCTION__, ##__VA_ARGS__)
+#define MSG_INFO(format, ...)               MSG_PRINTF(LOG_INFO, "[%s] "format, __FUNCTION__, ##__VA_ARGS__)  
+#define MSG_DUMP_ARRAY(tag, array, len)     MSG_INFO_ARRAY(tag, array, len)
+
+#endif
+
 /**************************************************************************************************
                                     Configure CHECK
 **************************************************************************************************/
