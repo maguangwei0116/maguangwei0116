@@ -22,4 +22,6 @@
 int32_t rt_mqtt_task(void);
 void rt_mqtt_set_alias(int8_t *alias);
 int8_t *rt_mqtt_get_channel(void);
+int32_t init_mqtt(void *arg);
+
 #endif  // __RT_MQTT_H__
