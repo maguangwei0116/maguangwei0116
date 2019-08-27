@@ -28,7 +28,6 @@ static void network_detection_task(void)
 {
     dsi_call_info_t dsi_net_hndl;
     dial_up_init(&dsi_net_hndl);
-    register_timer(10, 0 , &network_timer_callback);
     while (1) {
         dial_up_to_connect(&dsi_net_hndl);
         dial_up_stop(dsi_net_hndl);
@@ -39,6 +38,7 @@ int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     if (mode == MSG_ALL_SWITCH_CARD) {
         MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
+        register_timer(300, 0 , &network_timer_callback);
     }
 }
 
