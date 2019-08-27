@@ -315,7 +315,7 @@ static int32_t read_config_file(int8_t *file_path, const char **key_array, int8_
     return RT_SUCCESS;
 }
 
-int32_t rt_config_init(void)
+int32_t rt_config_init(void *arg)
 {
     int32_t i;
 

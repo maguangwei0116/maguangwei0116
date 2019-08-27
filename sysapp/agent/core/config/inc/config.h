@@ -56,7 +56,7 @@ extern int32_t LOG_FILE_SIZE;
 extern int32_t INIT_PROFILE_TYPE;
 extern int32_t RPLMN_ENABLE;
 
-int32_t rt_config_init(void);
+int32_t rt_config_init(void *arg);
 void modify_config_file(void);
 void parse_config_file(void);
 /**
