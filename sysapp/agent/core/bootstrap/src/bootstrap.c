@@ -60,7 +60,7 @@ static void enable_profile_fail(void) {
 
 }
 
-int32_t init_bootstrap(int32_t *arg) {
+int32_t init_bootstrap(void *arg) {
     return init_profile_file(NULL);
 }
 
