@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : rt_type.h
- * Date        : 2017.09.01
+ * File name   : rt_timer.h
+ * Date        : 2019.08.27
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,23 +11,12 @@
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
 
-#ifndef __TYPE_H__
-#define __TYPE_H__
+#ifndef __RT_TIMER_H__
+#define __RT_TIMER_H__
 
-#include <stdio.h>
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-#include "log.h"
-#include "rt_os.h"
-#include "rt_timer.h"
+#include "rt_type.h"
 
-typedef enum RT_BOOL{
-    RT_FALSE = 0,
-    RT_TRUE
-} rt_bool;
+int32_t rt_set_timer(int32_t seconds, void *fun);
+int32_t register_timer(int sec, int usec, void (*action)());
 
-#define RT_ERROR                     -1
-#define RT_SUCCESS                   0
-
-#endif // __TYPE_H__
+#endif // __RT_TIMER_H__

@@ -26,8 +26,8 @@ void cfinish(int32_t sig)
 int32_t main(int32_t argc, int8_t **argv)
 {
     rt_os_signal(RT_SIGINT, cfinish);
-    rt_os_signal(RT_SIGINT, cfinish);
     rt_qmi_init(NULL);
+    init_timer();
     init_queue(NULL);
     init_card_manager(NULL);
     init_network_detection(NULL);
