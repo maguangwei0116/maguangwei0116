@@ -13,6 +13,7 @@
 
 #include "dial_up.h"
 #include "rt_os.h"
+#include "rt_qmi.h"
 
 #define DAIL_UP_WAIT      5
 #define has_more_argv() ((opt < argc) && (argv[opt][0] != '-'))
@@ -267,6 +268,16 @@ int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
     return RT_SUCCESS;
 }
 
+static rt_bool get_regist_state(void)
+{
+    int32_t regist_state = 0;
+    rt_qmi_get_register_state(&regist_state);
+    if (regist_state == 1) {
+        MSG_PRINTF(LOG_INFO, "regist state:%d\n", regist_state);
+        return RT_TRUE;
+    }
+    return RT_FALSE;
+}
 int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
 {
     dsi_ce_reason_t dsicallend;
@@ -286,8 +297,13 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     pollfds[0].events = POLLIN;
     pollfds[0].revents = 0;
     nevents = sizeof(pollfds)/sizeof(pollfds[0]);
+    MSG_PRINTF(LOG_INFO, "Start dial up\n");
     while (1) {
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
+            if (get_regist_state() != RT_TRUE) {
+                rt_os_sleep(2);
+                break;
+            }
             rval = dsi_start_data_call(dsi_net_hndl->handle);
             if (DSI_SUCCESS != rval) {
                 MSG_PRINTF(LOG_WARN, "dsi_start_data_call rval = %d\n", rval);
