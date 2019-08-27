@@ -39,9 +39,9 @@ typedef enum BOOT_STATE {
 } boot_state_info_e;
 
 typedef struct _mqtt_param_t {
-    mqtt_info                   opts;
-    MQTTClient                  client;
     MQTTClient_connectOptions   conn_opts;
+    mqtt_info                   opts;
+    MQTTClient                  client;    
     network_state_info_e        state;
     char                        alias[40];    
     rt_bool                     mqtt_get_addr;
@@ -50,7 +50,7 @@ typedef struct _mqtt_param_t {
     rt_bool                     alias_rc;                    
 } mqtt_param_t;
 
-static mqtt_param_t g_mqtt_param;
+static mqtt_param_t g_mqtt_param = {MQTTClient_connectOptions_initializer, 0};
 
 #if 0
 /*
@@ -73,7 +73,7 @@ static int8_t rc = 1;
 network_state_info_e get_network_state(void)
 {
     //return g_network_state;
-    return 0;
+    return NETWORK_CONNECTING;
 }
 
 void set_network_state(network_state_info_e state)
@@ -236,6 +236,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
     const char *alias = param->alias;
 
     set_reg_url(OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
+    MSG_PRINTF(LOG_DBG, "addr:%s, port:%d\r\n", OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
 
     //连接我们红茶自己的ticket server adopter,最多尝试3次
     do {
@@ -247,7 +248,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
     } while((num != MAX_CONNECT_SERVER_TIMER) && (get_network_state() != NETWORK_DIS_CONNECTED));
 
     if ((num == MAX_CONNECT_SERVER_TIMER) || (get_network_state() == NETWORK_DIS_CONNECTED)) {
-        MSG_PRINTF(LOG_WARN, "rt_mqtt_connect_adapter error\n");
+        MSG_PRINTF(LOG_WARN, "rt_mqtt_connect adapter error\n");
         return RT_FALSE;
     }
 
@@ -480,7 +481,7 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     pconn_opts->keepAliveInterval   = 300;
     pconn_opts->reliable            = 0;
     pconn_opts->cleansession        = 0;
-
+    MSG_PRINTF(LOG_DBG, "pconn_opts->struct_version=%d\n", pconn_opts->struct_version);
     if (my_connect(c, pconn_opts) == RT_FALSE) {
         if (++opts->try_connect_timer > MAX_TRY_CONNECT_TIME) {
             if (!rt_os_strncmp(opts->rt_channel, "EMQ", 3)) {
@@ -503,6 +504,8 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
 
 static void mqtt_process_task(void)
 {
+    rt_os_sleep(10);
+    
     while(1) {
         if (get_network_state() == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
@@ -595,7 +598,6 @@ static int32_t mqtt_create_task(void)
 //init parameter
 static void mqtt_init_param(void)
 {
-    rt_os_memeset(&g_mqtt_param, 0, sizeof(g_mqtt_param));
     g_mqtt_param.opts.nodelimiter           = 0;
     g_mqtt_param.opts.qos                   = 1;
     g_mqtt_param.opts.port                  = 0;
