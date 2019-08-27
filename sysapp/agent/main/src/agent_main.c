@@ -60,7 +60,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_queue,                NULL), 
     INIT_OBJ(init_card_manager,         NULL), 
     INIT_OBJ(init_network_detection,    NULL), 
-    INIT_OBJ(init_mqtt,                 NULL),
+//    INIT_OBJ(init_mqtt,                 NULL),
 };
 
 static int32_t agent_init_call(void)
@@ -78,8 +78,9 @@ static int32_t agent_init_call(void)
 
 int32_t main(int32_t argc, int8_t **argv)
 {
+    init_timer();
     agent_init_call();
-
+    
     while (!toStop) {
         rt_os_sleep(3);
     }

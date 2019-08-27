@@ -22,6 +22,7 @@ SRC-y 		+= src/http.c
 SRC-y 		+= src/https.c
 SRC-y 		+= src/log.c
 SRC-y 		+= src/rt_os.c
+SRC-y 		+= src/rt_timer.c
 SRC-y 		+= src/qmi_control_point.c
 SRC-y 		+= src/qmi_dms.c
 SRC-y 		+= src/qmi_nas.c

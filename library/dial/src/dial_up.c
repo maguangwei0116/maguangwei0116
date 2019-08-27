@@ -293,7 +293,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
             if (get_regist_state() != RT_TRUE) {
                 rt_os_sleep(2);
-                break;
+                continue;
             }
             rval = dsi_start_data_call(dsi_net_hndl->handle);
             if (DSI_SUCCESS != rval) {
