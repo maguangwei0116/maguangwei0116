@@ -18,6 +18,7 @@
 #include "file.h"
 #include "rt_manage_data.h"
 #include "rt_type.h"
+#include "agent_queue.h"
 
 #define RANDOM_FILE                     "/dev/urandom"
 
@@ -26,8 +27,7 @@ uint32_t g_default_max_retry_num = 7; // 最大重试次数
 uint32_t g_default_sleep_time = 24 * 60 * 60; // 休眠时长
 uint32_t g_retry_num = 1; // 第几次激活
 
-static uint16_t get_random(void)
-{
+static uint16_t get_random(void) {
     int32_t ret = 0;
     int random = 0;
     if (rt_read_data(RANDOM_FILE, 0, &random, sizeof(random)) == RT_ERROR) {
@@ -40,9 +40,7 @@ static uint16_t get_random(void)
     return ret;
 }
 
-static int32_t bootstrap_select_profile(void)
-{
-    rt_os_alarm(g_default_single_interval_time);
+static int32_t bootstrap_select_profile(void) {
     selected_profile(get_random());
     // todo 激活profile
     g_default_single_interval_time *= g_retry_num;
@@ -51,13 +49,11 @@ static int32_t bootstrap_select_profile(void)
     return 0;
 }
 
-static void enable_profile_fail(void)
-{
-    MSG_PRINTF(LOG_ERR, "enable_profile_fail---------->num:%d\n",g_retry_num);
+static void enable_profile_fail(void) {
     if (g_retry_num > g_default_max_retry_num) {
         g_retry_num = 0;
         // todo 开始休眠
-        rt_os_alarm(g_default_sleep_time);
+        register_timer(g_default_sleep_time, 0, &enable_profile_fail);
     } else {
         bootstrap_select_profile();
     }
@@ -65,19 +61,18 @@ static void enable_profile_fail(void)
 }
 
 int32_t init_bootstrap(int32_t *arg) {
-    rt_os_signal(RT_SIGALRM, enable_profile_fail);
     return init_profile_file(NULL);
 }
 
-void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
-{
+void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode) {
     MSG_PRINTF(LOG_INFO, "Help us choose the card\n");
     // todo 激活是否成功
+
     if (mode == 0) {
         bootstrap_select_profile();
-    } else {
-        rt_os_alarm(g_default_single_interval_time);
-
+    } else if (mode == MSG_NETWORK_DISCONNECTED) {
+        register_timer(g_default_single_interval_time, 0, &enable_profile_fail);
+    } else if (mode == MSG_NETWORK_CONNECTED) {
+        register_timer(0, 0, &enable_profile_fail);
     }
 }
-

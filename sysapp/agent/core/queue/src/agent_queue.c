@@ -67,6 +67,9 @@ static void agent_queue_task(void)
                 case MSG_ID_NETWORK_DECTION:
                     network_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
+                case MSG_ID_BROAD_CAST_NETWORK:
+                    bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                break;
                 default: {
                     break;
                 }
