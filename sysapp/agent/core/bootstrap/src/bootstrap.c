@@ -63,11 +63,8 @@ static uint32_t enable_profile_fail(void)
 }
 
 int32_t init_bootstrap(int32_t *arg) {
-    rt_os_signal(RT_SIGINT, enable_profile_fail); // 失败
-    init_profile_file(NULL);
-//    selected_profile(get_random());
-//    bootstrap_select_profile();
-    return 0;
+    rt_os_signal(RT_SIGINT, enable_profile_fail);
+    return init_profile_file(NULL);
 }
 
 void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)

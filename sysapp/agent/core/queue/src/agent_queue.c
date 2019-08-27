@@ -22,8 +22,8 @@ typedef struct AGENT_QUEUE {
     long msg_typ;
     int32_t msg_id;
     int32_t mode;
-    int32_t data_len;
     void *data_buf;
+    int32_t data_len;
 } agent_que_t;
 
 typedef struct UPLOAD_QUEUE {
@@ -65,7 +65,7 @@ static void agent_queue_task(void)
                 break;
 
                 case MSG_ID_NETWORK_DECTION:
-
+                    network_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 default: {
                     break;
@@ -138,7 +138,6 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
     MSG_PRINTF(LOG_INFO, "len:%d, %p\n", len, que_t.data_buf);
     que_t.data_len = len;
     len = sizeof(agent_que_t) - sizeof(long);
-    MSG_PRINTF(LOG_INFO, "len:%d\n", len);
     return rt_send_queue_msg(g_queue_id, (void *)&que_t, len, 0);
 }
 

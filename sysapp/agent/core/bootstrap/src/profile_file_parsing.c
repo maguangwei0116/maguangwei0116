@@ -15,6 +15,7 @@
 #include "tlv.h"
 #include "agent_queue.h"
 #include "convert.h"
+#include "hash.h"
 
 #define SHARE_PROFILE "continuous_profile.der"
 
@@ -29,6 +30,8 @@ typedef struct profile_data {
 } profile_data_t;
 
 profile_data_t data;
+uint8_t profile_buffer1[300];
+uint16_t g_buf_size = 0;
 
 static uint16_t get_offset(rt_fshandle_t fp, uint8_t type, uint8_t *asset, uint16_t *size) {
     int ret = 0;
@@ -93,11 +96,12 @@ static uint16_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint8_t *sk, ui
 }
 
 static uint16_t rt_get_hash_code_offset(rt_fshandle_t fp) {
-    uint8_t buf[4];
+    uint8_t buf[4], hash_code_buf[32];
     uint16_t off = 0;
+    sha256_ctx hash_code;
+
     off = data.operator_info_offset;
     rt_fseek(fp, off, RT_FS_SEEK_SET);
-
     rt_fread(buf, 1, 4, fp);
     off += 4;
     if (buf[1] == ASN1_LENGTH_2BYTES) {
@@ -107,10 +111,20 @@ static uint16_t rt_get_hash_code_offset(rt_fshandle_t fp) {
     } else if ((buf[1] & 0x80) == 0) {
         off += buf[1] - 2;
     }
+
+    rt_fseek(fp, off, RT_FS_SEEK_SET);
+    rt_fread(buf, 1, 4, fp);
+    if (buf[0] != 0x41 || buf[1] != 0x20) {
+        return RT_ERROR;
+    }
+
+//    sha256_init(hash_code);
+//    sha256_update(hash_code, hash_code_buf, int32_t len);
+//    sha256_final(sha256_ctx *ctx, uint8_t hash[]);
     return off;
 }
 
-static uint8_t *get_share_profile(uint8_t *buffer, uint16_t len, uint16_t *tag_len, uint16_t *left_len) {
+static uint8_t get_share_profile(uint8_t *buffer, uint16_t len, uint16_t *tag_len, uint16_t *left_len) {
     uint8_t *p = NULL;
     p = get_simple_tlv(0x30, buffer, len, tag_len, left_len);
     if (p) {
@@ -119,12 +133,18 @@ static uint8_t *get_share_profile(uint8_t *buffer, uint16_t len, uint16_t *tag_l
     return p;
 }
 
-static uint8_t *get_profile_info(uint8_t *buffer, uint16_t len, uint16_t *tag_len, uint16_t *left_len) {
+static uint8_t get_profile_info(uint8_t *buffer, uint16_t len, uint16_t *tag_len, uint16_t *left_len) {
     uint8_t *p = NULL;
     p = get_simple_tlv(0x30, buffer, len, tag_len, left_len);
     if (p) {
         p = get_simple_tlv(0xA0, p, *left_len, tag_len, left_len);
     }
+    return p;
+}
+
+static uint8_t *get_tbh_request(uint16_t len, uint16_t *tag_len, uint16_t *left_len) {
+    uint8_t *p = NULL;
+    p = get_value_buffer(profile_buffer1);
     return p;
 }
 
@@ -144,7 +164,6 @@ static int decode_file_info(rt_fshandle_t fp) {
         printf("\n%ld\n", dc.consumed);
         return 0;// 报错
     }
-    printf("\n------num:%d\n", request->operatorNum);
     if (request != NULL) {
         ASN_STRUCT_FREE(asn_DEF_FileInfo, request);
     }
@@ -164,16 +183,11 @@ static uint8_t decode_profile(rt_fshandle_t fp, uint16_t off, int length) {
         MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
         return RT_ERROR;// 报错
     }
-    MSG_PRINTF(LOG_INFO, "size:%d\n", request->tbhRequest.imsi.size);
-    MSG_INFO_ARRAY("imsi:", request->tbhRequest.imsi.buf, request->tbhRequest.imsi.size);
     if (request != NULL) {
         ASN_STRUCT_FREE(asn_DEF_BootstrapRequest, request);
     }
     return RT_SUCCESS;
 }
-
-uint8_t profile_buffer1[300];
-uint16_t g_buf_size = 0;
 
 static int encode_cb_fun(const void *buffer, size_t size, void *app_key) {
     rt_os_memcpy(profile_buffer1 + g_buf_size, buffer, size);
@@ -181,10 +195,26 @@ static int encode_cb_fun(const void *buffer, size_t size, void *app_key) {
     return 0;
 }
 
+static int32_t update_hash(int32_t profile_len, uint8_t *profile_hash) {
+    uint16_t tag_len = 0, left_len = 0;
+    uint8_t *p = NULL;
+    sha256_ctx profile_ctx;
+    int32_t size = 0;
+
+    p = get_tbh_request(profile_len, &tag_len, &left_len);
+
+    size = get_length(p, 0) + get_length(p, 1);
+    sha256_init(&profile_ctx);
+    sha256_update(&profile_ctx, p, size);
+    sha256_final(&profile_ctx, profile_hash);
+    return RT_SUCCESS;
+}
+
 static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index) {
     BootstrapRequest_t *bootstrap_request = NULL;
     asn_dec_rval_t dc;
     asn_enc_rval_t ec;
+    uint8_t profile_hash[32];
 
     dc = ber_decode(NULL, &asn_DEF_BootstrapRequest, (void **) &bootstrap_request, profile_buffer, profile_len);
     if (dc.code != RC_OK) {
@@ -206,8 +236,17 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
 
     bootstrap_request->tbhRequest.imsi.buf[7] = imsi_buffer[0];
     bootstrap_request->tbhRequest.imsi.buf[8] = imsi_buffer[1];
-    ec = der_encode(&asn_DEF_BootstrapRequest, bootstrap_request, encode_cb_fun, NULL);
 
+    ec = der_encode(&asn_DEF_BootstrapRequest, bootstrap_request, encode_cb_fun, NULL);
+    if (ec.encoded == -1) {
+        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
+        return RT_ERROR;// 报错
+    }
+    update_hash(profile_len, profile_hash);
+
+    rt_os_memcpy(bootstrap_request->hashCode.buf, profile_hash, bootstrap_request->hashCode.size);
+    g_buf_size = 0;
+    ec = der_encode(&asn_DEF_BootstrapRequest, bootstrap_request, encode_cb_fun, NULL);
     if (ec.encoded == -1) {
         MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
         return RT_ERROR;// 报错
@@ -217,7 +256,6 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         ASN_STRUCT_FREE(asn_DEF_BootstrapRequest, bootstrap_request);
     }
 
-    MSG_INFO_ARRAY("profile:", profile_buffer1, profile_len);
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer1, profile_len);
     return RT_SUCCESS;
 }
@@ -259,6 +297,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
         profile_len = get_length(buf, 0);
     } else {
         profile_len = get_length(buf, 0) / request->totalNum;
+        off = selected_profile_index * profile_len;
     }
 
     uint8_t profile_buffer[profile_len];
@@ -266,11 +305,11 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
     rt_fseek(fp, off, RT_FS_SEEK_SET);
     rt_fread(profile_buffer, 1, profile_len, fp);
 
-    if (request->sequential == 0xFF) {
-        profile_len = get_length(buf, 0);
+    if (request->sequential == 0xFF) { // 连号profile处理
         build_profile(profile_buffer, profile_len, selected_profile_index);
-    } else {
-        // todo 计算偏移量抽选
+    } else { // 非连号profile处理
+        MSG_INFO_ARRAY("profile:", profile_buffer, profile_len);
+        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer, profile_len);
     }
 
     return RT_SUCCESS;
