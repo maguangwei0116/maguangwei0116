@@ -34,9 +34,7 @@ define AUTO_GEN_CONF_H
 	mv $(1) $(2)
 endef
 
-gen-conf-file: $(conf-file)
-
-$(conf-file): 
+$(conf-file):
 	$(Q)test -e $(dir $@) || $(MKDIR) -p $(dir $@)
 	$(Q)$(CP) -rf $(SYSAPP_KCONFIG_AUTOHEADER) $@.tmp
 	$(Q)$(call AUTO_GEN_CONF_H,$@.tmp,$@)

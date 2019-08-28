@@ -72,17 +72,17 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
     int32_t ret = RT_ERROR;
     switch (mode) {
         case MSG_CARD_SETTING_KEY:
-        break;
+            break;
         case MSG_CARD_SETTING_PROFILE:
             ret = card_load_profile(buf, len);
-        break;
+            break;
         case MSG_CARD_SETTING_CERTIFICATE:
             ret = card_load_cert(buf, len);
         break;
         case MSG_CARD_FROM_MQTT:
-        break;
+            break;
         default:
             MSG_PRINTF(LOG_ERR, "unknow command\n");
-        break;
+            break;
     }
 }

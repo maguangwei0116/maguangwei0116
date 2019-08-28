@@ -281,7 +281,7 @@ int MQTTPacket_sends(networkHandles* net, Header header, int count, char** buffe
 void* MQTTPacket_header_only(unsigned char aHeader, char* data, size_t datalen, networkHandles* handler);
 int MQTTPacket_send_disconnect(networkHandles* net, const char* clientID);
 
-void* MQTTPacket_get_ext_cmd_package(unsigned char aHeader, char* data, int datalen, networkHandles* handler);
+void* MQTTPacket_get_ext_cmd_package(unsigned char aHeader, char* data, size_t datalen, networkHandles* handler);
 void MQTTPacket_freeGet(Getack* pack);
 void* MQTTPacket_publish(unsigned char aHeader, char* data, size_t datalen, networkHandles* handler);
 void MQTTPacket_freePublish(Publish* pack);

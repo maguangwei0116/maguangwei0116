@@ -403,6 +403,7 @@ int lpa_load_cert(const uint8_t *data, uint16_t data_len)
 
 int lpa_load_profile(const uint8_t *data, uint16_t data_len)
 {
+    MSG_INFO("data[0]:%02X, data_len:%d\n", data[0], data_len);
     return load_profile(data, data_len);
 }
 
