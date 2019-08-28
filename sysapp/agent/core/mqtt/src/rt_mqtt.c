@@ -47,7 +47,7 @@ typedef struct _mqtt_param_t {
     rt_bool                     mqtt_get_addr;
     rt_bool                     mqtt_flag;          // mqtt connect ok falg
     rt_bool                     subscribe_flag;     // subscribe ok flag
-    rt_bool                     alias_rc;                    
+    rt_bool                     alias_rc;           // need set alias flag                  
 } mqtt_param_t;
 
 static mqtt_param_t g_mqtt_param = {MQTTClient_connectOptions_initializer, 0};
@@ -607,7 +607,7 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.nodeName              = NULL;
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
     g_mqtt_param.opts.last_connect_status   = 0;  // Initialize the last link push the state of the system
-    rt_os_memcpy(g_mqtt_param.alias, "8944500703196037324F", 20);  // only for test
+    rt_mqtt_set_alias("89086657727465610100000000000171");  // only for test
     MQTTClient_init();
 }
 
@@ -625,5 +625,21 @@ int32_t init_mqtt(void *arg)
 exit_entry:
 
     return ret;
+}
+
+void rt_mqtt_set_alias(int8_t *obj)
+{
+    rt_os_memset(g_mqtt_param.alias, 0, sizeof(g_mqtt_param.alias));
+    rt_os_memcpy(g_mqtt_param.alias, obj, rt_os_strlen(obj));
+    rt_os_memset(g_mqtt_param.opts.device_id, 0,sizeof(g_mqtt_param.opts.device_id));
+    rt_os_memcpy(g_mqtt_param.opts.device_id, obj, rt_os_strlen(obj));
+    rt_os_memset(g_mqtt_param.opts.client_id, 0, sizeof(g_mqtt_param.opts.client_id));
+    rt_os_memcpy(g_mqtt_param.opts.rt_channel, "EMQ", 3);  // default for EMQ
+    g_mqtt_param.alias_rc = 1;
+}
+
+int8_t *rt_mqtt_get_channel(void)
+{
+    return g_mqtt_param.opts.rt_channel;
 }
 
