@@ -413,7 +413,7 @@ int rt_mqtt_setup_with_appkey(char *appkey, mqtt_info *info)
     
     ret = http_post_json(json_data, reg_url, reg_port, "/api/v1/ticket", (PCALLBACK)reg_cb1);
     if (ret < 0){
-        RT_MQTT_COMMAN_DEBUG("http_post_json error\n");
+        RT_MQTT_COMMAN_DEBUG("http_post_json error, ret=%d\r\n", ret);
         return -1;
     }
     strcpy(info->client_id, reg_info.client_id);
