@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdint.h>
+#include <unistd.h>
 #include "profile_parse.h"
 #include "rt_rplmn.h"
 #include "file.h"
@@ -86,7 +87,7 @@ static uint16_t rt_init_file_info(rt_fshandle_t fp)
     p = get_value_buffer(buf);
     p = get_value_buffer(p);
     data.operator_num = p[0];
-    MSG_PRINTF(LOG_ERR, "operator_num:%d\n", data.operator_num);
+    MSG_PRINTF(LOG_INFO, "operator_num:%d\n", data.operator_num);
 }
 
 static uint16_t rt_get_root_sk_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size)
@@ -256,6 +257,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     }
 
     MSG_INFO_ARRAY("Current profile:", g_buf, profile_len);
+    sleep(1000);
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, g_buf, profile_len);
     return RT_SUCCESS;
 }
@@ -290,7 +292,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
     rt_fread(buf, 1, 4, fp);
     off += get_length(buf, 1);
 
-    MSG_PRINTF(LOG_ERR, "apn:%s\n", request->apn.list.array[0]->apnName.buf);
+    MSG_PRINTF(LOG_INFO, "apn:%s\n", request->apn.list.array[0]->apnName.buf);
     rt_qmi_modify_profile(1, 0, request->apn.list.array[0]->apnName.buf, 0);
 
     selected_profile_index = random % request->totalNum;
@@ -312,6 +314,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
         build_profile(profile_buffer, profile_len, selected_profile_index);
     } else {
         MSG_INFO_ARRAY("Current profile:", profile_buffer, profile_len);
+        sleep(1000);
         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer, profile_len);
     }
     rt_os_free(profile_buffer);
