@@ -40,7 +40,7 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     int32_t ret = RT_SUCCESS;
 
     ret = card_enable_profile(g_p_info.info[0].iccid);
-    if ((ret == RT_SUCCESS) || (ret == 1)) {
+    if ((ret == RT_SUCCESS) || (ret == 2)) {
         ret = lpa_load_profile(buf, len);
     }
     return ret;
