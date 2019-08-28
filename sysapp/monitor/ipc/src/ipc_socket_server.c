@@ -35,7 +35,6 @@ int32_t ipc_socket_server(void)
     uint16_t rcv_len;
 
     socket_id = socket_create();
-    MSG_PRINTF(LOG_INFO, "socket is:%d\n", socket_id);
     if (socket_id <= 0) {
         return ret;
     }
@@ -51,7 +50,6 @@ int32_t ipc_socket_server(void)
     }
     while (1) {
         new_fd = socket_accept(socket_id);
-        MSG_PRINTF(LOG_INFO, "client socket id:%d\n",new_fd);
         if (new_fd == -1) {
             break;
         }

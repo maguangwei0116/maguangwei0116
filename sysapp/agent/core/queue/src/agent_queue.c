@@ -47,7 +47,7 @@ static void agent_queue_task(void)
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 case MSG_ID_CARD_MANAGER:
-                    MSG_INFO_ARRAY("2.que_t.data_buf:", (uint8_t *)que_t.data_buf, que_t.data_len);
+                    MSG_INFO_ARRAY("que_t.data_buf:", (uint8_t *)que_t.data_buf, que_t.data_len);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 case MSG_ID_LOG_MANAGER:
@@ -133,7 +133,6 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
     if (len > 0) {
         que_t.data_buf = (void *)rt_os_malloc(len);
         rt_os_memcpy(que_t.data_buf, buffer, len);
-        MSG_INFO_ARRAY("1.que_t.data_buf:", que_t.data_buf, len);
     } else {
         que_t.data_buf = NULL;
     }

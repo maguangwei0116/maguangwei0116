@@ -29,7 +29,7 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
 
 int32_t main(void)
 {
-    softsim_logic_start();
+    softsim_logic_start(write_log_fun);
     trigegr_regist_reset(card_reset);
     trigegr_regist_cmd(card_cmd);
     trigger_insert_card(1);

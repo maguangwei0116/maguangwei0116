@@ -38,7 +38,7 @@ static int open_channel(int8_t *channel)
         }
         *channel = rsp[0];
     } else {
-        ret = rt_qmi_open_channel(euicc_aid,sizeof(euicc_aid),channel);
+        ret = rt_qmi_open_channel(euicc_aid, sizeof(euicc_aid), channel);
     }
     MSG_INFO("Open Channel: %02X\n", *channel);
     return ret;

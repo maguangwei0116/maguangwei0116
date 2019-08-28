@@ -16,7 +16,7 @@
 
 #include "rt_type.h"
 
-int32_t softsim_logic_start(void);
+int32_t softsim_logic_start(void *fun);
 
 uint16_t softsim_logic_command(
     uint8_t slot,
