@@ -47,7 +47,6 @@ static void agent_queue_task(void)
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;
                 case MSG_ID_CARD_MANAGER:
-                    MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, %p\n", que_t.data_len, que_t.data_buf);
                     MSG_INFO_ARRAY("2.que_t.data_buf:", (uint8_t *)que_t.data_buf, que_t.data_len);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
                 break;

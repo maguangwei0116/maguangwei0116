@@ -34,7 +34,8 @@ profile_data_t data;
 uint8_t profile_buffer1[300];
 uint16_t g_buf_size = 0;
 
-static uint16_t get_offset(rt_fshandle_t fp, uint8_t type, uint8_t *asset, uint16_t *size) {
+static uint16_t get_offset(rt_fshandle_t fp, uint8_t type, uint8_t *asset, uint16_t *size)
+{
     int ret = 0;
     uint8_t buf[4];
     uint16_t offset = 0;
@@ -80,23 +81,28 @@ static uint16_t get_offset(rt_fshandle_t fp, uint8_t type, uint8_t *asset, uint1
     return offset;
 }
 
-static uint16_t rt_get_root_sk_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size) {
+static uint16_t rt_get_root_sk_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size)
+{
     return get_offset(fp, ROOT_SK, sk, size);
 }
 
-static uint16_t rt_get_aes_key_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size) {
+static uint16_t rt_get_aes_key_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size)
+{
     return get_offset(fp, PROFILE_KEY, sk, size);
 }
 
-static uint16_t rt_get_file_info_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size) {
+static uint16_t rt_get_file_info_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size)
+{
     return get_offset(fp, FILE_INFO, sk, size);
 }
 
-static uint16_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size) {
+static uint16_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size)
+{
     return get_offset(fp, OPT_PROFILES, sk, size);
 }
 
-static uint16_t rt_get_hash_code_offset(rt_fshandle_t fp) {
+static uint16_t rt_get_hash_code_offset(rt_fshandle_t fp)
+{
     uint8_t buf[4], hash_code_buf[32];
     uint16_t off = 0;
     sha256_ctx hash_code;
@@ -318,7 +324,8 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
     return RT_SUCCESS;
 }
 
-int32_t selected_profile(int32_t random) {
+int32_t selected_profile(int32_t random)
+{
     rt_fshandle_t fp;
     uint8_t buf[8];
     uint16_t off = data.operator_info_offset;
@@ -376,7 +383,8 @@ int32_t selected_profile(int32_t random) {
     return RT_SUCCESS;
 }
 
-int32_t init_profile_file(int32_t *arg) {
+int32_t init_profile_file(int32_t *arg)
+{
     int32_t ret = RT_SUCCESS;
     uint8_t buf[500];
     uint16_t len = 0;
