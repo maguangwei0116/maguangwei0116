@@ -32,7 +32,7 @@ int32_t socket_connect(int32_t socket_id)
     memset(&server_sai, 0, sizeof(server_sai));
     server_sai.sun_family = AF_UNIX;
     strcpy(server_sai.sun_path, SERVER_PATH);
-    return connect(socket_id, (struct sockaddr_un *)&server_sai, sizeof(struct sockaddr_un));
+    return connect(socket_id, (struct sockaddr *)&server_sai, sizeof(struct sockaddr_un));
 }
 
 int32_t socket_bind(int32_t socket_id)
@@ -44,7 +44,7 @@ int32_t socket_bind(int32_t socket_id)
     server_sai.sun_family = AF_UNIX;
     strcpy(server_sai.sun_path, SERVER_PATH);
     setsockopt(socket_id, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-    return bind(socket_id, (struct sockaddr_un *)&server_sai, sizeof(struct sockaddr_un));
+    return bind(socket_id, (struct sockaddr *)&server_sai, sizeof(struct sockaddr_un));
 }
 
 int32_t socket_listen(int32_t socket_id, int32_t num)

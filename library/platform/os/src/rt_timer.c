@@ -54,7 +54,7 @@ void callback_timeout(void)
     }
     sigprocmask(SIG_SETMASK,&oldset,NULL);
     p->func();
-    free(p);
+    rt_os_free(p);
 }
 
 int32_t register_timer(int sec, int usec, void (*action)())
@@ -64,7 +64,7 @@ int32_t register_timer(int sec, int usec, void (*action)())
     struct sigaction sa;
     sigset_t set, oldset;
 
-    t = (my_timer_t *) malloc(sizeof(my_timer_t));
+    t = (my_timer_t *) rt_os_malloc(sizeof(my_timer_t));
     t->next = t->prev = NULL;
     t->diff_sec = sec;
     t->diff_usec = usec;
@@ -115,22 +115,4 @@ void timer_handler (int signo)
 void init_timer(void)
 {
     signal(SIGALRM, timer_handler);
-}
-
-//
-// register_timer(1, 0, &func1);
-// register_timer(4, 0, &func2);
-// register_timer(5, 0, &func3);
-
-// todo mutil timer
-int32_t rt_set_timer(int32_t seconds, void *callback)
-{
-    struct itimerval timer;
-
-    signal(SIGALRM, callback);
-    timer.it_value.tv_sec = seconds;
-    timer.it_value.tv_usec = 0;
-    timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 0;
-    return setitimer(ITIMER_REAL, &timer, NULL);
 }

@@ -94,7 +94,6 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     uim_remote_apdu_ind_msg_v01 ind_msg = {0};
     int rc;
     uint16_t sw;
-    MSG_PRINTF(LOG_INFO, "process_ind_apdu\n");
     rc = qmi_client_message_decode(user_handle, QMI_IDL_INDICATION, msg_id, ind_buf,
                         ind_buf_len, &ind_msg, sizeof(uim_remote_apdu_ind_msg_v01));
     if(rc != RT_SUCCESS) {
@@ -106,7 +105,7 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     req.slot = ind_msg.slot;
     req.apdu_id = ind_msg.apdu_id;
 
-    MSG_INFO_ARRAY(">>>", ind_msg.command_apdu, ind_msg.command_apdu_len);
+    MSG_INFO_ARRAY("M-APDU REQ:", ind_msg.command_apdu, ind_msg.command_apdu_len);
 
     // fill Response APDU
     req.response_apdu_segment_valid = true;
@@ -115,12 +114,11 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
                   req.response_apdu_segment, (uint16_t *)&req.response_apdu_segment_len);
     req.response_apdu_segment[req.response_apdu_segment_len++] = (sw >> 8) & 0xFF;
     req.response_apdu_segment[req.response_apdu_segment_len++] = sw & 0xFF;
-    MSG_PRINTF(LOG_INFO, "process_ind_apdu\n");
     req.response_apdu_info_valid = true;
     req.response_apdu_info.total_response_apdu_size = req.response_apdu_segment_len;
     req.response_apdu_info.response_apdu_segment_offset = 0;
 
-    MSG_INFO_ARRAY("<<<", req.response_apdu_segment, req.response_apdu_segment_len);
+    MSG_INFO_ARRAY("M-APDU RSP:", req.response_apdu_segment, req.response_apdu_segment_len);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_APDU_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, txn);

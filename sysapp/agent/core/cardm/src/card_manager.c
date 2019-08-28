@@ -26,6 +26,7 @@ static info_t g_p_info;
 static int32_t card_enable_profile(const int8_t *iccid)
 {
     int32_t ret = RT_ERROR;
+
     ret = lpa_enable_profile(iccid);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n",ret);
@@ -37,10 +38,9 @@ static int32_t card_enable_profile(const int8_t *iccid)
 static int32_t card_load_profile(const uint8_t *buf, int32_t len)
 {
     int32_t ret = RT_SUCCESS;
-    if (g_p_info.info[0].state != 1) {
-        ret = card_enable_profile(g_p_info.info[0].iccid);
-    }
-    if (ret == RT_SUCCESS) {
+
+    ret = card_enable_profile(g_p_info.info[0].iccid);
+    if ((ret == RT_SUCCESS) || (ret == 2)) {
         ret = lpa_load_profile(buf, len);
     }
     return ret;

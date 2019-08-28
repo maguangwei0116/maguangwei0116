@@ -3,9 +3,6 @@
 //
 
 #include <string.h>
-
-//#include "types.h"
-//#include "util.h"
 #include "tlv.h"
 
 #ifndef COS_MEMSET
@@ -18,38 +15,47 @@
 
 static TLV g_tlv;
 
-void init_tlv(void) {
+void init_tlv(void)
+{
     COS_MEMSET((uint8_t * ) & g_tlv, 0, sizeof(g_tlv));
 }
 
-void free_tlv(void) {
+void free_tlv(void)
+{
 }
 
-uint16_t get_cur_tlv_tag(void) {
+uint16_t get_cur_tlv_tag(void)
+{
     return g_tlv.tag;
 }
 
-uint16_t get_cur_tlv_off(void) {
+uint16_t get_cur_tlv_off(void)
+{
     return g_tlv.offset;
 }
 
-uint16_t get_cur_tlv_len(void) {
+uint16_t get_cur_tlv_len(void)
+{
     return g_tlv.length;
 }
 
-void set_cur_tlv_tag(uint8_t tag) {
+void set_cur_tlv_tag(uint8_t tag)
+{
     g_tlv.tag = tag;
 }
 
-void set_cur_tlv_off(uint16_t off) {
+void set_cur_tlv_off(uint16_t off)
+{
     g_tlv.offset = off;
 }
 
-void set_cur_tlv_len(uint16_t len) {
+void set_cur_tlv_len(uint16_t len)
+{
     g_tlv.length = len;
 }
 
-void append_tl_byte_v(uint8_t *buffer, uint8_t tag, uint8_t val) {
+void append_tl_byte_v(uint8_t *buffer, uint8_t tag, uint8_t val)
+{
     uint16_t curr_len;
     uint16_t curr_off;
 
@@ -63,7 +69,8 @@ void append_tl_byte_v(uint8_t *buffer, uint8_t tag, uint8_t val) {
     set_cur_tlv_off(curr_off);
 }
 
-void append_tl_short_v(uint8_t *buffer, uint8_t tag, uint16_t val) {
+void append_tl_short_v(uint8_t *buffer, uint8_t tag, uint16_t val)
+{
     uint16_t curr_len = get_cur_tlv_len(), curr_off = get_cur_tlv_off();
     curr_len += 4;
     buffer[curr_off++] = tag;
@@ -74,7 +81,8 @@ void append_tl_short_v(uint8_t *buffer, uint8_t tag, uint16_t val) {
     set_cur_tlv_off(curr_off);
 }
 
-void append_tl_buffer_v(uint8_t *buffer, uint8_t tag, uint8_t *valBuf, uint8_t valOff, uint8_t valLen) {
+void append_tl_buffer_v(uint8_t *buffer, uint8_t tag, uint8_t *valBuf, uint8_t valOff, uint8_t valLen)
+{
     uint16_t curr_len = get_cur_tlv_len(), curr_off = get_cur_tlv_off();
     curr_len += (valLen + 2);
     buffer[curr_off++] = tag;
@@ -85,7 +93,8 @@ void append_tl_buffer_v(uint8_t *buffer, uint8_t tag, uint8_t *valBuf, uint8_t v
     set_cur_tlv_off(curr_off);
 }
 
-uint16_t get_length(uint8_t *ba_buffer, uint8_t mode) {
+uint16_t get_length(uint8_t *ba_buffer, uint8_t mode)
+{
     uint16_t value;
     uint8_t length;
     uint8_t offset = 1;
@@ -110,7 +119,8 @@ uint16_t get_length(uint8_t *ba_buffer, uint8_t mode) {
     return value;
 }
 
-void copy_buffer(uint8_t *p_dst, uint8_t *p_src, uint16_t len) {
+void copy_buffer(uint8_t *p_dst, uint8_t *p_src, uint16_t len)
+{
     // Compare source address and destination address to know
     // the order (forward or backward copy)
     if (p_src > p_dst) {
@@ -129,7 +139,8 @@ void copy_buffer(uint8_t *p_dst, uint8_t *p_src, uint16_t len) {
 }
 
 // current offset is TAG offset.
-uint16_t set_length(uint8_t *ba_buffer, uint16_t s_length) {
+uint16_t set_length(uint8_t *ba_buffer, uint16_t s_length)
+{
     uint8_t pad_number = 0;
     uint8_t s_offset = 1;
 
@@ -155,7 +166,8 @@ uint16_t set_length(uint8_t *ba_buffer, uint16_t s_length) {
     return (uint16_t)(s_length + s_offset + pad_number + 1);
 }
 
-uint8_t *get_value_buffer(uint8_t *ba_buffer) {
+uint8_t *get_value_buffer(uint8_t *ba_buffer)
+{
     uint8_t s_offset = 1;
 
     if ((ba_buffer[0] & 0x1F) == 0x1F) {
@@ -170,7 +182,8 @@ uint8_t *get_value_buffer(uint8_t *ba_buffer) {
     }
 }
 
-uint8_t *get_simple_tag_tlv(uint16_t tag, uint8_t *ba_buffer, uint16_t s_length, uint16_t sOccurence) {
+uint8_t *get_simple_tag_tlv(uint16_t tag, uint8_t *ba_buffer, uint16_t s_length, uint16_t sOccurence)
+{
     uint16_t check_tag = 0;
     uint16_t counter = 0;
     uint8_t *the_end = (uint8_t * )(ba_buffer + s_length);
@@ -194,16 +207,19 @@ uint8_t *get_simple_tag_tlv(uint16_t tag, uint8_t *ba_buffer, uint16_t s_length,
     return NULL;
 }
 
-uint8_t get_byte(uint8_t *buf) {
+uint8_t get_byte(uint8_t *buf)
+{
     return buf[0];
 }
 
-uint16_t get_short(uint8_t *buf) {
+uint16_t get_short(uint8_t *buf)
+{
     return (buf[0] << 8) + buf[1];
 }
 
 /* return the opinter buffer of the tag-value buffer */
-uint8_t *get_simple_tlv(uint16_t tag, uint8_t *buffer, uint16_t len, uint16_t *tag_len, uint16_t *left_len) {
+uint8_t *get_simple_tlv(uint16_t tag, uint8_t *buffer, uint16_t len, uint16_t *tag_len, uint16_t *left_len)
+{
     uint8_t *p = NULL;
 
     p = get_simple_tag_tlv(tag, buffer, len, 1);

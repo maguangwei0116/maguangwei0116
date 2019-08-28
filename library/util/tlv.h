@@ -2,8 +2,8 @@
 // Created by admin on 2019-08-20.
 //
 
-#ifndef SMART_TLV_H
-#define SMART_TLV_H
+#ifndef __TLV_H__
+#define __TLV_H__
 
 #ifdef __cplusplus
 extern "C" {
