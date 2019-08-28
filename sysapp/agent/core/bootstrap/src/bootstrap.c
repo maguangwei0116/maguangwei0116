@@ -32,8 +32,7 @@ static int32_t get_random(void)
     if (rt_read_data(RANDOM_FILE, 0, (uint8_t * ) & random, sizeof(random)) == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "read urandom error\n");
     }
-    ret = rand();
-    return ret;
+    return rand();
 }
 
 static void bootstrap_select_profile(void)

@@ -282,7 +282,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
     dc = ber_decode(NULL, &asn_DEF_ProfileInfo1, (void **) &request, buf, size);
 
     if (dc.code != RC_OK) {
-        MSG_PRINTF("%ld\n", dc.consumed);
+        MSG_PRINTF(LOG_ERR, "%ld\n", dc.consumed);
         return RT_ERROR;
     }
     off += size;

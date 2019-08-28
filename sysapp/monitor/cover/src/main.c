@@ -11,6 +11,7 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
+#include <stdlib.h>
 #include "rt_type.h"
 #include "ipc_socket_server.h"
 #include "trigger.h"
