@@ -22,7 +22,7 @@
 
 #define LOG_NAME            "/data/redtea/rt_log"
 #define LOG_FILE_SIZE       1024
-#define LOG_BUF_SIZE        600
+#define LOG_BUF_SIZE        1024
 
 static int32_t g_file_fd = -1;
 static int32_t g_log_printf_type = LOG_PRINTF_TERMINAL;
@@ -77,9 +77,9 @@ static void printf_log(int8_t *data)
     }
 }
 
-int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const int8_t *msg, ...)
+int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const char *msg, ...)
 {
-    int8_t content[LOG_BUF_SIZE] = {0};
+    char content[LOG_BUF_SIZE] = {0};
     time_t  time_write;
     struct tm tm_Log;
     int32_t len = 0;
@@ -104,12 +104,12 @@ int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const int8_t *
         content[4] = 0;
         time_write = time(NULL);        //
         localtime_r(&time_write, &tm_Log);
-        strftime((int8_t *)&content[len], LOG_BUF_SIZE, "[%Y-%m-%d %H:%M:%S] ", &tm_Log);
+        strftime((char *)&content[len], LOG_BUF_SIZE, "[%Y-%m-%d %H:%M:%S]", &tm_Log);
         len = rt_os_strlen(&content[len]) + 4;
     }
 	
     va_start(vl_list, msg);
-    vsnprintf((int8_t *)&content[len], LOG_BUF_SIZE - len, (const int8_t *)msg, vl_list);   //
+    vsnprintf((char *)&content[len], LOG_BUF_SIZE - len, (const char *)msg, vl_list);   //
     va_end(vl_list);
     printf_log(content);
     return 0;
