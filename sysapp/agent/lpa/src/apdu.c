@@ -14,17 +14,17 @@ const static uint8_t g_close_channel_cmd[] = {0x00, 0x70, 0x80, 0x01, 0x00};
 
 const static uint8_t euicc_aid[] = {0xA0, 0x00, 0x00, 0x05, 0x59, 0x10, 0x10, 0xFF,
                                     0xFF, 0xFF, 0xFF, 0x89, 0x00, 0x00, 0x01, 0x00};
-static int8_t g_channel = -1;
+
 static channel_type_e g_channel_mode = CHANNEL_BY_IPC;
 
-static uint16_t get_sw(char *rsp,int len)
+static uint16_t get_sw(uint8_t *rsp, uint16_t len)
 {
     uint16_t sw;
     sw = ((uint16_t)rsp[len-2] << 8) + rsp[len-1];
     return sw;
 }
 
-static int open_channel(int8_t *channel)
+int open_channel(int8_t *channel)
 {
     int ret = RT_SUCCESS;
     if (g_channel_mode == CHANNEL_BY_IPC) {
@@ -44,7 +44,7 @@ static int open_channel(int8_t *channel)
     return ret;
 }
 
-static int close_channel(int8_t channel)
+int close_channel(int8_t channel)
 {
     int ret = RT_SUCCESS;
     if (g_channel_mode == CHANNEL_BY_IPC) {
@@ -62,24 +62,17 @@ static int close_channel(int8_t channel)
     return ret;
 }
 
-
-int cmd_manage_channel(channel_opt_t operation)
+static int32_t lpa_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int8_t channel)
 {
-    if (operation == OPEN_CHANNEL) {
-        if (g_channel == -1) {
-            RT_CHECK(open_channel(&g_channel));
-        }
-    } else if (operation == CLOSE_CHANNEL){
-        if (g_channel != -1) {
-            RT_CHECK(close_channel(g_channel));
-            g_channel = -1;
-        }
+    if (g_channel_mode == CHANNEL_BY_IPC) {
+        return ipc_send_data(data, data_len, rsp, rsp_len);
+    } else if (g_channel_mode == CHANNEL_BY_QMI) {
+        return rt_qmi_send_apdu(data, data_len, rsp, rsp_len, channel);
     }
-    return RT_SUCCESS;
 }
 
 #define APDU_BLOCK_SIZE         255
-int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
+int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int8_t channel)
 {
     int i;
     int ret = RT_SUCCESS;
@@ -96,22 +89,19 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
     if (left != 0) {
         cnt++;
     }
-    if (g_channel < 0) {
-        if(cmd_manage_channel(OPEN_CHANNEL) != RT_SUCCESS) {
-            MSG_ERR("Open channel error\n");
-            return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
-        }
+    if (channel < 0) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
     if (g_channel_mode == CHANNEL_BY_IPC) {
         // select aid
-        apdu->cla = g_channel & 0x03;
+        apdu->cla = channel & 0x03;
         apdu->ins = 0xA4;
         apdu->p1 = 0x04;
         apdu->p2 = 0x00;
         apdu->lc = sizeof(euicc_aid);
         memcpy(&apdu->data, euicc_aid, apdu->lc);
         cbuf[apdu->lc+5] = 0x00;
-        ipc_send_data((uint8_t *)cbuf, apdu->lc+6, cbuf, rsp_len);
+        lpa_send_apdu((uint8_t *)cbuf, apdu->lc+6, cbuf, rsp_len, channel);
         sw = get_sw(cbuf, *rsp_len);
         if (sw != SW_NORMAL) {
             return RT_ERR_APDU_STORE_DATA_FAIL;
@@ -120,7 +110,7 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
 
     apdu->cla = 0x80;     //cla
     apdu->ins = 0xE2;     //ins
-    apdu->cla |= g_channel;
+    apdu->cla |= channel;
     for (i = 0; i < cnt; i++) {
         apdu->p2 = i;            //p2
         if (i == (cnt - 1)) {    // Last block
@@ -133,13 +123,9 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
         memset(&apdu->data,0x00,apdu->lc);
         memcpy(&apdu->data,data + i * APDU_BLOCK_SIZE,apdu->lc);
         cbuf[apdu->lc+5] = 0x00;
-        if (g_channel_mode == CHANNEL_BY_IPC) {
-            ipc_send_data((uint8_t *)cbuf, apdu->lc+6, rsp, rsp_len);
-        } else {
-            ret = rt_qmi_send_apdu(cbuf, apdu->lc+6, rsp, rsp_len, g_channel);
-            if (ret != RT_SUCCESS) {
-                return RT_ERR_APDU_SEND_FAIL;
-            }
+        ret = lpa_send_apdu(cbuf, apdu->lc+6, rsp, rsp_len, channel);
+        if (ret != RT_SUCCESS) {
+            return RT_ERR_APDU_SEND_FAIL;
         }
         sw = get_sw(rsp, *rsp_len);
         do {
@@ -147,9 +133,9 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
                 uint16_t size;
                 uint8_t cmd[6] = {0x80,0xC0,0x00,0x00,0x00};
                 size = (sw & 0xFF);
-                cmd[0] = (g_channel & 0x03) | 0x80;   // Channel should be 0~3, and convert to hexstring
+                cmd[0] = (channel & 0x03) | 0x80;   // Channel should be 0~3, and convert to hexstring
                 cmd[4] = size;
-                ret = rt_qmi_send_apdu(cmd,5,rsp,&size,g_channel);
+                ret = lpa_send_apdu(cmd, 5, rsp, &size, channel);
                 if (ret != RT_SUCCESS) {
                     return RT_ERR_APDU_SEND_FAIL;
                 }

@@ -18,7 +18,7 @@ extern void clean_cb_data(void);
 extern uint8_t *get_cb_data(void);
 extern uint16_t get_cb_size(void);
 
-int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size)
+int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -34,7 +34,6 @@ int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out,
         req.profileIdentifier.choice.iccid.size = 10;
     }
     req.refreshFlag = refresh ? 0xFF : 0x00;
-    cmd_manage_channel(CLOSE_CHANNEL);
     *out_size = 0;
     clean_cb_data();
     ec = der_encode(&asn_DEF_EnableProfileRequest, &req, encode_cb, NULL);
@@ -44,7 +43,7 @@ int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out,
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("EnableProfileRequest: ", get_cb_data(), get_cb_size());
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
     if (ret == RT_SUCCESS){
         *out_size -= 2;  // Remove sw 9000
     } else if (ret == RT_ERR_AT_WRONG_RSP) {
@@ -56,7 +55,7 @@ int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out,
     return ret;
 }
 
-int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size)
+int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -72,7 +71,6 @@ int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out
         req.profileIdentifier.choice.iccid.size = 10;
     }
     req.refreshFlag = refresh ? 0xFF : 0x00;
-    cmd_manage_channel(CLOSE_CHANNEL);
     *out_size = 0;
     clean_cb_data();
     ec = der_encode(&asn_DEF_DisableProfileRequest, &req, encode_cb, NULL);
@@ -82,7 +80,7 @@ int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("DisableProfileRequest: ", get_cb_data(), get_cb_size());
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
     if (ret == RT_SUCCESS){
         *out_size -= 2;  // Remove sw 9000
     } else if (ret == RT_ERR_AT_WRONG_RSP) {
@@ -95,7 +93,7 @@ int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out
     return ret;
 }
 
-int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out_size)
+int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     asn_enc_rval_t ec;
     DeleteProfileRequest_t req = {0};
@@ -109,7 +107,6 @@ int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out
         req.choice.iccid.buf = id;
         req.choice.iccid.size = 10;
     }
-    cmd_manage_channel(CLOSE_CHANNEL);
     *out_size = 0;
     clean_cb_data();
     ec = der_encode(&asn_DEF_DeleteProfileRequest, &req, encode_cb, NULL);
@@ -119,13 +116,13 @@ int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("DeleteProfileRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
 }
 
-int get_eid(uint8_t *eid, uint16_t *size)
+int get_eid(uint8_t *eid, uint16_t *size, int8_t channel)
 {
     asn_enc_rval_t ec;
     GetEuiccDataRequest_t req = {0};
@@ -133,7 +130,6 @@ int get_eid(uint8_t *eid, uint16_t *size)
 
     req.tagList.buf = tag;
     req.tagList.size = 1;
-    cmd_manage_channel(CLOSE_CHANNEL);
     clean_cb_data();
     ec = der_encode(&asn_DEF_GetEuiccDataRequest, &req, encode_cb, NULL);
     MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
@@ -142,17 +138,16 @@ int get_eid(uint8_t *eid, uint16_t *size)
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("GetEuiccDataRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), eid, size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), eid, size, channel));
     *size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
 }
 
-int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size)
+int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     asn_enc_rval_t ec;
     MoreEIDOperateRequest_t req = {0};
-    cmd_manage_channel(CLOSE_CHANNEL);
     req.present = MoreEIDOperateRequest_PR_eidValue;
     req.choice.eidValue.buf = eid;
     req.choice.eidValue.size = size;
@@ -160,35 +155,33 @@ int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size)
     ec = der_encode(&asn_DEF_MoreEIDOperateRequest, &req, encode_cb, NULL);
     MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
     MSG_INFO_ARRAY("GetEuicclistRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
     return RT_SUCCESS;
 }
 
-int get_eid_list(uint8_t *eid, uint16_t *size)
+int get_eid_list(uint8_t *eid, uint16_t *size, int8_t channel)
 {
     asn_enc_rval_t ec;
     MoreEIDOperateRequest_t req = {0};
-    cmd_manage_channel(CLOSE_CHANNEL);
     req.present = MoreEIDOperateRequest_PR_listAllEID;
     clean_cb_data();
     ec = der_encode(&asn_DEF_MoreEIDOperateRequest, &req, encode_cb, NULL);
     MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
     MSG_INFO_ARRAY("GetEuicclistRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), eid, size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), eid, size, channel));
     //*size -= 2;  // Remove sw 9000
     return RT_SUCCESS;
 }
 
 int get_profiles_info(search_criteria_t sc, uint8_t *criteria, uint16_t c_size,
-                    uint8_t *profile_info, uint16_t *size /* out */)
+                    uint8_t *profile_info, uint16_t *size , int8_t channel/* out */)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
     ProfileInfoListRequest_t *req = NULL;
     req = calloc(1, sizeof(ProfileInfoListRequest_t));
     RT_CHECK_GO(req, RT_ERR_OUT_OF_MEMORY, end);
-    cmd_manage_channel(CLOSE_CHANNEL);
     if (sc != SEARCH_NONE) {
         req->searchCriteria = calloc(1, sizeof(struct ProfileInfoListRequest__searchCriteria));
         RT_CHECK_GO(req->searchCriteria, RT_ERR_OUT_OF_MEMORY, end);
@@ -214,7 +207,7 @@ int get_profiles_info(search_criteria_t sc, uint8_t *criteria, uint16_t c_size,
 
     MSG_INFO_ARRAY("ProfileInfoListRequest_t: ", get_cb_data(), get_cb_size());
     // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), profile_info, size));
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), profile_info, size);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), profile_info, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
@@ -225,7 +218,7 @@ end:
 }
 
 // TODO: Fix 6A80
-int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t *out_size)
+int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     asn_enc_rval_t ec;
     SetNicknameRequest_t req = {0};
@@ -235,7 +228,6 @@ int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t
 
     req.profileNickname.buf = (uint8_t *)nickname;
     req.profileNickname.size = strlen(nickname);
-    cmd_manage_channel(CLOSE_CHANNEL);
     clean_cb_data();
     ec = der_encode(&asn_DEF_SetNicknameRequest, &req, encode_cb, NULL);
     MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
@@ -244,13 +236,13 @@ int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
 }
 
-int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size)
+int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     asn_enc_rval_t ec;
     uint8_t bit_string[1] = {0};
@@ -267,7 +259,6 @@ int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size)
     if (mrt & RESET_DEFAULT_SDMP_ADDRESS) {
         bit_string[0] |= 0x20;
     }
-    cmd_manage_channel(CLOSE_CHANNEL);
     req.resetOptions.buf = bit_string;
     req.resetOptions.size = 1;
     req.resetOptions.bits_unused = 5;
@@ -280,7 +271,7 @@ int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size)
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;

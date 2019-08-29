@@ -23,13 +23,13 @@ typedef enum memory_reset_request {
 } memory_reset_t;
 
 // ES10c
-int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size);
-int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size);
-int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out_size);
-int get_eid(uint8_t *eid, uint16_t *size);
+int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, int8_t channel);
+int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, int8_t channel);
+int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out_size, int8_t channel);
+int get_eid(uint8_t *eid, uint16_t *size, int8_t channel);
 int get_profiles_info(search_criteria_t sc, uint8_t *criteria, uint16_t c_size,
-                    uint8_t *profile_info, uint16_t *size /* out */);
-int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t *out_size);
-int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size);
-int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size);
+                    uint8_t *profile_info, uint16_t *size , int8_t channel/* out */);
+int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t *out_size, int8_t channel);
+int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size, int8_t channel);
+int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size, int8_t channel);
 #endif  // __LUID_H__

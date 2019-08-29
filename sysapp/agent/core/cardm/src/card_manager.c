@@ -29,7 +29,7 @@ static int32_t card_enable_profile(const int8_t *iccid)
     int32_t ret = RT_ERROR;
     int32_t ii = 0;
     for (ii = 0; ii < g_p_info.num; ii++) {
-        if (rt_os_memcmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
+        if (rt_os_strncmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
             if (g_p_info.info[ii].state == 0) {
                 ret = lpa_enable_profile(iccid);
                 if (ret != RT_SUCCESS) {
@@ -50,6 +50,7 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     int32_t ret = RT_SUCCESS;
 
     ret = card_enable_profile(g_p_info.info[0].iccid);
+    rt_os_sleep(3); // must have
     if ((ret == RT_SUCCESS) || (ret == 2)) {
         ret = lpa_load_profile(buf, len);
     }

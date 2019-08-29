@@ -12,7 +12,7 @@ extern void clean_cb_data(void);
 extern uint8_t *get_cb_data(void);
 extern uint16_t get_cb_size(void);
 
-int get_euicc_configured_address(uint8_t *addr, uint16_t *size)
+int get_euicc_configured_address(uint8_t *addr, uint16_t *size, int8_t channel)
 {
     asn_enc_rval_t ec;
     EuiccConfiguredAddressesRequest_t req = {0};
@@ -25,13 +25,13 @@ int get_euicc_configured_address(uint8_t *addr, uint16_t *size)
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("EuiccConfiguredAddressesRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), addr, size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), addr, size, channel));
     *size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
 }
 
-int set_default_dp_address(char *addr, uint8_t *out, uint16_t *out_size)
+int set_default_dp_address(char *addr, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     asn_enc_rval_t ec;
     SetDefaultDpAddressRequest_t req = {0};
@@ -47,7 +47,7 @@ int set_default_dp_address(char *addr, uint8_t *out, uint16_t *out_size)
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("EuiccConfiguredAddressesRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;

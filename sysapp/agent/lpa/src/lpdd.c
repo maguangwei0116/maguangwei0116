@@ -52,7 +52,7 @@ uint16_t get_cb_size(void)
     return g_buf_size;
 }
 
-int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size)
+int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     asn_enc_rval_t ec;
     uint8_t bit_string[1] = {0};
@@ -89,13 +89,13 @@ int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size)
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     //*out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
 }
 
-int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_size)
+int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     // asn_enc_rval_t ec;
     // LoadCRLRequest_t req = {0};
@@ -113,13 +113,13 @@ int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_
     // *out_size -= 2;  // Remove sw 9000
 
     // Impl for crl prepared by caller
-    RT_CHECK(cmd_store_data(crl, crl_size, out, out_size));
+    RT_CHECK(cmd_store_data(crl, crl_size, out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
 }
 
-int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint16_t *out_size)
+int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -163,7 +163,7 @@ int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint1
         goto end;
     }
     MSG_INFO_ARRAY("RetrieveNotificationsListRequest: ", get_cb_data(), get_cb_size());
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*out_size -= 2;  // Remove sw 9000
 
@@ -174,7 +174,7 @@ end:
     return ret;
 }
 
-int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size)
+int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     asn_enc_rval_t ec;
     NotificationSentRequest_t req = {0};
@@ -190,13 +190,13 @@ int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size)
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
+    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
 }
 
-int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *size2)
+int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *size2, int8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -218,7 +218,7 @@ int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *si
     ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo1Request, req1);
     MSG_INFO_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), info1, size1);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), info1, size1, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size1 -= 2;  // Remove sw 9000
 
@@ -233,7 +233,7 @@ int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *si
         ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo1Request, req2);
         MSG_INFO_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
 
-        ret = cmd_store_data(get_cb_data(), get_cb_size(), info2, size2);
+        ret = cmd_store_data(get_cb_data(), get_cb_size(), info2, size2, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
         //*size2 -= 2;  // Remove sw 9000
     }
@@ -243,7 +243,7 @@ end:
     return ret;
 }
 
-int get_euicc_challenge(uint8_t challenge[16])
+int get_euicc_challenge(uint8_t challenge[16], int8_t channel)
 {
     int ret = RT_SUCCESS;
     uint16_t rlen;
@@ -263,7 +263,7 @@ int get_euicc_challenge(uint8_t challenge[16])
 
     MSG_INFO_ARRAY("GetEuiccChallengeRequest: ", get_cb_data(), get_cb_size());
     // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), rsp, &rlen));
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), rsp, &rlen);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), rsp, &rlen, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     memcpy(challenge, rsp + 5, 16);
@@ -273,7 +273,7 @@ end:
     return ret;
 }
 
-int get_rat(uint8_t *rat, uint16_t *size)
+int get_rat(uint8_t *rat, uint16_t *size, int8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -290,7 +290,7 @@ int get_rat(uint8_t *rat, uint16_t *size)
 
     MSG_INFO_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
     // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), rat, size));
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), rat, size);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), rat, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
@@ -299,7 +299,7 @@ end:
     return ret;
 }
 
-int cancel_session(const uint8_t *tid, uint8_t tid_size, uint8_t reason, uint8_t *csr, uint16_t *size)
+int cancel_session(const uint8_t *tid, uint8_t tid_size, uint8_t reason, uint8_t *csr, uint16_t *size, int8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -322,7 +322,7 @@ int cancel_session(const uint8_t *tid, uint8_t tid_size, uint8_t reason, uint8_t
     }
     MSG_DUMP_ARRAY("CancelSessionRequest: ", get_cb_data(), get_cb_size());
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), csr, size);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), csr, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
@@ -392,7 +392,7 @@ end:
     return ret;
 }
 
-int initiate_authentication(const char *smdp_addr, char *auth_data, int *size)
+int initiate_authentication(const char *smdp_addr, char *auth_data, int *size, int8_t channel)
 {
     int ret = RT_SUCCESS;
     char *data = NULL;
@@ -403,12 +403,12 @@ int initiate_authentication(const char *smdp_addr, char *auth_data, int *size)
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
 
-    RT_CHECK_GO((ret = get_euicc_challenge(tmp)) == RT_SUCCESS, ret, end);
+    RT_CHECK_GO((ret = get_euicc_challenge(tmp, channel)) == RT_SUCCESS, ret, end);
     MSG_INFO_ARRAY("euiccChallenge: ", tmp, 16);
     RT_CHECK_GO((ret = rt_base64_encode(tmp, 16, (char *)g_buf)) == RT_SUCCESS, ret, end);
     cJSON_AddStringToObject(content, "euiccChallenge", (char *)g_buf);
 
-    RT_CHECK_GO((ret = get_euicc_info(tmp, &tmp_size, NULL, NULL)) == RT_SUCCESS, ret, end);
+    RT_CHECK_GO((ret = get_euicc_info(tmp, &tmp_size, NULL, NULL, channel)) == RT_SUCCESS, ret, end);
     MSG_INFO_ARRAY("euiccInfo1: ", tmp, tmp_size);
     RT_CHECK_GO((ret = rt_base64_encode(tmp, tmp_size, (char *)g_buf)) == RT_SUCCESS, ret, end);
     cJSON_AddStringToObject(content, "euiccInfo1", (char *)g_buf);
@@ -630,7 +630,7 @@ static int get_cc_hash(const char *cc, const uint8_t *transaction_id, uint8_t id
 }
 
 int authenticate_server(const char *matching_id, const char *auth_data,
-                        uint8_t *response, uint16_t *size /* out */)
+                        uint8_t *response, uint16_t *size , int8_t channel/* out */)
 {
     int ret = RT_SUCCESS;
     void *p = NULL;
@@ -639,7 +639,6 @@ int authenticate_server(const char *matching_id, const char *auth_data,
     asn_enc_rval_t ec;
     asn_dec_rval_t dc;
     AuthenticateServerRequest_t *req = NULL;
-    cmd_manage_channel(CLOSE_CHANNEL);
     req = calloc(1, sizeof(AuthenticateServerRequest_t));
     RT_CHECK_GO(req, RT_ERR_OUT_OF_MEMORY, end);
 
@@ -689,7 +688,7 @@ int authenticate_server(const char *matching_id, const char *auth_data,
     MSG_INFO_ARRAY("AuthenticateServerRequest\n", get_cb_data(), get_cb_size());
 
     // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), response, size));
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), response, size);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), response, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
@@ -747,7 +746,7 @@ end:
     return ret;
 }
 
-int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t *out_size)
+int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t *out_size, int8_t channel)
 {
     int ret = RT_SUCCESS;
     cJSON *content = NULL;
@@ -797,7 +796,7 @@ int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t
     }
     MSG_INFO_ARRAY("PrepareDownloadRequest\n", get_cb_data(), get_cb_size());
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size);
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*out_size -= 2;  // Remove sw 9000
 
@@ -856,7 +855,7 @@ end:
 }
 
 int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
-                            uint8_t *out, uint16_t *out_size /* out */)
+                            uint8_t *out, uint16_t *out_size , int8_t channel/* out */)
 {
     int i;
     int ret = RT_SUCCESS;
@@ -895,7 +894,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("initialiseSecureChannelRequest\n", get_cb_data(), get_cb_size());
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size);  // Should only contain 9000
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     // ES8+ Configure ISDP
@@ -906,7 +905,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_INFO_ARRAY("firstSequenceOf87\n", get_cb_data(), get_cb_size());
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size);  // Should only contain 9000
+    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     // ES8+ Store Metadata
@@ -923,7 +922,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     p = get_cb_data();
     len = buf-get_cb_data();  // TODO: Make it general
     MSG_INFO("len: %d\n", len);
-    ret = cmd_store_data(p, len, out, out_size);  // Should only contain 9000
+    ret = cmd_store_data(p, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     // Send sequenceOf88 Value
@@ -937,7 +936,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
             return RT_ERR_ASN1_ENCODE_FAIL;
         }
         MSG_INFO_ARRAY("sequenceOf88TLV\n", get_cb_data(), get_cb_size());
-        ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size);
+        ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
     }
 
@@ -951,7 +950,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         }
         MSG_INFO_ARRAY("secondSequenceOf87\n", get_cb_data(), get_cb_size());
         // TODO: Test this
-        ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size);  // Should only contain 9000
+        ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);  // Should only contain 9000
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     }
 
@@ -969,7 +968,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     p = get_cb_data();
     len = buf-get_cb_data();  // TODO: Make it general
     MSG_INFO("len: %d\n", len);
-    ret = cmd_store_data(p, len, out, out_size);  // Should only contain 9000
+    ret = cmd_store_data(p, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     // Send sequenceOf86 Value
@@ -984,7 +983,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
             return RT_ERR_ASN1_ENCODE_FAIL;
         }
         MSG_INFO_ARRAY("sequenceOf86TLV\n", get_cb_data(), get_cb_size());
-        ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size);
+        ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
     }
 
@@ -1090,21 +1089,23 @@ end:
     return ret;
 }
 
-int load_cert(const uint8_t *data, uint16_t data_len)
+int load_cert(const uint8_t *data, uint16_t data_len, int8_t channel)
 {
     int ret = RT_SUCCESS;
-    ret = cmd_store_data(data, data_len, g_buf, &g_buf_size);  // Should only contain 9000
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-end:
+    ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000
+    if (ret == RT_SUCCESS) {
+        //return g_buf_size[];
+    }
     return ret;
 }
 
-int load_profile(const uint8_t *data, uint16_t data_len)
+int load_profile(const uint8_t *data, uint16_t data_len, int8_t channel)
 {
     int ret = RT_SUCCESS;
-    ret = cmd_store_data(data, data_len, g_buf, &g_buf_size);  // Should only contain 9000
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-end:
+    ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000
+    if (ret == RT_SUCCESS) {
+        return g_buf[5];
+    }
     return ret;
 }
 
