@@ -38,7 +38,7 @@ int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     if (mode == MSG_ALL_SWITCH_CARD) {
         MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
-        register_timer(300, 0 , &network_timer_callback);
+        register_timer(100, 0 , &network_timer_callback);
     }
 }
 

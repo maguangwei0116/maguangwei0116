@@ -189,7 +189,7 @@ static int32_t decode_profile(rt_fshandle_t fp, uint16_t off, int length)
 
 static int32_t encode_cb_fun(const void *buffer, size_t size, void *app_key)
 {
-    rt_os_memcpy(g_buf + g_buf_size, buffer, size);
+    rt_os_memcpy(g_buf + g_buf_size, (void *)buffer, size);
     g_buf_size += size;
     return RT_SUCCESS;
 }
@@ -257,7 +257,6 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     }
 
     MSG_INFO_ARRAY("Current profile:", g_buf, profile_len);
-    sleep(1000);
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, g_buf, profile_len);
     return RT_SUCCESS;
 }
@@ -314,7 +313,6 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint16_t off, int32_t rando
         build_profile(profile_buffer, profile_len, selected_profile_index);
     } else {
         MSG_INFO_ARRAY("Current profile:", profile_buffer, profile_len);
-        sleep(1000);
         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer, profile_len);
     }
     rt_os_free(profile_buffer);
