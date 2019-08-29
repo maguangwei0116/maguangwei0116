@@ -16,6 +16,7 @@
 #include "lpa.h"
 
 #define THE_MAX_CARD_NUM         20
+#define THE_ICCID_LENGTH         10
 
 typedef struct {
     profile_info_t info[THE_MAX_CARD_NUM];
@@ -26,11 +27,20 @@ static info_t g_p_info;
 static int32_t card_enable_profile(const int8_t *iccid)
 {
     int32_t ret = RT_ERROR;
-
-    ret = lpa_enable_profile(iccid);
-    if (ret != RT_SUCCESS) {
-        MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n",ret);
+    int32_t ii = 0;
+    for (ii = 0; ii < g_p_info.num; ii++) {
+        if (rt_os_memcmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
+            if (g_p_info.info[ii].state == 0) {
+                ret = lpa_enable_profile(iccid);
+                if (ret != RT_SUCCESS) {
+                    MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n",ret);
+                }
+            } else {
+                ret = 2;
+            }
+        }
     }
+    lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_ALL_SWITCH_CARD, NULL, 0);
     return ret;
 }

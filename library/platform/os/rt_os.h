@@ -52,5 +52,7 @@ void  rt_os_free(void *mem);
 void *rt_os_signal(int32_t signum, void *handler);
 RT_FILE_HANDLE rt_os_open(const int8_t *filename, const int8_t *flags);
 uint32_t rt_os_alarm(uint32_t seconds);
-
+int32_t rt_mutex_init(pthread_mutex_t *mutex);
+int32_t rt_mutex_lock(pthread_mutex_t *mutex);
+int32_t rt_mutex_unlock(pthread_mutex_t *mutex);
 #endif // __RT_OS_H__

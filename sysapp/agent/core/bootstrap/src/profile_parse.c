@@ -39,9 +39,9 @@ typedef struct profile_data {
     uint16_t hash_code_offset;
 } profile_data_t;
 
+static profile_data_t data;
 static uint8_t g_buf[300];
 static uint16_t g_buf_size = 0;
-static profile_data_t data;
 
 static uint16_t get_offset(rt_fshandle_t fp, uint8_t type, uint8_t *asset, uint16_t *size)
 {
@@ -188,8 +188,10 @@ static int32_t decode_profile(rt_fshandle_t fp, uint16_t off, int length)
 
 static int32_t encode_cb_fun(const void *buffer, size_t size, void *app_key)
 {
-    rt_os_memcpy(g_buf + g_buf_size, buffer, size);
+    MSG_PRINTF(LOG_ERR, "0.g_buf_size:%d\n", g_buf_size);
+    rt_os_memcpy(g_buf + g_buf_size, (void *) buffer, size);
     g_buf_size += size;
+    MSG_PRINTF(LOG_ERR, "1.g_buf_size:%d\n", g_buf_size);
     return RT_SUCCESS;
 }
 
@@ -204,10 +206,12 @@ static int32_t update_hash(uint8_t *buf, int32_t profile_len, uint8_t *profile_h
     sha256_init(&profile_ctx);
     sha256_update(&profile_ctx, p, size);
     sha256_final(&profile_ctx, profile_hash);
+    MSG_INFO_ARRAY("Current profile_hash:", profile_hash, 32);
     return RT_SUCCESS;
 }
 
-static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index, BOOLEAN_t sequential)
+static int32_t
+build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index, BOOLEAN_t sequential)
 {
     BootstrapRequest_t *bootstrap_request = NULL;
     asn_dec_rval_t dc;
@@ -248,7 +252,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
                     &asn_DEF_TBHRequest, rt_plmn[i].hplmn, rt_os_strlen(rt_plmn[i].hplmn));
         }
     }
-
+    g_buf_size = 0;
     ec = der_encode(&asn_DEF_BootstrapRequest, bootstrap_request, encode_cb_fun, NULL);
     if (ec.encoded == -1) {
         MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
@@ -268,8 +272,8 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         ASN_STRUCT_FREE(asn_DEF_BootstrapRequest, bootstrap_request);
     }
 
-    MSG_INFO_ARRAY("Current profile:", g_buf, profile_len);
-    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, g_buf, profile_len);
+    MSG_INFO_ARRAY("Current profile:", g_buf, g_buf_size);
+    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, g_buf, g_buf_size);
     return RT_SUCCESS;
 }
 
@@ -333,7 +337,6 @@ int32_t selected_profile(int32_t random)
     uint16_t off = data.operator_info_offset;
     uint16_t profile_len, selected_profile_index;
     int32_t i = 0;
-
     fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
     if (fp == NULL) {
         MSG_PRINTF(LOG_ERR, "Open file failed\n");
@@ -341,7 +344,6 @@ int32_t selected_profile(int32_t random)
     }
     rt_fseek(fp, off, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 4, fp);
-
     if (buf[0] != 0xA3) {
         MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
         return RT_ERROR;

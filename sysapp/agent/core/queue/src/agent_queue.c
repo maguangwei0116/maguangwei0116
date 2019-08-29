@@ -137,7 +137,7 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
     } else {
         que_t.data_buf = NULL;
     }
-    MSG_PRINTF(LOG_INFO, "len:%d, %p\n", len, que_t.data_buf);
+    MSG_PRINTF(LOG_INFO, "len:%d\n", len);
     que_t.data_len = len;
     len = sizeof(agent_que_t) - sizeof(long);
     return rt_send_queue_msg(g_queue_id, (void *) &que_t, len, 0);
