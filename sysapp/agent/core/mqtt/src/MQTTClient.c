@@ -1861,8 +1861,8 @@ exit:
     return rc;
 }
 
-REG_info reg_info;
-static char url_host[200];
+//REG_info reg_info;
+//static char url_host[200];
 static int retstatus;
 static size_t get_ret_status(const char *json_data)
 {
