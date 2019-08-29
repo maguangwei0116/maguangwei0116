@@ -11,33 +11,36 @@
 #include "MoreEIDOperateResponse.h"
 
 
-#define  BUFFER_SIZE          10*1024
+#define BUFFER_SIZE                10*1024
 extern uint8_t *g_proxy_server_url;
-
-typedef int (*callback_printf)(const char *format,...);
-callback_printf lpa_printf;
 
 int lpa_get_eid(uint8_t *eid)
 {
     //BF3E125A1089049032123451234512345678901235
     // BF3E 12 5A 10 EID
+    int8_t channel;
     uint8_t buf[21];
     uint16_t size = sizeof(buf);
 
+    open_channel(&channel);
     hexstring2bytes((uint8_t *)eid, buf, &size);
-    RT_CHECK(get_eid(buf, &size));
+    get_eid(buf, &size, channel);
     memcpy(eid, &buf[5], 16);
-
+    close_channel(channel);
     return RT_SUCCESS;
 }
 
 int lpa_switch_eid(const uint8_t *eid)
 {
     uint8_t rsp[33];
+    int8_t channel;
     uint16_t rsp_size = sizeof(rsp);
+
+    open_channel(&channel);
     MSG_INFO("eid:%s\n", eid);
     hexstring2bytes((uint8_t *)eid, rsp, &rsp_size);
-    switch_eid(rsp,rsp_size,rsp,&rsp_size);
+    switch_eid(rsp, rsp_size, rsp, &rsp_size, channel);
+    close_channel(channel);
     return RT_SUCCESS;
 }
 
@@ -50,9 +53,11 @@ int lpa_get_eid_list(uint8_t (*eid_list)[33])
     int i;
     int num =0;
     EIDInfo_t **p = NULL;
+    int8_t channel;
 
+    open_channel(&channel);
     MoreEIDOperateResponse_t *rsp = NULL;
-    RT_CHECK(get_eid_list(buf, &size));
+    get_eid_list(buf, &size, channel);
     MSG_INFO_ARRAY("get eid list:\n", buf, size);
     dc = ber_decode(NULL, &asn_DEF_MoreEIDOperateResponse, (void **)&rsp, buf, size);
     if (dc.code != RC_OK) {
@@ -77,6 +82,7 @@ int lpa_get_eid_list(uint8_t (*eid_list)[33])
     }
 end:
     ASN_STRUCT_FREE(asn_DEF_MoreEIDOperateResponse,rsp);
+    close_channel(channel);
     return ret;
 }
 
@@ -89,7 +95,9 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
     ProfileInfoListResponse_t *rsp = NULL;
     ProfileInfo_t **p = NULL;
     int i;
+    int8_t channel;
 
+    open_channel(&channel);
     if (num == NULL) {
         return RT_ERR_NULL_POINTER;
     }
@@ -98,7 +106,7 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
         ret = RT_ERR_NULL_POINTER;
         goto end;
     }
-    RT_CHECK(get_profiles_info(SEARCH_NONE, NULL, 0, (uint8_t *)buf, (uint16_t *)&size));
+    get_profiles_info(SEARCH_NONE, NULL, 0, (uint8_t *)buf, (uint16_t *)&size, channel);
     MSG_INFO_ARRAY("profile info:\n", buf, size);
 
     dc = ber_decode(NULL, &asn_DEF_ProfileInfoListResponse, (void **)&rsp, buf, size);
@@ -132,7 +140,7 @@ end:
         free(buf);
     }
     ASN_STRUCT_FREE(asn_DEF_ProfileInfoListResponse, rsp);
-
+    close_channel(channel);
     return ret;
 }
 
@@ -141,17 +149,19 @@ int lpa_delete_profile(const char *iccid)
     int ret;
     uint8_t rsp[32];
     uint16_t rsp_size = sizeof(rsp);
+    int8_t channel;
 
+    open_channel(&channel);
     hexstring2bytes(iccid, rsp, &rsp_size);
     swap_nibble(rsp, 10);
     MSG_INFO_ARRAY("ICCID: ", rsp, 10);
-    ret = delete_profile(PID_ICCID, rsp, rsp, &rsp_size);
+    ret = delete_profile(PID_ICCID, rsp, rsp, &rsp_size, channel);
     if (ret == RT_SUCCESS) {
         MSG_INFO_ARRAY("lpa_delete_profile: ", rsp, rsp_size);
         // BF33038001 Result
         ret = rsp[5];
     }
-
+    close_channel(channel);
     return ret;
 }
 
@@ -160,11 +170,13 @@ int lpa_enable_profile(const char *iccid)
     int ret;
     uint8_t rsp[32];
     uint16_t rsp_size = sizeof(rsp);
+    int8_t channel;
 
+    open_channel(&channel);
     hexstring2bytes(iccid, rsp, &rsp_size);
     swap_nibble(rsp, 10);
     MSG_INFO_ARRAY("ICCID: ", rsp, 10);
-    ret = enable_profile(PID_ICCID, rsp, true, rsp, &rsp_size);
+    ret = enable_profile(PID_ICCID, rsp, true, rsp, &rsp_size, channel);
     if (ret == RT_SUCCESS) {
         MSG_INFO_ARRAY("lpa_enable_profile: ", rsp, rsp_size);
         // BF31038001 Result
@@ -173,6 +185,7 @@ int lpa_enable_profile(const char *iccid)
         // With refresh request, it might be failed to get response, this also indicates success
         ret = 0;
     }
+    close_channel(channel);
     return ret;
 }
 
@@ -181,11 +194,13 @@ int lpa_disable_profile(const char *iccid)
     int ret;
     uint8_t rsp[32];
     uint16_t rsp_size = sizeof(rsp);
+    int8_t channel;
 
+    open_channel(&channel);
     hexstring2bytes(iccid, rsp, &rsp_size);
     swap_nibble(rsp, 10);
     MSG_INFO_ARRAY("ICCID: ", rsp, 10);
-    ret = disable_profile(PID_ICCID, rsp, true, rsp, &rsp_size);
+    ret = disable_profile(PID_ICCID, rsp, true, rsp, &rsp_size, channel);
     if (ret == RT_SUCCESS) {
         MSG_INFO_ARRAY("lpa_disable_profile: ", rsp, rsp_size);
         // BF32038001 Result
@@ -194,7 +209,7 @@ int lpa_disable_profile(const char *iccid)
         // With refresh request, it might be failed to get response, this also indicates success
         ret = 0;
     }
-
+    close_channel(channel);
     return ret;
 }
 
@@ -312,7 +327,9 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21],uint8_t 
     uint8_t *buf2 = NULL;
     uint16_t buf2_len = BUFFER_SIZE;
     uint8_t bppcid, error;
+    int8_t channel;
 
+    open_channel(&channel);
     buf1 = malloc(BUFFER_SIZE);
     if( buf1 == NULL) {
         goto end;
@@ -350,12 +367,12 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21],uint8_t 
     }
 
     buf1_len = BUFFER_SIZE;
-    ret = initiate_authentication(smdp_addr, (char *)buf1, &buf1_len);
+    ret = initiate_authentication(smdp_addr, (char *)buf1, &buf1_len, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     MSG_INFO("initiate_authentication response:\n%s\n", buf1);
 
     buf2_len = BUFFER_SIZE;
-    ret = authenticate_server(mid, (char *)buf1, buf2, &buf2_len);
+    ret = authenticate_server(mid, (char *)buf1, buf2, &buf2_len, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     MSG_INFO_ARRAY("authenticate_server:\n", buf2, buf2_len);
 
@@ -365,7 +382,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21],uint8_t 
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     buf2_len = BUFFER_SIZE;
-    ret = prepare_download(buf1, cc, buf2, &buf2_len);
+    ret = prepare_download(buf1, cc, buf2, &buf2_len, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     MSG_INFO_ARRAY("prepare_download:\n", buf2, buf2_len);
 
@@ -375,7 +392,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21],uint8_t 
     MSG_INFO("get_bound_profile_package response:\n%s\n", buf1);
 
     buf2_len = BUFFER_SIZE;
-    ret = load_bound_profile_package(smdp_addr, buf1, buf2, &buf2_len);
+    ret = load_bound_profile_package(smdp_addr, buf1, buf2, &buf2_len, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     MSG_INFO_ARRAY("load_bound_profile_package:\n", buf2, buf2_len);
 
@@ -389,6 +406,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21],uint8_t 
 
 end:
     close_session();
+    close_channel(channel);
     if (smdp_addr != NULL)  { free(smdp_addr);}
     if (mid != NULL)        { free(mid);}
     if (buf1 != NULL)       { free(buf1);}
@@ -398,26 +416,19 @@ end:
 
 int lpa_load_cert(const uint8_t *data, uint16_t data_len)
 {
-    return load_cert(data, data_len);
+    int8_t channel;
+
+    open_channel(&channel);
+    load_cert(data, data_len, channel);
+    return RT_SUCCESS;
 }
 
 int lpa_load_profile(const uint8_t *data, uint16_t data_len)
 {
+    int8_t channel;
+
+    open_channel(&channel);
     MSG_INFO("data[0]:%02X, data_len:%d\n", data[0], data_len);
-    return load_profile(data, data_len);
+    load_profile(data, data_len, channel);
+    return RT_SUCCESS;
 }
-
-void rt_lpa_printf(const char *format,...)
-{
-    char final[400] = {0};
-    char content[200] = {0};
-
-    va_list vl_list;
-    va_start(vl_list, format);
-    vsprintf(content, format, vl_list);
-    va_end(vl_list);
-    strncat(final, content, strlen(content));
-    lpa_printf("%s",final);
-}
-
-

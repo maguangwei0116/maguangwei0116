@@ -78,8 +78,8 @@ typedef enum channel_type {
     CHANNEL_BY_QMI
 } channel_type_e;
 
-int cmd_manage_channel(channel_opt_t operation);
-int cmd_get_response(uint8_t channel, uint8_t size, char *rsp);
-int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
+int open_channel(int8_t *channel);
+int close_channel(int8_t channel);
+int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int8_t channel);
 
 #endif  // __APDU_H__

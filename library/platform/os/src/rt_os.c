@@ -131,7 +131,7 @@ void *rt_os_memset(void *mem, int8_t value, int32_t len)
     return memset(mem, value, len);
 }
 
-int32_t rt_os_memcmp(void *mem_des,void *mem_src,int32_t len)
+int32_t rt_os_memcmp(void *mem_des, const void *mem_src, int32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
         MSG_PRINTF(LOG_WARN, "memory is empty!\n");
@@ -158,7 +158,7 @@ void *rt_os_strcpy(char* dest, const char *src)
     return strcpy(dest,src);
 }
 
-int32_t rt_os_strncmp(void *mem_des,void *mem_src,int32_t len)
+int32_t rt_os_strncmp(void *mem_des, const void *mem_src, int32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
         MSG_PRINTF(LOG_WARN, "memory is empty!\n");
@@ -167,7 +167,7 @@ int32_t rt_os_strncmp(void *mem_des,void *mem_src,int32_t len)
     return strncmp(mem_des, mem_src, len);
 }
 
-int32_t rt_os_strcmp(void *mem_des,void *mem_src)
+int32_t rt_os_strcmp(void *mem_des, const void *mem_src)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
         MSG_PRINTF(LOG_WARN, "memory is empty!\n");
@@ -176,7 +176,7 @@ int32_t rt_os_strcmp(void *mem_des,void *mem_src)
     return strcmp(mem_des,mem_src);
 }
 
-void *rt_os_memcpy(void *mem_des, void *mem_src, int32_t len)
+void *rt_os_memcpy(void *mem_des, const void *mem_src, int32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
         return NULL;
