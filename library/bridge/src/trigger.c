@@ -147,7 +147,6 @@ static int process_ind_pup(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    MSG_PRINTF(LOG_INFO, "process_ind_pup\n");
     trigger_reset(req.atr, (uint16_t *)&req.atr_len);
     //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
@@ -185,7 +184,6 @@ static int process_ind_reset(qmi_client_type user_handle, unsigned int msg_id,
     req.atr_valid = true;
 
     // fill ATR
-    MSG_PRINTF(LOG_INFO, "process_ind_reset\n");
     trigger_reset(req.atr, (uint16_t *)&req.atr_len);
     MSG_INFO_ARRAY("ATR", req.atr, req.atr_len);
 
@@ -232,7 +230,6 @@ void remote_uim_ind_cb( qmi_client_type       user_handle,
 int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot)
 {
     int rc;
-    MSG_PRINTF(LOG_INFO,"t9x07_insert_card\n");
     uim_remote_event_req_msg_v01 req = {0};
     uim_remote_event_resp_msg_v01 resp = {0};
     qmi_txn_handle txn;
@@ -241,7 +238,6 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot)
 
     unsigned int num_services, num_entries = 0;
     qmi_service_info info[10];
-    MSG_PRINTF(LOG_INFO,"t9x07_insert_card\n");
 
     if(slot != UIM_REMOTE_SLOT_1_V01) {
         MSG_PRINTF(LOG_ERR, "SLOT%d NOT SUPPORT CURRENTLY!\n", slot);
@@ -305,7 +301,6 @@ int t9x07_remove_card(uim_remote_slot_type_enum_v01 slot)
     uim_remote_event_resp_msg_v01 resp = {0};
     qmi_txn_handle txn;
 
-    MSG_PRINTF(LOG_INFO,"t9x07_remove_card\n");
     req.event_info.event = UIM_REMOTE_CARD_REMOVED_V01;
     req.event_info.slot = UIM_REMOTE_SLOT_1_V01;
 
@@ -326,13 +321,11 @@ int t9x07_reset_card(uim_remote_slot_type_enum_v01 slot)
     uim_remote_event_resp_msg_v01 resp = {0};
     qmi_txn_handle txn;
 
-    MSG_PRINTF(LOG_INFO,"t9x07_reset_card\n");
     req.event_info.event = UIM_REMOTE_CARD_RESET_V01;
     req.event_info.slot = UIM_REMOTE_SLOT_1_V01;
     req.atr_valid = true;
 
     // fill ATR
-    MSG_PRINTF(LOG_INFO, "process_ind_reset\n");
     trigger_reset(req.atr, (uint16_t *)&req.atr_len);
     MSG_INFO_ARRAY("ATR", req.atr, req.atr_len);
 
@@ -352,7 +345,6 @@ int t9x07_send_card_error(  uim_remote_slot_type_enum_v01       slot,
     uim_remote_event_resp_msg_v01 resp = {0};
     qmi_txn_handle txn;
 
-    MSG_PRINTF(LOG_INFO,"t9x07_send_card_error\n");
     req.event_info.event = UIM_REMOTE_CARD_ERROR_V01;
     req.event_info.event = slot;
     req.error_cause_valid = error_cause_valid;
