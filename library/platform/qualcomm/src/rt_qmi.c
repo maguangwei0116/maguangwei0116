@@ -34,8 +34,12 @@ int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc)
     int32_t ret = 0;
     ret = qmi_get_serving_system(&info);
     if (ret == 0) {
-        *mcc = info.mnc_includes_pcs_digit.mcc;
-        *mnc = info.mnc_includes_pcs_digit.mnc;
+        if (mcc) {
+            *mcc = info.mnc_includes_pcs_digit.mcc;
+        }
+        if (mnc) {
+            *mnc = info.mnc_includes_pcs_digit.mnc;
+        }
     }
     return ret;
 }
@@ -63,7 +67,7 @@ int32_t rt_qmi_get_signal(int32_t *strength)
     qmi_signal_strength_info_t info;
     int32_t ret = 0;
     ret = qmi_get_signal_strength(&info);
-    if(ret == 0) {
+    if (ret == 0) {
         *strength = info.signal_strength;
     }
     return ret;
@@ -74,10 +78,10 @@ int32_t rt_qmi_get_imei(uint8_t *imei)
     qmi_device_info_t devinfo;
     uint8_t ii = 0;
     int32_t ret = RT_ERROR;
-    while (ret!=0) {
+    while (ret != 0) {
         ret = qmi_query_device_info(&devinfo);
         ii++;
-        if (ii>3) {
+        if (ii > 3) {
             break;
         }
     }
@@ -113,7 +117,7 @@ int32_t rt_qmi_init(void *arg)
  * RETURNS
  *  int
  *****************************************************************************/
-int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int8_t pdp_type)
+int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t *apn, int8_t pdp_type)
 {
     qmi_wds_profile_info_t info;
     uint8_t ii = 0;
@@ -122,10 +126,10 @@ int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int
     info.pdp_type = pdp_type;
     info.profile_index = index;
     info.profile_type = profile_type;
-    while (ret!=0) {
+    while (ret != 0) {
         ret = qmi_modify_profile(&info);
         ii++;
-        if (ii>3) {
+        if (ii > 3) {
             break;
         }
     }

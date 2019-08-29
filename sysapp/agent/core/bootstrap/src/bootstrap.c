@@ -43,8 +43,8 @@ static void bootstrap_select_profile(void)
         register_timer(g_sleep_time, 0, &bootstrap_select_profile);
     } else {
         selected_profile(get_random());
-        g_single_interval_time *= retry_times;
         retry_times++;
+        g_single_interval_time *= retry_times;
     }
 }
 
