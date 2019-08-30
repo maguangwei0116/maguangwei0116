@@ -18,8 +18,8 @@
 #include "rt_mqtt.h"
 #include "config.h"
 #include "bootstrap.h"
-
 #include "rt_qmi.h"
+#include "lpa.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
 
@@ -52,7 +52,7 @@ static int32_t init_system_signal(void *arg)
 
 /*
 List your init call here !
-*/
+**/
 static const init_obj_t g_init_objs[] =
 {
     INIT_OBJ(init_system_signal,        NULL),

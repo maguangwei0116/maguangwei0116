@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+typedef enum LPA_CHANNEL_TYPE {
+    LPA_CHANNEL_BY_IPC = 0,
+    LPA_CHANNEL_BY_QMI
+} lpa_channel_type_e;
+
 // See SGP.22_v2.2 for more information
 typedef struct profile_info {
     char iccid[21]; // 20-digit ICCID, padded with F

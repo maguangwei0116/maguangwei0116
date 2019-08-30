@@ -7,6 +7,7 @@
 #include "lpa_error_codes.h"
 #include "rt_qmi.h"
 #include "ipc_socket_client.h"
+#include "lpa.h"
 
 #define SW_BUFFER_LEN               100
 const static uint8_t g_open_channel_cmd[] = {0x00, 0x70, 0x00, 0x00, 0x01};
@@ -15,7 +16,7 @@ const static uint8_t g_close_channel_cmd[] = {0x00, 0x70, 0x80, 0x01, 0x00};
 const static uint8_t euicc_aid[] = {0xA0, 0x00, 0x00, 0x05, 0x59, 0x10, 0x10, 0xFF,
                                     0xFF, 0xFF, 0xFF, 0x89, 0x00, 0x00, 0x01, 0x00};
 
-static channel_type_e g_channel_mode = CHANNEL_BY_IPC;
+static lpa_channel_type_e g_channel_mode = LPA_CHANNEL_BY_IPC;
 
 static uint16_t get_sw(uint8_t *rsp, uint16_t len)
 {
@@ -27,7 +28,7 @@ static uint16_t get_sw(uint8_t *rsp, uint16_t len)
 int open_channel(int8_t *channel)
 {
     int ret = RT_SUCCESS;
-    if (g_channel_mode == CHANNEL_BY_IPC) {
+    if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len;
@@ -47,7 +48,7 @@ int open_channel(int8_t *channel)
 int close_channel(int8_t channel)
 {
     int ret = RT_SUCCESS;
-    if (g_channel_mode == CHANNEL_BY_IPC) {
+    if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len;
@@ -64,9 +65,9 @@ int close_channel(int8_t channel)
 
 static int32_t lpa_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int8_t channel)
 {
-    if (g_channel_mode == CHANNEL_BY_IPC) {
+    if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         return ipc_send_data(data, data_len, rsp, rsp_len);
-    } else if (g_channel_mode == CHANNEL_BY_QMI) {
+    } else if (g_channel_mode == LPA_CHANNEL_BY_QMI) {
         return rt_qmi_send_apdu(data, data_len, rsp, rsp_len, channel);
     }
 }
@@ -92,7 +93,7 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
     if (channel < 0) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
-    if (g_channel_mode == CHANNEL_BY_IPC) {
+    if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         // select aid
         apdu->cla = channel & 0x03;
         apdu->ins = 0xA4;
