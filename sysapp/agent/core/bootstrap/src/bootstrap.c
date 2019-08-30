@@ -38,7 +38,6 @@ static int32_t get_random(void)
 void bootstrap_select_profile(void)
 {
     static uint8_t retry_times = 0;
-    MSG_PRINTF(LOG_INFO, "bootstrap_select_profile:%d\n", g_single_interval_time);
     if (retry_times > g_max_retry_times) {
         retry_times = 0;
     } else {

@@ -59,7 +59,7 @@ export BR2_VERSION_FULL:=$(BR2_VERSION)$(shell $(TOPDIR)/support/scripts/setloca
 
 # prebuilt_defconfig := $(shell ls configs)
 noconfig_targets:=menuconfig nconfig gconfig xconfig config oldconfig randconfig \
-	defconfig %_defconfig savedefconfig allyesconfig allnoconfig silentoldconfig release \
+	defconfig %_defconfig savedefconfig allyesconfig allnoconfig silentoldconfig \
 	randpackageconfig allyespackageconfig allnopackageconfig \
 	source-check print-version
 
@@ -97,6 +97,7 @@ KCONFIG_AUTOHEADER_FILE=$(CONFIG_DIR)/build/buildroot-config/autoconf.h
 endif
 
 # Pull in the user's configuration file
+#$(warning noconfig_targets=$(noconfig_targets), MAKECMDGOALS=$(MAKECMDGOALS))
 ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
 -include $(CONFIG_DIR)/.config
 endif
@@ -345,7 +346,7 @@ include library/library.mk
 include sysapp/sysapp.mk
 #include usrapp/usrapp.mk
 #include image/image.mk
-#include release/release.mk
+include release/release.mk
 
 TARGETS+=target-finalize
 

@@ -438,6 +438,6 @@ source "sysapp/Config.in"
 
 #source "usrapp/Config.in"
 
-#source "release/Config.in"
+source "release/Config.in"
 
 source "Config.in.legacy"

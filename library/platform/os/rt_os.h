@@ -29,6 +29,7 @@ typedef void * (* rt_taskfun) (void *para);
 typedef pthread_mutex_t    rt_pthread_mutex_t;
 
 int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
+
 int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id);
 int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg);
 int32_t rt_send_queue_msg(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg);

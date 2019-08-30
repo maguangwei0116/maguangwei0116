@@ -1,0 +1,31 @@
+menu "Release"
+
+config BR2_PACKAGE_RELEASE_BUILD
+	bool "Packet Release Targets"
+	default y
+	help
+		Packet all release targets.
+	  	
+if BR2_PACKAGE_RELEASE_BUILD
+
+config BR2_RELEASE_INSTALL_PATH
+	string "Release Targets Install Path"
+	default "$(BASE_DIR)/system/release"
+	help 
+		Released targets install path configuration
+
+config BR2_RELEASE_VERSION
+	string "Release Targets Version"
+	default "v1.0.0.0"
+	help 
+		Released targets version configuration
+		
+config BR2_RELEASE_TARGET
+	string "Release Targets Name"
+	default ""
+	help 
+		Released targets name configuration
+		
+endif
+
+endmenu
