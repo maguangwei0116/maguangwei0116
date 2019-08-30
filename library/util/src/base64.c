@@ -1,4 +1,16 @@
 
+/*******************************************************************************
+ * Copyright (c) redtea mobile.
+ * File name   : base64.c
+ * Date        : 2018.08.30
+ * Note        :
+ * Description :
+ * Contributors: RT - create the file
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Sublime text 2
+ *******************************************************************************/
+
 #include "base64.h"
 #include <stdbool.h>
 

@@ -28,7 +28,7 @@ struct my_timer_s {
 
 my_timer_t  *timer_list = NULL;
 
-void callback_timeout(void)
+static void callback_timeout(void)
 {
     my_timer_t *p, *q;
     struct itimerval itimer;
@@ -61,6 +61,17 @@ void callback_timeout(void)
     rt_mutex_unlock(&g_mutex);
 }
 
+// timer callbach
+static void timer_handler (int signo)
+{
+    switch(signo) {
+    case SIGALRM:
+        callback_timeout();
+        break;
+    }
+}
+
+// A timer list from small to large
 int32_t register_timer(int sec, int usec, void (*action)())
 {
     my_timer_t  *t, *p, *pre;
@@ -115,19 +126,15 @@ int32_t register_timer(int sec, int usec, void (*action)())
     return 0;
 }
 
-void timer_handler (int signo)
-{
-    switch(signo) {
-    case SIGALRM:
-        callback_timeout();
-        break;
-    }
-}
-
-void init_timer(void)
+int32_t init_timer(void *arg)
 {
     int32_t ret = RT_SUCCESS;
     ret = rt_mutex_init(&g_mutex);
-    MSG_PRINTF(LOG_INFO, "ret:%d\n", ret);
     signal(SIGALRM, timer_handler);
+    return ret;
+}
+
+uint32_t rt_os_alarm(uint32_t seconds)
+{
+    return alarm(seconds);
 }

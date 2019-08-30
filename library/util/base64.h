@@ -1,3 +1,16 @@
+
+/*******************************************************************************
+ * Copyright (c) redtea mobile.
+ * File name   : base64.h
+ * Date        : 2018.08.30
+ * Note        :
+ * Description :
+ * Contributors: RT - create the file
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Sublime text 2
+ *******************************************************************************/
+
 #ifndef __BASE64_H__
 #define __BASE64_H__
 

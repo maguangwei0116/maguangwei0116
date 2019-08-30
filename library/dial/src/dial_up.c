@@ -237,6 +237,7 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
     param_info.buf_val = NULL;
     param_info.num_val = dsi_net_hndl->ip_version;
     dsi_set_data_call_param(dsi_net_hndl->handle, DSI_CALL_INFO_IP_VERSION, &param_info);
+
     if (dsi_net_hndl->apn && dsi_net_hndl->apn[0]) {
         param_info.buf_val = dsi_net_hndl->apn;
         param_info.num_val = strlen(param_info.buf_val);

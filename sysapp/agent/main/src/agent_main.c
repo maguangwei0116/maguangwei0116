@@ -46,22 +46,23 @@ static void cfinish(int32_t sig)
 
 static int32_t init_system_signal(void *arg)
 {
-    rt_os_signal(RT_SIGINT, cfinish); 
+    rt_os_signal(RT_SIGINT, cfinish);
     return RT_SUCCESS;
 }
 
 /*
 List your init call here !
 */
-static const init_obj_t g_init_objs[] = 
+static const init_obj_t g_init_objs[] =
 {
-    INIT_OBJ(init_system_signal,        NULL), 
+    INIT_OBJ(init_system_signal,        NULL),
+    INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(rt_config_init,            NULL),
-    INIT_OBJ(rt_qmi_init,               NULL),  
-    INIT_OBJ(init_queue,                NULL), 
+    INIT_OBJ(rt_qmi_init,               NULL),
+    INIT_OBJ(init_queue,                NULL),
     INIT_OBJ(init_bootstrap,            NULL),
-    INIT_OBJ(init_card_manager,         NULL), 
-    INIT_OBJ(init_network_detection,    NULL), 
+    INIT_OBJ(init_card_manager,         NULL),
+    INIT_OBJ(init_network_detection,    NULL),
 //    INIT_OBJ(init_mqtt,                 NULL),
 };
 
@@ -80,7 +81,6 @@ static int32_t agent_init_call(void)
 
 int32_t main(int32_t argc, int8_t **argv)
 {
-    init_timer();
     agent_init_call();
 
     while (!toStop) {

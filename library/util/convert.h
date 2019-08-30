@@ -1,10 +1,16 @@
+
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : convert.h
- * Date        : 2017.09.01
+ * File name   : covert.h
+ * Date        : 2018.08.30
  * Note        :
- * Description : Some common conversion function
+ * Description :
+ * Contributors: RT - create the file
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Sublime text 2
  *******************************************************************************/
+
 #ifndef __CONVERT_H__
 #define __CONVERT_H__
 

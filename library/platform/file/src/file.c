@@ -20,10 +20,12 @@
 rt_fshandle_t rt_fopen(const char *filename, rt_fsmode_t mode)
 {
     rt_fshandle_t fp = NULL;
+
     fp = fopen(filename, mode);
     if(fp != NULL) {
         setbuf(fp, NULL);
     }
+
     return fp;
 }
 
@@ -76,7 +78,9 @@ int rt_create_dir(const char *dir)
 int rt_delete_dir(const char *dir)
 {
     char tmp[64] = "rm -rf ";
+
     strcat(tmp, dir);
+
     return system(tmp);
 }
 

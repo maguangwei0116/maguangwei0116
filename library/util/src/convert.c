@@ -1,6 +1,18 @@
 
-#include "convert.h"
+/*******************************************************************************
+ * Copyright (c) redtea mobile.
+ * File name   : convert.c
+ * Date        : 2018.08.30
+ * Note        :
+ * Description :
+ * Contributors: RT - create the file
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Sublime text 2
+ *******************************************************************************/
+
 #include <string.h>
+#include "convert.h"
 
 void swap_nibble(uint8_t *buf, uint16_t swap_cnt)
 {

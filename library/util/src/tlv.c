@@ -1,6 +1,15 @@
-//
-// Created by admin on 2019-08-20.
-//
+
+/*******************************************************************************
+ * Copyright (c) redtea mobile.
+ * File name   : tlv.c
+ * Date        : 2018.08.30
+ * Note        :
+ * Description :
+ * Contributors: RT - create the file
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Sublime text 2
+ *******************************************************************************/
 
 #include <string.h>
 #include "tlv.h"
@@ -13,7 +22,7 @@
 #define COS_MEMCPY(d, s, n)    memcpy(d, s, n)
 #endif
 
-static TLV g_tlv;
+static tlv_t g_tlv;
 
 void init_tlv(void)
 {

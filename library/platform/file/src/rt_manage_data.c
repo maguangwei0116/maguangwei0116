@@ -21,15 +21,16 @@ int32_t rt_create_file(uint8_t *file_name)
 {
     int8_t status = RT_ERROR;
     FILE *fp = NULL;
+
     if ((fp = fopen(file_name, "w+")) == NULL) {
         MSG_PRINTF(LOG_WARN, "open error \n");
     } else {
         status = RT_SUCCESS;
     }
-
     if(fp != NULL) {
         fclose(fp);
     }
+
     return status;
 }
 
@@ -38,6 +39,7 @@ int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer
     FILE *fp = NULL;
     int32_t status = RT_ERROR;
     fp = fopen(addr, "rb+");
+
     if (fp == NULL) {
         MSG_PRINTF(LOG_WARN, "open config error\n");
     } else {
@@ -49,6 +51,7 @@ int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer
         }
         fclose(fp);
     }
+
     rt_os_sync();
     return status;
 }
@@ -69,6 +72,7 @@ int32_t rt_read_data(uint8_t *addr, uint32_t offset, uint8_t *data_buffer, uint3
         }
         fclose(fp);
     }
+
     return status;
 }
 int32_t rt_truncate_data(uint8_t *filename, int32_t offset)
@@ -122,6 +126,7 @@ int32_t rm_dir(const int8_t *dirpath)
         return -1;
     }
     closedir(dirp);
+
     return RT_SUCCESS;
 }
 
@@ -146,5 +151,6 @@ int32_t rm(const int8_t *file_name)
             return RT_ERROR;
         }
     }
+
     return RT_SUCCESS;
 }

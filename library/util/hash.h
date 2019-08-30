@@ -10,6 +10,7 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
+
 #ifndef __HASH_H__
 #define __HASH_H__
 
