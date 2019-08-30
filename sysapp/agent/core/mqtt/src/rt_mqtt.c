@@ -90,7 +90,7 @@ boot_state_info_e get_boot_flag(void)
 
 void msg_parse(int8_t *message, int32_t len)
 {
-    MSG_PRINTF(LOG_WARN, "mqtt recv msg: %s\r\n", message);    
+    MSG_PRINTF(LOG_WARN, "mqtt recv msg (%d bytes): %s\r\n", len, message);    
 }
 
 //本地缓存之前的从adapter获取的ticket server
@@ -237,7 +237,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
     const char *alias = param->alias;
 
     set_reg_url(OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
-    MSG_PRINTF(LOG_DBG, "addr:%s, port:%d\r\n", OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
+    MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
 
     //连接我们红茶自己的ticket server adopter,最多尝试3次
     do {
@@ -282,14 +282,16 @@ static rt_bool rt_mqtt_connect_yunba(mqtt_param_t *param, int8_t *ticket_server)
             MSG_PRINTF(LOG_WARN, "mqtt_get_ip_pair error ticket_serverL:%s\n", ticket_server);
             return RT_FALSE;
         }
+        MSG_PRINTF(LOG_WARN, "ticket_server:%s, yunba addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
     //连接yunba server 最多尝试3次
     do {
-        if (MQTTClient_setup_with_appkey_and_deviceid(YUNBA_APPKEY, (char *)opts->device_id, opts) == 0) {
+        int ret;
+        if ((ret = MQTTClient_setup_with_appkey_and_deviceid(YUNBA_APPKEY, (char *)opts->device_id, opts)) == 0) {
             break;
         }
-        MSG_PRINTF(LOG_DBG, "MQTTClient_setup_with_appkey_and_deviceid num:%d\n", num++);
+        MSG_PRINTF(LOG_DBG, "MQTTClient_setup_with_appkey_and_deviceid num:%d, error ret:%d\n", num++, ret);
         rt_os_sleep(1);
     } while((num != MAX_CONNECT_SERVER_TIMER) && (get_network_state() != NETWORK_DIS_CONNECTED));
 
@@ -324,6 +326,7 @@ static rt_bool rt_mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
             MSG_PRINTF(LOG_WARN, "mqtt_get_ip_pair error ticket_serverL:%s\n", ticket_server);
             return RT_FALSE;
         }
+        MSG_PRINTF(LOG_WARN, "ticket_server:%s, EMQ addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
     do {
@@ -346,6 +349,21 @@ static rt_bool rt_mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
     return RT_TRUE;
 }
 
+#if 1  // only for test
+#define TEST_FORCE_TO_ADAPTER       0
+#define TEST_FORCE_TO_EMQ           0
+#define TEST_FORCE_TO_YUNBA         1
+
+#define MQTT_PASSAGEWAY_DEF(x)\
+do {\
+    if (TEST_##x) {\
+        MSG_PRINTF(LOG_DBG, "MQTT %s ...\r\n", #x);\
+        goto x;\
+    }\
+} while(0)
+#else
+#define MQTT_PASSAGEWAY_DEF(x)      do {} while(0)
+#endif
 
 //used to get mqtt server addr
 static rt_bool mqtt_get_server_addr(mqtt_param_t *param)
@@ -353,9 +371,14 @@ static rt_bool mqtt_get_server_addr(mqtt_param_t *param)
     if (get_network_state() == NETWORK_DIS_CONNECTED) {
         return RT_FALSE;
     }
-    
+
     //attemp to connect adapter
     do{
+        MQTT_PASSAGEWAY_DEF(FORCE_TO_ADAPTER);
+        MQTT_PASSAGEWAY_DEF(FORCE_TO_EMQ);
+        MQTT_PASSAGEWAY_DEF(FORCE_TO_YUNBA);
+        
+FORCE_TO_ADAPTER:
         if (USE_ADAPTER_SERVER){
             if (rt_mqtt_connect_adapter(param) == RT_TRUE) {
                 MSG_PRINTF(LOG_DBG, "connect adapter ticket server to get mqtt server address EMQ or YUNBA\n");
@@ -379,13 +402,15 @@ static rt_bool mqtt_get_server_addr(mqtt_param_t *param)
             }
         }
 
-        //若果adapter 和 系统缓存的ticket server都无法使用，用本地写死的ticket server地址进行连接
+        //如果adapter 和 系统缓存的ticket server都无法使用，用本地写死的ticket server地址进行连接
         if (!rt_os_strncmp(param->opts.rt_channel, "YUNBA", 5)) {
+FORCE_TO_EMQ:
             if (rt_mqtt_connect_emq(param, NULL) == RT_TRUE) {
                 MSG_PRINTF(LOG_DBG, "connect EMQ mqtt server successfull\n");
                 break;
             }
         } else if (!rt_os_strncmp(param->opts.rt_channel, "EMQ", 3)) {
+FORCE_TO_YUNBA:
             if (rt_mqtt_connect_yunba(param, NULL) == RT_TRUE) {
                 MSG_PRINTF(LOG_DBG, "connect yunba mqtt server successfull\n");
                 break;
@@ -411,9 +436,10 @@ static int message_arrived(void* context, char* topicName, int32_t topicLen, MQT
 
     //parse JSON
     MSG_PRINTF(LOG_DBG, "topicName:%s\n",topicName);
-    msg_parse(md->payload,(int32_t) md->payloadlen);
+    msg_parse(md->payload, (int32_t)md->payloadlen);
     MQTTClient_freeMessage(&md);
     MQTTClient_free(topicName);
+    MSG_PRINTF(LOG_DBG, "topicName:%s ok!\n",topicName);
     
     return 1;
 }
@@ -429,6 +455,7 @@ static rt_bool my_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
 {
     int32_t c = 0;
 
+    //MSG_PRINTF(LOG_WARN, "Connect mqtt broker [%s] !\n", opts->serverURIs);
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
         g_mqtt_param.mqtt_flag = RT_TRUE;
         MSG_PRINTF(LOG_WARN, "Connect mqtt ok !\n", c);
@@ -458,6 +485,12 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     MQTTClient *c = &param->client;
     mqtt_info *opts = &param->opts;
     MQTTClient_connectOptions *pconn_opts = &param->conn_opts;
+
+    MSG_PRINTF(LOG_DBG, "MQTT broker: addr [%s] id [%s] user [%s] passwd [%s]\n", 
+                    (const char *)opts->rt_url,
+                    (const char *)opts->client_id,
+                    (const char *)opts->username,
+                    (const char *)opts->password);
 
     if (MQTTClient_create(c, (const char *)opts->rt_url, \
         (const char *)opts->client_id, MQTTCLIENT_PERSISTENCE_NONE, NULL) != 0) {
