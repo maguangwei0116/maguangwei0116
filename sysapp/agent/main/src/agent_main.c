@@ -50,6 +50,11 @@ static int32_t init_system_signal(void *arg)
     return RT_SUCCESS;
 }
 
+static int32_t init_monitor(void *arg)
+{
+
+}
+
 /*
 List your init call here !
 **/

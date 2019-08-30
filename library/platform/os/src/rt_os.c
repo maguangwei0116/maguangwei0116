@@ -126,6 +126,11 @@ void *rt_os_malloc(uint32_t size)
     return malloc(size);
 }
 
+void *rt_os_realloc(void *mem, uint32_t size)
+{
+    return realloc(mem, size);
+}
+
 void rt_os_free(void *mem)
 {
     if (NULL == mem) {
