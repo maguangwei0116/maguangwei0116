@@ -73,8 +73,8 @@ typedef enum channel_operation {
     CLOSE_CHANNEL
 } channel_opt_t;
 
-int open_channel(int8_t *channel);
-int close_channel(int8_t channel);
-int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int8_t channel);
+int open_channel(uint8_t *channel);
+int close_channel(uint8_t channel);
+int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel);
 
 #endif  // __APDU_H__

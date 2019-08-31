@@ -16,15 +16,15 @@ const static uint8_t g_close_channel_cmd[] = {0x00, 0x70, 0x80, 0x01, 0x00};
 const static uint8_t euicc_aid[] = {0xA0, 0x00, 0x00, 0x05, 0x59, 0x10, 0x10, 0xFF,
                                     0xFF, 0xFF, 0xFF, 0x89, 0x00, 0x00, 0x01, 0x00};
 
-static lpa_channel_type_e g_channel_mode = LPA_CHANNEL_BY_IPC;
+static lpa_channel_type_e g_channel_mode = LPA_CHANNEL_BY_QMI;
 static uint16_t get_sw(uint8_t *rsp, uint16_t len)
 {
-    uint16_t sw;
+    uint16_t sw = 0;
     sw = ((uint16_t)rsp[len-2] << 8) + rsp[len-1];
     return sw;
 }
 
-int open_channel(int8_t *channel)
+int open_channel(uint8_t *channel)
 {
     int ret = RT_SUCCESS;
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
@@ -40,11 +40,11 @@ int open_channel(int8_t *channel)
     } else {
         ret = rt_qmi_open_channel(euicc_aid, sizeof(euicc_aid), channel);
     }
-    MSG_INFO("Open Channel: %02X\n", *channel);
+    MSG_INFO("Open Channel: %d\n", *channel);
     return ret;
 }
 
-int close_channel(int8_t channel)
+int close_channel(uint8_t channel)
 {
     int ret = RT_SUCCESS;
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
@@ -59,10 +59,11 @@ int close_channel(int8_t channel)
     } else {
         ret = rt_qmi_close_channel(channel);
     }
+    MSG_INFO("channel %d, ret:%d\n", channel, ret);
     return ret;
 }
 
-static int32_t lpa_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int8_t channel)
+static int32_t lpa_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         return ipc_send_data(data, data_len, rsp, rsp_len);
@@ -72,16 +73,15 @@ static int32_t lpa_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rs
 }
 
 #define APDU_BLOCK_SIZE         255
-int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int8_t channel)
+int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
     int i;
     int ret = RT_SUCCESS;
-    uint16_t sw;
+    uint16_t sw = 0;
     uint8_t cnt, left;
     uint8_t cbuf[LPA_AT_BLOCK_BUF];
     apdu_t *apdu = (apdu_t *)cbuf;
-    memset(cbuf,0x00,LPA_AT_BLOCK_BUF);
-
+    memset(cbuf, 0x00, LPA_AT_BLOCK_BUF);
 
     cnt = data_len / APDU_BLOCK_SIZE;
     left = data_len % APDU_BLOCK_SIZE;

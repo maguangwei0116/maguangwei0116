@@ -35,7 +35,7 @@ static int32_t get_random(void)
     return rand();
 }
 
-void bootstrap_select_profile(void)
+static void bootstrap_select_profile(void)
 {
     static uint8_t retry_times = 0;
     if (retry_times > g_max_retry_times) {

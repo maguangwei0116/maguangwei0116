@@ -23,8 +23,9 @@
 #include "https.h"
 #include "hash.h"
 #include "lpa_error_codes.h"
+#include "rt_os.h"
 
-static uint8_t g_buf[1024*10];
+static uint8_t g_buf[10*1024];
 static uint16_t g_buf_size;
 
 static char g_transaction_id[33] = {0};
@@ -33,7 +34,6 @@ int encode_cb(const void *buffer, size_t size, void *app_key)
 {
     memcpy(g_buf + g_buf_size, buffer, size);
     g_buf_size += size;
-
     return 0;
 }
 
@@ -52,7 +52,7 @@ uint16_t get_cb_size(void)
     return g_buf_size;
 }
 
-int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size, int8_t channel)
+int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     asn_enc_rval_t ec;
     uint8_t bit_string[1] = {0};
@@ -95,7 +95,7 @@ int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size, int8_
     return RT_SUCCESS;
 }
 
-int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_size, int8_t channel)
+int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     // asn_enc_rval_t ec;
     // LoadCRLRequest_t req = {0};
@@ -119,7 +119,7 @@ int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_
     return RT_SUCCESS;
 }
 
-int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint16_t *out_size, int8_t channel)
+int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -174,7 +174,7 @@ end:
     return ret;
 }
 
-int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size, int8_t channel)
+int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     asn_enc_rval_t ec;
     NotificationSentRequest_t req = {0};
@@ -196,7 +196,7 @@ int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size, in
     return RT_SUCCESS;
 }
 
-int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *size2, int8_t channel)
+int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *size2, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -243,7 +243,7 @@ end:
     return ret;
 }
 
-int get_euicc_challenge(uint8_t challenge[16], int8_t channel)
+int get_euicc_challenge(uint8_t challenge[16], uint8_t channel)
 {
     int ret = RT_SUCCESS;
     uint16_t rlen;
@@ -273,7 +273,7 @@ end:
     return ret;
 }
 
-int get_rat(uint8_t *rat, uint16_t *size, int8_t channel)
+int get_rat(uint8_t *rat, uint16_t *size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -299,7 +299,7 @@ end:
     return ret;
 }
 
-int cancel_session(const uint8_t *tid, uint8_t tid_size, uint8_t reason, uint8_t *csr, uint16_t *size, int8_t channel)
+int cancel_session(const uint8_t *tid, uint8_t tid_size, uint8_t reason, uint8_t *csr, uint16_t *size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -392,7 +392,7 @@ end:
     return ret;
 }
 
-int initiate_authentication(const char *smdp_addr, char *auth_data, int *size, int8_t channel)
+int initiate_authentication(const char *smdp_addr, char *auth_data, int *size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     char *data = NULL;
@@ -630,7 +630,7 @@ static int get_cc_hash(const char *cc, const uint8_t *transaction_id, uint8_t id
 }
 
 int authenticate_server(const char *matching_id, const char *auth_data,
-                        uint8_t *response, uint16_t *size , int8_t channel/* out */)
+                        uint8_t *response, uint16_t *size , uint8_t channel/* out */)
 {
     int ret = RT_SUCCESS;
     void *p = NULL;
@@ -746,7 +746,7 @@ end:
     return ret;
 }
 
-int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t *out_size, int8_t channel)
+int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     cJSON *content = NULL;
@@ -855,7 +855,7 @@ end:
 }
 
 int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
-                            uint8_t *out, uint16_t *out_size , int8_t channel/* out */)
+                            uint8_t *out, uint16_t *out_size , uint8_t channel/* out */)
 {
     int i;
     int ret = RT_SUCCESS;
@@ -1089,7 +1089,7 @@ end:
     return ret;
 }
 
-int load_cert(const uint8_t *data, uint16_t data_len, int8_t channel)
+int load_cert(const uint8_t *data, uint16_t data_len, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000
@@ -1099,7 +1099,7 @@ int load_cert(const uint8_t *data, uint16_t data_len, int8_t channel)
     return ret;
 }
 
-int load_profile(const uint8_t *data, uint16_t data_len, int8_t channel)
+int load_profile(const uint8_t *data, uint16_t data_len, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000

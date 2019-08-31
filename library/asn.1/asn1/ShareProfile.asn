@@ -55,7 +55,7 @@ PROFILE DEFINITIONS AUTOMATIC TAGS ::= BEGIN
         opc OCTET STRING,               -- 密文，32 位，Hex 格式
         rotation OCTET STRING OPTIONAL, -- optional，遵从 SIM 格式，默认 4000204060，
         xoring OCTET STRING OPTIONAL,   -- optional, 遵从 SIM 格式，默认
-        sqnFlag OCTET STRING OPTIONAL,  -- optional, true 代表打开 SQN 校验并使用默认配置，false 表示关闭 SQN 校验，默认 false
+        sqnFlag OCTET STRING OPTIONAL,  -- optional,
         rplmn OCTET STRING OPTIONAL,    -- optional, 单个，SIM 卡片文件存储格式，64F010，默认 FFFFFF
         fplmn OCTET STRING OPTIONAL,    -- optional, 多个，同上
         hplmn OCTET STRING OPTIONAL,    -- optional, SIM 卡片文件存储格式，多个，例：64F0100000 64F000000，默认 FFFFFF0000

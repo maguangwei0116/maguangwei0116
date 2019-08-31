@@ -18,7 +18,7 @@ extern void clean_cb_data(void);
 extern uint8_t *get_cb_data(void);
 extern uint16_t get_cb_size(void);
 
-int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, int8_t channel)
+int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -55,7 +55,7 @@ int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out,
     return ret;
 }
 
-int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, int8_t channel)
+int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -93,7 +93,7 @@ int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out
     return ret;
 }
 
-int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out_size, int8_t channel)
+int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     asn_enc_rval_t ec;
     DeleteProfileRequest_t req = {0};
@@ -122,7 +122,7 @@ int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out
     return RT_SUCCESS;
 }
 
-int get_eid(uint8_t *eid, uint16_t *size, int8_t channel)
+int get_eid(uint8_t *eid, uint16_t *size, uint8_t channel)
 {
     asn_enc_rval_t ec;
     GetEuiccDataRequest_t req = {0};
@@ -144,7 +144,7 @@ int get_eid(uint8_t *eid, uint16_t *size, int8_t channel)
     return RT_SUCCESS;
 }
 
-int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size, int8_t channel)
+int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     asn_enc_rval_t ec;
     MoreEIDOperateRequest_t req = {0};
@@ -160,7 +160,7 @@ int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size, int
     return RT_SUCCESS;
 }
 
-int get_eid_list(uint8_t *eid, uint16_t *size, int8_t channel)
+int get_eid_list(uint8_t *eid, uint16_t *size, uint8_t channel)
 {
     asn_enc_rval_t ec;
     MoreEIDOperateRequest_t req = {0};
@@ -175,7 +175,7 @@ int get_eid_list(uint8_t *eid, uint16_t *size, int8_t channel)
 }
 
 int get_profiles_info(search_criteria_t sc, uint8_t *criteria, uint16_t c_size,
-                    uint8_t *profile_info, uint16_t *size , int8_t channel/* out */)
+                    uint8_t *profile_info, uint16_t *size , uint8_t channel/* out */)
 {
     int ret = RT_SUCCESS;
     asn_enc_rval_t ec;
@@ -218,7 +218,7 @@ end:
 }
 
 // TODO: Fix 6A80
-int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t *out_size, int8_t channel)
+int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     asn_enc_rval_t ec;
     SetNicknameRequest_t req = {0};
@@ -242,7 +242,7 @@ int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t
     return RT_SUCCESS;
 }
 
-int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size, int8_t channel)
+int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     asn_enc_rval_t ec;
     uint8_t bit_string[1] = {0};

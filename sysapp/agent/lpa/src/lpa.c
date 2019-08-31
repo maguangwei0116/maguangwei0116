@@ -101,7 +101,7 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
     if (num == NULL) {
         return RT_ERR_NULL_POINTER;
     }
-    buf = (uint8_t *)malloc(size);
+    buf = (uint8_t *) malloc (size);
     if (buf == NULL) {
         ret = RT_ERR_NULL_POINTER;
         goto end;
@@ -149,7 +149,7 @@ int lpa_delete_profile(const char *iccid)
     int ret;
     uint8_t rsp[32];
     uint16_t rsp_size = sizeof(rsp);
-    int8_t channel;
+    uint8_t channel;
 
     open_channel(&channel);
     hexstring2bytes(iccid, rsp, &rsp_size);
@@ -194,7 +194,7 @@ int lpa_disable_profile(const char *iccid)
     int ret;
     uint8_t rsp[32];
     uint16_t rsp_size = sizeof(rsp);
-    int8_t channel;
+    uint8_t channel;
 
     open_channel(&channel);
     hexstring2bytes(iccid, rsp, &rsp_size);
@@ -327,7 +327,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21],uint8_t 
     uint8_t *buf2 = NULL;
     uint16_t buf2_len = BUFFER_SIZE;
     uint8_t bppcid, error;
-    int8_t channel;
+    uint8_t channel;
 
     open_channel(&channel);
     buf1 = malloc(BUFFER_SIZE);
@@ -416,19 +416,21 @@ end:
 
 int lpa_load_cert(const uint8_t *data, uint16_t data_len)
 {
-    int8_t channel;
+    uint8_t channel;
 
     open_channel(&channel);
     load_cert(data, data_len, channel);
+    close_channel(channel);
     return RT_SUCCESS;
 }
 
 int lpa_load_profile(const uint8_t *data, uint16_t data_len)
 {
-    int8_t channel;
+    uint8_t channel;
 
     open_channel(&channel);
     MSG_INFO("data[0]:%02X, data_len:%d\n", data[0], data_len);
     load_profile(data, data_len, channel);
+    close_channel(channel);
     return RT_SUCCESS;
 }

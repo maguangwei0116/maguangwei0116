@@ -68,7 +68,9 @@ int32_t init_card_manager(void *arg)
     int32_t ret = RT_ERROR;
 
     lpa_get_eid(eid);
+    rt_os_sleep(1);
     ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
+    MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
     if (ret == RT_SUCCESS) {
         if ((g_p_info.info[0].class == 1) && (g_p_info.num == 1)) {
             msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
