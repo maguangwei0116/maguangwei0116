@@ -540,7 +540,7 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     return RT_TRUE;
 }
 
-#include "new_upload.h"
+#include "upload.h"
 static void mqtt_process_task(void)
 {
     rt_os_sleep(10);

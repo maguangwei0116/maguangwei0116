@@ -71,6 +71,8 @@ SRC-y 			                        += src/lpdd.c
 SRC-y 			                        += src/luid.c
 SRC-y 			                        += src/ldsd.c
 SRC-y 			                        += src/apdu.c
+SRC-y 			                        += ./core/upload/src/upload.c
+SRC-y 			                        += ./core/random/src/random.c
 
 # Config your include file path by += xxx-inc
 INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)		+= ./core/bootstrap/
@@ -84,6 +86,8 @@ INC-PATH-y 		                        += ./core/networkd/
 INC-PATH-y 		                        += ./main/
 INC-PATH-y 		                        += ./ipc/
 INC-PATH-y 		                        += ./lpa/
+INC-PATH-y 		                        += ./core/upload/inc
+INC-PATH-y 		                        += ./core/random/inc
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)

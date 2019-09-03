@@ -18,6 +18,7 @@
 #include "rt_mqtt.h"
 #include "config.h"
 #include "bootstrap.h"
+#include "upload.h"
 
 #include "rt_qmi.h"
 
@@ -62,7 +63,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_card_manager,         NULL), 
     INIT_OBJ(init_network_detection,    NULL), 
-//    INIT_OBJ(init_mqtt,                 NULL),
+    INIT_OBJ(init_mqtt,                 NULL),
 };
 
 static int32_t agent_init_call(void)
