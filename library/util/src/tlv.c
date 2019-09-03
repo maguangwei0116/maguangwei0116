@@ -139,7 +139,7 @@ uint32_t get_length(uint8_t *ba_buffer, uint8_t mode)
     return value;
 }
 
-void copy_buffer(uint8_t *p_dst, uint8_t *p_src, uint16_t len)
+void copy_buffer(uint8_t *p_dst, uint8_t *p_src, uint32_t len)
 {
     // Compare source address and destination address to know
     // the order (forward or backward copy)
@@ -159,7 +159,7 @@ void copy_buffer(uint8_t *p_dst, uint8_t *p_src, uint16_t len)
 }
 
 // current offset is TAG offset.
-uint16_t set_length(uint8_t *ba_buffer, uint16_t s_length)
+uint32_t set_length(uint8_t *ba_buffer, uint32_t s_length)
 {
     uint8_t pad_number = 0;
     uint8_t s_offset = 1;
@@ -183,7 +183,7 @@ uint16_t set_length(uint8_t *ba_buffer, uint16_t s_length)
         ba_buffer[s_offset] = (uint8_t) s_length;
     }
     //return TLV length
-    return (uint16_t)(s_length + s_offset + pad_number + 1);
+    return (uint32_t)(s_length + s_offset + pad_number + 1);
 }
 
 uint8_t *get_value_buffer(uint8_t *ba_buffer)
@@ -202,7 +202,7 @@ uint8_t *get_value_buffer(uint8_t *ba_buffer)
     }
 }
 
-uint8_t *get_simple_tag_tlv(uint16_t tag, uint8_t *ba_buffer, uint16_t s_length, uint16_t sOccurence)
+uint8_t *get_simple_tag_tlv(uint16_t tag, uint8_t *ba_buffer, uint32_t s_length, uint16_t sOccurence)
 {
     uint16_t check_tag = 0;
     uint16_t counter = 0;
@@ -238,7 +238,7 @@ uint16_t get_short(uint8_t *buf)
 }
 
 /* return the opinter buffer of the tag-value buffer */
-uint8_t *get_simple_tlv(uint16_t tag, uint8_t *buffer, uint16_t len, uint16_t *tag_len, uint16_t *left_len)
+uint8_t *get_simple_tlv(uint16_t tag, uint8_t *buffer, uint32_t len, uint32_t *tag_len, uint32_t *left_len)
 {
     uint8_t *p = NULL;
 
