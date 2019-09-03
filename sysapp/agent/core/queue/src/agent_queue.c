@@ -10,26 +10,37 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Sublime text
  *******************************************************************************/
+#include <errno.h>
 
 #include "rt_os.h"
 #include "rt_type.h"
 #include "agent_queue.h"
 #include "bootstrap.h"
 
-#define  AGENT_QUEUE_MSG_TYPE    1
+/* 
+queue msg type must large than 0, it's a nonpositive mtype value !
+or it will return errno(22,EINVAL), see "man msgsnd" !!
+*/
+typedef enum {
+    UPLOAD_QUEUE_MSG_TYPE   = 1,
+    AGENT_QUEUE_MSG_TYPE    = 2,
+} queue_msg_type_e;
 
 typedef struct AGENT_QUEUE {
-    long msg_typ;
-    int32_t msg_id;
-    int32_t mode;
-    void *data_buf;
-    int32_t data_len;
+    long                msg_typ;   
+    int32_t             msg_id;    
+    int32_t             mode;      
+    void *              data_buf;  
+    int32_t             data_len;
 } agent_que_t;
 
 typedef struct UPLOAD_QUEUE {
-    long msg_typ;
-    int32_t data_len;
-    void *data_buf;
+    long                msg_typ;
+    char                host_addr[16];  // server ip addr
+    int32_t             port;           // server port
+    void *              cb;             // recv data callback function    
+    void *              data_buf;
+    int32_t             data_len;
 } upload_que_t;
 
 static int32_t g_queue_id = -1;
@@ -85,11 +96,20 @@ static void agent_queue_task(void)
 static void upload_queue_task(void)
 {
     upload_que_t que_t;
-    int32_t len = sizeof(upload_que_t)-sizeof(long);;
+    int32_t ret;
+    int32_t len = sizeof(upload_que_t)-sizeof(long);
+    
     while (1) {
-        if (rt_receive_queue_msg(g_upload_queue_id, &que_t, len, 0, 0) == 0) {
+        rt_os_memset(&que_t, 0, sizeof(upload_que_t));
+        if (rt_receive_queue_msg(g_upload_queue_id, &que_t, len, UPLOAD_QUEUE_MSG_TYPE, 0) == 0) {
+            MSG_PRINTF(LOG_INFO, "upload queue dealing ...\r\n");
+            ret = upload_http_post(que_t.host_addr, que_t.port, que_t.cb, que_t.data_buf, que_t.data_len);
+            MSG_PRINTF(LOG_INFO, "upload http post:%d\n", ret);
+            if (que_t.data_buf) {
+                rt_os_free(que_t.data_buf);
+            }
         }
-        rt_os_free(que_t.data_buf);
+        MSG_PRINTF(LOG_INFO, "upload queue task ...\n");
     }
 }
 
@@ -127,6 +147,7 @@ int32_t init_queue(void *arg)
 int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len)
 {
     agent_que_t que_t;
+    
     que_t.msg_typ = AGENT_QUEUE_MSG_TYPE;
     que_t.msg_id = msgid;
     que_t.mode = mode;
@@ -142,12 +163,24 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
     return rt_send_queue_msg(g_queue_id, (void *)&que_t, len, 0);
 }
 
-int32_t msg_send_upload_queue(void *buffer, int32_t len)
+int32_t msg_send_upload_queue(const char *host_addr, int32_t port, void *cb, void *buffer, int32_t len)
 {
     upload_que_t que_t;
-    que_t.data_buf = (void *)rt_os_malloc(len);
+    int32_t ret;
+
+    snprintf(que_t.host_addr, sizeof(que_t.host_addr), "%s", host_addr);
+    que_t.msg_typ   = UPLOAD_QUEUE_MSG_TYPE;
+    que_t.port      = port;
+    que_t.cb        = cb;
+    que_t.data_buf  = (void *)rt_os_malloc(len);
     rt_os_memcpy(que_t.data_buf, buffer, len);
     que_t.data_len = len;
     len = sizeof(upload_que_t) - sizeof(long);
-    return rt_send_queue_msg(g_upload_queue_id, (void *)&que_t, len, 0);
+    MSG_PRINTF(LOG_INFO, "len:%d, %p\n", len, que_t.data_buf);
+    ret = rt_send_queue_msg(g_upload_queue_id, (void *)&que_t, len, 0);
+    if (ret < 0) {
+        MSG_PRINTF(LOG_ERR, "send upload msg queue fail, ret=%d, err(%d)=%s\n", ret, errno, strerror(errno));  
+    }
+
+    return ret;
 }
