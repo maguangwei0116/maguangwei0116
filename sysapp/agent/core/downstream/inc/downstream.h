@@ -18,15 +18,15 @@ typedef struct _downstram_data_t {
     cJSON *         payload;
 } downstram_data_t ;
 
-typedef int32_t (*parser)(const char *msg);
+typedef int32_t (*parser_func)(const char *msg);
 
 typedef struct _downstream_cmd_t {
     const char *    cmd;
-    parser *        parser;
+    parser_func     parser;
 } downstream_cmd_t;
 
 #define DOWNSTREAM_CMD_OBJ_INIT(cmd, parser)\
-    static const downstream_cmd_t downstream_cmd_##cmd##obj \
+    static const downstream_cmd_t downstream_cmd_##cmd##_obj \
     __attribute__((section(".downstream.cmd.init.obj"))) = \
     {#cmd, parser}
 

@@ -5,10 +5,7 @@
 
 #include "cJSON.h"
 
-#define DOWNSTRAM_METHOD_STR        "\"method\""
-#define DOWNSTRAM_METHOD_STRLEN     8
-
-static int32_t downstram_inpsect_parse(const char *msg)
+static int32_t downstram_inpsect_parser(const char *msg)
 {
     int32_t id = -1;
     char cmd_id_str[64] = {0};
@@ -23,6 +20,6 @@ exit_entry:
     return id;
 }
 
-DOWNSTREAM_CMD_OBJ_INIT(INSPECT, downstram_inpsect_parse);
+DOWNSTREAM_CMD_OBJ_INIT(INSPECT, downstram_inpsect_parser);
 
 
