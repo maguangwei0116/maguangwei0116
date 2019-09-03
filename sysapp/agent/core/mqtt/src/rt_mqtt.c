@@ -8,6 +8,7 @@
 #include "cJSON.h"
 #include "MQTTClient.h"
 #include "MQTTClientPersistence.h"
+#include "downstream.h"
 
 #define ADAPTER_APPKEY          "D358134D21684E8FA23CC25740506A82"
 #define ADAPTER_PORT            7082
@@ -90,7 +91,9 @@ boot_state_info_e get_boot_flag(void)
 
 void msg_parse(int8_t *message, int32_t len)
 {
-    MSG_PRINTF(LOG_WARN, "mqtt recv msg (%d bytes): %s\r\n", len, message);    
+    MSG_PRINTF(LOG_WARN, "mqtt recv msg (%d bytes): %s\r\n", len, message);
+
+    downstram_msg_parse((const char *)message);
 }
 
 //本地缓存之前的从adapter获取的ticket server
@@ -351,8 +354,8 @@ static rt_bool rt_mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
 
 #if 1  // only for test
 #define TEST_FORCE_TO_ADAPTER       0
-#define TEST_FORCE_TO_EMQ           0
-#define TEST_FORCE_TO_YUNBA         1
+#define TEST_FORCE_TO_EMQ           1
+#define TEST_FORCE_TO_YUNBA         0
 
 #define MQTT_PASSAGEWAY_DEF(x)\
 do {\
@@ -435,11 +438,11 @@ static int message_arrived(void* context, char* topicName, int32_t topicLen, MQT
 #endif
 
     //parse JSON
-    MSG_PRINTF(LOG_DBG, "topicName:%s\n",topicName);
+    MSG_PRINTF(LOG_DBG, "msg arrived, topicName:%s\n",topicName);
     msg_parse(md->payload, (int32_t)md->payloadlen);
     MQTTClient_freeMessage(&md);
     MQTTClient_free(topicName);
-    MSG_PRINTF(LOG_DBG, "topicName:%s ok!\n",topicName);
+    //MSG_PRINTF(LOG_DBG, "topicName:%s ok!\n",topicName);
     
     return 1;
 }

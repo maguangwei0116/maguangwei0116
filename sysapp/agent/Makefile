@@ -74,6 +74,8 @@ SRC-y 			                        += src/apdu.c
 SRC-y 			                        += ./core/upload/src/upload.c
 SRC-y 			                        += ./core/random/src/random.c
 SRC-y 			                        += ./core/ota/src/upgrade.c
+SRC-y 			                        += ./core/downstream/src/downstream.c
+SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
 
 # Config your include file path by += xxx-inc
 INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)		+= ./core/bootstrap/
@@ -90,6 +92,7 @@ INC-PATH-y 		                        += ./lpa/
 INC-PATH-y 		                        += ./core/upload/inc
 INC-PATH-y 		                        += ./core/random/inc
 INC-PATH-y 		                        += ./core/ota/inc
+INC-PATH-y 		                        += ./core/downstream/inc
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)
