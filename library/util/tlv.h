@@ -30,10 +30,10 @@ void init_tlv(void);
 uint16_t get_cur_tlv_tag(void);
 uint16_t get_cur_tlv_off(void);
 uint16_t get_cur_tlv_len(void);
-uint16_t get_length(uint8_t *baBuffer, uint8_t mode);
-uint16_t set_length(uint8_t *baBuffer, uint16_t sLength);
+uint32_t get_length(uint8_t *baBuffer, uint8_t mode);
+uint32_t set_length(uint8_t *baBuffer, uint32_t sLength);
 uint8_t *get_value_buffer(uint8_t *baBuffer);
-uint8_t *get_simple_tag_tlv(uint16_t tag, uint8_t *baBuffer, uint16_t sLength, uint16_t sOccurence);
+uint8_t *get_simple_tag_tlv(uint16_t tag, uint8_t *baBuffer, uint32_t sLength, uint16_t sOccurence);
 void set_cur_tlv_tag(uint8_t tag);
 void set_cur_tlv_off(uint16_t off);
 void set_cur_tlv_len(uint16_t len);
@@ -44,7 +44,7 @@ uint8_t get_byte(uint8_t *buf);
 uint16_t get_short(uint8_t *buf);
 
 /* return the opinter buffer of the tag-value buffer */
-uint8_t *get_simple_tlv(uint16_t tag, uint8_t *buffer, uint16_t len, uint16_t *tag_len, uint16_t *left_len);
+uint8_t *get_simple_tlv(uint16_t tag, uint8_t *buffer, uint32_t len, uint32_t *tag_len, uint32_t *left_len);
 
 #ifdef __cplusplus
 }

@@ -41,7 +41,7 @@ uint32_t rt_os_strlen(void *string);
 int8_t *rt_os_strchr(int8_t *str, const int8_t chr);
 int8_t *rt_os_strstr(int8_t *str1, const int8_t *str2);
 void *rt_os_malloc(uint32_t size);
-void *rt_os_realloc(uint32_t size);
+void *rt_os_realloc(void *mem, uint32_t size);
 void  rt_os_free(void *mem);
 void *rt_os_memset(void *mem, int8_t value, int32_t len);
 void *rt_os_memcpy(void *mem_des, const void *mem_src, int32_t len);

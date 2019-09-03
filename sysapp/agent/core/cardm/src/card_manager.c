@@ -74,7 +74,6 @@ int32_t init_card_manager(void *arg)
             msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
         }
     }
-    MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
     return ret;
 }
 
