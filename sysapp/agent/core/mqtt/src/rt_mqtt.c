@@ -468,14 +468,17 @@ static rt_bool my_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
 
 static void connection_lost(void *context, char *cause)
 {
+    MSG_PRINTF(LOG_WARN, "connection lost: %s, %s\r\n",(char *)context, cause);
     if (my_connect(&g_mqtt_param.client, &g_mqtt_param.conn_opts) != RT_TRUE) {
         g_mqtt_param.mqtt_flag = RT_FALSE;
+        MSG_PRINTF(LOG_WARN, "connect again fail after connection lost !!!\r\n");
         
         //if (get_network_state() == NETWORK_USING) {
         //    set_network_state(NETWORK_GET_IP);
         //}
+    } else {
+        MSG_PRINTF(LOG_WARN, "connect again ok after connection lost !!!\r\n");
     }
-    MSG_PRINTF(LOG_WARN, "%s, %s\r\n",(char *)context, cause);
 }
 
 //connect mqtt server
@@ -528,7 +531,7 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
         return RT_FALSE;
     }
 
-    rt_os_sleep(10);
+    //rt_os_sleep(10);
 
     opts->last_connect_status = MQTT_CONNECT_SUCCESS;
     opts->try_connect_timer = 0;
@@ -537,9 +540,12 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     return RT_TRUE;
 }
 
+#include "new_upload.h"
 static void mqtt_process_task(void)
 {
     rt_os_sleep(10);
+
+    init_upload(NULL);
     
     while(1) {
         if (get_network_state() == NETWORK_CONNECTING) {
