@@ -347,7 +347,7 @@ int32_t selected_profile(int32_t random)
         return RT_ERROR;
     }
     rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 4, fp);
+    rt_fread(buf, 1, 8, fp);
     if (buf[0] != 0xA3) {
         MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
         return RT_ERROR;
@@ -355,7 +355,7 @@ int32_t selected_profile(int32_t random)
     off += get_length(buf, 1);
 
     rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 4, fp);
+    rt_fread(buf, 1, 8, fp);
     if (buf[0] != 0x30) {
         MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
         return RT_ERROR;
@@ -365,6 +365,8 @@ int32_t selected_profile(int32_t random)
     }
     for (i = 0; i < data.priority; i++) {
         off += get_length(buf, 1) + get_length(buf, 0);
+        rt_fseek(fp, off, RT_FS_SEEK_SET);
+        rt_fread(buf, 1, 8, fp);
     }
     decode_profile_info(fp, off, random);
 
