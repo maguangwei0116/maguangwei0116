@@ -21,6 +21,7 @@
 #include <linux/reboot.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "rt_os.h"
 
 int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
@@ -104,6 +105,7 @@ int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t m
 int32_t rt_send_queue_msg(int32_t msgid, void *buffer, int32_t len, int32_t msgflg)
 {
     if (msgsnd(msgid, buffer, len, msgflg) == -1) {
+		MSG_PRINTF(LOG_ERR, "send queue error, err(%d)=%s!!\n", errno, strerror(errno));
         return RT_ERROR;
     }
     return RT_SUCCESS;
