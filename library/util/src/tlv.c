@@ -102,18 +102,29 @@ void append_tl_buffer_v(uint8_t *buffer, uint8_t tag, uint8_t *valBuf, uint8_t v
     set_cur_tlv_off(curr_off);
 }
 
-uint16_t get_length(uint8_t *ba_buffer, uint8_t mode)
+uint32_t get_length(uint8_t *ba_buffer, uint8_t mode)
 {
-    uint16_t value;
+    uint32_t value;
     uint8_t length;
     uint8_t offset = 1;
 
     if ((ba_buffer[0] & 0x1F) == 0x1F) {
         offset++;
     }
-    if (ba_buffer[offset] == 0x82) {
+    if (ba_buffer[offset] == 0x84) {
         value = ba_buffer[offset + 1];
-        value = (uint16_t)((value << 8) | ba_buffer[offset + 2]);
+        value = (uint32_t)((value << 8) | ba_buffer[offset + 2]);
+        value = (uint32_t)((value << 8) | ba_buffer[offset + 3]);
+        value = (uint32_t)((value << 8) | ba_buffer[offset + 4]);
+        length = 5 + offset;
+    } else if (ba_buffer[offset] == 0x83) {
+        value = ba_buffer[offset + 1];
+        value = (uint32_t)((value << 8) | ba_buffer[offset + 2]);
+        value = (uint32_t)((value << 8) | ba_buffer[offset + 3]);
+        length = 4 + offset;
+    } else if (ba_buffer[offset] == 0x82) {
+        value = ba_buffer[offset + 1];
+        value = (uint32_t)((value << 8) | ba_buffer[offset + 2]);
         length = 3 + offset;
     } else if (ba_buffer[offset] == 0x81) {
         value = ba_buffer[offset + 1];

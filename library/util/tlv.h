@@ -30,7 +30,7 @@ void init_tlv(void);
 uint16_t get_cur_tlv_tag(void);
 uint16_t get_cur_tlv_off(void);
 uint16_t get_cur_tlv_len(void);
-uint16_t get_length(uint8_t *baBuffer, uint8_t mode);
+uint32_t get_length(uint8_t *ba_buffer, uint8_t mode);
 uint16_t set_length(uint8_t *baBuffer, uint16_t sLength);
 uint8_t *get_value_buffer(uint8_t *baBuffer);
 uint8_t *get_simple_tag_tlv(uint16_t tag, uint8_t *baBuffer, uint16_t sLength, uint16_t sOccurence);

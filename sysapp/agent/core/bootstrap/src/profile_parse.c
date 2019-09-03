@@ -240,7 +240,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         bootstrap_request->tbhRequest.imsi.buf[7] = imsi_buffer[0];
         bootstrap_request->tbhRequest.imsi.buf[8] = imsi_buffer[1];
     }
-
+/*
     rt_qmi_get_mcc_mnc(&mcc, NULL);
     for (i = 0; i < sizeof(rt_plmn); ++i) {
         if (mcc == rt_plmn[i].mcc) {
@@ -250,6 +250,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
                     &asn_DEF_TBHRequest, rt_plmn[i].hplmn, rt_os_strlen(rt_plmn[i].hplmn));
         }
     }
+*/
     g_buf_size = 0;
     ec = der_encode(&asn_DEF_BootstrapRequest, bootstrap_request, encode_cb_fun, NULL);
     if (ec.encoded == -1) {
