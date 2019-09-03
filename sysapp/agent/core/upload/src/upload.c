@@ -130,6 +130,8 @@ static int32_t upload_send_request(const char *out)
         return ret;
     }
 
+    MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", strlen((const char *)out), (const char *)out);
+    
     get_md5_string((int8_t *)out, md5_out);
     md5_out[MD5_STRING_LENGTH] = '\0';
 
@@ -282,12 +284,9 @@ int32_t upload_cmd_registered(void)
     }
 
     CJSON_ADD_NEW_STR_OBJ(content, pushChannel);
-    MSG_PRINTF(LOG_WARN, "1111111111111\r\n");
-    upload = upload_packet_all(NULL, event, status, content);MSG_PRINTF(LOG_WARN, "1111111111111\r\n");
-    upload_json_pag = (char *)cJSON_PrintUnformatted(upload);MSG_PRINTF(LOG_WARN, "1111111111111\r\n");
-    MSG_PRINTF(LOG_WARN, "1111111111111upload_json_pag=%p, upload=%p\r\n", upload_json_pag, upload);
-    MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", strlen((const char *)upload_json_pag), (const char *)upload_json_pag);
     
+    upload = upload_packet_all(NULL, event, status, content);
+    upload_json_pag = (char *)cJSON_PrintUnformatted(upload);    
     ret = upload_send_request((const char *)upload_json_pag);
 
 exit_entry:
@@ -364,9 +363,7 @@ static int32_t upload_cmd_boot_info(const char *str_cmd, rt_bool only_profile_ne
     }
 
     upload = upload_packet_all(NULL, event, status, content);
-    upload_json_pag = (char *)cJSON_PrintUnformatted(upload);
-    MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", strlen((const char *)upload_json_pag), (const char *)upload_json_pag);
-    
+    upload_json_pag = (char *)cJSON_PrintUnformatted(upload);    
     ret = upload_send_request((const char *)upload_json_pag);
 
 exit_entry:
