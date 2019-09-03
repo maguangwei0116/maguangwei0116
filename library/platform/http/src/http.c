@@ -200,7 +200,7 @@ http_result_e http_post(const int8_t *url,int8_t *post_str,int8_t *header, socke
         lpbuf = (int8_t *)rt_os_malloc(BUFFER_SIZE * 4);
         if (lpbuf == NULL) {
             ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_PRINTF(LOG_WARN, "lpbuf malloc error\n");
+            MSG_PRINTF(LOG_WARN, "lpbuf memory alloc error\n");
             break;
         }
         rt_os_memset(lpbuf, '0', BUFFER_SIZE * 4);
@@ -208,7 +208,7 @@ http_result_e http_post(const int8_t *url,int8_t *post_str,int8_t *header, socke
         host_addr = (int8_t *)rt_os_malloc(HOST_ADDRESS_LEN);
         if (host_addr == NULL) {
             ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_PRINTF(LOG_WARN, "lpbuf malloc error\n");
+            MSG_PRINTF(LOG_WARN, "lpbuf memory alloc error\n");
             break;
         }
         rt_os_memset(host_addr, '0', HOST_ADDRESS_LEN);
@@ -216,7 +216,7 @@ http_result_e http_post(const int8_t *url,int8_t *post_str,int8_t *header, socke
         file = (int8_t *)rt_os_malloc(HOST_PATH_LEN);
         if (file == NULL) {
             ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_PRINTF(LOG_WARN, "file malloc error\n");
+            MSG_PRINTF(LOG_WARN, "file memory alloc error\n");
             break;
         }
         rt_os_memset(file, '0', HOST_PATH_LEN);

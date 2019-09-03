@@ -258,7 +258,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
             }
 #endif
         }
-        free(line);
+        rt_os_free(line);
         X509_free(cert);
     } else {
         MSG_PRINTF(LOG_ERR, "No Certificate found on Server!\n");
