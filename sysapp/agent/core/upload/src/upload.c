@@ -5,6 +5,7 @@
 #include "md5.h"
 #include "http.h"
 #include "agent_queue.h"
+#include "agent_main.h"
 #include "config.h"
 #include "random.h"
 
@@ -25,10 +26,10 @@ do{                 \
     
 #define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
 
-static uint8_t g_eid[64] = "89086657727465610100000000000171";;
-static uint8_t g_imei[64] = "1234567890ABCDEF";
-static uint8_t g_current_mcc[8] = "460";
-static uint8_t g_push_channel[8] = "EMQ";
+static const char *g_upload_eid     = NULL;
+static const char *g_upload_imei    = NULL;
+static const char *g_push_channel   = NULL;
+static uint8_t g_current_mcc[8]     = "460";
 
 int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
@@ -201,7 +202,7 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
 {
     char random_tran_id[MAX_TRAN_ID_LEN + 1] = {0};
     const char *tranId = tran_id;
-    const char *topic = g_eid;
+    const char *topic = g_upload_eid;
     int32_t version = 0;
     time_t timestamp = time(NULL);
     
@@ -221,23 +222,37 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
 static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t status, const cJSON *content)
 {
     int32_t ret;
-    cJSON *payload = NULL;
-    
-    payload = cJSON_CreateObject();
-    if (!payload) {
-        MSG_PRINTF(LOG_WARN, "The payload is error\n");
+    cJSON *payload_json = NULL;
+    char *payload = NULL;
+     
+    payload_json = cJSON_CreateObject();
+    if (!payload_json) {
+        MSG_PRINTF(LOG_WARN, "The payload_json is error\n");
         ret = -1;
         goto exit_entry;
     }
 
-    CJSON_ADD_NEW_STR_OBJ(payload, event);
-    CJSON_ADD_NEW_INT_OBJ(payload, status);
-    CJSON_ADD_STR_OBJ(payload, content);
-    CJSON_ADD_STR_OBJ(upload, payload);
+    CJSON_ADD_NEW_STR_OBJ(payload_json, event);
+    CJSON_ADD_NEW_INT_OBJ(payload_json, status);
+    CJSON_ADD_STR_OBJ(payload_json, content);
+
+    payload = (char *)cJSON_PrintUnformatted(payload_json);
+    
+    CJSON_ADD_NEW_STR_OBJ(upload, payload);
 
     ret = 0;
 
 exit_entry:
+
+    if (payload_json) {
+        cJSON_Delete(payload_json);
+        payload_json = NULL;
+    }
+
+    if (payload) {
+        rt_os_free(payload);
+        payload = NULL;
+    }
 
     return ret;
 }
@@ -286,7 +301,8 @@ int32_t upload_cmd_registered(void)
     CJSON_ADD_NEW_STR_OBJ(content, pushChannel);
     
     upload = upload_packet_all(NULL, event, status, content);
-    upload_json_pag = (char *)cJSON_PrintUnformatted(upload);    
+    upload_json_pag = (char *)cJSON_PrintUnformatted(upload); 
+    MSG_PRINTF(LOG_WARN, "\nupload_json_pag: %s\n", upload_json_pag);
     ret = upload_send_request((const char *)upload_json_pag);
 
 exit_entry:
@@ -391,6 +407,16 @@ int32_t upload_cmd_info(void)
 
 int32_t init_upload(void *arg)
 {
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
+    
+    MSG_PRINTF(LOG_WARN, "eid : %p, %s\n", public_value_list->eid, public_value_list->eid);
+    MSG_PRINTF(LOG_WARN, "imei: %p, %s\n", public_value_list->imei, public_value_list->imei);
+    g_upload_eid = (const char *)public_value_list->eid;
+    g_upload_imei = (const char *)public_value_list->imei;
+    g_push_channel = (const char *)public_value_list->push_channel;
+
+    rt_os_sleep(10);
+    
     upload_cmd_registered(); 
     rt_os_sleep(1);
     upload_cmd_boot();
