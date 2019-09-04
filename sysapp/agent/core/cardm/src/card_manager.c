@@ -13,6 +13,7 @@
 
 #include "card_manager.h"
 #include "agent_queue.h"
+#include "agent_main.h"
 #include "lpa.h"
 
 #define THE_MAX_CARD_NUM         20
@@ -65,11 +66,17 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 
 int32_t init_card_manager(void *arg)
 {
-    uint8_t eid[32];
+    uint8_t eid[16];
+    static char g_eid[32+1];
     int32_t ret = RT_ERROR;
 
     lpa_get_eid(eid);
+    bytes2hexstring(eid, sizeof(eid), g_eid);
+    ((public_value_list_t *)arg)->eid = (const char *)g_eid;
+    //MSG_PRINTF(LOG_WARN, "eid: %p, %s\n", ((public_value_list_t *)arg)->eid, g_eid);
+    
     rt_os_sleep(1);
+    
     ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
     if (ret == RT_SUCCESS) {

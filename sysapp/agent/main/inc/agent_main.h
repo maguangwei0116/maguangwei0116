@@ -31,8 +31,10 @@ typedef struct INFO_VUICC_DATA {
 } info_vuicc_data_t;
 
 typedef struct PUBLIC_VALUE_LIST {
-    int8_t lpa_channel_type;
-
+    int8_t          lpa_channel_type;
+    const char *    eid;
+    const char *    imei;
+    const char *    push_channel;
 } public_value_list_t;
 
 #endif // __AGENT_MAIN_H__

@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "rt_type.h"
+#include "agent_main.h"
 #include "config.h"
 #include "cJSON.h"
 #include "MQTTClient.h"
@@ -548,8 +549,6 @@ static void mqtt_process_task(void)
 {
     rt_os_sleep(10);
 
-    init_upload(NULL);
-    
     while(1) {
         if (get_network_state() == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
@@ -609,6 +608,7 @@ static void mqtt_process_task(void)
                     MSG_PRINTF(LOG_WARN, "alias is error\n");
                 }
 
+#if 0
                 //如果agent的topic还未订阅，订阅agent
                 if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) && 
                         (MQTTClient_subscribe(g_mqtt_param.client, "agent", 1) == 0)) {
@@ -616,6 +616,7 @@ static void mqtt_process_task(void)
                 } else {
                     MSG_PRINTF(LOG_WARN, "MQTTClient_subscribe agent error\n");
                 }
+#endif
             }  
         }
         
@@ -656,6 +657,9 @@ static void mqtt_init_param(void)
 int32_t init_mqtt(void *arg)
 {
     int32_t ret;
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
+    
+    public_value_list->push_channel = (const char *)g_mqtt_param.opts.rt_channel;
 
     mqtt_init_param();
 
