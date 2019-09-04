@@ -56,7 +56,7 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
         recv_buf = (int8_t *)rt_os_malloc(BUFFER_SIZE * 4);
         if (!recv_buf) {
             ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_PRINTF(LOG_WARN, "lpbuf malloc error\n");
+            MSG_PRINTF(LOG_WARN, "lpbuf memory alloc error\n");
             break;
         }
 
