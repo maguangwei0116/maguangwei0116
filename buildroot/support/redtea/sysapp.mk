@@ -27,7 +27,7 @@ info:
 	@echo "RELEASE_TARGET=$(RELEASE_TARGET)"
 #	@echo "$(.VARIABLES)"
 	@echo "BR2_CONF_MK=$(BR2_CONF_MK)"
-	
+
 clean:
 	rm -rf $(O)
 

@@ -32,7 +32,6 @@ typedef struct INFO_VUICC_DATA {
 
 typedef struct PUBLIC_VALUE_LIST {
     int8_t lpa_channel_type;
-
 } public_value_list_t;
 
 #endif // __AGENT_MAIN_H__

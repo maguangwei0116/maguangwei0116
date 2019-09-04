@@ -13,6 +13,7 @@
 
 #include "card_manager.h"
 #include "agent_queue.h"
+#include "msg_process.h"
 #include "lpa.h"
 
 #define THE_MAX_CARD_NUM         20
@@ -43,6 +44,7 @@ static int32_t card_enable_profile(const int8_t *iccid)
     }
     lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_ALL_SWITCH_CARD, NULL, 0);
+
     return ret;
 }
 
@@ -55,6 +57,7 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     if ((ret == RT_SUCCESS) || (ret == 2)) {
         ret = lpa_load_profile(buf, len);
     }
+
     return ret;
 }
 
@@ -77,12 +80,8 @@ int32_t init_card_manager(void *arg)
             msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
         }
     }
+
     return ret;
-}
-
-static int32_t card_deal_mqtt_msg(const uint8_t *buf, int32_t len)
-{
-
 }
 
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)

@@ -18,7 +18,7 @@
 #include "bootstrap.h"
 #include "card_manager.h"
 
-/* 
+/*
 queue msg type must large than 0, it's a nonpositive mtype value !
 or it will return errno(22,EINVAL), see "man msgsnd" !!
 */
@@ -28,10 +28,10 @@ typedef enum {
 } queue_msg_type_e;
 
 typedef struct AGENT_QUEUE {
-    long                msg_typ;   
-    int32_t             msg_id;    
-    int32_t             mode;      
-    void *              data_buf;  
+    long                msg_typ;
+    int32_t             msg_id;
+    int32_t             mode;
+    void *              data_buf;
     int32_t             data_len;
 } agent_que_t;
 
@@ -39,7 +39,7 @@ typedef struct UPLOAD_QUEUE {
     long                msg_typ;
     char                host_addr[16];  // server ip addr
     int32_t             port;           // server port
-    void *              cb;             // recv data callback function    
+    void *              cb;             // recv data callback function
     void *              data_buf;
     int32_t             data_len;
 } upload_que_t;
@@ -101,7 +101,7 @@ static void upload_queue_task(void)
     upload_que_t que_t;
     int32_t ret;
     int32_t len = sizeof(upload_que_t) - sizeof(long);
-	
+
     while (1) {
         rt_os_memset(&que_t, 0, sizeof(upload_que_t));
         if (rt_receive_queue_msg(g_upload_queue_id, &que_t, len, UPLOAD_QUEUE_MSG_TYPE, 0) == 0) {
@@ -150,7 +150,7 @@ int32_t init_queue(void *arg)
 int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len)
 {
     agent_que_t que_t;
-    
+
     que_t.msg_typ = AGENT_QUEUE_MSG_TYPE;
     que_t.msg_id = msgid;
     que_t.mode = mode;
@@ -182,7 +182,7 @@ int32_t msg_send_upload_queue(const char *host_addr, int32_t port, void *cb, voi
     MSG_PRINTF(LOG_INFO, "len:%d, %p\n", len, que_t.data_buf);
     ret = rt_send_queue_msg(g_upload_queue_id, (void *)&que_t, len, 0);
     if (ret < 0) {
-        MSG_PRINTF(LOG_ERR, "send upload msg queue fail, ret=%d, err(%d)=%s\n", ret, errno, strerror(errno));  
+        MSG_PRINTF(LOG_ERR, "send upload msg queue fail, ret=%d, err(%d)=%s\n", ret, errno, strerror(errno));
     }
 
     return ret;
