@@ -47,7 +47,6 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
             trigger_swap_card(1);
         }
     }
-    rt_os_memset(data, 0x00, len);
 }
 
 int32_t main(void)

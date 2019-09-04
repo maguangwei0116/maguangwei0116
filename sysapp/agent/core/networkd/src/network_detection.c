@@ -17,7 +17,7 @@
 #include "rt_timer.h"
 #include "agent_main.h"
 
-#define MAX_WAIT_REGIST_TIME     300
+#define MAX_WAIT_REGIST_TIME     180
 
 static int32_t g_network_state = 0;
 
