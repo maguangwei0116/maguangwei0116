@@ -17,8 +17,8 @@
 #include "tlv.h"
 #include "file.h"
 #include "rt_manage_data.h"
-#include "rt_type.h"
 #include "agent_queue.h"
+#include "rt_type.h"
 
 #define RANDOM_FILE                     "/dev/urandom"
 
@@ -40,11 +40,10 @@ static void bootstrap_select_profile(void)
     static uint8_t retry_times = 0;
     if (retry_times > g_max_retry_times) {
         retry_times = 0;
-        register_timer(g_sleep_time, 0, &bootstrap_select_profile);
     } else {
         selected_profile(get_random());
-        g_single_interval_time *= retry_times;
         retry_times++;
+        g_single_interval_time *= retry_times;
     }
 }
 
@@ -59,8 +58,8 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
     if (mode == 0) {
         bootstrap_select_profile();
     } else if (mode == MSG_NETWORK_DISCONNECTED) {
+        MSG_PRINTF(LOG_INFO, "g_single_interval_time:%d\n", g_single_interval_time);
         register_timer(g_single_interval_time, 0, &bootstrap_select_profile);
     } else if (mode == MSG_NETWORK_CONNECTED) {
-        register_timer(0, 0, &bootstrap_select_profile);
     }
 }

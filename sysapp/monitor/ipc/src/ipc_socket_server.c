@@ -31,7 +31,7 @@ int32_t ipc_socket_server(void)
     int32_t new_fd = -1;
     uint8_t buffer[512];
     uint8_t rsp[512];
-    uint16_t rsp_len;
+    uint16_t rsp_len = 0;
     uint16_t rcv_len;
 
     socket_id = socket_create();

@@ -18,6 +18,7 @@
 #include "rt_timer.h"
 
 typedef struct my_timer_s my_timer_t;
+pthread_mutex_t g_mutex;
 struct my_timer_s {
     my_timer_t *prev, *next;
     int32_t diff_sec;
@@ -27,17 +28,13 @@ struct my_timer_s {
 
 my_timer_t  *timer_list = NULL;
 
-void callback_timeout(void)
+static void callback_timeout(void)
 {
     my_timer_t *p, *q;
     struct itimerval itimer;
-    sigset_t set, oldset;
 
+    rt_mutex_lock(&g_mutex);
     p = timer_list;
-    sigemptyset(&set);
-    sigaddset(&set, SIGALRM);
-    sigprocmask(SIG_SETMASK, &set, &oldset);
-
     for (q = timer_list->next; q; q = q->next) {
         q->diff_sec -= p->diff_sec;
         q->diff_usec -= p->diff_usec;
@@ -45,50 +42,72 @@ void callback_timeout(void)
 
     if (timer_list->next != NULL) {
         timer_list = timer_list->next;
-
         itimer.it_interval.tv_sec = 0;
         itimer.it_interval.tv_usec = 0;
         itimer.it_value.tv_sec = timer_list->diff_sec;
         itimer.it_value.tv_usec = timer_list->diff_usec;
+        if ((itimer.it_value.tv_sec == 0) && (itimer.it_value.tv_usec == 0)) {
+            itimer.it_value.tv_usec = 10;
+        }
+        MSG_PRINTF(LOG_INFO, "time:%d\n", itimer.it_value.tv_sec);
         setitimer(ITIMER_REAL, &itimer, NULL);
+        timer_list->prev = NULL;
+    } else {
+        timer_list = NULL;
     }
-    sigprocmask(SIG_SETMASK,&oldset,NULL);
     p->func();
     rt_os_free(p);
+    p = NULL;
+    rt_mutex_unlock(&g_mutex);
 }
 
+// timer callbach
+static void timer_handler (int signo)
+{
+    switch(signo) {
+    case SIGALRM:
+        callback_timeout();
+        break;
+    }
+}
+
+// A timer list from small to large
 int32_t register_timer(int sec, int usec, void (*action)())
 {
     my_timer_t  *t, *p, *pre;
     struct itimerval itimer;
-    struct sigaction sa;
-    sigset_t set, oldset;
 
+    if ((action == NULL) || ((sec == 0) && (usec == 0))) {
+        return RT_ERROR;
+    }
+
+    rt_mutex_lock(&g_mutex);
     t = (my_timer_t *) rt_os_malloc(sizeof(my_timer_t));
     t->next = t->prev = NULL;
     t->diff_sec = sec;
     t->diff_usec = usec;
     t->func = action;
 
-    sigemptyset(&set);
-    sigaddset(&set, SIGALRM);
-    sigprocmask(SIG_SETMASK,&set,&oldset);
-
     if (timer_list == NULL) {
         timer_list = t;
     } else {
         for (pre = NULL, p = timer_list; p; pre = p, p = p->next) {
-            if (p->diff_sec > t->diff_sec ) {
+            MSG_PRINTF(LOG_INFO, "p->diff_sec:%d,t->diff_sec:%d\n", p->diff_sec, t->diff_sec);
+            if (t->diff_sec < p->diff_sec) {
                 t->next = p;
-                p->prev = t;
                 if (p->prev) {
                     p->prev->next = t;
                     t->prev = p->prev;
+                } else {
+                    t->prev = NULL;
+                    timer_list = t;
                 }
+                p->prev = t;
                 break;
             }
         }
         if (p == NULL) {
+            t->next = NULL;
             t->prev = pre;
             pre->next = t;
         }
@@ -98,21 +117,24 @@ int32_t register_timer(int sec, int usec, void (*action)())
     itimer.it_interval.tv_usec = 0;
     itimer.it_value.tv_sec = t->diff_sec;
     itimer.it_value.tv_usec = t->diff_usec;
+    if ((itimer.it_value.tv_sec == 0) && (itimer.it_value.tv_usec == 0)) {
+        itimer.it_value.tv_usec = 10;
+    }
+    MSG_PRINTF(LOG_INFO, "time:%d\n", itimer.it_value.tv_sec);
     setitimer(ITIMER_REAL, &itimer, NULL);
-    sigprocmask(SIG_SETMASK, &oldset, NULL);
+    rt_mutex_unlock(&g_mutex);
     return 0;
 }
 
-void timer_handler (int signo)
+int32_t init_timer(void *arg)
 {
-    switch(signo) {
-    case SIGALRM:
-        callback_timeout();
-        break;
-    }
+    int32_t ret = RT_SUCCESS;
+    ret = rt_mutex_init(&g_mutex);
+    signal(SIGALRM, timer_handler);
+    return ret;
 }
 
-void init_timer(void)
+uint32_t rt_os_alarm(uint32_t seconds)
 {
-    signal(SIGALRM, timer_handler);
+    return alarm(seconds);
 }

@@ -16,7 +16,8 @@
 
 #include "rt_type.h"
 
-int32_t rt_set_timer(int32_t seconds, void *fun);
+int32_t init_timer(void *arg);
 int32_t register_timer(int sec, int usec, void (*action)());
+uint32_t rt_os_alarm(uint32_t seconds);
 
 #endif // __RT_TIMER_H__

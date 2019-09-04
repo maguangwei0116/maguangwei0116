@@ -55,7 +55,7 @@ int qmi_get_elementary_iccid_file(uint8_t *iccid)
             goto out;
         }
         if(resp.read_result_valid) {
-            //get_ascii_data(resp.read_result.content,resp.read_result.content_len,iccid);
+            // get_ascii_data(resp.read_result.content,resp.read_result.content_len,iccid);
         }
     }
 out:
@@ -95,7 +95,7 @@ int qmi_get_elementary_imsi_file(uint8_t *imsi)
             int len;
             if(resp.read_result.content_len > 0) {
                 len = resp.read_result.content[0];
-                //get_ascii_data(&resp.read_result.content[1],len,imsi);
+                // get_ascii_data(&resp.read_result.content[1],len,imsi);
                 strcpy(imsi, imsi + 1);
             }
         }
@@ -104,7 +104,7 @@ out:
     return err;
 }
 
-int qmi_open_channel(uint8_t *aid, uint16_t aid_len, int *channel)
+int qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *channel)
 {
     qmi_client_error_type err;
 
@@ -114,31 +114,31 @@ int qmi_open_channel(uint8_t *aid, uint16_t aid_len, int *channel)
     memset(&resp, 0, sizeof(resp));
     memset(&req, 0, sizeof(req));
 
-    req.slot=1;
-    req.aid_valid=1;
+    req.slot = 1;
+    req.aid_valid = 1;
     req.aid_len = aid_len;
-    memcpy(req.aid,aid,req.aid_len);
+    memcpy(req.aid, aid, req.aid_len);
     QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_LOGICAL_CHANNEL_REQ_V01, req, resp);
     if(err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
             MSG_PRINTF(LOG_ERR, "Failed to open channel\n");
             err = resp.resp.result;
         }
-        if(resp.channel_id_valid) {     //analyse respose
-            *channel=resp.channel_id;
+        if(resp.channel_id_valid) {     // analyse respose
+            *channel = resp.channel_id;
         }
     }
     return err;
 }
 
-int qmi_close_channel(int channel)
+int qmi_close_channel(uint8_t channel)
 {
     qmi_client_error_type err;
 
     uim_logical_channel_req_msg_v01 req = { 0 };
     uim_logical_channel_resp_msg_v01 resp = { 0 };
-    req.slot=1;
-    req.channel_id_valid=1;
+    req.slot = 1;
+    req.channel_id_valid = 1;
     req.channel_id = channel;
 
     QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_LOGICAL_CHANNEL_REQ_V01, req, resp);
@@ -150,14 +150,14 @@ int qmi_close_channel(int channel)
             }
             err = resp.resp.error;
         }
-        if(resp.channel_id_valid) {     //analyse respose
+        if(resp.channel_id_valid) {     // analyse respose
 
         }
     }
     return err;
 }
 
-int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, int channel)
+int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
     qmi_client_error_type err;
     uim_send_apdu_req_msg_v01 req = { 0 };
@@ -165,7 +165,7 @@ int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t
 
     req.slot=1;
     req.apdu_len = data_len;
-    memcpy(req.apdu,data,data_len);
+    memcpy(req.apdu, data, data_len);
     req.apdu[req.apdu_len] = '\0';
     req.channel_id_valid = 1;
     req.channel_id = channel;

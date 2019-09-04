@@ -16,11 +16,15 @@
 #include "dial_up.h"
 #include "rt_timer.h"
 
+#define MAX_WAIT_REGIST_TIME     300
+
 static int32_t g_network_state = 0;
 
 static void network_timer_callback(void)
 {
-    msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
+    if (g_network_state != DSI_STATE_CALL_CONNECTED) {
+        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
+    }
     MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
 }
 
@@ -38,7 +42,7 @@ int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     if (mode == MSG_ALL_SWITCH_CARD) {
         MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
-        register_timer(300, 0 , &network_timer_callback);
+        register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
     }
 }
 

@@ -20,6 +20,9 @@
 
 #define ASN1_LENGTH_1BYTES                      0x81
 #define ASN1_LENGTH_2BYTES                      0x82
+#define ASN1_LENGTH_3BYTES                      0x83
+#define ASN1_LENGTH_4BYTES                      0x84
+
 #define SHARED_PROFILE                          0x30
 #define HASH_CODE                               0x41
 #define FILE_INFO                               0xA0

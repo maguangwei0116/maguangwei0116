@@ -11,6 +11,7 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
+#include "agent_main.h"
 #include "agent_queue.h"
 #include "card_manager.h"
 #include "ipc_socket_client.h"
@@ -19,8 +20,8 @@
 #include "config.h"
 #include "bootstrap.h"
 #include "upload.h"
-
 #include "rt_qmi.h"
+#include "lpa.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
 
@@ -37,6 +38,7 @@ typedef struct _init_obj_t {
 } init_obj_t ;
 
 static volatile int32_t toStop = 0;
+static public_value_list_t g_value_list;
 
 static void cfinish(int32_t sig)
 {
@@ -47,23 +49,36 @@ static void cfinish(int32_t sig)
 
 static int32_t init_system_signal(void *arg)
 {
-    rt_os_signal(RT_SIGINT, cfinish); 
+    rt_os_signal(RT_SIGINT, cfinish);
     return RT_SUCCESS;
+}
+
+static int32_t init_monitor(void *arg)
+{
+    info_vuicc_data_t info;
+    uint16_t len = sizeof(info);
+    rt_os_memset(info.start, 0xFF, sizeof(info.start));
+    info.vuicc_switch = ((public_value_list_t *)arg)->lpa_channel_type;
+    info.share_profile_state = 0;
+    ipc_send_data((const uint8_t *)&info, len, (uint8_t *)&info, &len);
 }
 
 /*
 List your init call here !
-*/
-static const init_obj_t g_init_objs[] = 
+**/
+static const init_obj_t g_init_objs[] =
 {
-    INIT_OBJ(init_system_signal,        NULL), 
+    INIT_OBJ(init_monitor,              (void *)&g_value_list),
+    INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),
+    INIT_OBJ(init_system_signal,        NULL),
+    INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(rt_config_init,            NULL),
-    INIT_OBJ(rt_qmi_init,               NULL),  
-    INIT_OBJ(init_queue,                NULL), 
+    INIT_OBJ(rt_qmi_init,               NULL),
+    INIT_OBJ(init_queue,                NULL),
     INIT_OBJ(init_bootstrap,            NULL),
-    INIT_OBJ(init_card_manager,         NULL), 
-    INIT_OBJ(init_network_detection,    NULL), 
-    INIT_OBJ(init_mqtt,                 NULL),
+    INIT_OBJ(init_card_manager,         NULL),
+    INIT_OBJ(init_network_detection,    NULL),
+//    INIT_OBJ(init_mqtt,                 NULL),
 };
 
 static int32_t agent_init_call(void)
@@ -81,7 +96,6 @@ static int32_t agent_init_call(void)
 
 int32_t main(int32_t argc, int8_t **argv)
 {
-    init_timer();
     agent_init_call();
 
     while (!toStop) {

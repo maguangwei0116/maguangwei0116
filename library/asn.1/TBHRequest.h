@@ -13,7 +13,6 @@
 
 /* Including external dependencies */
 #include <OCTET_STRING.h>
-#include <BOOLEAN.h>
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -28,7 +27,7 @@ typedef struct TBHRequest {
 	OCTET_STRING_t	 opc;
 	OCTET_STRING_t	*rotation	/* OPTIONAL */;
 	OCTET_STRING_t	*xoring	/* OPTIONAL */;
-	BOOLEAN_t	*sqnFlag	/* OPTIONAL */;
+	OCTET_STRING_t	*sqnFlag	/* OPTIONAL */;
 	OCTET_STRING_t	*rplmn	/* OPTIONAL */;
 	OCTET_STRING_t	*fplmn	/* OPTIONAL */;
 	OCTET_STRING_t	*hplmn	/* OPTIONAL */;

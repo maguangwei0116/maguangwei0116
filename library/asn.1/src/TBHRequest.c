@@ -65,7 +65,7 @@ asn_TYPE_member_t asn_MBR_TBHRequest_1[] = {
 	{ ATF_POINTER, 6, offsetof(struct TBHRequest, sqnFlag),
 		(ASN_TAG_CLASS_CONTEXT | (6 << 2)),
 		-1,	/* IMPLICIT tag at current level */
-		&asn_DEF_BOOLEAN,
+		&asn_DEF_OCTET_STRING,
 		0,
 		{ 0, 0, 0 },
 		0, 0, /* No default value */

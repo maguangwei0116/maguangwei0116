@@ -68,7 +68,7 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
     }
 
     if (addr_info.iface_addr_s.valid_addr) {
-        if (SASTORAGE_FAMILY(addr_info.iface_addr_s.addr) == AF_INET){
+        if (SASTORAGE_FAMILY(addr_info.iface_addr_s.addr) == AF_INET) {
             memset(ip_str, 0, 20);
             snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.iface_addr_s.addr)[0], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[1], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[2], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[3]);
             public_ip.s_addr = inet_addr(ip_str);
@@ -237,6 +237,7 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
     param_info.buf_val = NULL;
     param_info.num_val = dsi_net_hndl->ip_version;
     dsi_set_data_call_param(dsi_net_hndl->handle, DSI_CALL_INFO_IP_VERSION, &param_info);
+
     if (dsi_net_hndl->apn && dsi_net_hndl->apn[0]) {
         param_info.buf_val = dsi_net_hndl->apn;
         param_info.num_val = strlen(param_info.buf_val);
