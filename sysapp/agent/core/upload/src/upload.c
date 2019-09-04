@@ -8,6 +8,7 @@
 #include "agent_main.h"
 #include "config.h"
 #include "random.h"
+#include "upload.h"
 
 #include "cJSON.h"
 
@@ -405,6 +406,26 @@ int32_t upload_cmd_info(void)
     return upload_cmd_boot_info("INFO", RT_TRUE);
 }
 
+static const upload_cmd_t *g_upload_start = NULL;
+static const upload_cmd_t *g_upload_end = NULL;
+
+int32_t init_upload_obj(void)
+{
+    const upload_cmd_t *obj = NULL;
+    cJSON *ret;
+    
+    g_upload_start = upload_cmd_get_start();
+    g_upload_end = upload_cmd_get_end();
+
+    MSG_PRINTF(LOG_WARN, "g_upload_start %p, g_upload_end %p ...\r\n", g_upload_start, g_upload_end);
+    for (obj = g_upload_start; obj <= g_upload_end; obj++) {
+        MSG_PRINTF(LOG_WARN, "upload %p, %s ...\r\n", obj, obj->cmd);
+        ret = obj->packer(NULL, 0, NULL);
+    }
+
+    return 0;
+}
+
 int32_t init_upload(void *arg)
 {
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
@@ -416,6 +437,9 @@ int32_t init_upload(void *arg)
     g_push_channel = (const char *)public_value_list->push_channel;
 
     rt_os_sleep(10);
+
+    init_upload_obj();
+    return 0;
     
     upload_cmd_registered(); 
     rt_os_sleep(1);
