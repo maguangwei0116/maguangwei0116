@@ -17,6 +17,7 @@ extern void init_apdu_channel(lpa_channel_type_e channel_mode);
 int init_lpa(void *arg)
 {
     init_apdu_channel(*(lpa_channel_type_e *)arg);
+    return RT_SUCCESS;
 }
 
 int lpa_get_eid(uint8_t *eid)

@@ -15,6 +15,7 @@
 #include "agent_queue.h"
 #include "dial_up.h"
 #include "rt_timer.h"
+#include "agent_main.h"
 
 #define MAX_WAIT_REGIST_TIME     300
 
@@ -40,9 +41,12 @@ static void network_detection_task(void)
 
 int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
+    uint8_t imsi[IMSI_LENGTH + 1];
     if (mode == MSG_ALL_SWITCH_CARD) {
-        MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
         register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
+        rt_os_sleep(10);
+        rt_qmi_get_current_imsi(imsi);
+        MSG_PRINTF(LOG_INFO, "state:%d, imsi:%s\n", g_network_state, imsi);
     }
 }
 
@@ -53,7 +57,6 @@ void network_state(int32_t state)
         register_timer(0, 0 , &network_timer_callback);
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
     }
-    MSG_PRINTF(LOG_INFO, "state:%d\n", g_network_state);
 }
 
 int32_t init_network_detection(void *arg)

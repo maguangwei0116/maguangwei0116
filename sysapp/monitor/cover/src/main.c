@@ -40,7 +40,6 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
         trigegr_regist_reset(card_reset);
         trigegr_regist_cmd(card_cmd);
         trigger_insert_card(1);
-        *rsp_len = 0;
     } else {
         MSG_PRINTF(LOG_INFO, "Receive msg from lpa\r\n");
         softsim_logic_command(1, data, len, rsp, rsp_len);  // msg from lpa
@@ -48,6 +47,7 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
             trigger_swap_card(1);
         }
     }
+    rt_os_memset(data, 0x00, len);
 }
 
 int32_t main(void)
