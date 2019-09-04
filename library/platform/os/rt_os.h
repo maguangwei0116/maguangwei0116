@@ -34,15 +34,15 @@ int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t m
 int32_t rt_send_queue_msg(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg);
 
 int32_t rt_os_memcmp(const void *mem_des, const void *mem_src,int32_t len);
-int32_t rt_os_strcmp(void *mem_des, const void *mem_src);
-int32_t rt_os_strncmp(void *mem_des, const void *mem_src, int32_t len);
-uint32_t rt_os_strlen(void *string);
-int8_t *rt_os_strchr(int8_t *str, const int8_t chr);
-int8_t *rt_os_strstr(int8_t *str1, const int8_t *str2);
+int32_t rt_os_strcmp(const char *mem_des, const char *mem_src);
+int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, int32_t len);
+uint32_t rt_os_strlen(const char *string);
+char *rt_os_strchr(const char *str, int32_t chr);
+char *rt_os_strstr(const char *str1, const char *str2);
 void *rt_os_malloc(uint32_t size);
 void *rt_os_realloc(void *mem, uint32_t size);
 void  rt_os_free(void *mem);
-void *rt_os_memset(void *mem, int8_t value, int32_t len);
+void *rt_os_memset(void *mem, int32_t value, int32_t len);
 void *rt_os_memcpy(void *mem_des, const void *mem_src, int32_t len);
 void *rt_os_strcpy(char* dest, const char *src);
 
