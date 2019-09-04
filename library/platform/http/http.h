@@ -26,13 +26,13 @@
 typedef int (*socket_call_back)(char *p);
 
 typedef enum {
-    HTTP_SUCCESS = 0,
-    HTTP_SYSTEM_CALL_ERROR,
-    HTTP_PARAMETER_ERROR,
-    HTTP_SOCKET_CONNECT_ERROR,
-    HTTP_SOCKET_SEND_ERROR,
-    HTTP_SOCKET_RECV_ERROR,
-    HTTP_RESPOND_ERROR,
+    HTTP_SUCCESS = 0,           // 0
+    HTTP_SYSTEM_CALL_ERROR,     // 1
+    HTTP_PARAMETER_ERROR,       // 2
+    HTTP_SOCKET_CONNECT_ERROR,  // 3
+    HTTP_SOCKET_SEND_ERROR,     // 4
+    HTTP_SOCKET_RECV_ERROR,     // 5
+    HTTP_RESPOND_ERROR,         // 6
 } http_result_e;
 
 http_result_e http_post(const int8_t *url,int8_t *post_str,int8_t *header,socket_call_back cb);

@@ -27,6 +27,7 @@
 #include "rt_type.h"
 #include "md5.h"
 #include "rt_os.h"
+#include "log.h"
 
 #if defined(OPENSSL)
 #include <openssl/ssl.h>
@@ -34,13 +35,13 @@
 
 #include "rt_mqtt_common.h"
 
-#if (0)
-    #define RT_MQTT_COMMAN_DEBUG  TRACE_ERROR
+#if (1)
+    #define RT_MQTT_COMMAN_DEBUG(fmt, arg...)   MSG_PRINTF(LOG_DBG, fmt, ##arg)
 #else
-    #define RT_MQTT_COMMAN_DEBUG
+    #define RT_MQTT_COMMAN_DEBUG(fmt, arg...)   do {} while(0)     
 #endif
 
-REG_info reg_info;
+static REG_info reg_info;
 static char reg_url[40];
 static int reg_port = 8383;
 
@@ -91,7 +92,9 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
             break;
         }
 
+        //RT_MQTT_COMMAN_DEBUG("get host by name 1\r\n");
         struct hostent *host_entry = gethostbyname(hostname);
+        //RT_MQTT_COMMAN_DEBUG("get host by name 2\r\n");
 
         if(NULL == host_entry) {
             break;
@@ -110,7 +113,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         
         RT_MQTT_COMMAN_DEBUG("servaddr.sin_addr:%x\n",servaddr.sin_addr);
         struct timeval timeout;
-        timeout.tv_sec = 10;
+        timeout.tv_sec = 30;
         timeout.tv_usec = 0;
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
             RT_MQTT_COMMAN_DEBUG("setsockopt0 error\n");
@@ -185,7 +188,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
                     temp = strstr(temp,"\r\n");
                 }
                 ret = cb(temp);
-                RT_MQTT_COMMAN_DEBUG("cb ret£º%d\n",ret);
+                RT_MQTT_COMMAN_DEBUG("cb ret:%d\n",ret);
                 break;
             } else {
                 RT_MQTT_COMMAN_DEBUG("ret:%d\n",ret);
@@ -193,7 +196,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
                 break;
             }
         } else {
-            RT_MQTT_COMMAN_DEBUG("ret£º%d\n",ret);
+            RT_MQTT_COMMAN_DEBUG("ret:%d\n",ret);
             ret = -1;
             break;
         }
@@ -329,27 +332,29 @@ static int reg_cb1(const char *json_data)
 int MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_info *info)
 {
     int ret;
+    int json_data_len = 1024;
     char *json_data = NULL;
 
-    if (!appkey || !json_data) {
+    if (!appkey) {
         ret = -1;
         goto exit_entry;
     }
 
-    json_data = (char *)rt_os_malloc(1024);
+    json_data = (char *)rt_os_malloc(json_data_len);
     if (!json_data) {
         ret = -2;
         goto exit_entry;
     }
     
     if (deviceid == NULL) {
-        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\", \"p\":4}", appkey);
+        snprintf(json_data, json_data_len, "{\"a\": \"%s\", \"p\":4}", appkey);
     } else {
-        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
+        snprintf(json_data, json_data_len, "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
     }
     
     ret = http_post_json(json_data, reg_url, reg_port, "/device/reg/", (PCALLBACK)reg_cb);
     if (ret < 0) {
+        MSG_PRINTF(LOG_ERR, "http post json yunba error, %s:%d, ret=%d\r\n", reg_url, reg_port, ret);
         ret = -3;
         goto exit_entry;
     }
@@ -401,7 +406,7 @@ int rt_mqtt_setup_with_appkey(char *appkey, mqtt_info *info)
     int ret;
 
     if (appkey == NULL){
-        RT_MQTT_COMMAN_DEBUG("appkey is NULL\n");
+        MSG_PRINTF(LOG_ERR, "appkey is NULL\n");
         return -1;
     }
 
@@ -410,10 +415,11 @@ int rt_mqtt_setup_with_appkey(char *appkey, mqtt_info *info)
     } else {
         snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", appkey, info->device_id, NULL, info->last_connect_status);
     }
-    
+
+    MSG_PRINTF(LOG_DBG, "reg_url:%s, reg_port:%d\r\n", reg_url, reg_port);
     ret = http_post_json(json_data, reg_url, reg_port, "/api/v1/ticket", (PCALLBACK)reg_cb1);
     if (ret < 0){
-        RT_MQTT_COMMAN_DEBUG("http_post_json error, ret=%d\r\n", ret);
+        MSG_PRINTF(LOG_ERR, "http_post_json error, ret=%d\r\n", ret);
         return -1;
     }
     strcpy(info->client_id, reg_info.client_id);
@@ -422,6 +428,12 @@ int rt_mqtt_setup_with_appkey(char *appkey, mqtt_info *info)
     strcpy(info->rt_channel, reg_info.rt_channel);
     strcpy(info->ticket_server, reg_info.ticket_server);
     strcpy(info->rt_url, reg_info.rt_url);
+    MSG_PRINTF(LOG_DBG, "client_id     : %s\r\n", info->client_id);
+    MSG_PRINTF(LOG_DBG, "username      : %s\r\n", info->username);
+    MSG_PRINTF(LOG_DBG, "password      : %s\r\n", info->password);
+    MSG_PRINTF(LOG_DBG, "rt_channel    : %s\r\n", info->rt_channel);
+    MSG_PRINTF(LOG_DBG, "ticket_server : %s\r\n", info->ticket_server);
+    MSG_PRINTF(LOG_DBG, "rt_url        : %s\r\n", info->rt_url);
     
     return 0;
 }

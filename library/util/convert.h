@@ -35,5 +35,7 @@ void swap_nibble(uint8_t *buf, uint16_t swap_cnt);
 void pad_F(char *raw_string, char *target, uint8_t size);
 int hexstring2bytes(const char *hextring, uint8_t *bytes, uint16_t *length);
 int bytes2hexstring(const uint8_t *bytes, uint16_t length, char *hextring);
+rt_bool strncpy_case_insensitive(int8_t *src,int8_t *obj,int16_t len);
+void bytestring_to_charstring(int8_t *bytestring,int8_t *charstring,int16_t length);
 
 #endif // __CONVERT_H__

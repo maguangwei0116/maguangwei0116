@@ -39,5 +39,5 @@ typedef enum MSG_MODE {
 
 int32_t init_queue(void *arg);
 int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len);
-int32_t msg_send_upload_queue(void *buffer, int32_t len);
+int32_t msg_send_upload_queue(const char *host_addr, int32_t port, void *cb, void *buffer, int32_t len);
 #endif // __AGENT_QUEUE_H__

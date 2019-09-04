@@ -31,7 +31,7 @@ typedef enum LOG_LEVE_FLAG {
     LOG_NO_LEVE_PRINTF
 } log_leve_flag_e;
 
-int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const int8_t *msg, ...);
+int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const char *msg, ...);
 
 #define __FILENAME__            (strrchr("/"__FILE__, '/') + 1)
 #define ARRAY_PRINTF(tag, array, len)                                            \
