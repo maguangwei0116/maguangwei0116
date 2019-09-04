@@ -241,9 +241,6 @@ build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_pro
     rt_qmi_get_mcc_mnc(&mcc, NULL);
     for (i = 0; i < ARRAY_SIZE(rt_plmn); ++i) {
         if (mcc == rt_plmn[i].mcc) {
-            if (rt_os_strlen(rt_plmn[i].rplmn) == 5) {
-
-            }
             bootstrap_request->tbhRequest.rplmn = OCTET_STRING_new_fromBuf(
                     &asn_DEF_TBHRequest, rt_plmn[i].rplmn, rt_os_strlen(rt_plmn[i].rplmn));
             // bootstrap_request->tbhRequest.hplmn = OCTET_STRING_new_fromBuf(
