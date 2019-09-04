@@ -33,6 +33,7 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
     if (ret == -1) {
         MSG_PRINTF(LOG_ERR, "send data failed\n");
     }
+
     *rsp_len = socket_recv(socket_id, rsp, 1024);
     MSG_INFO_ARRAY("IPC RSP:", rsp, *rsp_len);
 end:

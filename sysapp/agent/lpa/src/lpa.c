@@ -13,6 +13,11 @@
 
 #define BUFFER_SIZE                10*1024
 extern uint8_t *g_proxy_server_url;
+extern void init_apdu_channel(lpa_channel_type_e channel_mode);
+int init_lpa(void *arg)
+{
+    init_apdu_channel(*(lpa_channel_type_e *)arg);
+}
 
 int lpa_get_eid(uint8_t *eid)
 {

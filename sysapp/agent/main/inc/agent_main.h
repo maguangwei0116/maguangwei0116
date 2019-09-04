@@ -17,9 +17,14 @@
 #include "rt_type.h"
 
 typedef struct INFO_VUICC_DATA {
-　　int16_t start; // Agent message flag, 0xFFFF
-　　int8_t vuicc_switch; // lpa_channel_type_e, IPC used for vuicc
-   int8_t share_profile_state; // 0:not damage， 1:damaged
+    uint8_t start[7]; // Agent message flag, 0xFFFF
+    int8_t vuicc_switch; // lpa_channel_type_e, IPC used for vuicc
+    int8_t share_profile_state; // 0:not damage， 1:damaged
 } info_vuicc_data_t;
+
+typedef struct PUBLIC_VALUE_LIST {
+    int8_t lpa_channel_type;
+
+} public_value_list_t;
 
 #endif // __AGENT_MAIN_H__

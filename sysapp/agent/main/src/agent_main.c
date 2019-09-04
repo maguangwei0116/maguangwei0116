@@ -11,6 +11,7 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
+#include "agent_main.h"
 #include "agent_queue.h"
 #include "card_manager.h"
 #include "ipc_socket_client.h"
@@ -36,6 +37,7 @@ typedef struct _init_obj_t {
 } init_obj_t ;
 
 static volatile int32_t toStop = 0;
+static public_value_list_t g_value_list;
 
 static void cfinish(int32_t sig)
 {
@@ -52,7 +54,12 @@ static int32_t init_system_signal(void *arg)
 
 static int32_t init_monitor(void *arg)
 {
-
+    info_vuicc_data_t info;
+    uint16_t len = sizeof(info);
+    rt_os_memset(info.start, 0xFF, sizeof(info.start));
+    info.vuicc_switch = ((public_value_list_t *)arg)->lpa_channel_type;
+    info.share_profile_state = 0;
+    ipc_send_data((const uint8_t *)&info, len, (uint8_t *)&info, &len);
 }
 
 /*
@@ -60,6 +67,8 @@ List your init call here !
 **/
 static const init_obj_t g_init_objs[] =
 {
+    INIT_OBJ(init_monitor,              (void *)&g_value_list),
+    INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),
     INIT_OBJ(init_system_signal,        NULL),
     INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(rt_config_init,            NULL),
