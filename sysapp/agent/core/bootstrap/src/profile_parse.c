@@ -206,8 +206,7 @@ static int32_t update_hash(uint8_t *buf, int32_t profile_len, uint8_t *profile_h
     return RT_SUCCESS;
 }
 
-static int32_t
-build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index, BOOLEAN_t sequential)
+static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index, BOOLEAN_t sequential)
 {
     BootstrapRequest_t *bootstrap_request = NULL;
     asn_dec_rval_t dc;
@@ -271,7 +270,7 @@ build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_pro
     MSG_INFO_ARRAY("Current profile:", g_buf, g_buf_size);
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, g_buf, g_buf_size);
     ret = RT_SUCCESS;
-    end:
+end:
     rt_os_free(g_buf);
     g_buf = NULL;
     return ret;

@@ -17,6 +17,7 @@ extern void init_apdu_channel(lpa_channel_type_e channel_mode);
 int init_lpa(void *arg)
 {
     init_apdu_channel(*(lpa_channel_type_e *)arg);
+    return RT_SUCCESS;
 }
 
 int lpa_get_eid(uint8_t *eid)
@@ -100,7 +101,7 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
     ProfileInfoListResponse_t *rsp = NULL;
     ProfileInfo_t **p = NULL;
     int i;
-    int8_t channel;
+    uint8_t channel;
 
     open_channel(&channel);
     if (num == NULL) {

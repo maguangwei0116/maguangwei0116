@@ -96,6 +96,7 @@ static int32_t agent_init_call(void)
 
 int32_t main(int32_t argc, int8_t **argv)
 {
+    g_value_list.lpa_channel_type = LPA_CHANNEL_BY_QMI;
     agent_init_call();
 
     while (!toStop) {

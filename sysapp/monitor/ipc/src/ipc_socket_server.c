@@ -15,6 +15,7 @@
 #include "socket.h"
 
 #define THE_MAX_CLIENT_NUM  2
+#define THT_BUFFER_LEN      512
 
 typedef uint16_t (*ipc_callback)(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
 ipc_callback ipc_cmd;
@@ -29,8 +30,8 @@ int32_t ipc_socket_server(void)
     int32_t socket_id = -1;
     int32_t ret = RT_ERROR;
     int32_t new_fd = -1;
-    uint8_t buffer[512];
-    uint8_t rsp[512];
+    uint8_t buffer[THT_BUFFER_LEN];
+    uint8_t rsp[THT_BUFFER_LEN];
     uint16_t rsp_len = 0;
     uint16_t rcv_len;
 
@@ -53,10 +54,11 @@ int32_t ipc_socket_server(void)
         if (new_fd == -1) {
             break;
         }
-        rcv_len = socket_recv(new_fd, buffer, 1024);
+        rcv_len = socket_recv(new_fd, buffer, THT_BUFFER_LEN);
         ipc_cmd(buffer, rcv_len, rsp, &rsp_len);
         socket_send(new_fd, rsp, rsp_len);
         close(new_fd);
+        rt_os_memset(buffer, 0x00, THT_BUFFER_LEN);
     }
 end:
     socket_close(socket_id);
