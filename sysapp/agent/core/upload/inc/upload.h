@@ -7,10 +7,6 @@ extern "C" {
 #endif
 
 #include "http.h"
-
-int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len);
-int32_t init_upload(void *arg);
-
 #include "rt_type.h"
 #include "cJSON.h"
 
@@ -35,7 +31,11 @@ typedef struct _upload_event_t {
 UPLOAD_EVENT_OBJ_EXTERN_HERE(START);
 UPLOAD_EVENT_OBJ_EXTERN_HERE(END);
 
-int32_t upload_msg_report(const char *event, const char *tran_id, int32_t status); // "BOOT"  "INFO"  "NO_CERT"
+int32_t upload_event_report(const char *event, const char *tran_id, int32_t status); // "BOOT"  "INFO"  "NO_CERT"
+
+int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len);
+
+int32_t init_upload(void *arg);
 
 #ifdef __cplusplus
 }

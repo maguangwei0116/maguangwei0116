@@ -192,11 +192,11 @@ static void upload_get_random_tran_id(char *tran_id, uint16_t size)
     "version": 0,
     "timestamp": 1566284086,
     "topic": "89086001202200101018000001017002",
-    "payload": {
+    "payload": \"" {
         "event": "INFO",
         "status": 0,
         "content": {}
-     }
+     } \""
 }
 #endif
 
@@ -281,135 +281,6 @@ exit_entry:
     return !ret ? upload : NULL;
 }
 
-#if 0
-int32_t upload_cmd_registered(void)
-{
-    int32_t ret;
-    int32_t status = 0;
-    cJSON *upload = NULL;
-    cJSON *content = NULL;    
-    char *upload_json_pag = NULL;
-    const char *event = "REGISTERED";
-    const char *pushChannel = (const char *)g_push_channel;
-
-    MSG_PRINTF(LOG_WARN, "\n----------------->%s\n", event);
-    
-    content = cJSON_CreateObject();
-    if (!content) {
-        MSG_PRINTF(LOG_WARN, "The content is error\n");
-        ret = -1;
-        goto exit_entry;
-    }
-
-    CJSON_ADD_NEW_STR_OBJ(content, pushChannel);
-    
-    upload = upload_packet_all(NULL, event, status, content);
-    upload_json_pag = (char *)cJSON_PrintUnformatted(upload); 
-    MSG_PRINTF(LOG_WARN, "\nupload_json_pag: %s\n", upload_json_pag);
-    ret = upload_send_request((const char *)upload_json_pag);
-
-exit_entry:
-
-    if (upload != NULL) {
-        cJSON_Delete(upload);
-    }
-
-    if (upload_json_pag) {
-        rt_os_free(upload_json_pag);
-    }
-
-    return ret;
-}
-
-static int32_t upload_cmd_boot_info(const char *str_cmd, rt_bool only_profile_network)
-{
-    int32_t ret = 0;
-    int32_t status = 0;
-    cJSON *upload = NULL;
-    cJSON *content = NULL;
-    cJSON *deviceInfo = NULL;
-    cJSON *profiles = NULL;
-    cJSON *network = NULL;
-    cJSON *software = NULL;
-    char *upload_json_pag = NULL;
-    const char *event = str_cmd;
-
-    content = cJSON_CreateObject();
-    if (!content) {
-        MSG_PRINTF(LOG_WARN, "The content is error\n");
-    }
-
-    if (!only_profile_network) {
-        deviceInfo = cJSON_CreateObject();
-        if (!deviceInfo) {
-            MSG_PRINTF(LOG_WARN, "The deviceInfo is error\n");
-        }
-    }
-
-    profiles = cJSON_CreateObject();
-    if (!profiles) {
-        MSG_PRINTF(LOG_WARN, "The profiles is error\n");
-    }
-
-    network = cJSON_CreateObject();
-    if (!network) {
-        MSG_PRINTF(LOG_WARN, "The network is error\n");
-    }
-
-    if (!only_profile_network) {
-        software = cJSON_CreateObject();
-        if (!software) {
-            MSG_PRINTF(LOG_WARN, "The software is error\n");
-        }
-    }
-
-    MSG_PRINTF(LOG_WARN, "\n----------------->%s\n", event);
-    
-    content = cJSON_CreateObject();
-    if (!content) {
-        MSG_PRINTF(LOG_WARN, "The content is error\n");
-        ret = -1;
-        goto exit_entry;
-    }
-
-    if (!only_profile_network) {
-        CJSON_ADD_STR_OBJ(content, deviceInfo);
-    }
-    CJSON_ADD_STR_OBJ(content, profiles);
-    CJSON_ADD_STR_OBJ(content, network);
-    if (!only_profile_network) {
-        CJSON_ADD_STR_OBJ(content, software);
-    }
-
-    upload = upload_packet_all(NULL, event, status, content);
-    upload_json_pag = (char *)cJSON_PrintUnformatted(upload);    
-    ret = upload_send_request((const char *)upload_json_pag);
-
-exit_entry:
-
-    if (upload != NULL) {
-        cJSON_Delete(upload);
-    }
-
-    if (upload_json_pag) {
-        rt_os_free(upload_json_pag);
-    }
-
-    return ret;
-}
-
-int32_t upload_cmd_boot(void)
-{
-    return upload_cmd_boot_info("BOOT", RT_FALSE);
-}
-
-int32_t upload_cmd_info(void)
-{
-    return upload_cmd_boot_info("INFO", RT_TRUE);
-}
-
-#endif
-
 static int32_t init_upload_obj(void)
 {
     const upload_event_t *obj = NULL;
@@ -424,7 +295,7 @@ static int32_t init_upload_obj(void)
     return 0;
 }
 
-int32_t upload_msg_report(const char *event, const char *tran_id, int32_t status)
+int32_t upload_event_report(const char *event, const char *tran_id, int32_t status)
 {
     const upload_event_t *obj = NULL;
 
@@ -470,9 +341,10 @@ int32_t init_upload(void *arg)
     rt_os_sleep(10);
 
     init_upload_obj();
-    upload_msg_report("REGISTERED", NULL, 0);
-    upload_msg_report("BOOT", NULL, 0);
-    upload_msg_report("INFO", NULL, 0);
+    
+    upload_event_report("REGISTERED", NULL, 0);
+    upload_event_report("BOOT", NULL, 0);
+    upload_event_report("INFO", NULL, 0);
     
     return 0;
     

@@ -54,6 +54,11 @@ vpath %.c ./lpa
 vpath %.c ./core/ota
 vpath %.c ./core/personalise
 
+############################################################################
+# Never adjustment order of these files
+SRC-y 			                        += ./core/upload/src/upload_null_start.c
+############################################################################
+
 # Config your resource file list by += xxx.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/profile_parse.c
@@ -75,18 +80,21 @@ SRC-y 			                        += src/apdu.c
 SRC-y 			                        += ./core/random/src/random.c
 SRC-y 			                        += ./core/ota/src/upgrade.c
 
-# Add your upload-xxx cmd between upload_null_start.c and upload_null_end.c
+# Add your upload-xxx cmd here
 SRC-y 			                        += ./core/upload/src/upload.c
-SRC-y 			                        += ./core/upload/src/upload_null_start.c
 SRC-y 			                        += ./core/upload/src/upload_registered.c
 SRC-y 			                        += ./core/upload/src/upload_boot.c
 SRC-y 			                        += ./core/upload/src/upload_info.c
-SRC-n 			                        += ./core/personalise/src/upload_no_cert.c
-SRC-y 			                        += ./core/upload/src/upload_null_end.c
+SRC-y 			                        += ./core/personalise/src/upload_no_cert.c
 
 # Add your upload-xxx cmd between downstream_null_start.c and downstream_null_end.c
 SRC-y 			                        += ./core/downstream/src/downstream.c
 SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
+
+############################################################################
+# Never adjustment order of these files
+SRC-y 			                        += ./core/upload/src/upload_null_end.c
+############################################################################
 
 # Config your include file path by += xxx-inc
 INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)		+= ./core/bootstrap/
