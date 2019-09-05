@@ -347,14 +347,5 @@ int32_t init_upload(void *arg)
     upload_event_report("INFO", NULL, 0);
     
     return 0;
-    
-    upload_cmd_registered(); 
-    rt_os_sleep(1);
-    upload_cmd_boot();
-    rt_os_sleep(1);
-    upload_cmd_info();
-    rt_os_sleep(1);
-
-    return 0;
 }
 
