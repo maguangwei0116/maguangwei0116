@@ -175,9 +175,10 @@ int32_t msg_send_upload_queue(const char *host_addr, int32_t port, void *cb, voi
     que_t.msg_typ   = UPLOAD_QUEUE_MSG_TYPE;
     que_t.port      = port;
     que_t.cb        = cb;
-    que_t.data_buf  = (void *)rt_os_malloc(len);
+    que_t.data_len  = len;
+    que_t.data_buf  = (void *)rt_os_malloc(que_t.data_len + 1);
     rt_os_memcpy(que_t.data_buf, buffer, len);
-    que_t.data_len = len;
+    *(((uint8_t *)que_t.data_buf) + len) = '\0';
     len = sizeof(upload_que_t) - sizeof(long);
     MSG_PRINTF(LOG_INFO, "len:%d, %p\n", len, que_t.data_buf);
     ret = rt_send_queue_msg(g_upload_queue_id, (void *)&que_t, len, 0);
