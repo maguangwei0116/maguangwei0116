@@ -33,7 +33,7 @@ typedef enum LOG_LEVE_FLAG {
 } log_leve_flag_e;
 
 extern int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const char *msg, ...);
-extern void    hexdump(const char *title, const void *data, unsigned int len);
+extern void    hexdump(const char *file, int32_t line, const char *title, const void *data, unsigned int len);
 
 #define __FILENAME__            (strrchr("/"__FILE__, '/') + 1)
 #define ARRAY_PRINTF(tag, array, len)                                            \
@@ -49,6 +49,6 @@ extern void    hexdump(const char *title, const void *data, unsigned int len);
 
 #define MSG_INFO_ARRAY(tag, array, len)         ARRAY_PRINTF(tag, array, len)
 #define MSG_PRINTF(LOG_LEVE, format,...)        write_log_fun(LOG_LEVE, LOG_HAVE_LEVE_PRINTF,"[ %d %s ] "format, __LINE__, __FILENAME__, ##__VA_ARGS__)
-#define MSG_HEXDUMP(title, data, len)           hexdump(title, data, len)
+#define MSG_HEXDUMP(title, data, len)           hexdump(__FILE__, __LINE__, title, data, len)
 
 #endif // __LOG_H__

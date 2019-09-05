@@ -120,7 +120,7 @@ int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const char *ms
     return 0;
 }
 
-void hexdump(const char *title, const void *data, unsigned int len)
+void hexdump(const char *file, int32_t line, const char *title, const void *data, unsigned int len)
 {
     #if 1
     char str[160], octet[10];
@@ -132,7 +132,7 @@ void hexdump(const char *title, const void *data, unsigned int len)
         return;
     }
 
-    MSG_PRINTF(LOG_INFO, "%s (%d bytes):\r\n", title, len);
+    MSG_PRINTF(LOG_INFO, "[%s, %d] %s (%d bytes):\r\n", file, line, title, len);
     MSG_PRINTF(LOG_INFO, "%s\r\n", dimm);
     MSG_PRINTF(LOG_INFO, "| Offset  : 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F   0123456789ABCDEF |\r\n");
     MSG_PRINTF(LOG_INFO, "%s\r\n", dimm);
