@@ -68,7 +68,7 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
     }
 
     if (addr_info.iface_addr_s.valid_addr) {
-        if (SASTORAGE_FAMILY(addr_info.iface_addr_s.addr) == AF_INET){
+        if (SASTORAGE_FAMILY(addr_info.iface_addr_s.addr) == AF_INET) {
             memset(ip_str, 0, 20);
             snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.iface_addr_s.addr)[0], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[1], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[2], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[3]);
             public_ip.s_addr = inet_addr(ip_str);

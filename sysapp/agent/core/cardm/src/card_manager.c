@@ -22,6 +22,7 @@ typedef struct {
     profile_info_t info[THE_MAX_CARD_NUM];
     uint8_t num;
 } info_t;
+
 static info_t g_p_info;
 
 static int32_t card_enable_profile(const int8_t *iccid)
@@ -33,7 +34,7 @@ static int32_t card_enable_profile(const int8_t *iccid)
             if (g_p_info.info[ii].state == 0) {
                 ret = lpa_enable_profile(iccid);
                 if (ret != RT_SUCCESS) {
-                    MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n",ret);
+                    MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n", ret);
                 }
             } else {
                 ret = 2;
@@ -79,6 +80,11 @@ int32_t init_card_manager(void *arg)
     return ret;
 }
 
+static int32_t card_deal_mqtt_msg(const uint8_t *buf, int32_t len)
+{
+
+}
+
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t ret = RT_ERROR;
@@ -92,6 +98,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             ret = card_load_cert(buf, len);
             break;
         case MSG_CARD_FROM_MQTT:
+            ret = card_deal_mqtt_msg(buf, len);
             break;
         case MSG_NETWORK_DISCONNECTED:
             ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);

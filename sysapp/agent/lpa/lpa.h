@@ -14,8 +14,7 @@ typedef struct profile_info {
     uint8_t class;  // 0 test, 1 provisioning, 2 operational
     uint8_t state;  // 0 disabled, 1 enabled
 } profile_info_t;
-
-int lpa_init(void *fun, void *arg);
+int init_lpa(void *arg);
 int lpa_get_eid(uint8_t *eid);
 int lpa_get_profile_info(profile_info_t *pi, uint8_t *num);
 int lpa_get_eid_list(uint8_t (*eid_list)[33]);

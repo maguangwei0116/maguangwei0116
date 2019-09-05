@@ -100,8 +100,8 @@ static void upload_queue_task(void)
 {
     upload_que_t que_t;
     int32_t ret;
-    int32_t len = sizeof(upload_que_t)-sizeof(long);
-    
+    int32_t len = sizeof(upload_que_t) - sizeof(long);
+	
     while (1) {
         rt_os_memset(&que_t, 0, sizeof(upload_que_t));
         if (rt_receive_queue_msg(g_upload_queue_id, &que_t, len, UPLOAD_QUEUE_MSG_TYPE, 0) == 0) {

@@ -16,7 +16,13 @@ const static uint8_t g_close_channel_cmd[] = {0x00, 0x70, 0x80, 0x01, 0x00};
 const static uint8_t euicc_aid[] = {0xA0, 0x00, 0x00, 0x05, 0x59, 0x10, 0x10, 0xFF,
                                     0xFF, 0xFF, 0xFF, 0x89, 0x00, 0x00, 0x01, 0x00};
 
-static lpa_channel_type_e g_channel_mode = LPA_CHANNEL_BY_QMI;
+static lpa_channel_type_e g_channel_mode = LPA_CHANNEL_BY_IPC;
+
+void init_apdu_channel(lpa_channel_type_e channel_mode)
+{
+    g_channel_mode = channel_mode;
+}
+
 static uint16_t get_sw(uint8_t *rsp, uint16_t len)
 {
     uint16_t sw = 0;

@@ -142,7 +142,7 @@ void rt_os_free(void *mem)
     mem = NULL;
 }
 
-void *rt_os_memset(void *mem, int8_t value, int32_t len)
+void *rt_os_memset(void *mem, int32_t value, int32_t len)
 {
     if (NULL == mem) {
         return NULL;
