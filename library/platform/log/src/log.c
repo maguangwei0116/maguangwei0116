@@ -26,6 +26,7 @@
 
 static int32_t g_file_fd = -1;
 static int32_t g_log_printf_type = LOG_PRINTF_TERMINAL;
+static int32_t g_log_level = LOG_DBG;
 
 int32_t log_file(void)
 {
@@ -85,6 +86,10 @@ int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const char *ms
     int32_t len = 0;
     va_list vl_list;
 
+    if (leve > g_log_level) {
+        return -1;
+    }
+
     if (leve_flag == LOG_HAVE_LEVE_PRINTF) {
         switch(leve) {
             case LOG_ERR:
@@ -122,6 +127,10 @@ void hexdump(const char *title, const void *data, unsigned int len)
     int ofs, i, k, d;
     const unsigned char *buf = (const unsigned char *)data;
     const char dimm[] = "+------------------------------------------------------------------------------+";
+
+    if (g_log_level < LOG_INFO) {
+        return;
+    }
 
     MSG_PRINTF(LOG_INFO, "%s (%d bytes):\r\n", title, len);
     MSG_PRINTF(LOG_INFO, "%s\r\n", dimm);

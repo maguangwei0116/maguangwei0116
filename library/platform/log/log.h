@@ -18,7 +18,8 @@ typedef enum LOG_LEVE {
     LOG_ERR = 0,
     LOG_WARN,
     LOG_DBG,
-    LOG_INFO
+    LOG_INFO,
+    LOG_NONE,
 } log_leve_e;
 
 typedef enum LOG_MODE {
