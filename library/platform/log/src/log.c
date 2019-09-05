@@ -26,7 +26,7 @@
 
 static int32_t g_file_fd = -1;
 static int32_t g_log_printf_type = LOG_PRINTF_TERMINAL;
-static int32_t g_log_level = LOG_DBG;
+static int32_t g_log_level = LOG_INFO;
 
 int32_t log_file(void)
 {
