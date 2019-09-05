@@ -61,6 +61,8 @@ typedef struct cJSON_Hooks {
       void (*free_fn)(void *ptr);
 } cJSON_Hooks;
 
+extern void (*cJSON_free)(void *ptr);
+
 /* Supply malloc, realloc and free functions to cJSON */
 extern void cJSON_InitHooks(cJSON_Hooks* hooks);
 
