@@ -16,10 +16,12 @@
 
 #include "rt_type.h"
 #include "personalise.h"
+#include "device_info.h"
 
-int32_t personalise_main(void)
+int32_t init_personalise(void *arg)
 {
-    return 0;
+    init_device_info(arg);
+    return RT_SUCCESS;
 }
 
 #endif

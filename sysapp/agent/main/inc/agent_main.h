@@ -30,8 +30,4 @@ typedef struct INFO_VUICC_DATA {
     int8_t share_profile_state; // 0:not damage， 1:damaged
 } info_vuicc_data_t;
 
-typedef struct PUBLIC_VALUE_LIST {
-    int8_t lpa_channel_type;
-} public_value_list_t;
-
 #endif // __AGENT_MAIN_H__

@@ -14,22 +14,15 @@
 #include "card_manager.h"
 #include "agent_queue.h"
 #include "msg_process.h"
-#include "lpa.h"
+#include "agent_main.h"
 
-#define THE_MAX_CARD_NUM         20
-#define THE_ICCID_LENGTH         10
-
-typedef struct {
-    profile_info_t info[THE_MAX_CARD_NUM];
-    uint8_t num;
-} info_t;
-
-static info_t g_p_info;
+static card_info_t g_p_info;
 
 static int32_t card_enable_profile(const int8_t *iccid)
 {
     int32_t ret = RT_ERROR;
     int32_t ii = 0;
+
     for (ii = 0; ii < g_p_info.num; ii++) {
         if (rt_os_strncmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
             if (g_p_info.info[ii].state == 0) {
@@ -68,10 +61,9 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 
 int32_t init_card_manager(void *arg)
 {
-    uint8_t eid[32];
     int32_t ret = RT_ERROR;
 
-    lpa_get_eid(eid);
+    lpa_get_eid(g_p_info.eid);
     rt_os_sleep(1);
     ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
@@ -80,7 +72,7 @@ int32_t init_card_manager(void *arg)
             msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
         }
     }
-
+    ((public_value_list_t *)arg)->card_info = &g_p_info;
     return ret;
 }
 

@@ -59,6 +59,7 @@ SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/profile_parse.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c
 SRC-y 		                            += $(wildcard ./core/mqtt/src/*.c)
 SRC-y 		                            += src/config.c
 SRC-y 			                        += src/agent_main.c

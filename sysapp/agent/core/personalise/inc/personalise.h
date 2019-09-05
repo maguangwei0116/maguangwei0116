@@ -14,6 +14,6 @@
 #ifndef __PERSONALISE_H__
 #define __PERSONALISE_H__
 
-
+int32_t init_personalise(void *arg);
 
 #endif // __PERSONALISE_H__

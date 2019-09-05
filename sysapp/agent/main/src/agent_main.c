@@ -19,6 +19,7 @@
 #include "rt_mqtt.h"
 #include "config.h"
 #include "bootstrap.h"
+#include "personalise.h"
 #include "upload.h"
 #include "rt_qmi.h"
 #include "lpa.h"
@@ -76,8 +77,9 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(rt_qmi_init,               NULL),
     INIT_OBJ(init_queue,                NULL),
     INIT_OBJ(init_bootstrap,            NULL),
-    INIT_OBJ(init_card_manager,         NULL),
+    INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    NULL),
+    INIT_OBJ(init_personalise,          (void *)&g_value_list),
 //    INIT_OBJ(init_mqtt,                 NULL),
 };
 
@@ -98,7 +100,7 @@ int32_t main(int32_t argc, int8_t **argv)
 {
     g_value_list.lpa_channel_type = LPA_CHANNEL_BY_QMI;
     agent_init_call();
-
+    MSG_PRINTF(LOG_INFO, "Device id:%s\n", g_value_list.device_info->device_id);
     while (!toStop) {
         rt_os_sleep(3);
     }
