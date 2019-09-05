@@ -49,7 +49,11 @@ static int cJSON_strcasecmp(const char *s1,const char *s2)
 }
 
 static void *(*cJSON_malloc)(size_t sz) = malloc;
+#if 0
 static void (*cJSON_free)(void *ptr) = free;
+#else
+void (*cJSON_free)(void *ptr) = free;
+#endif
 
 static char* cJSON_strdup(const char* str)
 {
