@@ -57,6 +57,7 @@ vpath %.c ./core/personalise
 ############################################################################
 # Never adjustment order of these files
 SRC-y 			                        += ./core/upload/src/upload_null_start.c
+SRC-y 			                        += ./core/downstream/src/downstream_null_start.c
 ############################################################################
 
 # Config your resource file list by += xxx.c
@@ -87,13 +88,14 @@ SRC-y 			                        += ./core/upload/src/upload_boot.c
 SRC-y 			                        += ./core/upload/src/upload_info.c
 SRC-y 			                        += ./core/personalise/src/upload_no_cert.c
 
-# Add your upload-xxx cmd between downstream_null_start.c and downstream_null_end.c
+# Add your downstream-xxx cmd here
 SRC-y 			                        += ./core/downstream/src/downstream.c
 SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
 
 ############################################################################
 # Never adjustment order of these files
 SRC-y 			                        += ./core/upload/src/upload_null_end.c
+SRC-y 			                        += ./core/downstream/src/downstream_null_end.c
 ############################################################################
 
 # Config your include file path by += xxx-inc
