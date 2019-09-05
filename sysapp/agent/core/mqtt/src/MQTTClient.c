@@ -1563,7 +1563,7 @@ int MQTTClient_publish_json(MQTTClient handle, char* topicName, cJSON *data)
         int payloadlen = strlen(payload);
         ret = MQTTClient_dopublish(handle, topicName, payloadlen, payload, qos, retained, NULL);
 
-        free(payload);
+        cJSON_free(payload);
     }
 
     return ret;

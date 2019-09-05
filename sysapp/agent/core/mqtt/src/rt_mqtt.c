@@ -94,7 +94,7 @@ void msg_parse(int8_t *message, int32_t len)
 {
     MSG_PRINTF(LOG_WARN, "mqtt recv msg (%d bytes): %s\r\n", len, message);
 
-    downstram_msg_parse((const char *)message);
+    downstream_msg_handle((const char *)message);
 }
 
 //本地缓存之前的从adapter获取的ticket server
@@ -143,7 +143,7 @@ static rt_bool save_ticket_server(mqtt_info *opts)
 exit_entry:
     
     if (save_info) {
-        rt_os_free(save_info);
+        cJSON_free(save_info);
     }
     if (obj) {
         cJSON_Delete(obj);
@@ -608,7 +608,7 @@ static void mqtt_process_task(void)
                     MSG_PRINTF(LOG_WARN, "alias is error\n");
                 }
 
-#if 0
+#if 1
                 //如果agent的topic还未订阅，订阅agent
                 if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) && 
                         (MQTTClient_subscribe(g_mqtt_param.client, "agent", 1) == 0)) {

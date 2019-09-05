@@ -234,7 +234,7 @@ static int rt_reg_cb(const char *json_data)
     str = cJSON_Print(root);
     if (str) {
         RT_MQTT_COMMAN_DEBUG("%s\n",str);
-        rt_os_free(str);
+        cJSON_free(str);
     }
     
     if (root) {
@@ -454,7 +454,7 @@ static size_t rt_get_broker_cb(const char *json_data)
     root = cJSON_Parse(buf);    
     str = cJSON_Print(root);
     RT_MQTT_COMMAN_DEBUG("%s\n",str);
-    rt_os_free(str);
+    cJSON_free(str);
     
     if (root) {
         cJSON *obj = cJSON_GetObjectItem(root, "obj");
