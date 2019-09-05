@@ -18,7 +18,7 @@
 #include "network_detection.h"
 #include "rt_mqtt.h"
 #include "config.h"
-#include "bootstrap.h"
+#include "bootstrap.h"git
 #include "personalise.h"
 #include "upload.h"
 #include "rt_qmi.h"

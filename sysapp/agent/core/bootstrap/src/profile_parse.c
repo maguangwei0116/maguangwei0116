@@ -89,22 +89,22 @@ static uint16_t rt_init_file_info(rt_fshandle_t fp)
     MSG_PRINTF(LOG_INFO, "operator_num:%d\n", data.operator_num);
 }
 
-static uint32_t rt_get_root_sk_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size)
+static uint32_t rt_get_root_sk_offset(rt_fshandle_t fp, uint8_t *sk, uint32_t *size)
 {
     return get_offset(fp, ROOT_SK, sk, size);
 }
 
-static uint32_t rt_get_aes_key_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size)
+static uint32_t rt_get_aes_key_offset(rt_fshandle_t fp, uint8_t *sk, uint32_t *size)
 {
     return get_offset(fp, PROFILE_KEY, sk, size);
 }
 
-static uint32_t rt_get_file_info_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size)
+static uint32_t rt_get_file_info_offset(rt_fshandle_t fp, uint8_t *sk, uint32_t *size)
 {
     return get_offset(fp, FILE_INFO, sk, size);
 }
 
-static uint32_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint8_t *sk, uint16_t *size)
+static uint32_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint8_t *sk, uint32_t *size)
 {
     return get_offset(fp, OPT_PROFILES, sk, size);
 }
@@ -378,7 +378,7 @@ int32_t init_profile_file(int32_t *arg)
 {
     int32_t ret = RT_SUCCESS;
     uint8_t buf[500];
-    uint16_t len = 0;
+    uint32_t len = 0;
     rt_fshandle_t fp;
 
     fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);

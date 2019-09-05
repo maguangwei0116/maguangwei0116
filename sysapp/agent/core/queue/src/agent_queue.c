@@ -11,12 +11,10 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 #include <errno.h>
-
-#include "rt_os.h"
-#include "rt_type.h"
 #include "agent_queue.h"
 #include "bootstrap.h"
-#include "card_manager.h"
+#include "rt_type.h"
+#include "rt_os.h"
 
 /*
 queue msg type must large than 0, it's a nonpositive mtype value !
