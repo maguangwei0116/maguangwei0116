@@ -29,7 +29,7 @@ do{                 \
 
 static const char *g_upload_eid     = NULL;
 static const char *g_upload_imei    = NULL;
-static const char *g_push_channel   = NULL;
+const char *g_push_channel   = NULL;
 static uint8_t g_current_mcc[8]     = "460";
 
 int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
@@ -48,6 +48,7 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
             break;
         }
 
+        MSG_HEXDUMP("http-send", buffer, len);
         MSG_PRINTF(LOG_INFO, "http post send (%d bytes): %s\r\n", len, buffer);
         if (http_tcpclient_send(socket_fd, buffer, len) < 0) {      // send data
             ret = HTTP_SOCKET_SEND_ERROR;
@@ -120,10 +121,10 @@ static int32_t upload_send_request(const char *out)
     int32_t ret = RT_ERROR;
     char md5_out[MD5_STRING_LENGTH + 1];
     char upload_url[MAX_OTI_URL_LEN + 1];
-    char file[100];
+    char file[100] = {0};
     char host_addr[HOST_ADDRESS_LEN];
     int32_t port = 0;
-    uint8_t lpbuf[4096] = {0};
+    uint8_t lpbuf[BUFFER_SIZE * 4] = {0};
     int32_t send_len;
 
     if (!out) {
@@ -159,8 +160,8 @@ exit_entry:
 
 
 #define CJSON_ADD_STR_OBJ(father_item, sub_item)        cJSON_AddItemToObject(father_item, #sub_item, (cJSON *)sub_item)
-#define CJSON_ADD_NEW_STR_OBJ(father_item, str_item)    cJSON_AddItemToObject(father_item, #str_item, cJSON_CreateString(str_item));
-#define CJSON_ADD_NEW_INT_OBJ(father_item, int_item)    cJSON_AddItemToObject(father_item, #int_item, cJSON_CreateNumber(int_item));
+#define CJSON_ADD_NEW_STR_OBJ(father_item, str_item)    cJSON_AddItemToObject(father_item, #str_item, cJSON_CreateString(str_item))
+#define CJSON_ADD_NEW_INT_OBJ(father_item, int_item)    cJSON_AddItemToObject(father_item, #int_item, cJSON_CreateNumber(int_item))
 
 static void upload_get_random_tran_id(char *tran_id, uint16_t size)
 {
@@ -269,7 +270,7 @@ static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t 
         ret = -1;
         goto exit_entry;
     }
-    
+
     upload_packet_header_info(upload, tran_id);
     upload_packet_payload(upload, event, status, content);
 
@@ -280,6 +281,7 @@ exit_entry:
     return !ret ? upload : NULL;
 }
 
+#if 0
 int32_t upload_cmd_registered(void)
 {
     int32_t ret;
@@ -406,24 +408,53 @@ int32_t upload_cmd_info(void)
     return upload_cmd_boot_info("INFO", RT_TRUE);
 }
 
-static const upload_cmd_t *g_upload_start = NULL;
-static const upload_cmd_t *g_upload_end = NULL;
+#endif
 
-int32_t init_upload_obj(void)
+static int32_t init_upload_obj(void)
 {
-    const upload_cmd_t *obj = NULL;
+    const upload_event_t *obj = NULL;
     cJSON *ret;
     
-    g_upload_start = upload_cmd_get_start();
-    g_upload_end = upload_cmd_get_end();
-
-    MSG_PRINTF(LOG_WARN, "g_upload_start %p, g_upload_end %p ...\r\n", g_upload_start, g_upload_end);
-    for (obj = g_upload_start; obj <= g_upload_end; obj++) {
-        MSG_PRINTF(LOG_WARN, "upload %p, %s ...\r\n", obj, obj->cmd);
-        ret = obj->packer(NULL, 0, NULL);
+    MSG_PRINTF(LOG_WARN, "event_START ~ event_END : %p ~ %p\r\n", g_upload_event_START, g_upload_event_END);
+    for (obj = g_upload_event_START; obj <= g_upload_event_END; obj++) {
+        MSG_PRINTF(LOG_WARN, "upload %p, %s ...\r\n", obj, obj->event);
+        ret = obj->packer(NULL);
     }
 
     return 0;
+}
+
+int32_t upload_msg_report(const char *event, const char *tran_id, int32_t status)
+{
+    const upload_event_t *obj = NULL;
+
+    for (obj = g_upload_event_START; obj <= g_upload_event_END; obj++) {
+        //MSG_PRINTF(LOG_WARN, "upload %p, %s ...\r\n", obj, obj->event);
+        if (!rt_os_strcmp(obj->event, event)) {
+            char *upload_json_pag = NULL;
+            cJSON *upload = NULL;
+            cJSON *content = NULL;
+            int32_t ret;
+            
+            content = obj->packer(NULL);
+            upload = upload_packet_all(tran_id, event, status, content);
+            upload_json_pag = (char *)cJSON_PrintUnformatted(upload);    
+            ret = upload_send_request((const char *)upload_json_pag);
+
+            if (upload) {
+                cJSON_Delete(upload);
+            }
+
+            if (upload_json_pag) {
+                rt_os_free(upload_json_pag);
+            }
+            
+            return ret;
+        }
+    }
+
+    MSG_PRINTF(LOG_WARN, "Unknow upload event [%s] !!!\r\n", event);
+    return 0;  
 }
 
 int32_t init_upload(void *arg)
@@ -439,6 +470,10 @@ int32_t init_upload(void *arg)
     rt_os_sleep(10);
 
     init_upload_obj();
+    upload_msg_report("REGISTERED", NULL, 0);
+    upload_msg_report("BOOT", NULL, 0);
+    upload_msg_report("INFO", NULL, 0);
+    
     return 0;
     
     upload_cmd_registered(); 

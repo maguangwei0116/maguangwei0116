@@ -14,27 +14,28 @@ int32_t init_upload(void *arg);
 #include "rt_type.h"
 #include "cJSON.h"
 
-typedef cJSON *(*packer_func)(const char *tran_id, int32_t status, const cJSON *content);
+typedef cJSON *(*packer_func)(void *arg);
 
-typedef struct _upload_cmd_t {
-    const char *    cmd;
+typedef struct _upload_event_t {
+    const char *    event;
     packer_func     packer;
-} upload_cmd_t;
+} upload_event_t;
 
-#define UPLOAD_CMD_OBJ_INIT(cmd, packer)\
-    static const upload_cmd_t upload_cmd_##cmd##_obj \
-    __attribute__((section(".upload.cmd.init.obj"))) = \
-    {#cmd, packer}
+#define UPLOAD_EVENT_OBJ_INIT(event, packer)\
+    static const upload_event_t upload_event_##event##_obj \
+    __attribute__((section(".upload.event.init.obj"))) = \
+    {#event, packer}
 
-#define UPLOAD_CMD_OBJ_EXTERN(cmd) \
-    do { \
-        return &upload_cmd_##cmd##_obj; \
-    } while(0)
+#define UPLOAD_EVENT_OBJ_EXTERN(event) \
+    const upload_event_t * g_upload_event_##event = (const upload_event_t * )&upload_event_##event##_obj
 
-const upload_cmd_t *upload_cmd_get_start(void);
-const upload_cmd_t *upload_cmd_get_end(void);
+#define UPLOAD_EVENT_OBJ_EXTERN_HERE(event) \
+    extern const upload_event_t * g_upload_event_##event
 
-int32_t upload_msg_pack(const char *msg);
+UPLOAD_EVENT_OBJ_EXTERN_HERE(START);
+UPLOAD_EVENT_OBJ_EXTERN_HERE(END);
+
+int32_t upload_msg_report(const char *event, const char *tran_id, int32_t status); // "BOOT"  "INFO"  "NO_CERT"
 
 #ifdef __cplusplus
 }

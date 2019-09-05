@@ -95,7 +95,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    NULL),
-    INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
+//    INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
 };
 
