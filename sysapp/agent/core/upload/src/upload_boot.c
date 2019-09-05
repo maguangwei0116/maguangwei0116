@@ -5,10 +5,6 @@
 
 #include "cJSON.h"
 
-#define CJSON_ADD_STR_OBJ(father_item, sub_item)        cJSON_AddItemToObject(father_item, #sub_item, (cJSON *)sub_item)
-#define CJSON_ADD_NEW_STR_OBJ(father_item, str_item)    cJSON_AddItemToObject(father_item, #str_item, cJSON_CreateString(str_item))
-#define CJSON_ADD_NEW_INT_OBJ(father_item, int_item)    cJSON_AddItemToObject(father_item, #int_item, cJSON_CreateNumber(int_item))
-
 cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_network)
 {
     int32_t ret = 0;

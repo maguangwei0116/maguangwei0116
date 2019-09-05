@@ -7,10 +7,6 @@
 
 extern const char *g_push_channel;
 
-#define CJSON_ADD_STR_OBJ(father_item, sub_item)        cJSON_AddItemToObject(father_item, #sub_item, (cJSON *)sub_item)
-#define CJSON_ADD_NEW_STR_OBJ(father_item, str_item)    cJSON_AddItemToObject(father_item, #str_item, cJSON_CreateString(str_item))
-#define CJSON_ADD_NEW_INT_OBJ(father_item, int_item)    cJSON_AddItemToObject(father_item, #int_item, cJSON_CreateNumber(int_item))
-
 static cJSON *upload_registered_packer(void *arg)
 {
     int32_t ret;

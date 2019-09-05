@@ -1,5 +1,4 @@
 
-
 #include <time.h>
 
 #include "md5.h"
@@ -13,7 +12,6 @@
 #include "cJSON.h"
 
 #define MAX_OTI_URL_LEN             100
-#define MAX_TRAN_ID_LEN             32
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do{                 \
@@ -48,7 +46,7 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
             break;
         }
 
-        MSG_HEXDUMP("http-send", buffer, len);
+        //MSG_HEXDUMP("http-send", buffer, len);
         MSG_PRINTF(LOG_INFO, "http post send (%d bytes): %s\r\n", len, buffer);
         if (http_tcpclient_send(socket_fd, buffer, len) < 0) {      // send data
             ret = HTTP_SOCKET_SEND_ERROR;
@@ -158,11 +156,6 @@ exit_entry:
     return ret;
 }
 
-
-#define CJSON_ADD_STR_OBJ(father_item, sub_item)        cJSON_AddItemToObject(father_item, #sub_item, (cJSON *)sub_item)
-#define CJSON_ADD_NEW_STR_OBJ(father_item, str_item)    cJSON_AddItemToObject(father_item, #str_item, cJSON_CreateString(str_item))
-#define CJSON_ADD_NEW_INT_OBJ(father_item, int_item)    cJSON_AddItemToObject(father_item, #int_item, cJSON_CreateNumber(int_item))
-
 static void upload_get_random_tran_id(char *tran_id, uint16_t size)
 {
     int32_t i,flag;
@@ -202,13 +195,13 @@ static void upload_get_random_tran_id(char *tran_id, uint16_t size)
 
 static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
 {
-    char random_tran_id[MAX_TRAN_ID_LEN + 1] = {0};
+    char random_tran_id[NORMAL_TRAN_ID_LEN + 1] = {0};
     const char *tranId = tran_id;
-    const char *topic = g_upload_eid;
+    const char *topic = g_upload_eid ? g_upload_eid : "";
     int32_t version = 0;
     time_t timestamp = time(NULL);
     
-    if (!tranId) {        
+    if (!tranId || !rt_os_strlen(tranId)) {        
         upload_get_random_tran_id(random_tran_id, sizeof(random_tran_id) - 1);
         tranId = (const char *)random_tran_id;
     }
@@ -252,7 +245,7 @@ exit_entry:
     }
 
     if (payload) {
-        rt_os_free(payload);
+        cJSON_free(payload);
         payload = NULL;
     }
 
@@ -295,7 +288,7 @@ static int32_t init_upload_obj(void)
     return 0;
 }
 
-int32_t upload_event_report(const char *event, const char *tran_id, int32_t status)
+int32_t upload_event_report(const char *event, const char *tran_id, int32_t status, void *private_arg)
 {
     const upload_event_t *obj = NULL;
 
@@ -305,21 +298,25 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             char *upload_json_pag = NULL;
             cJSON *upload = NULL;
             cJSON *content = NULL;
+            int32_t status = 0; 
             int32_t ret;
             
-            content = obj->packer(NULL);
+            content = obj->packer(private_arg);
+            MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
             upload = upload_packet_all(tran_id, event, status, content);
-            upload_json_pag = (char *)cJSON_PrintUnformatted(upload);    
+            MSG_PRINTF(LOG_WARN, "upload [%p] !!!\r\n", upload);
+            upload_json_pag = (char *)cJSON_PrintUnformatted(upload); 
+            MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
             ret = upload_send_request((const char *)upload_json_pag);
-
+MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
             if (upload) {
                 cJSON_Delete(upload);
             }
-
+MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
             if (upload_json_pag) {
-                rt_os_free(upload_json_pag);
+                cJSON_free(upload_json_pag);
             }
-            
+            MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
             return ret;
         }
     }
@@ -330,6 +327,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
 
 int32_t init_upload(void *arg)
 {
+    rt_bool report_all_info;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
     
     MSG_PRINTF(LOG_WARN, "eid : %p, %s\n", public_value_list->eid, public_value_list->eid);
@@ -338,13 +336,18 @@ int32_t init_upload(void *arg)
     g_upload_imei = (const char *)public_value_list->imei;
     g_push_channel = (const char *)public_value_list->push_channel;
 
+    return 0;
+
     rt_os_sleep(10);
 
     init_upload_obj();
     
-    upload_event_report("REGISTERED", NULL, 0);
-    upload_event_report("BOOT", NULL, 0);
-    upload_event_report("INFO", NULL, 0);
+    upload_event_report("REGISTERED", NULL, 0, NULL);
+    upload_event_report("BOOT", NULL, 0, NULL);
+    report_all_info = RT_FALSE;
+    upload_event_report("INFO", NULL, 0, &report_all_info);
+    report_all_info = RT_TRUE;
+    upload_event_report("INFO", NULL, 0, &report_all_info);
     
     return 0;
 }
