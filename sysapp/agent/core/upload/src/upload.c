@@ -26,8 +26,9 @@ do{                 \
 #define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
 
 static const char *g_upload_eid     = NULL;
-static const char *g_upload_imei    = NULL;
+const char *g_upload_imei    = NULL;
 const char *g_push_channel   = NULL;
+const profiles_info_t *g_upload_profiles_info = NULL;
 static uint8_t g_current_mcc[8]     = "460";
 
 int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
@@ -308,15 +309,15 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             upload_json_pag = (char *)cJSON_PrintUnformatted(upload); 
             MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
             ret = upload_send_request((const char *)upload_json_pag);
-MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
+            
             if (upload) {
                 cJSON_Delete(upload);
             }
-MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
+            
             if (upload_json_pag) {
                 cJSON_free(upload_json_pag);
             }
-            MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
+
             return ret;
         }
     }
@@ -335,6 +336,7 @@ int32_t init_upload(void *arg)
     g_upload_eid = (const char *)public_value_list->eid;
     g_upload_imei = (const char *)public_value_list->imei;
     g_push_channel = (const char *)public_value_list->push_channel;
+    g_upload_profiles_info = (const profiles_info_t *)public_value_list->profiles;
 
     return 0;
 

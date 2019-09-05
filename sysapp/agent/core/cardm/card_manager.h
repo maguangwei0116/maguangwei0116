@@ -15,6 +15,14 @@
 #define __CARD_MANAGER_H__
 
 #include "rt_type.h"
+#include "lpa.h"
+
+#define THE_MAX_CARD_NUM         20
+
+typedef struct _profiles_info_t {
+    profile_info_t info[THE_MAX_CARD_NUM];
+    uint8_t num;
+} profiles_info_t;
 
 int32_t init_card_manager(void *arg);
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode);

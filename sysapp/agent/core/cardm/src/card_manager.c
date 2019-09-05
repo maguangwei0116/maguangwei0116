@@ -16,15 +16,9 @@
 #include "agent_main.h"
 #include "lpa.h"
 
-#define THE_MAX_CARD_NUM         20
 #define THE_ICCID_LENGTH         10
 
-typedef struct {
-    profile_info_t info[THE_MAX_CARD_NUM];
-    uint8_t num;
-} info_t;
-
-static info_t g_p_info;
+static profiles_info_t g_p_info;
 
 static int32_t card_enable_profile(const int8_t *iccid)
 {
@@ -74,6 +68,8 @@ int32_t init_card_manager(void *arg)
     bytes2hexstring(eid, sizeof(eid), g_eid);
     ((public_value_list_t *)arg)->eid = (const char *)g_eid;
     //MSG_PRINTF(LOG_WARN, "eid: %p, %s\n", ((public_value_list_t *)arg)->eid, g_eid);
+
+    ((public_value_list_t *)arg)->profiles = (const profiles_info_t *)&g_p_info;
     
     rt_os_sleep(1);
     

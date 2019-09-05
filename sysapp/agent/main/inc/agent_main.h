@@ -15,6 +15,7 @@
 #define __AGENT_MAIN_H__
 
 #include "rt_type.h"
+#include "card_manager.h"
 
 #define ICCID_LEN                                20
 #define MCC_LEN                                  3
@@ -35,6 +36,7 @@ typedef struct PUBLIC_VALUE_LIST {
     const char *    eid;
     const char *    imei;
     const char *    push_channel;
+    const profiles_info_t * profiles;
 } public_value_list_t;
 
 #endif // __AGENT_MAIN_H__
