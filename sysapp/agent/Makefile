@@ -67,12 +67,13 @@ SRC-y 			                        += ./core/downstream/src/downstream_null_start.
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/profile_parse.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
-SRC-n 		                            += src/personalise.c
+
 SRC-y 		                            += $(wildcard ./core/mqtt/src/*.c)
 SRC-y 		                            += src/config.c
 SRC-y 			                        += src/agent_main.c
 SRC-y 			                        += src/agent_queue.c
 SRC-y 			                        += src/card_manager.c
+SRC-y 			                        += src/msg_process.c
 SRC-y 			                        += src/ipc_socket_client.c
 SRC-y 			                        += src/network_detection.c
 SRC-y 			                        += src/lpa.c
@@ -89,7 +90,6 @@ SRC-y 			                        += ./core/upload/src/upload.c
 SRC-y 			                        += ./core/upload/src/upload_registered.c
 SRC-y 			                        += ./core/upload/src/upload_boot.c
 SRC-y 			                        += ./core/upload/src/upload_info.c
-SRC-y 			                        += ./core/personalise/src/upload_no_cert.c
 
 # Add your downstream-xxx cmd here
 SRC-y 			                        += ./core/downstream/src/downstream.c
@@ -97,6 +97,7 @@ SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
 
 # Personalise module
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
 
 ############################################################################
@@ -117,10 +118,10 @@ INC-PATH-y 		                        += ./core/networkd/
 INC-PATH-y 		                        += ./main/
 INC-PATH-y 		                        += ./ipc/
 INC-PATH-y 		                        += ./lpa/
-INC-PATH-y 		                        += ./core/upload/inc
-INC-PATH-y 		                        += ./core/random/inc
-INC-PATH-y 		                        += ./core/ota/inc
-INC-PATH-y 		                        += ./core/downstream/inc
+INC-PATH-y 		                        += ./core/upload/
+INC-PATH-y 		                        += ./core/random/
+INC-PATH-y 		                        += ./core/ota/
+INC-PATH-y 		                        += ./core/downstream/
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)

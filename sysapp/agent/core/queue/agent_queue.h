@@ -15,6 +15,8 @@
 #define __AGENT_QUEUE_H__
 
 #include "rt_type.h"
+#include "device_info.h"
+#include "card_manager.h"
 
 typedef enum AGENT_MSG_ID {
     MSG_ID_CARD_MANAGER = 0,
@@ -37,6 +39,13 @@ typedef enum MSG_MODE {
     MSG_NETWORK_CONNECTED,
     MSG_NETWORK_DISCONNECTED,
 } msg_mode_e;
+
+typedef struct PUBLIC_VALUE_LIST {
+    int8_t              lpa_channel_type;
+    devicde_info_t *    device_info;
+    card_info_t *       card_info;
+    const char *        push_channel;
+} public_value_list_t;
 
 int32_t init_queue(void *arg);
 int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len);

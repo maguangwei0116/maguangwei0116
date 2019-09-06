@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : personalise.c
- * Date        : 2019.08.21
+ * File name   : msg_process.c
+ * Date        : 2019.09.04
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,17 +11,9 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifdef CFG_AGENT_PERSONALISE_ON
-#warning AGENT_PERSONALISE_ON on ...
+#include "msg_process.h"
 
-#include "rt_type.h"
-#include "personalise.h"
-#include "device_info.h"
-
-int32_t init_personalise(void *arg)
+int32_t card_deal_mqtt_msg(const uint8_t *buf, int32_t len)
 {
-    init_device_info(arg);
     return RT_SUCCESS;
 }
-
-#endif

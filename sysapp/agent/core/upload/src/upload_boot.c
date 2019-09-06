@@ -7,7 +7,7 @@
 #include "cJSON.h"
 
 extern const char *g_upload_imei;
-extern const profiles_info_t *g_upload_profiles_info;
+extern const card_info_t *g_upload_card_info;
 
 static cJSON *upload_event_boot_device_info(void)
 {
@@ -54,13 +54,13 @@ static cJSON *upload_event_boot_profiles_info(void)
         goto exit_entry;
     }
 
-    if (!g_upload_profiles_info) {
-        MSG_PRINTF(LOG_WARN, "The g_upload_profiles_info is error\n");
+    if (!g_upload_card_info) {
+        MSG_PRINTF(LOG_WARN, "The g_upload_card_info is error\n");
         ret = -2;
         goto exit_entry;
     }
 
-    profiles_num = g_upload_profiles_info->num;
+    profiles_num = g_upload_card_info->num;
 
     for (i = 0; i < profiles_num; i++) {
         profile = cJSON_CreateObject();
@@ -70,8 +70,8 @@ static cJSON *upload_event_boot_profiles_info(void)
             goto exit_entry;
         }
     
-        iccid = g_upload_profiles_info->info[i].iccid;
-        type = g_upload_profiles_info->info[i].class;
+        iccid = g_upload_card_info->info[i].iccid;
+        type = g_upload_card_info->info[i].class;
         CJSON_ADD_NEW_STR_OBJ(profile, iccid);
         CJSON_ADD_NEW_INT_OBJ(profile, type);
         cJSON_AddItemToArray(profiles, profile);
@@ -130,7 +130,7 @@ static void rt_get_network_info(uint8_t *mcc_mnc,uint8_t *net_type,uint8_t *leve
     //used qmi to get network info
     rt_qmi_get_current_iccid(iccid);
     rt_qmi_get_mcc_mnc(&mcc_int,&mnc_int);
-    j += sprintf(mcc_mnc, "%03d", 666);
+    j += sprintf(mcc_mnc, "%03d", mcc_int);
     j += sprintf(mcc_mnc+j, "%02d", mnc_int);
     rt_qmi_get_signal(dbm);
     if (*dbm < -100) {
@@ -145,6 +145,7 @@ static void rt_get_network_info(uint8_t *mcc_mnc,uint8_t *net_type,uint8_t *leve
         leve[0] = '4';
     }
     leve[1]='\0';
+    rt_qmi_get_network_type(net_type);
     
 #elif PLATFORM == PLATFORM_FIBCOM
     //used fibcom api to get network info

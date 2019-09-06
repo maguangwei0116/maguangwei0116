@@ -22,7 +22,7 @@ unsigned char PADDING[] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static void MD5Init(MD5_CTX *context)
+void MD5Init(MD5_CTX *context)
 {
     context->count[0] = 0;
     context->count[1] = 0;
@@ -32,7 +32,7 @@ static void MD5Init(MD5_CTX *context)
     context->state[3] = 0x10325476;
 }
 
-static void MD5Decode(unsigned int *output, unsigned char *input, unsigned int len)
+void MD5Decode(unsigned int *output, unsigned char *input, unsigned int len)
 {
     unsigned int i = 0;
     unsigned int j = 0;
@@ -47,7 +47,7 @@ static void MD5Decode(unsigned int *output, unsigned char *input, unsigned int l
     }
 }
 
-static void MD5Transform(unsigned int state[4], unsigned char block[64])
+void MD5Transform(unsigned int state[4], unsigned char block[64])
 {
     unsigned int a = state[0];
     unsigned int b = state[1];
@@ -133,7 +133,7 @@ static void MD5Transform(unsigned int state[4], unsigned char block[64])
     state[3] += d;
 }
 
-static void MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen)
+void MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen)
 {
     unsigned int i = 0;
     unsigned int index = 0;
@@ -161,7 +161,7 @@ static void MD5Update(MD5_CTX *context, unsigned char *input, unsigned int input
     memcpy(&context->buffer[index], &input[i], inputlen-i);
 }
 
-static void MD5Encode(unsigned char *output,unsigned int *input,unsigned int len)
+void MD5Encode(unsigned char *output,unsigned int *input,unsigned int len)
 {
     unsigned int i = 0;
     unsigned int j = 0;
@@ -176,7 +176,7 @@ static void MD5Encode(unsigned char *output,unsigned int *input,unsigned int len
     }
 }
 
-static void MD5Final(MD5_CTX *context, unsigned char digest[16])
+void MD5Final(MD5_CTX *context, unsigned char digest[16])
 {
     unsigned int index = 0,padlen = 0;
     unsigned char bits[8];
@@ -189,7 +189,7 @@ static void MD5Final(MD5_CTX *context, unsigned char digest[16])
     MD5Encode(digest, context->state, 16);
 }
 
-static unsigned char to_ascii(unsigned char ch)
+unsigned char to_ascii(unsigned char ch)
 {
     if (ch <= 9) {
         ch += ('0' - 0);

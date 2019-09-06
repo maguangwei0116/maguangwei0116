@@ -135,7 +135,7 @@ static unsigned char to_ascii(unsigned char ch)
     return ch;
 }
 
-void bytestring_to_charstring(int8_t *bytestring,int8_t *charstring,int16_t length)
+void bytestring_to_charstring(int8_t *bytestring, int8_t *charstring, int16_t length)
 {
     int32_t i = 0;
     int8_t left,right;

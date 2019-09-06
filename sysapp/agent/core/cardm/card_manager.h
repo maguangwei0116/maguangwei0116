@@ -18,11 +18,13 @@
 #include "lpa.h"
 
 #define THE_MAX_CARD_NUM         20
+#define THE_ICCID_LENGTH         10
 
-typedef struct _profiles_info_t {
+typedef struct PROFILE_INFO {
     profile_info_t info[THE_MAX_CARD_NUM];
     uint8_t num;
-} profiles_info_t;
+    uint8_t eid[32];
+} card_info_t;
 
 int32_t init_card_manager(void *arg);
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode);

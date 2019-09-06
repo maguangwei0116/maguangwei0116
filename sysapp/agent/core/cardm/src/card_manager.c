@@ -13,17 +13,16 @@
 
 #include "card_manager.h"
 #include "agent_queue.h"
+#include "msg_process.h"
 #include "agent_main.h"
-#include "lpa.h"
 
-#define THE_ICCID_LENGTH         10
-
-static profiles_info_t g_p_info;
+static card_info_t g_p_info;
 
 static int32_t card_enable_profile(const int8_t *iccid)
 {
     int32_t ret = RT_ERROR;
     int32_t ii = 0;
+
     for (ii = 0; ii < g_p_info.num; ii++) {
         if (rt_os_strncmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
             if (g_p_info.info[ii].state == 0) {
@@ -38,6 +37,7 @@ static int32_t card_enable_profile(const int8_t *iccid)
     }
     lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_ALL_SWITCH_CARD, NULL, 0);
+
     return ret;
 }
 
@@ -50,6 +50,7 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     if ((ret == RT_SUCCESS) || (ret == 2)) {
         ret = lpa_load_profile(buf, len);
     }
+
     return ret;
 }
 
@@ -60,19 +61,16 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 
 int32_t init_card_manager(void *arg)
 {
-    uint8_t eid[16];
-    static char g_eid[32+1];
     int32_t ret = RT_ERROR;
+    uint8_t eid[16];
+    
+    ((public_value_list_t *)arg)->card_info = &g_p_info;
 
     lpa_get_eid(eid);
-    bytes2hexstring(eid, sizeof(eid), g_eid);
-    ((public_value_list_t *)arg)->eid = (const char *)g_eid;
-    //MSG_PRINTF(LOG_WARN, "eid: %p, %s\n", ((public_value_list_t *)arg)->eid, g_eid);
-
-    ((public_value_list_t *)arg)->profiles = (const profiles_info_t *)&g_p_info;
+    bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
     
     rt_os_sleep(1);
-    
+
     ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
     if (ret == RT_SUCCESS) {
@@ -80,12 +78,8 @@ int32_t init_card_manager(void *arg)
             msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
         }
     }
+    
     return ret;
-}
-
-static int32_t card_deal_mqtt_msg(const uint8_t *buf, int32_t len)
-{
-
 }
 
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
