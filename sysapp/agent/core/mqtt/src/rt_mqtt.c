@@ -337,8 +337,8 @@ static rt_bool rt_mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
 }
 
 #if 1  // only for test
-#define TEST_FORCE_TO_ADAPTER       0
-#define TEST_FORCE_TO_EMQ           1
+#define TEST_FORCE_TO_ADAPTER       1
+#define TEST_FORCE_TO_EMQ           0
 #define TEST_FORCE_TO_YUNBA         0
 
 #define MQTT_PASSAGEWAY_DEF(x)\
