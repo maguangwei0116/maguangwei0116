@@ -29,7 +29,7 @@ typedef enum AGENT_MSG_ID {
 } msg_id_e;
 
 typedef enum MSG_MODE {
-    MSG_CARD_FROM_MQTT = 0,
+    MSG_FROM_MQTT = 0,      // public for all module
     MSG_CARD_SETTING_KEY,
     MSG_CARD_SETTING_PROFILE,
     MSG_CARD_SETTING_CERTIFICATE,

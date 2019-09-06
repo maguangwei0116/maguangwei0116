@@ -54,23 +54,6 @@ typedef struct _mqtt_param_t {
 
 static mqtt_param_t g_mqtt_param = {MQTTClient_connectOptions_initializer, 0};
 
-#if 0
-/*
-* the data used to indicate topic subscribe
-*bit0 topic of agent
-*bit1 topid of CID
-*/
-static mqtt_info opts;  // mqtt connect info
-static MQTTClient client;
-static MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-
-static rt_bool mqtt_get_addr = RT_FALSE;  // if get mqtt server addr
-static int8_t alias[40] = {'F'};
-static int32_t mqtt_flag = 0;  // que ren buffer da xiao
-static int8_t subscribe_flag = 0;
-static int8_t rc = 1;
-#endif
-
 //TODO:
 static g_network_state = NETWORK_CONNECTING;
 network_state_info_e get_network_state(void)
@@ -90,11 +73,11 @@ boot_state_info_e get_boot_flag(void)
     return 1;
 }
 
-void msg_parse(int8_t *message, int32_t len)
+static void msg_parse(int8_t *message, int32_t len)
 {
     MSG_PRINTF(LOG_WARN, "mqtt recv msg (%d bytes): %s\r\n", len, message);
 
-    downstream_msg_handle((const char *)message);
+    downstream_msg_handle(message, len);
 }
 
 //本地缓存之前的从adapter获取的ticket server
@@ -568,6 +551,7 @@ static void mqtt_process_task(void)
 
                     //成功连接服务器后将网络状态置为已连接
                     set_network_state(NETWORK_USING);
+                    continue;
                 } else {
                     //如果本地缓存的mqtt server和hardcode的mqtt server都无法使用，那么重新去获ticket server获取一下mqtt server
                     g_mqtt_param.mqtt_get_addr = RT_FALSE;

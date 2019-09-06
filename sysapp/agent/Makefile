@@ -67,7 +67,7 @@ SRC-y 			                        += ./core/downstream/src/downstream_null_start.
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/profile_parse.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
+SRC-n 		                            += src/personalise.c
 SRC-y 		                            += $(wildcard ./core/mqtt/src/*.c)
 SRC-y 		                            += src/config.c
 SRC-y 			                        += src/agent_main.c
@@ -94,6 +94,10 @@ SRC-y 			                        += ./core/personalise/src/upload_no_cert.c
 # Add your downstream-xxx cmd here
 SRC-y 			                        += ./core/downstream/src/downstream.c
 SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
+
+# Personalise module
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
 
 ############################################################################
 # Never adjustment order of these files

@@ -49,7 +49,7 @@ typedef struct _downstream_msg_t {
 DOWNSTREAM_METHOD_OBJ_EXTERN_HERE(START);
 DOWNSTREAM_METHOD_OBJ_EXTERN_HERE(END);
 
-int32_t downstream_msg_handle(const char *msg);
+int32_t downstream_msg_handle(const void *data, uint32_t len);
 
 #ifdef __cplusplus
 }

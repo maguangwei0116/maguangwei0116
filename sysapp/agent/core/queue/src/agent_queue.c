@@ -53,6 +53,7 @@ static void idle_event(const uint8_t *buf, int32_t len, int32_t mode)
     int32_t status = 0;
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
+    (void)mode;
     MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
     
     downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
@@ -60,7 +61,7 @@ static void idle_event(const uint8_t *buf, int32_t len, int32_t mode)
         rt_os_free(downstream_msg->msg);
         downstream_msg->msg = NULL;
     }
-    MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
+    //MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
 
     status = downstream_msg->handler(downstream_msg->private_arg, &downstream_msg->out_arg);
 
@@ -84,15 +85,19 @@ static void agent_queue_task(void)
                     MSG_INFO_ARRAY("que_t.data_buf:", (uint8_t *) que_t.data_buf, que_t.data_len);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
+                    
                 case MSG_ID_LOG_MANAGER:
-
+                    
                     break;
+                    
                 case MSG_ID_OTA_UPGRADE:
 
                     break;
+                    
                 case MSG_ID_PERSONLLISE:
 
                     break;
+                    
                 case MSG_ID_REMOTE_CONFIG:
 
                     break;
@@ -114,10 +119,11 @@ static void agent_queue_task(void)
                     break;
                 }
             }
-            MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, que_t.data_buf:%p\n", que_t.data_len, que_t.data_buf);
-            if (que_t.data_len != 0) {MSG_PRINTF(LOG_INFO, "que_t.data_len:%d\n", que_t.data_len);
-                rt_os_free(que_t.data_buf);MSG_PRINTF(LOG_INFO, "que_t.data_len:%d\n", que_t.data_len);
-            }MSG_PRINTF(LOG_INFO, "que_t.data_len:%d\n", que_t.data_len);
+            
+            //MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, que_t.data_buf:%p\n", que_t.data_len, que_t.data_buf);
+            if (que_t.data_len != 0) {
+                rt_os_free(que_t.data_buf);
+            }
         }
     }
 }

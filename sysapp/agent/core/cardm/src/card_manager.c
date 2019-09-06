@@ -100,7 +100,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
         case MSG_CARD_SETTING_CERTIFICATE:
             ret = card_load_cert(buf, len);
             break;
-        case MSG_CARD_FROM_MQTT:
+        case MSG_FROM_MQTT:
             ret = card_deal_mqtt_msg(buf, len);
             break;
         case MSG_NETWORK_DISCONNECTED:

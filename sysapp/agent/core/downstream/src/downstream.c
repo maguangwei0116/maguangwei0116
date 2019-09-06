@@ -51,7 +51,8 @@ static int32_t downstream_msg_get_method(const char *msg, char *method)
 
     string_trim(p0 + 1, p1 - p0 - 1, method);
 
-    MSG_PRINTF(LOG_INFO, "get msg method : [%s]\n", method);
+    //MSG_PRINTF(LOG_INFO, "get msg method : [%s]\n", method);
+    MSG_PRINTF(LOG_WARN, "\n<-----------------%s\n", method);
 
     ret = 0;
 
@@ -60,13 +61,15 @@ exit_entry:
     return ret;
 }
 
-int32_t downstream_msg_handle(const char *msg)
+int32_t downstream_msg_handle(const void *data, uint32_t len)
 {
     int32_t ret = -1;
     int32_t id;
     char method[64] = {0};
     const downstream_method_t *obj = NULL;
+    const char *msg = (const char *)data;
 
+    (void)len;
     ret = downstream_msg_get_method(msg, method);
     if (ret) {
         goto exit_entry;
@@ -89,7 +92,7 @@ int32_t downstream_msg_handle(const char *msg)
             downstream_msg.out_arg      = NULL;
             MSG_PRINTF(LOG_WARN, "tranId: %p, msg: %p\r\n", downstream_msg.tranId, downstream_msg.msg);
             
-            ret = msg_send_agent_queue(obj->msg_id, 0, &downstream_msg, sizeof(downstream_msg_t));
+            ret = msg_send_agent_queue(obj->msg_id, MSG_FROM_MQTT, &downstream_msg, sizeof(downstream_msg_t));
             
             return ret;
         }
