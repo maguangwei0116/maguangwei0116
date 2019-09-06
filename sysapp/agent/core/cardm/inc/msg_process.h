@@ -16,6 +16,9 @@
 
 #include "rt_type.h"
 
-int32_t card_deal_mqtt_msg(const uint8_t *buf, int32_t len);
+int32_t msg_push_ac(const uint8_t *buf, int32_t len);
+int32_t msg_enable(const uint8_t *buf, int32_t len);
+int32_t msg_disable(const uint8_t *buf, int32_t len);
+int32_t msg_delete(const uint8_t *buf, int32_t len);
 
 #endif // __MSG_PROCESS_H__

@@ -247,6 +247,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
             break;
         }
     }
+
     g_buf_size = 0;
     ec = der_encode(&asn_DEF_BootstrapRequest, bootstrap_request, encode_cb_fun, NULL);
     if (ec.encoded == -1) {
