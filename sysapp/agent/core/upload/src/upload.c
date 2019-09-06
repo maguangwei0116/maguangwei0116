@@ -26,8 +26,8 @@ do{                 \
 #define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
 
 static const char *g_upload_eid     = NULL;
-const char *g_upload_imei    = NULL;
 const char *g_push_channel   = NULL;
+const devicde_info_t *g_upload_device_info    = NULL;
 const card_info_t *g_upload_card_info = NULL;
 static uint8_t g_current_mcc[8]     = "460";
 
@@ -331,12 +331,12 @@ int32_t init_upload(void *arg)
     rt_bool report_all_info;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
     
-    g_upload_imei       = (const char *)public_value_list->device_info->imei;
-    g_push_channel      = (const char *)public_value_list->push_channel;
-    g_upload_eid        = (const char *)public_value_list->card_info->eid;
-    g_upload_card_info  = (const card_info_t *)public_value_list->card_info->info;
+    g_upload_device_info    = (const char *)public_value_list->device_info;
+    g_push_channel          = (const char *)public_value_list->push_channel;
+    g_upload_eid            = (const char *)public_value_list->card_info->eid;
+    g_upload_card_info      = (const card_info_t *)public_value_list->card_info->info;
 
-    MSG_PRINTF(LOG_WARN, "imei: %p, %s\n", g_upload_imei, g_upload_imei);
+    MSG_PRINTF(LOG_WARN, "imei: %p, %s\n", g_upload_device_info->imei, g_upload_device_info->imei);
     MSG_PRINTF(LOG_WARN, "eid : %p, %s\n", g_upload_eid, g_upload_eid);
 
     return 0;

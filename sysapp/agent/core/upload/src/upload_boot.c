@@ -3,20 +3,21 @@
 #include "rt_type.h"
 #include "rt_os.h"
 #include "card_manager.h"
+#include "device_info.h"
 
 #include "cJSON.h"
 
-extern const char *g_upload_imei;
+extern const devicde_info_t *g_upload_device_info;
 extern const card_info_t *g_upload_card_info;
 
 static cJSON *upload_event_boot_device_info(void)
 {
-    int32_t ret = 0;
-    cJSON *deviceInfo = NULL;
-    const char *imei = g_upload_imei;
-    char *deviceId = "2E11F8D5928F37D918797ECC46C9B763";
-    char *sn = "0123456789ABDEF";
-    char *model = "QUECTEL-EC20";
+    int32_t ret         = 0;
+    cJSON *deviceInfo   = NULL;
+    const char *imei    = g_upload_device_info->imei;
+    const char *deviceId= g_upload_device_info->device_id;
+    const char *sn      = g_upload_device_info->sn;
+    const char *model   = g_upload_device_info->model;
 
     deviceInfo = cJSON_CreateObject();
     if (!deviceInfo) {
