@@ -24,13 +24,16 @@ endif
 endif
 
 # Config your final release target name
+AGENT_LOCAL_NAME=$(SYSAPP_TARGET_NAME)
 RELEASE_TARGET 	= $(SYSAPP_TARGET_NAME)_v$(AGENT_LOCAL_VERSION)_$(PLATFORM_TYPE)_$(ENV_TYPE)_$(DEBUG_TYPE)
 
 # Config your application target version with git hash and build time
 RELEASE_TARGET_VERSION = $(RELEASE_TARGET)_$(SYSAPP_GIT_HASH)_$(shell date +%Y-%m-%d_%H:%M:%S)
 
 # Config your own CFLAGS
-USER_CFLAGS		+= -DRELEASE_TARGET_VERSION=$(RELEASE_TARGET_VERSION)
+USER_CFLAGS		+= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
+USER_CFLAGS		+= -DAGENT_LOCAL_NAME=\"$(AGENT_LOCAL_NAME)\"
+USER_CFLAGS		+= -DAGENT_LOCAL_VERSION=\"$(AGENT_LOCAL_VERSION)\"
 
 # Config your own libraries
 QMI-LIB 		= dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
@@ -54,6 +57,12 @@ vpath %.c ./lpa
 vpath %.c ./core/ota
 vpath %.c ./core/personalise
 
+############################################################################
+# Never adjustment order of these files
+SRC-y 			                        += ./core/upload/src/upload_null_start.c
+SRC-y 			                        += ./core/downstream/src/downstream_null_start.c
+############################################################################
+
 # Config your resource file list by += xxx.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/profile_parse.c
@@ -73,11 +82,30 @@ SRC-y 			                        += src/lpdd.c
 SRC-y 			                        += src/luid.c
 SRC-y 			                        += src/ldsd.c
 SRC-y 			                        += src/apdu.c
-SRC-y 			                        += ./core/upload/src/upload.c
+
 SRC-y 			                        += ./core/random/src/random.c
 SRC-y 			                        += ./core/ota/src/upgrade.c
+
+# Add your upload-xxx cmd here
+SRC-y 			                        += ./core/upload/src/upload.c
+SRC-y 			                        += ./core/upload/src/upload_registered.c
+SRC-y 			                        += ./core/upload/src/upload_boot.c
+SRC-y 			                        += ./core/upload/src/upload_info.c
+SRC-y 			                        += ./core/personalise/src/upload_no_cert.c
+
+# Add your downstream-xxx cmd here
 SRC-y 			                        += ./core/downstream/src/downstream.c
 SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
+
+# Personalise module
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
+
+############################################################################
+# Never adjustment order of these files
+SRC-y 			                        += ./core/upload/src/upload_null_end.c
+SRC-y 			                        += ./core/downstream/src/downstream_null_end.c
+############################################################################
 
 # Config your include file path by += xxx-inc
 INC-PATH-$(CFG_AGENT_BOOTSRRAP_ON)		+= ./core/bootstrap/

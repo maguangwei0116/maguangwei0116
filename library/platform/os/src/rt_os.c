@@ -123,6 +123,7 @@ int32_t rt_send_queue_msg(int32_t msgid, const void *buffer, int32_t len, int32_
     return RT_SUCCESS;
 }
 
+#ifndef RT_OS_MEM_DEBUG
 void *rt_os_malloc(uint32_t size)
 {
     return malloc(size);
@@ -141,6 +142,32 @@ void rt_os_free(void *mem)
     free(mem);
     mem = NULL;
 }
+#else
+static int g_mem_cnt = 0;
+void *_rt_os_malloc(const char *file, uint32_t line, uint32_t size)
+{
+	void *ret = malloc(size);
+	printf("[%-50s, %5d] ++++++++ (%5d) malloc : %p\r\n", file, line, ++g_mem_cnt, ret);
+    return ret;
+}
+
+void *_rt_os_realloc(const char *file, uint32_t line, void *mem, uint32_t size)
+{
+    void *ret = realloc(mem, size);
+	printf("[%-50s, %5d] ++++++++ (%5d) realloc: %p, %p\r\n", file, line, ++g_mem_cnt, mem, ret);
+    return ret;
+}
+
+void _rt_os_free(const char *file, uint32_t line, void *mem)
+{
+    if (NULL == mem) {
+        return;
+    }
+	printf("[%-50s, %5d] -------- (%5d) free   : %p\r\n", file, line, --g_mem_cnt, mem);
+    free(mem);
+    mem = NULL;
+}
+#endif
 
 void *rt_os_memset(void *mem, int32_t value, int32_t len)
 {

@@ -97,6 +97,7 @@ static qmi_client_error_type dms_get_msisdn_req(qmi_client_type dms_client, qmi_
         if(resp.imsi_valid) {
             strcpy(devinfo->imsi, resp.imsi);
         }
+        MSG_PRINTF(LOG_WARN, "IMSI         : %s\n", devinfo->imsi_valid ? devinfo->imsi : "N/A");
     }
     return err;
 }

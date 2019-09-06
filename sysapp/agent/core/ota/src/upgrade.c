@@ -156,7 +156,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         timer++;
         rt_os_sleep(1);
     } while(timer < MAX_DOWNLOAD_TIMER);
-    rt_os_free(out);
+    cJSON_free(out);
     cJSON_Delete(post_info);
     return ret;
 }

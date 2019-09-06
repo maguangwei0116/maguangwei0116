@@ -54,6 +54,20 @@ static int32_t init_system_signal(void *arg)
     return RT_SUCCESS;
 }
 
+/*
+get device IMEI, and so on.
+*/
+static int32_t init_device_info(void *arg)
+{
+    static char g_device_imei[64] = {0};  
+
+    rt_qmi_get_imei(g_device_imei);
+    ((public_value_list_t *)arg)->imei = (const char *)g_device_imei;
+    MSG_PRINTF(LOG_WARN, "imei: %p, %s\n", ((public_value_list_t *)arg)->imei, g_device_imei);
+
+    return RT_SUCCESS;
+}
+
 static int32_t init_monitor(void *arg)
 {
     info_vuicc_data_t info;
@@ -62,6 +76,8 @@ static int32_t init_monitor(void *arg)
     info.vuicc_switch = ((public_value_list_t *)arg)->lpa_channel_type;
     info.share_profile_state = 0;
     ipc_send_data((const uint8_t *)&info, len, (uint8_t *)&info, &len);
+
+    return RT_SUCCESS;
 }
 
 /*
@@ -69,6 +85,7 @@ List your init call here !
 **/
 static const init_obj_t g_init_objs[] =
 {
+    INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),
     INIT_OBJ(init_system_signal,        NULL),
@@ -79,8 +96,8 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    NULL),
-    INIT_OBJ(init_personalise,          (void *)&g_value_list),
-//    INIT_OBJ(init_mqtt,                 NULL),
+    INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
+    INIT_OBJ(init_upload,               (void *)&g_value_list),
 };
 
 static int32_t agent_init_call(void)

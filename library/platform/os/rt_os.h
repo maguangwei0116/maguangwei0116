@@ -39,9 +39,24 @@ int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, int32_t len);
 uint32_t rt_os_strlen(const char *string);
 char *rt_os_strchr(const char *str, int32_t chr);
 char *rt_os_strstr(const char *str1, const char *str2);
+
+//#define RT_OS_MEM_DEBUG 1
+
+#ifndef RT_OS_MEM_DEBUG
 void *rt_os_malloc(uint32_t size);
 void *rt_os_realloc(void *mem, uint32_t size);
 void  rt_os_free(void *mem);
+#else
+void *_rt_os_malloc(const char *file, uint32_t line, uint32_t size);
+void *_rt_os_realloc(const char *file, uint32_t line, void *mem, uint32_t size);
+void  _rt_os_free(const char *file, uint32_t line, void *mem);
+
+#define rt_os_malloc(size)          _rt_os_malloc(__FILE__, __LINE__, size)
+#define rt_os_realloc(mem, size)    _rt_os_realloc(__FILE__, __LINE__, mem, size)
+#define rt_os_free(mem)             _rt_os_free(__FILE__, __LINE__, mem)
+
+#endif
+
 void *rt_os_memset(void *mem, int32_t value, int32_t len);
 void *rt_os_memcpy(void *mem_des, const void *mem_src, int32_t len);
 void *rt_os_strcpy(char* dest, const char *src);
