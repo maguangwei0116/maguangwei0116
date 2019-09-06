@@ -84,15 +84,109 @@ exit_entry:
     return !ret ? profiles : NULL;
 }
 
+/*****************************************************************************
+ * FUNCTION
+ *  get_euicc_iccid.
+ * DESCRIPTION
+ *  get the iccid of provisioning card.
+ * PARAMETERS
+ *  @iccid    provisioning card iccid.
+  * RETURNS
+ *  @void.
+ *****************************************************************************/
+static int32_t rt_get_euicc_iccid(uint8_t *iccid)
+{
+#if 1 || (PLATFORM == PLATFORM_9X07)
+    return rt_qmi_get_current_iccid(iccid);
+#elif PLATFORM == PLATFORM_FIBCOM
+    return rt_fibcom_get_iccid(iccid);
+#endif
+    return 0;
+}
+
+/*****************************************************************************
+ * FUNCTION
+ *  get_network_info
+ * DESCRIPTION
+ *  get mccmnc,network type and signial leve
+ * PARAMETERS
+ *  @mcc_mnc  regist operational
+ *  @net_type network type(2g,3g or 4g)
+ *  @leve     signial leve
+ * RETURNS
+ *  @void
+ *****************************************************************************/
+static void rt_get_network_info(uint8_t *mcc_mnc,uint8_t *net_type,uint8_t *leve,int32_t *dbm,uint8_t *iccid)
+{
+    uint16_t mcc_int = 0;
+    uint16_t mnc_int = 0;
+    int32_t j = 0;
+
+    if (mcc_mnc == NULL) {
+        return;
+    }
+    
+#if 1 || (PLATFORM == PLATFORM_9X07)
+    //used qmi to get network info
+    rt_qmi_get_current_iccid(iccid);
+    rt_qmi_get_mcc_mnc(&mcc_int,&mnc_int);
+    j += sprintf(mcc_mnc, "%03d", 666);
+    j += sprintf(mcc_mnc+j, "%02d", mnc_int);
+    rt_qmi_get_signal(dbm);
+    if (*dbm < -100) {
+        leve[0] = '0';
+    } else if (*dbm < -85) {
+        leve[0] = '1';
+    } else if (*dbm < -70) {
+        leve[0] = '2';
+    } else if (*dbm < -60) {
+        leve[0] = '3';
+    } else {
+        leve[0] = '4';
+    }
+    leve[1]='\0';
+    
+#elif PLATFORM == PLATFORM_FIBCOM
+    //used fibcom api to get network info
+    int32_t signal;
+    rt_fibcom_get_iccid(iccid);
+    rt_fibcom_get_mcc_mnc(&mcc_int,&mnc_int);
+    j += sprintf(mcc_mnc, "%03d", mcc_int);
+    j += sprintf(mcc_mnc+j, "%02d", mnc_int);
+    rt_fibcom_get_signal(&signal);
+    sprintf(leve, "%d", signal);
+    if (signal == 5) {
+        *dbm = -51;
+    } else if (signal == 4) {
+        *dbm = -62;
+    } else if (signal == 3) {
+        *dbm = -71;
+    } else if (signal == 2) {
+        *dbm = -86;
+    } else if (signal == 1) {
+        *dbm = -93;
+    } else if (signal == 0) {
+        *dbm = -105;
+    }
+#endif
+
+    j = rt_os_strlen(iccid);
+    for (;j < 20; j++) {
+        iccid[j] = 'F';
+    }
+    iccid[j] = '\0';
+    MSG_PRINTF(LOG_DBG, "*leve:%c\n",*leve);
+}
+
 static cJSON *upload_event_boot_network_info(void)
 {
     int32_t ret = 0;
     cJSON *network = NULL;
-    char *iccid = "12345678901234567890";
-    char *mccmnc = "46000";
-    char *type = "4G";
-    int32_t dbm = -70;
-    char *level = "3";
+    char iccid[21] = {0};
+    char mccmnc[8] = {0};
+    char type[8] = {0};
+    int32_t dbm = 0;
+    char level[8] = {0};
 
     network = cJSON_CreateObject();
     if (!network) {
@@ -100,6 +194,8 @@ static cJSON *upload_event_boot_network_info(void)
         ret = -1;
         goto exit_entry;
     }
+
+    rt_get_network_info(mccmnc, type, level, &dbm, iccid);
 
     CJSON_ADD_NEW_STR_OBJ(network, iccid);
     CJSON_ADD_NEW_STR_OBJ(network, mccmnc);
