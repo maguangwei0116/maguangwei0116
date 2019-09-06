@@ -11,15 +11,17 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifdef CFG_AGENT_PERSONALISE_ON
-#warning AGENT_PERSONALISE_ON on ...
 
 #include "rt_type.h"
-#include "personalise.h"
+#include "device_info.h"
+#include "upload.h"
 
-int32_t personalise_main(void)
+int32_t personalise_main(void *arg)
 {
-    return 0;
+    int32_t ret;
+    MSG_PRINTF(LOG_WARN, "0------------\n", ret);
+    ret = upload_cmd_no_cert(NULL);
+    MSG_PRINTF(LOG_WARN, "---------ret:%d\n", ret);
+    return ret;
 }
 
-#endif

@@ -10,6 +10,7 @@ extern "C" {
 
 int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len);
 int32_t init_upload(void *arg);
+int32_t upload_cmd_no_cert(void *arg);
 
 #ifdef __cplusplus
 }

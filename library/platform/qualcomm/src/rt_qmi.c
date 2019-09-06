@@ -98,6 +98,18 @@ int32_t rt_qmi_init(void *arg)
     qmi_uim_init();
 }
 
+// get MEID
+int32_t rt_qmi_get_model(uint8_t *model)
+{
+    int32_t ret = RT_ERROR;
+    qmi_device_info_t devinfo;
+    if (qmi_query_device_info(&devinfo) == 0) {
+        rt_os_memcpy(model, devinfo.device_model_id, rt_os_strlen(devinfo.device_model_id));
+        ret = RT_SUCCESS;
+    }
+    return ret;
+}
+
 /*****************************************************************************
  * FUNCTION
  *  rt_modify_profile

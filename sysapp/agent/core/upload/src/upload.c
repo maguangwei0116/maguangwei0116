@@ -22,10 +22,10 @@ do{                 \
     "Content-Type:application/json;charset=UTF-8\r\n"\
     "md5sum:%s\r\n"\
     "Content-Length: %d\r\n\r\n%s"
-    
+
 #define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
 
-static uint8_t g_eid[64] = "89086657727465610100000000000171";;
+static uint8_t g_eid[64] = "6e9d01b1f732b2704d9b2c8db0f6800e";;
 static uint8_t g_imei[64] = "1234567890ABCDEF";
 static uint8_t g_current_mcc[8] = "460";
 static uint8_t g_push_channel[8] = "EMQ";
@@ -33,7 +33,7 @@ static uint8_t g_push_channel[8] = "EMQ";
 int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
     int32_t socket_fd = -1;
-    int8_t  *recv_buf = NULL;
+    int8_t *recv_buf = NULL;
     int32_t offset = 0;
     http_result_e ret = HTTP_SUCCESS;
 
@@ -52,11 +52,11 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
             MSG_PRINTF(LOG_WARN, "http_tcpclient_send failed..\n");
             break;
         }
-        
-        recv_buf = (int8_t *)rt_os_malloc(BUFFER_SIZE * 4);
+
+        recv_buf = (int8_t *) rt_os_malloc(BUFFER_SIZE * 4);
         if (!recv_buf) {
             ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_PRINTF(LOG_WARN, "lpbuf malloc error\n");
+            MSG_PRINTF(LOG_WARN, "lpbuf memory alloc error\n");
             break;
         }
 
@@ -71,7 +71,7 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
             offset = http_parse_result(recv_buf);
             MSG_PRINTF(LOG_WARN, "%s\n", recv_buf + offset);
             if (cb(recv_buf + offset) != 0) {
-            ret = HTTP_RESPOND_ERROR;
+                ret = HTTP_RESPOND_ERROR;
             }
         }
     } while (0);
@@ -81,8 +81,8 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
     }
 
     http_tcpclient_close(socket_fd);
-    
-    return ret;     
+
+    return ret;
 }
 
 static int32_t upload_deal_rsp_msg(int8_t *msg)
@@ -91,12 +91,12 @@ static int32_t upload_deal_rsp_msg(int8_t *msg)
     cJSON *rsp_msg = NULL;
     cJSON *back_state = NULL;
 
-    rsp_msg = cJSON_Parse((char *)msg);
+    rsp_msg = cJSON_Parse((char *) msg);
     if (!rsp_msg) {
         MSG_PRINTF(LOG_WARN, "rsp_msg error\n");
         return RT_ERROR;
     }
-    
+
     back_state = cJSON_GetObjectItem(rsp_msg, "status");
     if (back_state == NULL) {
         MSG_PRINTF(LOG_WARN, "back_state error\n");
@@ -104,7 +104,7 @@ static int32_t upload_deal_rsp_msg(int8_t *msg)
         if (back_state->valueint == 0) {
             state = RT_SUCCESS;
         } else {
-            MSG_PRINTF(LOG_WARN, "state error string: %s\r\n", (const char*)msg);  
+            MSG_PRINTF(LOG_WARN, "state error string: %s\r\n", (const char *) msg);
         }
     }
     if (rsp_msg) {
@@ -130,9 +130,9 @@ static int32_t upload_send_request(const char *out)
         return ret;
     }
 
-    MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", strlen((const char *)out), (const char *)out);
-    
-    get_md5_string((int8_t *)out, md5_out);
+    MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", strlen((const char *) out), (const char *) out);
+
+    get_md5_string((int8_t *) out, md5_out);
     md5_out[MD5_STRING_LENGTH] = '\0';
 
     //send report by http
@@ -145,13 +145,13 @@ static int32_t upload_send_request(const char *out)
     }
 
     snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, md5_out, rt_os_strlen(out), out);
-    
+
     send_len = rt_os_strlen(lpbuf);
     ret = msg_send_upload_queue(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
     MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
-    
-exit_entry:
-    
+
+    exit_entry:
+
     return ret;
 }
 
@@ -162,22 +162,21 @@ exit_entry:
 
 static void upload_get_random_tran_id(char *tran_id, uint16_t size)
 {
-    int32_t i,flag;
-       
-    for(i = 0; i < size; i ++) {
+    int32_t i, flag;
+
+    for (i = 0; i < size; i++) {
         flag = rt_get_random_num() % 3;
-        switch(flag)
-        {
+        switch (flag) {
             case 0:
-                tran_id[i] = rt_get_random_num() % 26 + 'a'; 
+                tran_id[i] = rt_get_random_num() % 26 + 'a';
                 break;
 
             case 1:
-                tran_id[i] = rt_get_random_num() % 26 + 'A'; 
+                tran_id[i] = rt_get_random_num() % 26 + 'A';
                 break;
-            
+
             case 2:
-                tran_id[i] = rt_get_random_num() % 10 + '0'; 
+                tran_id[i] = rt_get_random_num() % 10 + '0';
                 break;
         }
     }
@@ -204,10 +203,10 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
     const char *topic = g_eid;
     int32_t version = 0;
     time_t timestamp = time(NULL);
-    
-    if (!tranId) {        
+
+    if (!tranId) {
         upload_get_random_tran_id(random_tran_id, sizeof(random_tran_id) - 1);
-        tranId = (const char *)random_tran_id;
+        tranId = (const char *) random_tran_id;
     }
 
     CJSON_ADD_NEW_STR_OBJ(upload, tranId);
@@ -221,23 +220,29 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
 static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t status, const cJSON *content)
 {
     int32_t ret;
-    cJSON *payload = NULL;
-    
-    payload = cJSON_CreateObject();
-    if (!payload) {
+    cJSON *payloadJSON = NULL;
+    char *payload = NULL;
+
+
+    payloadJSON = cJSON_CreateObject();
+    if (!payloadJSON) {
         MSG_PRINTF(LOG_WARN, "The payload is error\n");
         ret = -1;
         goto exit_entry;
     }
 
-    CJSON_ADD_NEW_STR_OBJ(payload, event);
-    CJSON_ADD_NEW_INT_OBJ(payload, status);
-    CJSON_ADD_STR_OBJ(payload, content);
-    CJSON_ADD_STR_OBJ(upload, payload);
+    CJSON_ADD_NEW_STR_OBJ(payloadJSON, event);
+    CJSON_ADD_NEW_INT_OBJ(payloadJSON, status);
+    CJSON_ADD_STR_OBJ(payloadJSON, content);
+    payload = (char *) cJSON_PrintUnformatted(payloadJSON);
+    CJSON_ADD_NEW_STR_OBJ(upload, payload);
+    if (payload) {
+        rt_os_free(payload);
+    }
 
     ret = 0;
 
-exit_entry:
+    exit_entry:
 
     return ret;
 }
@@ -246,22 +251,61 @@ static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t 
 {
     int32_t ret;
     cJSON *upload = NULL;
-    
+
     upload = cJSON_CreateObject();
     if (!upload) {
         MSG_PRINTF(LOG_WARN, "The upload is error\n");
         ret = -1;
         goto exit_entry;
     }
-    
+
     upload_packet_header_info(upload, tran_id);
     upload_packet_payload(upload, event, status, content);
 
     ret = 0;
-    
-exit_entry:
+
+    exit_entry:
 
     return !ret ? upload : NULL;
+}
+
+int32_t upload_cmd_no_cert(void)
+{
+    int32_t ret;
+    int32_t status = 0;
+    cJSON *upload = NULL;
+    cJSON *content = NULL;
+    char *upload_json_pag = NULL;
+    const char *event = "NO_CERT";
+    const char *imei = "866713030010830";
+    const char *deviceId = "6e9d01b1f732b2704d9b2c8db0f6800e";
+    char *model = NULL;
+    char *fileVersion = NULL;
+
+    content = cJSON_CreateObject();
+    if (!content) {
+        MSG_PRINTF(LOG_WARN, "The content is error\n");
+        ret = -1;
+        goto exit_entry;
+    }
+    CJSON_ADD_NEW_STR_OBJ(content, imei);
+    CJSON_ADD_NEW_STR_OBJ(content, deviceId);
+
+    upload = upload_packet_all(NULL, event, status, content);
+    upload_json_pag = (char *) cJSON_PrintUnformatted(upload);
+    ret = upload_send_request((const char *) upload_json_pag);
+
+    exit_entry:
+
+    if (upload != NULL) {
+        cJSON_Delete(upload);
+    }
+
+    if (upload_json_pag) {
+        rt_os_free(upload_json_pag);
+    }
+
+    return ret;
 }
 
 int32_t upload_cmd_registered(void)
@@ -269,13 +313,13 @@ int32_t upload_cmd_registered(void)
     int32_t ret;
     int32_t status = 0;
     cJSON *upload = NULL;
-    cJSON *content = NULL;    
+    cJSON *content = NULL;
     char *upload_json_pag = NULL;
     const char *event = "REGISTERED";
-    const char *pushChannel = (const char *)g_push_channel;
+    const char *pushChannel = (const char *) g_push_channel;
 
     MSG_PRINTF(LOG_WARN, "\n----------------->%s\n", event);
-    
+
     content = cJSON_CreateObject();
     if (!content) {
         MSG_PRINTF(LOG_WARN, "The content is error\n");
@@ -284,12 +328,12 @@ int32_t upload_cmd_registered(void)
     }
 
     CJSON_ADD_NEW_STR_OBJ(content, pushChannel);
-    
-    upload = upload_packet_all(NULL, event, status, content);
-    upload_json_pag = (char *)cJSON_PrintUnformatted(upload);    
-    ret = upload_send_request((const char *)upload_json_pag);
 
-exit_entry:
+    upload = upload_packet_all(NULL, event, status, content);
+    upload_json_pag = (char *) cJSON_PrintUnformatted(upload);
+    ret = upload_send_request((const char *) upload_json_pag);
+
+    exit_entry:
 
     if (upload != NULL) {
         cJSON_Delete(upload);
@@ -345,7 +389,7 @@ static int32_t upload_cmd_boot_info(const char *str_cmd, rt_bool only_profile_ne
     }
 
     MSG_PRINTF(LOG_WARN, "\n----------------->%s\n", event);
-    
+
     content = cJSON_CreateObject();
     if (!content) {
         MSG_PRINTF(LOG_WARN, "The content is error\n");
@@ -363,10 +407,10 @@ static int32_t upload_cmd_boot_info(const char *str_cmd, rt_bool only_profile_ne
     }
 
     upload = upload_packet_all(NULL, event, status, content);
-    upload_json_pag = (char *)cJSON_PrintUnformatted(upload);    
-    ret = upload_send_request((const char *)upload_json_pag);
+    upload_json_pag = (char *) cJSON_PrintUnformatted(upload);
+    ret = upload_send_request((const char *) upload_json_pag);
 
-exit_entry:
+    exit_entry:
 
     if (upload != NULL) {
         cJSON_Delete(upload);
@@ -391,7 +435,7 @@ int32_t upload_cmd_info(void)
 
 int32_t init_upload(void *arg)
 {
-    upload_cmd_registered(); 
+    upload_cmd_registered();
     rt_os_sleep(1);
     upload_cmd_boot();
     rt_os_sleep(1);
