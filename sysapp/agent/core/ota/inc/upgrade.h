@@ -10,9 +10,10 @@
 
 #include "stdint.h"
 
-#define MAX_FILE_PATH_LEN                   100
-#define TMP_DOWNLOAD_PATH                   "/data/"
-#define BACKUP_INFO_FILE                    "/data/rt_upgrade_info"
+#define MAX_DOWNLOAD_TIMEOUTS           120     // unit: second
+#define MAX_FILE_PATH_LEN               100
+#define TMP_DOWNLOAD_PATH               "/data/"
+#define BACKUP_INFO_FILE                "/data/rt_upgrade_info"
 
 typedef enum {
     UPGRADE_NO_FAILURE = 0,
@@ -27,26 +28,37 @@ typedef enum {
 } rt_upgrade_result_e;
 
 typedef struct upgrade_struct {
-#define MAX_TRANID_LEN              128
-#define MAX_MAKE_LEN                32
-#define MAX_CHIP_MODEL_LEN        32
-#define MAX_VERSION_NAME_LEN        128
-#define MAX_FILE_NAME_LEN           128
-#define MAX_FILE_HASH_LEN           64
-#define MAX_TICKET_LEN              32
-#define HASH_CHECK_BLOCK            1024  // 哈希校验每块的大小
+#define MAX_TRANID_LEN                  128
+#define MAX_MAKE_LEN                    32
+#define MAX_CHIP_MODEL_LEN              32
+#define MAX_VERSION_NAME_LEN            128
+#define MAX_FILE_NAME_LEN               128
+#define MAX_FILE_HASH_LEN               64
+#define MAX_TICKET_LEN                  32
+#define HASH_CHECK_BLOCK                1024  // 哈希校验每块的大小
 
 /* 该宏用于设置在线升级状态标示为 */
 #define SET_UPGRADE_FLAG(obj, update_mode, force_update) \
     (obj)->upgrade_flag = ((update_mode) | (force_update) << 3)
 
 /* 该宏用于获取在线升级状态标示为 */
-#define GET_UPDATEMODE(obj)                      (((obj)->upgrade_flag >> 0) & 0x03)
-#define SET_UPDATEMODE(obj, data)                ((obj)->upgrade_flag |= (data))
-#define GET_FORCEUPDATE(obj)                     (((obj)->upgrade_flag >> 2) & 0x01)
-#define SET_FORCEUPDATE(obj, data)               ((obj)->upgrade_flag |= (data) << 2)
-#define GET_UPGRADE_STATUS(obj)                  (((obj)->upgrade_flag >> 3) & 0x01)
-#define SET_UPGRADE_STATUS(obj, data)            ((obj)->upgrade_flag |= (data) << 3)
+#define GET_UPDATEMODE(obj)             (((obj)->upgrade_flag >> 0) & 0x03)
+#define SET_UPDATEMODE(obj, data)       ((obj)->upgrade_flag |= (data))
+#define GET_FORCEUPDATE(obj)            (((obj)->upgrade_flag >> 2) & 0x01)
+#define SET_FORCEUPDATE(obj, data)      ((obj)->upgrade_flag |= (data) << 2)
+#define GET_UPGRADE_STATUS(obj)         (((obj)->upgrade_flag >> 3) & 0x01)
+#define SET_UPGRADE_STATUS(obj, data)   ((obj)->upgrade_flag |= (data) << 3)
+
+/* lock for download process */
+#define DOWNLOAD_LOCKED                 1
+#define DOWNLOAD_UNLOCKED               0
+#define DOWNLOAD_LOCK(upgrade)          ((upgrade_struct_t *)(upgrade))->downloadLock = DOWNLOAD_LOCKED
+#define DOWNLOAD_UNLOCK(upgrade)        ((upgrade_struct_t *)(upgrade))->downloadLock = DOWNLOAD_UNLOCKED
+#define DOWNLOAD_LOCK_CHECK(upgrade)    (((upgrade_struct_t *)(upgrade))->downloadLock == DOWNLOAD_LOCKED)
+
+/* download result code */
+#define SET_DOWNLOAD_RET(upgrade, ret)  ((upgrade_struct_t *)(upgrade))->downloadResult = ret
+#define GET_DOWNLOAD_RET(upgrade, ret)  ret = ((upgrade_struct_t *)(upgrade))->downloadResult
 
     int8_t      upgrade_flag;
     /* 在线升级相关参数标志位     
@@ -67,9 +79,12 @@ typedef struct upgrade_struct {
     int8_t      buffer[HASH_CHECK_BLOCK];
     uint16_t    retryAttempts;
     uint16_t    retryInterval;
+    uint8_t     downloadLock;                           // lock for download process
+    int32_t     downloadResult;                         // the result of download process
 } upgrade_struct_t;
 
-extern void * check_upgrade_process(void *args);
-extern void upgrade_check_info(void);
+int32_t upgrade_process_create(upgrade_struct_t **d_info);
+int32_t upgrade_process_start(upgrade_struct_t *d_info);
+int32_t upgrade_process_wating(upgrade_struct_t *d_info, int32_t timeous);
 
 #endif /* __INCLUDE_UPGRADE_H__ */

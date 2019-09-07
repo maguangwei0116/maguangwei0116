@@ -213,15 +213,16 @@ static int32_t ota_upgrade_start(const void *in)
     uint8_t update_mode = 1;
     uint8_t force_update = 0;
     const ota_upgrade_param_t *param = (const ota_upgrade_param_t *)in;
-    upgrade_struct_t *upgrade_info = (upgrade_struct_t *)rt_os_malloc(sizeof(upgrade_struct_t));  
+    upgrade_struct_t *upgrade_info = NULL;  
 
     OTA_CHK_PINTER_NULL(param, -1);
+    upgrade_process_create(&upgrade_info);
     OTA_CHK_PINTER_NULL(upgrade_info, -2);
-    rt_os_memset(upgrade_info, 0, sizeof(upgrade_struct_t));
 
+    /* set upgrade information */
+    rt_os_memset(upgrade_info, 0, sizeof(upgrade_struct_t));
     SET_UPDATEMODE(upgrade_info, update_mode);
     SET_FORCEUPDATE(upgrade_info, force_update);
-
     snprintf(upgrade_info->tranId, sizeof(upgrade_info->tranId), "%s", param->tranId);
     snprintf(upgrade_info->chipModel, sizeof(upgrade_info->chipModel), "%s", param->target.chipModel);
     snprintf(upgrade_info->fileName, sizeof(upgrade_info->fileName), "%s", param->target.name);
@@ -235,9 +236,10 @@ static int32_t ota_upgrade_start(const void *in)
         ret = -3;
         goto exit_entry;
     }
-    
-    if (rt_create_task(&id, check_upgrade_process, (void *)upgrade_info) != RT_SUCCESS) {
-        MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
+
+    ret = upgrade_process_start(upgrade_info);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "Create upgrade start error\n");
         ret = -4;
         goto exit_entry;
     }
@@ -251,9 +253,9 @@ exit_entry:
         param = NULL;
     }
 
-    if (ret && upgrade_info) {
-        rt_os_free((void *)upgrade_info);
-        upgrade_info = NULL;
+    upgrade_process_wating(upgrade_info, MAX_DOWNLOAD_TIMEOUTS);
+    if (!ret) {
+        ret = GET_DOWNLOAD_RET(upgrade_info, ret);
     }
 
     return ret;
