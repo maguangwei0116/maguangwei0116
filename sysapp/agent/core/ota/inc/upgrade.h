@@ -28,6 +28,7 @@ typedef enum {
 typedef struct upgrade_struct {
 #define MAX_TRANID_LEN              128
 #define MAX_MAKE_LEN                32
+#define MAX_CHIP_MODEL_LEN        32
 #define MAX_VERSION_NAME_LEN        128
 #define MAX_FILE_NAME_LEN           128
 #define MAX_FILE_HASH_LEN           64
@@ -56,6 +57,7 @@ typedef struct upgrade_struct {
     int8_t      tranId[MAX_TRANID_LEN + 1];
     int8_t      make[MAX_MAKE_LEN + 1];
     int8_t      versioncode;  // 版本标识
+    int8_t      chipModel[MAX_CHIP_MODEL_LEN + 1];
     int8_t      versionName[MAX_VERSION_NAME_LEN + 1];
     int8_t      fileName[MAX_FILE_NAME_LEN + 1];
     int8_t      fileHash[MAX_FILE_HASH_LEN + 1];  // 平台下载文件的hash码

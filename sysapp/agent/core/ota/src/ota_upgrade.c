@@ -33,7 +33,7 @@ typedef struct _ota_upgrade_target_t {
     char                    version[16];
     char                    chipModel[16];
     char                    ticket[64];
-    char                    fileHash[64];
+    char                    fileHash[72];
 } ota_upgrade_target_t;
 
 typedef struct _ota_upgrade_policy_t {
@@ -42,6 +42,8 @@ typedef struct _ota_upgrade_policy_t {
     uint8_t                 profileType;
     uint16_t                retryAttempts;
     uint16_t                retryInterval;
+    char                    mode[16];
+    char                    issueType[16];
 } ota_upgrade_policy_t;
 
 typedef struct _ota_upgrade_param_t {
@@ -189,6 +191,7 @@ static int32_t ota_upgrade_start(const void *in)
     SET_FORCEUPDATE(upgrade_info, force_update);
 
     snprintf(upgrade_info->tranId, sizeof(upgrade_info->tranId), "%s", param->tranId);
+    snprintf(upgrade_info->chipModel, sizeof(upgrade_info->chipModel), "%s", param->target.chipModel);
     snprintf(upgrade_info->fileName, sizeof(upgrade_info->fileName), "%s", param->target.name);
     snprintf(upgrade_info->versionName, sizeof(upgrade_info->versionName), "%s", param->target.version);
     snprintf(upgrade_info->fileHash, sizeof(upgrade_info->fileHash), "%s", param->target.fileHash);
@@ -212,6 +215,15 @@ exit_entry:
     }
 
     return ret;
+}
+
+/* 
+return RT_FALSE: needn't download
+return RT_TRUE : download right now
+*/
+static rt_bool ota_upgrade_start_check(const ota_upgrade_param_t *param)
+{
+    rt_bool ret;   
 }
 
 static int32_t ota_upgrade_handler(const void *in, void **out)

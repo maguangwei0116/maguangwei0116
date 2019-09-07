@@ -37,17 +37,6 @@ extern int8_t  *g_imei;
 
 int8_t g_download_flag = 0;
 
-#if 0
-#define RT_CHECK_ERR(process, result) \
-    if((process) == result){ MSG_PRINTF(LOG_WARN, "%s error result:%s\n", #process, strerror(errno));  goto end;}
-#define RT_CHECK_NEQ(process, result) \
-    if((process) != result){ MSG_PRINTF(LOG_WARN, "%s error result:%s\n", #process, strerror(errno));  goto end;}
-#define RT_CHECK_LESE(process, result) \
-    if((process) <= result){ MSG_PRINTF(LOG_WARN, "%s error result:%s\n", #process, strerror(errno));  goto end;}
-#define RT_CHECK_LES(process, result) \
-    if((process) < result){ MSG_PRINTF(LOG_WARN, "%s error result:%s\n", #process, strerror(errno));  goto end;}
-#endif
-
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do{                 \
    snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
@@ -93,6 +82,12 @@ static rt_bool upgrade_compare_version(upgrade_struct_t *d_info)
     return RT_TRUE;
 }
 
+static void upgrade_get_file_path(char *file_path, int32_t len, upgrade_struct_t *d_info)
+{
+    snprintf((char *)file_path, len, "%s%s_v%s_%s.tmp", \
+                BACKUP_PATH, d_info->fileName, d_info->versionName, d_info->chipModel);  // Build a complete path to download files    
+}
+
 static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 {
     rt_bool ret = RT_FALSE;
@@ -109,30 +104,30 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.buf = NULL;
 
     /* 构建文件下载Http请求body */
-    snprintf((char *)file_path, MAX_FILE_PATH_LEN + 1, "%s%s", BACKUP_PATH, d_info->fileName);  // Build a complete path to download files
+    upgrade_get_file_path((char *)file_path, sizeof(file_path), d_info);
     dw_struct.file_path = (const char *)file_path;
     dw_struct.manager_type = 1;
     dw_struct.http_header.method = 0;  // POST
-    STRUCTURE_OTI_URL(buf, 100, OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT, "/api/v1/download");  // Build the OTI address
+    STRUCTURE_OTI_URL(buf, sizeof(buf), OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT, "/api/v1/download");  // Build the OTI address
     rt_os_memcpy(dw_struct.http_header.url, buf, rt_os_strlen(buf));
     dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
     dw_struct.http_header.version = 0;
     dw_struct.http_header.record_size = 0;
     
     post_info = cJSON_CreateObject();
-    cJSON_AddItemToObject(post_info,"ticket",cJSON_CreateString((char *)d_info->ticket));
+    cJSON_AddItemToObject(post_info, "ticket", cJSON_CreateString((char *)d_info->ticket));
+    cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(""));  // must have a empty "imei"
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
     rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
     dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
 
-    snprintf((char *)buf, 100, "%s:%d", OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
+    snprintf((char *)buf, sizeof(buf), "%s:%d", OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
     http_set_header_record(&dw_struct, "HOST", buf);
 
     http_set_header_record(&dw_struct, "Content-Type", "application/json");
     http_set_header_record(&dw_struct, "Accept", "application/octet-stream");
-    http_set_header_record(&dw_struct, "imei", "");
 
-    snprintf((char *)buf, 100, "%d", rt_os_strlen(dw_struct.http_header.buf));
+    snprintf((char *)buf, sizeof(buf), "%d", rt_os_strlen(dw_struct.http_header.buf));
     http_set_header_record(&dw_struct, "Content-Length", (const char *)buf);
 
     /* 计算body的md5校验码 */
@@ -150,7 +145,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         
         /*There is file need to download in system*/
         if (rt_os_access((const int8_t *)file_path, F_OK) == RT_SUCCESS){
-            snprintf(buf, 100, "%d", get_file_size(file_path));
+            snprintf(buf, sizeof(buf), "%d", get_file_size(file_path));
             http_set_header_record(&dw_struct, "Range", (const char *)buf);
         }
 
@@ -182,7 +177,7 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
     int32_t partlen;
     struct  stat f_info;
 
-    snprintf((char *)file_path, MAX_FILE_PATH_LEN + 1, "%s%s", BACKUP_PATH, d_info->fileName);
+    upgrade_get_file_path((char *)file_path, sizeof(file_path), d_info);
 
     RT_CHECK_ERR(stat((char *)file_path, &f_info), -1);
 
@@ -210,10 +205,13 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
 
     sha256_final(&sha_ctx,(uint8_t *)hash_out);
     bytestring_to_charstring(hash_out, hash_result, 32);
-
+    
+    MSG_PRINTF(LOG_WARN, "download  hash_result: %s\r\n", hash_result);
+    MSG_PRINTF(LOG_WARN, "push file hash_result: %s\r\n", d_info->fileHash);
     RT_CHECK_NEQ(strncpy_case_insensitive(hash_result, d_info->fileHash, MAX_FILE_HASH_LEN), RT_TRUE);
 
     ret = RT_TRUE;
+    
 end:
 
     if (fp != NULL) {
@@ -228,7 +226,7 @@ static rt_bool replace_process(upgrade_struct_t *d_info)
     rt_bool ret = RT_FALSE;
     int8_t file_path[MAX_FILE_PATH_LEN + 1];
 
-    snprintf((char *)file_path, MAX_FILE_PATH_LEN + 1, "%s%s", BACKUP_PATH, d_info->fileName);
+    upgrade_get_file_path((char *)file_path, sizeof(file_path), d_info);
 
     /* 进行agent替换 */
     RT_CHECK_NEQ(rt_os_rename(file_path, AGENT_PATH), 0);
@@ -251,7 +249,7 @@ static void upgrade_package_cleanup(upgrade_struct_t *d_info)
     int8_t cmd[100];
     int8_t file_path[MAX_FILE_PATH_LEN + 1];
 
-    snprintf((char *)file_path, MAX_FILE_PATH_LEN + 1, "%s%s", BACKUP_PATH, d_info->fileName);
+    upgrade_get_file_path((char *)file_path, sizeof(file_path), d_info);
     rt_os_unlink(file_path);
 }
 
@@ -289,6 +287,8 @@ static rt_upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info
         upgrade_package_cleanup(d_info);
         return UPGRADE_REPLACE_APP_ERROR;
     }
+
+    MSG_PRINTF(LOG_INFO, "Upgrade ok ! \n");
 
     return UPGRADE_NO_FAILURE;
 }
