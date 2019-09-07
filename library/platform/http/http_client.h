@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 
+#if 0
 #define RT_CHECK_ERR(process, result) \
     if((process) == result){ MSG_PRINTF(LOG_WARN, "%s error result:%s\n", #process, strerror(errno));  goto end;}
 #define RT_CHECK_NEQ(process, result) \
@@ -18,6 +19,16 @@
     if((process) <= result){ MSG_PRINTF(LOG_WARN, "%s error result:%s\n", #process, strerror(errno));  goto end;}
 #define RT_CHECK_LES(process, result) \
     if((process) < result){ MSG_PRINTF(LOG_WARN, "%s error result:%s\n", #process, strerror(errno));  goto end;}
+#else
+#define RT_CHECK_ERR(process, result) \
+    if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
+#define RT_CHECK_NEQ(process, result) \
+    if((process) != result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
+#define RT_CHECK_LESE(process, result) \
+    if((process) <= result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
+#define RT_CHECK_LES(process, result) \
+    if((process) < result){ MSG_PRINTF(LOG_WARN, "[%s] error\n",  #process);  goto end;}
+#endif
 
 typedef struct http_request_header_record {
 #define MAX_KEY_LEN                           30
