@@ -23,10 +23,6 @@ int32_t init_device_info(void *arg)
     uint8_t device_id[DEVICE_ID_LEN + 1];
     int32_t ret = RT_ERROR;
 
-    {
-        MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION);  
-    }
-
     ret = rt_qmi_get_imei(info.imei);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Get imei failed\n");
