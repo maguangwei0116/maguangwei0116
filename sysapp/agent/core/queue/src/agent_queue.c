@@ -90,7 +90,7 @@ static void agent_queue_task(void)
                     break;
                     
                 case MSG_ID_OTA_UPGRADE:
-
+                    ota_upgrade_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
                     
                 case MSG_ID_PERSONLLISE:

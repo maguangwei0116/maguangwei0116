@@ -14,4 +14,6 @@
 #ifndef __OTA_H__
 #define __OTA_H__
 
+int32_t ota_upgrade_event(const uint8_t *buf, int32_t len, int32_t mode);
+
 #endif // __OTA_H__

@@ -331,7 +331,7 @@ int32_t init_upload(void *arg)
     rt_bool report_all_info;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
     
-    g_upload_device_info    = (const char *)public_value_list->device_info;
+    g_upload_device_info    = (const devicde_info_t *)public_value_list->device_info;
     g_push_channel          = (const char *)public_value_list->push_channel;
     g_upload_eid            = (const char *)public_value_list->card_info->eid;
     g_upload_card_info      = (const card_info_t *)public_value_list->card_info->info;

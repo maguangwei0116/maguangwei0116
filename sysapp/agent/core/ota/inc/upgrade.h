@@ -33,13 +33,13 @@ typedef struct upgrade_struct {
 #define MAX_FILE_NAME_LEN           128
 #define MAX_FILE_HASH_LEN           64
 #define MAX_TICKET_LEN              32
-#define HASH_CHECK_BLOCK            1024  // å“ˆå¸Œæ ¡éªŒæ¯å—çš„å¤§å°
+#define HASH_CHECK_BLOCK            1024  // ¹þÏ£Ð£ÑéÃ¿¿éµÄ´óÐ¡
 
-    /* è¯¥å®ç”¨äºŽè®¾ç½®åœ¨çº¿å‡çº§çŠ¶æ€æ ‡ç¤ºä¸º */
+/* ¸ÃºêÓÃÓÚÉèÖÃÔÚÏßÉý¼¶×´Ì¬±êÊ¾Îª */
 #define SET_UPGRADE_FLAG(obj, update_mode, force_update) \
     (obj)->upgrade_flag = ((update_mode) | (force_update) << 3)
 
-/* è¯¥å®ç”¨äºŽèŽ·å–åœ¨çº¿å‡çº§çŠ¶æ€æ ‡ç¤ºä¸º */
+/* ¸ÃºêÓÃÓÚ»ñÈ¡ÔÚÏßÉý¼¶×´Ì¬±êÊ¾Îª */
 #define GET_UPDATEMODE(obj)                      (((obj)->upgrade_flag >> 0) & 0x03)
 #define SET_UPDATEMODE(obj, data)                ((obj)->upgrade_flag |= (data))
 #define GET_FORCEUPDATE(obj)                     (((obj)->upgrade_flag >> 2) & 0x01)
@@ -48,23 +48,23 @@ typedef struct upgrade_struct {
 #define SET_UPGRADE_STATUS(obj, data)            ((obj)->upgrade_flag |= (data) << 3)
 
     int8_t upgrade_flag;
-    /* åœ¨çº¿å‡çº§ç›¸å…³å‚æ•°æ ‡å¿—ä½
-     * -bit0-1--updateModeï¼Œ1ä¸ºå…¨é‡æ›´æ–°ï¼Œ2ä¸ºFOTAæ›´æ–°
-     * -bit2--æ˜¯å¦æ”¯æŒé™çº§æ“ä½œ
-     * -bit3--å‡çº§æ˜¯å¦æˆåŠŸï¼Œ1æˆåŠŸï¼Œ0å¤±è´¥
+    /* ÔÚÏßÉý¼¶Ïà¹Ø²ÎÊý±êÖ¾Î»     
+     * -bit0-1--updateMode£¬1ÎªÈ«Á¿¸üÐÂ£¬2ÎªFOTA¸üÐÂ     
+     * -bit2--ÊÇ·ñÖ§³Ö½µ¼¶²Ù×÷     
+     * -bit3--Éý¼¶ÊÇ·ñ³É¹¦£¬1³É¹¦£¬0Ê§°Ü     
      */
 
     int8_t tranid[MAX_TRANID_LEN + 1];
     int8_t make[MAX_MAKE_LEN + 1];
-    int8_t versioncode;  // ç‰ˆæœ¬æ ‡è¯†
+    int8_t versioncode;  // °æ±¾±êÊ¶
     int8_t versionName[MAX_VERSION_NAME_LEN + 1];
     int8_t fileName[MAX_FILE_NAME_LEN + 1];
-    int8_t fileHash[MAX_FILE_HASH_LEN + 1];  // å¹³å°ä¸‹è½½æ–‡ä»¶çš„hashç 
+    int8_t fileHash[MAX_FILE_HASH_LEN + 1];  // Æ½Ì¨ÏÂÔØÎÄ¼þµÄhashÂë
     int8_t ticket[MAX_TICKET_LEN + 1];
     int8_t buffer[HASH_CHECK_BLOCK];
 } upgrade_struct_t;
 
-extern void check_upgrade_process(void *args);
+extern void * check_upgrade_process(void *args);
 extern void upgrade_check_info(void);
 
 #endif /* __INCLUDE_UPGRADE_H__ */
