@@ -10,19 +10,20 @@
 
 #include "stdint.h"
 
-#define MAX_FILE_PATH_LEN                  100
-#define BACKUP_PATH                        "/data/"
-#define AGENT_PATH                         "/usr/bin/agent"
-#define BACKUP_INFO_FILE                   "/data/rt_upgrade_info"
+#define MAX_FILE_PATH_LEN                   100
+#define TMP_DOWNLOAD_PATH                   "/data/"
+#define BACKUP_INFO_FILE                    "/data/rt_upgrade_info"
 
 typedef enum {
     UPGRADE_NO_FAILURE = 0,
-    UPGRADE_VERSION_NUM_ERROR = 2001,
-    UPGRADE_DOWNLOAD_PACKET_ERROR = 2002,
-    UPGRADE_CHECK_PACKET_ERROR = 2003,
-    UPGRADE_REPLACE_APP_ERROR = 2004,
-    UPGRADE_SAVE_INFO_ERROR = 2005,
-    UPGRADE_OTHER = 2010
+    UPGRADE_CHECK_VERSION_ERROR         = -2001,
+    UPGRADE_DOWNLOAD_PACKET_ERROR       = -2002,
+    UPGRADE_CHECK_PACKET_ERROR          = -2003,
+    UPGRADE_INSTALL_APP_ERROR           = -2004,
+    UPGRADE_SAVE_INFO_ERROR             = -2005,
+    UPGRADE_FS_SPACE_NOT_ENOUGH_ERROR   = -2006,
+    UPGRADE_DIR_PERMISSION_ERROR        = -2007,
+    UPGRADE_OTHER                       = -2010,
 } rt_upgrade_result_e;
 
 typedef struct upgrade_struct {
@@ -56,11 +57,12 @@ typedef struct upgrade_struct {
 
     int8_t      tranId[MAX_TRANID_LEN + 1];
     int8_t      make[MAX_MAKE_LEN + 1];
-    int8_t      versioncode;  // 版本标识
+    int8_t      versioncode;
     int8_t      chipModel[MAX_CHIP_MODEL_LEN + 1];
     int8_t      versionName[MAX_VERSION_NAME_LEN + 1];
-    int8_t      fileName[MAX_FILE_NAME_LEN + 1];
-    int8_t      fileHash[MAX_FILE_HASH_LEN + 1];  // 平台下载文件的hash码
+    int8_t      targetFileName[MAX_FILE_NAME_LEN + 1];  // the full path in local file system
+    int8_t      fileName[MAX_FILE_NAME_LEN + 1];        // file name of push file name, such as "linux-euicc-agent-general"
+    int8_t      fileHash[MAX_FILE_HASH_LEN + 1];        // hash code of the upgrade file
     int8_t      ticket[MAX_TICKET_LEN + 1];
     int8_t      buffer[HASH_CHECK_BLOCK];
     uint16_t    retryAttempts;

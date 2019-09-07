@@ -174,6 +174,38 @@ exit_entry:
     return ret;
 }
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a)           (sizeof((a)) / sizeof((a)[0]))
+#endif
+
+static rt_bool ota_upgrade_get_target_file_name(const char *fileName, char *targetFileName)
+{
+    const char *g_target_files[] = 
+    {
+        "/usr/bin/agent",
+        "/usr/bin/monitor",
+        "/usr/lib/libcomm.so",        
+    };
+    int32_t i = 0;
+    int32_t cnt = ARRAY_SIZE(g_target_files);
+    char *p;
+
+    for (i = 0; i < cnt; i++) {
+        p = rt_os_strrchr(g_target_files[i], '/');
+        if (p) {
+            p++;
+            if (rt_os_strstr(fileName, p)) {
+                rt_os_strcpy(targetFileName, g_target_files[i]);
+                MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
+                return RT_TRUE;
+            }
+        }
+    }
+
+    MSG_PRINTF(LOG_WARN, "Can't find target file name of [%s]\r\n", fileName);
+    return RT_FALSE;
+}
+
 static int32_t ota_upgrade_start(const void *in)
 {
     int32_t ret;
@@ -198,10 +230,15 @@ static int32_t ota_upgrade_start(const void *in)
     snprintf(upgrade_info->ticket, sizeof(upgrade_info->ticket), "%s", param->target.ticket);
     upgrade_info->retryAttempts = param->policy.retryAttempts;
     upgrade_info->retryInterval = param->policy.retryInterval;
+    if (ota_upgrade_get_target_file_name(upgrade_info->fileName, upgrade_info->targetFileName) != RT_TRUE) {
+        MSG_PRINTF(LOG_WARN, "Unknow target file name: %s\r\n", upgrade_info->fileName);
+        ret = -3;
+        goto exit_entry;
+    }
     
     if (rt_create_task(&id, check_upgrade_process, (void *)upgrade_info) != RT_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
-        ret = -3;
+        ret = -4;
         goto exit_entry;
     }
     
@@ -212,6 +249,11 @@ exit_entry:
     if (param) {
         rt_os_free((void *)param);
         param = NULL;
+    }
+
+    if (ret && upgrade_info) {
+        rt_os_free((void *)upgrade_info);
+        upgrade_info = NULL;
     }
 
     return ret;

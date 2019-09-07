@@ -33,13 +33,11 @@ typedef enum NETWORK_STATE {
 
 #define MAX_DOWNLOAD_RETRY_CNT      9   /* plus 1 for max total download times */
 
-extern int8_t  *g_imei;
-
 int8_t g_download_flag = 0;
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do{                 \
-   snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
+    snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
 }while(0)
 
 static rt_bool upgrade_check_sys_memory()
@@ -85,7 +83,7 @@ static rt_bool upgrade_compare_version(upgrade_struct_t *d_info)
 static void upgrade_get_file_path(char *file_path, int32_t len, upgrade_struct_t *d_info)
 {
     snprintf((char *)file_path, len, "%s%s_v%s_%s.tmp", \
-                BACKUP_PATH, d_info->fileName, d_info->versionName, d_info->chipModel);  // Build a complete path to download files    
+                TMP_DOWNLOAD_PATH, d_info->fileName, d_info->versionName, d_info->chipModel);  // Build a complete path to download files    
 }
 
 static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
@@ -135,14 +133,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     buf[MD5_STRING_LENGTH] = '\0';
     http_set_header_record(&dw_struct, "md5sum", (const char *)buf);
 
-    do {
-        #if 0
-        /* wait network connecting*/
-        while(get_network_state() != NETWORK_CONNECTING && get_network_state() != NETWORK_USING) {
-            rt_os_sleep(1);
-        };
-        #endif
-        
+    do {        
         /*There is file need to download in system*/
         if (rt_os_access((const int8_t *)file_path, F_OK) == RT_SUCCESS){
             snprintf(buf, sizeof(buf), "%d", get_file_size(file_path));
@@ -209,7 +200,7 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
     MSG_PRINTF(LOG_WARN, "download  hash_result: %s\r\n", hash_result);
     MSG_PRINTF(LOG_WARN, "push file hash_result: %s\r\n", d_info->fileHash);
     RT_CHECK_NEQ(strncpy_case_insensitive(hash_result, d_info->fileHash, MAX_FILE_HASH_LEN), RT_TRUE);
-
+    MSG_PRINTF(LOG_WARN, "file hash check ok !\r\n");
     ret = RT_TRUE;
     
 end:
@@ -229,11 +220,14 @@ static rt_bool replace_process(upgrade_struct_t *d_info)
     upgrade_get_file_path((char *)file_path, sizeof(file_path), d_info);
 
     /* 进行agent替换 */
-    RT_CHECK_NEQ(rt_os_rename(file_path, AGENT_PATH), 0);
+    MSG_PRINTF(LOG_INFO, "file_path:%s, targetFileName=%s\r\n", file_path, d_info->targetFileName);
+    RT_CHECK_NEQ(rt_os_rename(file_path, d_info->targetFileName), 0);
 
-    RT_CHECK_NEQ(chmod(AGENT_PATH, S_IRWXU | S_IRWXG | S_IRWXO), 0);
+    /* 权限设置 */
+    RT_CHECK_NEQ(chmod(d_info->targetFileName, S_IRWXU | S_IRWXG | S_IRWXO), 0);
 
-    SET_UPGRADE_STATUS(d_info, 1);  // 设置升级成功标志位
+    /* 设置升级成功标志位 */
+    SET_UPGRADE_STATUS(d_info, 1);
 
     /* 连续两次sync保证新软件同步到本地flash */
     rt_os_sync();
@@ -256,41 +250,58 @@ static void upgrade_package_cleanup(upgrade_struct_t *d_info)
 /* 进行普通升级操作 */
 static rt_upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
 {
+    rt_upgrade_result_e ret;
+    
     /* 检测系统内存 */
-    upgrade_check_sys_memory();
+    if (upgrade_check_sys_memory() != RT_TRUE) {
+        ret = UPGRADE_FS_SPACE_NOT_ENOUGH_ERROR;
+        MSG_PRINTF(LOG_WARN, "upgrade_sys space not enough False\n");
+        goto exit_entry;
+    }
 
     /* 检测文件系统权限 */
-    ugrade_check_dir_permission();
+    if (ugrade_check_dir_permission() != RT_TRUE) {
+        MSG_PRINTF(LOG_WARN, "upgrade_dir permission False\n");
+        ret = UPGRADE_DIR_PERMISSION_ERROR;
+        goto exit_entry;
+    }
 
     /* 对比版本号 */
     if (upgrade_compare_version(d_info) != RT_TRUE) {
-        MSG_PRINTF(LOG_WARN, "upgrade_compare_version False\n");
-        return UPGRADE_VERSION_NUM_ERROR;
+        MSG_PRINTF(LOG_WARN, "upgrade_compare version False\n");
+        ret = UPGRADE_CHECK_VERSION_ERROR;
+        goto exit_entry;
     }
 
     /* 下载升级包 */
     if (upgrade_download_package(d_info) != RT_TRUE) {
-        MSG_PRINTF(LOG_WARN, "upgrade_download_package False\n");
-        upgrade_package_cleanup(d_info);
-        return UPGRADE_DOWNLOAD_PACKET_ERROR;
+        MSG_PRINTF(LOG_WARN, "upgrade_download package False\n");
+        ret = UPGRADE_DOWNLOAD_PACKET_ERROR;
+        goto exit_entry;
     }
 
     /* 校验升级包 */
     if (upgrade_check_package(d_info) != RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "Check Upgrade Packet Error \n");
         upgrade_package_cleanup(d_info);
-        return UPGRADE_CHECK_PACKET_ERROR;
+        ret = UPGRADE_CHECK_PACKET_ERROR;
+        goto exit_entry;
     }
 
     /* 替换升级包 */
-    if (replace_process(d_info) == RT_FALSE) {
+    if (replace_process(d_info) != RT_TRUE) {
         upgrade_package_cleanup(d_info);
-        return UPGRADE_REPLACE_APP_ERROR;
+        ret = UPGRADE_INSTALL_APP_ERROR;
+        goto exit_entry;
     }
 
     MSG_PRINTF(LOG_INFO, "Upgrade ok ! \n");
 
-    return UPGRADE_NO_FAILURE;
+    ret = UPGRADE_NO_FAILURE;
+
+exit_entry:
+
+    return ret;
 }
 
 
@@ -307,15 +318,19 @@ void * check_upgrade_process(void *args)
 
     MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
     
-    /* 全量升级模式 */
-    if (GET_UPDATEMODE(d_info) == 1) {
+    if (GET_UPDATEMODE(d_info) == 1) { /* 全量升级模式 */
         result = start_comman_upgrade_process(d_info);
-
-       /* FOTA升级模式 */
-    } else if (GET_UPDATEMODE(d_info) == 2) {
+    } else if (GET_UPDATEMODE(d_info) == 2) { /* TODO: FOTA升级模式 */
         result = start_fota_upgrade_process(d_info);
     }
 
     /* 上报升级结果 */
     //msg_upload_data(d_info->tranid, ON_UPGRADE, (int)result, (void *)d_info);
+
+    /* release memory */
+    if (d_info) {
+        rt_os_free((void *)d_info);
+        d_info = NULL;
+    }
 }
+
