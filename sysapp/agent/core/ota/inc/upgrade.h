@@ -15,7 +15,6 @@
 #define AGENT_PATH                         "/usr/bin/agent"
 #define BACKUP_INFO_FILE                   "/data/rt_upgrade_info"
 
-
 typedef enum {
     UPGRADE_NO_FAILURE = 0,
     UPGRADE_VERSION_NUM_ERROR = 2001,
@@ -47,21 +46,23 @@ typedef struct upgrade_struct {
 #define GET_UPGRADE_STATUS(obj)                  (((obj)->upgrade_flag >> 3) & 0x01)
 #define SET_UPGRADE_STATUS(obj, data)            ((obj)->upgrade_flag |= (data) << 3)
 
-    int8_t upgrade_flag;
+    int8_t      upgrade_flag;
     /* 在线升级相关参数标志位     
      * -bit0-1--updateMode，1为全量更新，2为FOTA更新     
      * -bit2--是否支持降级操作     
      * -bit3--升级是否成功，1成功，0失败     
      */
 
-    int8_t tranid[MAX_TRANID_LEN + 1];
-    int8_t make[MAX_MAKE_LEN + 1];
-    int8_t versioncode;  // 版本标识
-    int8_t versionName[MAX_VERSION_NAME_LEN + 1];
-    int8_t fileName[MAX_FILE_NAME_LEN + 1];
-    int8_t fileHash[MAX_FILE_HASH_LEN + 1];  // 平台下载文件的hash码
-    int8_t ticket[MAX_TICKET_LEN + 1];
-    int8_t buffer[HASH_CHECK_BLOCK];
+    int8_t      tranId[MAX_TRANID_LEN + 1];
+    int8_t      make[MAX_MAKE_LEN + 1];
+    int8_t      versioncode;  // 版本标识
+    int8_t      versionName[MAX_VERSION_NAME_LEN + 1];
+    int8_t      fileName[MAX_FILE_NAME_LEN + 1];
+    int8_t      fileHash[MAX_FILE_HASH_LEN + 1];  // 平台下载文件的hash码
+    int8_t      ticket[MAX_TICKET_LEN + 1];
+    int8_t      buffer[HASH_CHECK_BLOCK];
+    uint16_t    retryAttempts;
+    uint16_t    retryInterval;
 } upgrade_struct_t;
 
 extern void * check_upgrade_process(void *args);

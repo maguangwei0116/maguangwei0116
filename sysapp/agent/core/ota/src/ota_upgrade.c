@@ -5,6 +5,7 @@
 #include "log.h"
 #include "downstream.h"
 #include "upload.h"
+#include "upgrade.h"
 
 #include "cJSON.h"
 
@@ -114,7 +115,6 @@ static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
     OTA_CHK_PINTER_NULL(tranId, -2);
     
     rt_os_strcpy(tran_id, tranId->valuestring);
-    MSG_PRINTF(LOG_WARN, "tranId: %s, %p, stelen=%d\n", tran_id, tran_id, rt_os_strlen(tran_id));
 
     param = (ota_upgrade_param_t *)rt_os_malloc(sizeof(ota_upgrade_param_t));
     OTA_CHK_PINTER_NULL(param, -3);
@@ -172,9 +172,51 @@ exit_entry:
     return ret;
 }
 
+static int32_t ota_upgrade_start(const void *in)
+{
+    int32_t ret;
+    rt_task id;
+    uint8_t update_mode = 1;
+    uint8_t force_update = 0;
+    const ota_upgrade_param_t *param = (const ota_upgrade_param_t *)in;
+    upgrade_struct_t *upgrade_info = (upgrade_struct_t *)rt_os_malloc(sizeof(upgrade_struct_t));  
+
+    OTA_CHK_PINTER_NULL(param, -1);
+    OTA_CHK_PINTER_NULL(upgrade_info, -2);
+    rt_os_memset(upgrade_info, 0, sizeof(upgrade_struct_t));
+
+    SET_UPDATEMODE(upgrade_info, update_mode);
+    SET_FORCEUPDATE(upgrade_info, force_update);
+
+    snprintf(upgrade_info->tranId, sizeof(upgrade_info->tranId), "%s", param->tranId);
+    snprintf(upgrade_info->fileName, sizeof(upgrade_info->fileName), "%s", param->target.name);
+    snprintf(upgrade_info->versionName, sizeof(upgrade_info->versionName), "%s", param->target.version);
+    snprintf(upgrade_info->fileHash, sizeof(upgrade_info->fileHash), "%s", param->target.fileHash);
+    snprintf(upgrade_info->ticket, sizeof(upgrade_info->ticket), "%s", param->target.ticket);
+    upgrade_info->retryAttempts = param->policy.retryAttempts;
+    upgrade_info->retryInterval = param->policy.retryInterval;
+    
+    if (rt_create_task(&id, check_upgrade_process, (void *)upgrade_info) != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
+        ret = -3;
+        goto exit_entry;
+    }
+    
+    ret = 0;
+        
+exit_entry:
+
+    if (param) {
+        rt_os_free((void *)param);
+        param = NULL;
+    }
+
+    return ret;
+}
+
 static int32_t ota_upgrade_handler(const void *in, void **out)
 {
-    int32_t ret = 0;
+    int32_t ret = -1;
     const ota_upgrade_param_t *param = (const ota_upgrade_param_t *)in;
     
     if (param) {
@@ -189,8 +231,9 @@ static int32_t ota_upgrade_handler(const void *in, void **out)
         MSG_PRINTF(LOG_INFO, "param->policy.profileType     : %d\r\n", param->policy.profileType);
         MSG_PRINTF(LOG_INFO, "param->policy.retryAttempts   : %d\r\n", param->policy.retryAttempts);
         MSG_PRINTF(LOG_INFO, "param->policy.retryInterval   : %d\r\n", param->policy.retryInterval);
+
+        ret = ota_upgrade_start(param);
     }
-    ret = 0;
 
 exit_entry:
 

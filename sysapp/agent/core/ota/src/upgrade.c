@@ -31,7 +31,7 @@ typedef enum NETWORK_STATE {
     NETWORK_USING
 } network_state_info_e;
 
-#define MAX_DOWNLOAD_CNT      9
+#define MAX_DOWNLOAD_RETRY_CNT      9   /* plus 1 for max total download times */
 
 extern int8_t  *g_imei;
 
@@ -102,7 +102,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     int8_t *out;
     int8_t  buf[100];
     uint8_t down_try = 0;
-    int8_t cnt = 0;  // used to count the number of download
+    int32_t cnt = -1;  // used to count the number of download
 
     g_download_flag = 1;  // set download flag
     dw_struct.if_continue = 1;
@@ -118,17 +118,19 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
     dw_struct.http_header.version = 0;
     dw_struct.http_header.record_size = 0;
+    
     post_info = cJSON_CreateObject();
     cJSON_AddItemToObject(post_info,"ticket",cJSON_CreateString((char *)d_info->ticket));
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
     rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
     dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
 
-    snprintf((char *)buf, 100, "%s:%d",OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
+    snprintf((char *)buf, 100, "%s:%d", OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
     http_set_header_record(&dw_struct, "HOST", buf);
 
     http_set_header_record(&dw_struct, "Content-Type", "application/json");
     http_set_header_record(&dw_struct, "Accept", "application/octet-stream");
+    http_set_header_record(&dw_struct, "imei", "");
 
     snprintf((char *)buf, 100, "%d", rt_os_strlen(dw_struct.http_header.buf));
     http_set_header_record(&dw_struct, "Content-Length", (const char *)buf);
@@ -159,8 +161,9 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         }
         cnt++;
         MSG_PRINTF(LOG_WARN, "Download fail cnt: %d\r\n", cnt);
-        rt_os_sleep(1);
-    } while(cnt < MAX_DOWNLOAD_CNT);
+        
+        rt_os_sleep(d_info->retryInterval);
+    } while(cnt < d_info->retryAttempts);
     
     cJSON_free(out);
     cJSON_Delete(post_info);
@@ -255,7 +258,6 @@ static void upgrade_package_cleanup(upgrade_struct_t *d_info)
 /* 进行普通升级操作 */
 static rt_upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
 {
-
     /* 检测系统内存 */
     upgrade_check_sys_memory();
 
@@ -303,19 +305,16 @@ void * check_upgrade_process(void *args)
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
     rt_upgrade_result_e result;
 
-    MSG_PRINTF(LOG_WARN, "111111 \n");
+    MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
+    
     /* 全量升级模式 */
     if (GET_UPDATEMODE(d_info) == 1) {
-        MSG_PRINTF(LOG_WARN, "111111 \n");
         result = start_comman_upgrade_process(d_info);
 
        /* FOTA升级模式 */
     } else if (GET_UPDATEMODE(d_info) == 2) {
-        MSG_PRINTF(LOG_WARN, "111111 \n");
         result = start_fota_upgrade_process(d_info);
     }
-
-    MSG_PRINTF(LOG_WARN, "111111 = %d\n", GET_UPDATEMODE(d_info));
 
     /* 上报升级结果 */
     //msg_upload_data(d_info->tranid, ON_UPGRADE, (int)result, (void *)d_info);
