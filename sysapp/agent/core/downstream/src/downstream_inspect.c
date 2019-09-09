@@ -43,10 +43,13 @@ exit_entry:
     return ret;
 }
 
-static int32_t downstream_inpsect_handler(const void *in, void **out)
+static int32_t downstream_inpsect_handler(const void *in, const char *event, void **out)
 {
     int32_t ret = 0;
 
+    (void)in;
+    (void)event;
+    *out = NULL;
     MSG_PRINTF(LOG_WARN, "\n");
 
 exit_entry:

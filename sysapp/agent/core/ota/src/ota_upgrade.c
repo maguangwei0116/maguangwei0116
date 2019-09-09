@@ -362,7 +362,7 @@ static rt_bool ota_upgrade_start_check(const ota_upgrade_param_t *param)
     rt_bool ret;   
 }
 
-static int32_t ota_upgrade_handler(const void *in, void **out)
+static int32_t ota_upgrade_handler(const void *in, const char *event, void **out)
 {
     int32_t ret = -1;
     const ota_upgrade_param_t *param = (const ota_upgrade_param_t *)in;

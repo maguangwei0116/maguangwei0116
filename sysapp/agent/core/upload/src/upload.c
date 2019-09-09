@@ -320,7 +320,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
     const upload_event_t *obj = NULL;
 
     for (obj = g_upload_event_START; obj <= g_upload_event_END; obj++) {
-        //MSG_PRINTF(LOG_WARN, "upload %p, %s ...\r\n", obj, obj->event);
+        MSG_PRINTF(LOG_WARN, "upload %p, %s ...\r\n", obj, obj->event);
         if (!rt_os_strcmp(obj->event, event)) {
             char *upload_json_pag = NULL;
             cJSON *upload = NULL;
@@ -388,6 +388,9 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
         if (g_report_boot_event == RT_FALSE) {
             upload_event_report("BOOT", NULL, 0, NULL);  
             g_report_boot_event = RT_TRUE;
+        } else {
+            rt_bool report_all_info = RT_FALSE;
+            upload_event_report("INFO", NULL, 0, &report_all_info);
         }
     }  
 }
