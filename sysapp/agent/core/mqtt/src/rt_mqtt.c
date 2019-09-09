@@ -445,10 +445,10 @@ static rt_bool my_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
     //MSG_PRINTF(LOG_WARN, "Connect mqtt broker [%s] !\n", opts->serverURIs);
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
         g_mqtt_param.mqtt_flag = RT_TRUE;
-        MSG_PRINTF(LOG_WARN, "Connect mqtt ok !\n", c);
+        MSG_PRINTF(LOG_WARN, "Connect mqtt ok ! [%p]\n", pthread_self());
         return RT_TRUE;
     } else {
-        MSG_PRINTF(LOG_WARN, "Failed to connect error:%d\n", c);
+        MSG_PRINTF(LOG_WARN, "Failed to connect error:%d [%p]\n", c, pthread_self());
         return RT_FALSE;
     }
 }
@@ -626,6 +626,8 @@ static int32_t mqtt_create_task(void)
     return RT_SUCCESS;
 }
 
+static const char *g_mqtt_eid = NULL;
+
 //init parameter
 static void mqtt_init_param(void)
 {
@@ -636,7 +638,7 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.nodeName              = NULL;
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
     g_mqtt_param.opts.last_connect_status   = 0;  // Initialize the last link push the state of the system
-    rt_mqtt_set_alias("89086657727465610100000000000171");  // only for test
+    rt_mqtt_set_alias((int8_t *)g_mqtt_eid);
     MQTTClient_init();
 }
 
@@ -646,6 +648,7 @@ int32_t init_mqtt(void *arg)
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
     
     public_value_list->push_channel = (const char *)g_mqtt_param.opts.rt_channel;
+    g_mqtt_eid = (const char *)public_value_list->card_info->eid;
 
     mqtt_init_param();
 

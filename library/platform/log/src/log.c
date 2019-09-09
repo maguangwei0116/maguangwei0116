@@ -51,6 +51,10 @@ static int32_t log_file_size(void)
     struct stat statbuf;
     int32_t size;
 
+    if (rt_os_access(LOG_NAME, F_OK)) { /* log file isn't exist */
+        return 0;
+    }
+
     stat(LOG_NAME, &statbuf);
     size = statbuf.st_size;
     return size;
@@ -58,12 +62,12 @@ static int32_t log_file_size(void)
 
 static int32_t clear_file(void)
 {
-    int32_t ret = open(LOG_NAME, O_WRONLY | O_TRUNC);
-    if (ret == -1) {
+    int32_t fd = open(LOG_NAME, O_WRONLY | O_TRUNC);
+    if (fd == -1) {
         MSG_PRINTF(LOG_WARN, "clear_file open file is fail!\n");
         return -1;
     }
-    close(ret);
+    close(fd);
     return 0;
 }
 
