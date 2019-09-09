@@ -8,33 +8,52 @@ extern "C" {
 
 #include "rt_type.h"
 #include "cJSON.h"
+#include "agent_queue.h"
+#include "upload.h"
 
-#define MAX_TRAN_ID_LEN     32
 
-typedef struct _downstram_data_t {
-    char            tranId[MAX_TRAN_ID_LEN + 1];
-    uint64_t        timestamp;
-    uint16_t        expireTime;
-    cJSON *         payload;
-} downstram_data_t ;
+typedef int32_t (*parser_func)(const void *in, char *tranId, void **out);
+typedef int32_t (*handler_func)(const void *in, void **out);
 
-typedef int32_t (*parser_func)(const char *msg);
-
-typedef struct _downstream_cmd_t {
-    const char *    cmd;
+typedef struct _downstream_method_t {
+    const char *    method;
+    const char *    event;
+    msg_id_e        msg_id;
     parser_func     parser;
-} downstream_cmd_t;
+    handler_func    handler;
+} downstream_method_t;
 
-#define DOWNSTREAM_CMD_OBJ_INIT(cmd, parser)\
-    static const downstream_cmd_t downstream_cmd_##cmd##_obj \
-    __attribute__((section(".downstream.cmd.init.obj"))) = \
-    {#cmd, parser}
+typedef struct _downstream_msg_t {
+    char *          msg;
+    uint32_t        msg_len;
+    const char *    method;
+    const char *    event;
+    parser_func     parser;
+    handler_func    handler;
+    void *          private_arg;
+    void *          out_arg;
+    char            tranId[MAX_TRAN_ID_LEN + 1];
+} downstream_msg_t;
 
-int32_t downstram_msg_parse(const char *msg);
+#define DOWNSTREAM_METHOD_OBJ_INIT(method, msg_id, event, parser, handler)\
+    static const downstream_method_t downstream_method_##method##_obj \
+    __attribute__((section(".downstream.method.init.obj"))) = \
+    {#method, #event, msg_id, parser, handler}
+
+#define DOWNSTREAM_METHOD_OBJ_EXTERN(method) \
+    const downstream_method_t * g_downstream_method_##method = (const downstream_method_t * )&downstream_method_##method##_obj
+
+#define DOWNSTREAM_METHOD_OBJ_EXTERN_HERE(event) \
+    extern const downstream_method_t * g_downstream_method_##event
+
+DOWNSTREAM_METHOD_OBJ_EXTERN_HERE(START);
+DOWNSTREAM_METHOD_OBJ_EXTERN_HERE(END);
+
+int32_t downstream_msg_handle(const void *data, uint32_t len);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __DOWNSTRAM_H__*/
+#endif /* __DOWNSTREAM_H__*/
 

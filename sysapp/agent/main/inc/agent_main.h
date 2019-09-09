@@ -15,6 +15,7 @@
 #define __AGENT_MAIN_H__
 
 #include "rt_type.h"
+#include "card_manager.h"
 
 #define ICCID_LEN                                20
 #define MCC_LEN                                  3

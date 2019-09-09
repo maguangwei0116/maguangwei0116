@@ -26,11 +26,12 @@ typedef enum AGENT_MSG_ID {
     MSG_ID_PERSONLLISE,
     MSG_ID_NETWORK_DECTION,
     MSG_ID_REMOTE_CONFIG,
-    MSG_ID_BROAD_CAST_NETWORK
+    MSG_ID_BROAD_CAST_NETWORK,
+    MSG_ID_IDLE,
 } msg_id_e;
 
 typedef enum MSG_MODE {
-    MSG_FROM_MQTT = 0,
+    MSG_FROM_MQTT = 0,      // public for all module
     MSG_CARD_SETTING_KEY,
     MSG_CARD_SETTING_PROFILE,
     MSG_CARD_SETTING_CERTIFICATE,
@@ -40,9 +41,10 @@ typedef enum MSG_MODE {
 } msg_mode_e;
 
 typedef struct PUBLIC_VALUE_LIST {
-    int8_t lpa_channel_type;
-    devicde_info_t *device_info;
-    card_info_t *card_info;
+    int8_t              lpa_channel_type;
+    devicde_info_t *    device_info;
+    card_info_t *       card_info;
+    const char *        push_channel;
 } public_value_list_t;
 
 int32_t init_queue(void *arg);

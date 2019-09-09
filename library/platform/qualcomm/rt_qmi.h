@@ -32,6 +32,7 @@ int32_t rt_qmi_get_signal(int32_t *strength);
 int32_t rt_qmi_get_imei(uint8_t *imei);
 int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int8_t pdp_type);
 int32_t rt_qmi_get_model(uint8_t *model);
+int32_t rt_qmi_get_network_type(uint8_t *network_type);
 int32_t rt_qmi_init(void *arg);
 
 #endif   // __RT_QMI_H__

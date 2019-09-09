@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "rt_type.h"
+#include "agent_main.h"
 #include "config.h"
 #include "cJSON.h"
 #include "MQTTClient.h"
@@ -53,23 +54,6 @@ typedef struct _mqtt_param_t {
 
 static mqtt_param_t g_mqtt_param = {MQTTClient_connectOptions_initializer, 0};
 
-#if 0
-/*
-* the data used to indicate topic subscribe
-*bit0 topic of agent
-*bit1 topid of CID
-*/
-static mqtt_info opts;  // mqtt connect info
-static MQTTClient client;
-static MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-
-static rt_bool mqtt_get_addr = RT_FALSE;  // if get mqtt server addr
-static int8_t alias[40] = {'F'};
-static int32_t mqtt_flag = 0;  // que ren buffer da xiao
-static int8_t subscribe_flag = 0;
-static int8_t rc = 1;
-#endif
-
 //TODO:
 static g_network_state = NETWORK_CONNECTING;
 network_state_info_e get_network_state(void)
@@ -89,11 +73,11 @@ boot_state_info_e get_boot_flag(void)
     return 1;
 }
 
-void msg_parse(int8_t *message, int32_t len)
+static void msg_parse(int8_t *message, int32_t len)
 {
     MSG_PRINTF(LOG_WARN, "mqtt recv msg (%d bytes): %s\r\n", len, message);
 
-    downstram_msg_parse((const char *)message);
+    downstream_msg_handle(message, len);
 }
 
 //本地缓存之前的从adapter获取的ticket server
@@ -142,7 +126,7 @@ static rt_bool save_ticket_server(mqtt_info *opts)
 exit_entry:
     
     if (save_info) {
-        rt_os_free(save_info);
+        cJSON_free(save_info);
     }
     if (obj) {
         cJSON_Delete(obj);
@@ -353,8 +337,8 @@ static rt_bool rt_mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
 }
 
 #if 1  // only for test
-#define TEST_FORCE_TO_ADAPTER       0
-#define TEST_FORCE_TO_EMQ           1
+#define TEST_FORCE_TO_ADAPTER       1
+#define TEST_FORCE_TO_EMQ           0
 #define TEST_FORCE_TO_YUNBA         0
 
 #define MQTT_PASSAGEWAY_DEF(x)\
@@ -548,8 +532,6 @@ static void mqtt_process_task(void)
 {
     rt_os_sleep(10);
 
-    init_upload(NULL);
-    
     while(1) {
         if (get_network_state() == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
@@ -569,6 +551,7 @@ static void mqtt_process_task(void)
 
                     //成功连接服务器后将网络状态置为已连接
                     set_network_state(NETWORK_USING);
+                    continue;
                 } else {
                     //如果本地缓存的mqtt server和hardcode的mqtt server都无法使用，那么重新去获ticket server获取一下mqtt server
                     g_mqtt_param.mqtt_get_addr = RT_FALSE;
@@ -609,6 +592,7 @@ static void mqtt_process_task(void)
                     MSG_PRINTF(LOG_WARN, "alias is error\n");
                 }
 
+#if 1
                 //如果agent的topic还未订阅，订阅agent
                 if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) && 
                         (MQTTClient_subscribe(g_mqtt_param.client, "agent", 1) == 0)) {
@@ -616,6 +600,7 @@ static void mqtt_process_task(void)
                 } else {
                     MSG_PRINTF(LOG_WARN, "MQTTClient_subscribe agent error\n");
                 }
+#endif
             }  
         }
         
@@ -656,6 +641,9 @@ static void mqtt_init_param(void)
 int32_t init_mqtt(void *arg)
 {
     int32_t ret;
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
+    
+    public_value_list->push_channel = (const char *)g_mqtt_param.opts.rt_channel;
 
     mqtt_init_param();
 

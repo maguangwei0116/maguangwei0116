@@ -61,6 +61,8 @@ typedef struct cJSON_Hooks {
       void (*free_fn)(void *ptr);
 } cJSON_Hooks;
 
+extern void (*cJSON_free)(void *ptr);
+
 /* Supply malloc, realloc and free functions to cJSON */
 extern void cJSON_InitHooks(cJSON_Hooks* hooks);
 
@@ -143,6 +145,11 @@ extern void cJSON_Minify(char *json);
 /* When assigning an integer value, it needs to be propagated to valuedouble too. */
 #define cJSON_SetIntValue(object,val)           ((object)?(object)->valueint=(object)->valuedouble=(val):(val))
 #define cJSON_SetNumberValue(object,val)        ((object)?(object)->valueint=(object)->valuedouble=(val):(val))
+
+/* Redtea mobile easy cJSON API */
+#define CJSON_ADD_STR_OBJ(father_item, sub_item)        cJSON_AddItemToObject(father_item, #sub_item, (cJSON *)sub_item)
+#define CJSON_ADD_NEW_STR_OBJ(father_item, str_item)    cJSON_AddItemToObject(father_item, #str_item, cJSON_CreateString(str_item))
+#define CJSON_ADD_NEW_INT_OBJ(father_item, int_item)    cJSON_AddItemToObject(father_item, #int_item, cJSON_CreateNumber(int_item))
 
 #ifdef __cplusplus
 }

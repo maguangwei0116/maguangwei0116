@@ -437,7 +437,9 @@ int initiate_authentication(const char *smdp_addr, char *auth_data, int *size, u
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
 end:
-    free(data);
+    if (data) {
+        cJSON_free(data);
+    }
     cJSON_Delete(content);
     return ret;
 }
@@ -738,7 +740,7 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 
 end:
     if (data != NULL) {
-        free(data);
+        cJSON_free(data);
     }
     if (b64_in != NULL) { free(b64_in);}
     cJSON_Delete(content);
@@ -846,7 +848,7 @@ int get_bound_profile_package(const char *smdp_addr, const uint8_t *in, uint16_t
 
 end:
     if (data != NULL) {
-        free(data);
+        cJSON_free(data);
     }
     if (b64_in != NULL) { free(b64_in);}
     cJSON_Delete(content);
@@ -1036,7 +1038,7 @@ int handle_notification(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 
 end:
     if (!data) {
-        free(data);
+        cJSON_free(data);
     }
     if (b64_in != NULL) { free(b64_in);}
     cJSON_Delete(content);
@@ -1081,7 +1083,7 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 
 end:
     if (!data) {
-        free(data);
+        cJSON_free(data);
     }
     if (b64_in != NULL) { free(b64_in);}
     cJSON_Delete(content);

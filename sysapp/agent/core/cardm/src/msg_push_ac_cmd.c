@@ -11,11 +11,23 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifndef __MSG_PROCESS_H__
-#define __MSG_PROCESS_H__
-
 #include "rt_type.h"
 
-int32_t mqtt_msg_event(const uint8_t *buf, int32_t len);
+static int32_t push_ac_parser(const void *in, char *tranId, void **out)
+{
+    int32_t ret;
 
-#endif // __MSG_PROCESS_H__
+
+    return ret;
+}
+
+static int32_t push_ac_handler(const void *in, void **out)
+{
+    int32_t ret = 0;
+
+    MSG_PRINTF(LOG_WARN, "\n");
+
+    return ret;
+}
+
+DOWNSTREAM_METHOD_OBJ_INIT(PUSH_AC, MSG_ID_CARD_MANAGER, ON_PUSH_AC, push_ac_parser, push_ac_handler);

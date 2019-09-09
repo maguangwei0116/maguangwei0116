@@ -13,7 +13,6 @@
 #include "upgrade.h"
 #include "md5.h"
 #include "hash.h"
-//#include "agent.h"
 #include "rt_os.h"
 #include "http_client.h"
 #include "cJSON.h"
@@ -49,9 +48,9 @@ int8_t g_download_flag = 0;
 #endif
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
-do{                 \
+do {                 \
    snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
-}while(0)
+} while(0)
 
 static rt_bool upgrade_check_sys_memory()
 {
@@ -141,7 +140,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
             rt_os_sleep(1);
         };
         #endif
-        
+
         /*There is file need to download in system*/
         if (rt_os_access((const int8_t *)file_path, F_OK) == RT_SUCCESS){
             snprintf(buf, 100, "%d", get_file_size(file_path));
@@ -156,7 +155,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         timer++;
         rt_os_sleep(1);
     } while(timer < MAX_DOWNLOAD_TIMER);
-    rt_os_free(out);
+    cJSON_free(out);
     cJSON_Delete(post_info);
     return ret;
 }

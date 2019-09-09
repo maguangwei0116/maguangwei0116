@@ -62,9 +62,15 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
+    uint8_t eid[16];
 
-    lpa_get_eid(g_p_info.eid);
+    ((public_value_list_t *)arg)->card_info = &g_p_info;
+
+    lpa_get_eid(eid);
+    bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
+
     rt_os_sleep(1);
+
     ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
     if (ret == RT_SUCCESS) {
@@ -72,7 +78,6 @@ int32_t init_card_manager(void *arg)
             msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
         }
     }
-    ((public_value_list_t *)arg)->card_info = &g_p_info;
     return ret;
 }
 
@@ -89,7 +94,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             ret = card_load_cert(buf, len);
             break;
         case MSG_FROM_MQTT:
-            ret = msg_push_ac(buf, len);
+            ret = mqtt_msg_event(buf, len);
             break;
         case MSG_NETWORK_DISCONNECTED:
             ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);

@@ -18,7 +18,7 @@
 #include "network_detection.h"
 #include "rt_mqtt.h"
 #include "config.h"
-#include "bootstrap.h"git
+#include "bootstrap.h"
 #include "personalise.h"
 #include "upload.h"
 #include "rt_qmi.h"
@@ -62,6 +62,8 @@ static int32_t init_monitor(void *arg)
     info.vuicc_switch = ((public_value_list_t *)arg)->lpa_channel_type;
     info.share_profile_state = 0;
     ipc_send_data((const uint8_t *)&info, len, (uint8_t *)&info, &len);
+
+    return RT_SUCCESS;
 }
 
 /*
@@ -69,6 +71,7 @@ List your init call here !
 **/
 static const init_obj_t g_init_objs[] =
 {
+    INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),
     INIT_OBJ(init_system_signal,        NULL),
@@ -79,8 +82,9 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    NULL),
+    INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
+    INIT_OBJ(init_upload,               (void *)&g_value_list),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),
-//    INIT_OBJ(init_mqtt,                 NULL),
 };
 
 static int32_t agent_init_call(void)
