@@ -51,6 +51,10 @@ static int32_t log_file_size(void)
     struct stat statbuf;
     int32_t size;
 
+    if (rt_os_access(LOG_NAME, F_OK)) {
+        return 0;
+    }
+
     stat(LOG_NAME, &statbuf);
     size = statbuf.st_size;
     return size;
