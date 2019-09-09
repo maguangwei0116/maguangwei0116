@@ -14,13 +14,16 @@
 
 #define USE_ADAPTER_SERVER              1  // 是否使用mqtt ticket adapter代理服务器
 
-#define GET_CID_FLAG(flag)             ((flag) & 0x01)
-#define GET_AGENT_FLAG(flag)           (((flag) >> 1) & 0x01)
-#define SET_CID_FLAG(flag)             ((flag) |= 0x01)
-#define SET_AGENT_FLAG(flag)           ((flag) |= (0x01 << 1))
+#define AGENT_ALIAS                     "agent"
+
+#define GET_CID_FLAG(flag)              ((flag) & 0x01)
+#define GET_AGENT_FLAG(flag)            (((flag) >> 1) & 0x01)
+#define GET_DEVICE_ID_FLAG(flag)        (((flag) >> 2) & 0x01)
+#define SET_CID_FLAG(flag)              ((flag) |= 0x01)
+#define SET_AGENT_FLAG(flag)            ((flag) |= (0x01 << 1))
+#define SET_DEVICE_ID_FLAG(flag)        ((flag) |= (0x01 << 2))
 
 int32_t rt_mqtt_task(void);
-void rt_mqtt_set_alias(int8_t *alias);
 int8_t *rt_mqtt_get_channel(void);
 int32_t init_mqtt(void *arg);
 

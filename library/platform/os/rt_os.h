@@ -38,6 +38,7 @@ int32_t rt_os_strcmp(const char *mem_des, const char *mem_src);
 int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, int32_t len);
 uint32_t rt_os_strlen(const char *string);
 char *rt_os_strchr(const char *str, int32_t chr);
+char *rt_os_strrchr(const char *str, int32_t chr);
 char *rt_os_strstr(const char *str1, const char *str2);
 
 //#define RT_OS_MEM_DEBUG 1

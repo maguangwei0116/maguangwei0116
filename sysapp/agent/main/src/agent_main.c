@@ -23,6 +23,7 @@
 #include "upload.h"
 #include "rt_qmi.h"
 #include "lpa.h"
+#include "ota.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
 
@@ -66,11 +67,27 @@ static int32_t init_monitor(void *arg)
     return RT_SUCCESS;
 }
 
+static int32_t init_files(void *arg)
+{
+#define DATA_REDTEA_PATH    "/data/redtea"
+    
+    if (rt_os_access(DATA_REDTEA_PATH, 0)) {
+        rt_os_mkdir(DATA_REDTEA_PATH);
+    }
+    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
+    MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION); 
+    
+#undef DATA_REDTEA_PATH
+
+    return RT_SUCCESS;
+}
+
 /*
 List your init call here !
 **/
 static const init_obj_t g_init_objs[] =
 {
+    INIT_OBJ(init_files,                NULL),
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),
@@ -85,6 +102,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),
+    INIT_OBJ(init_ota,                  (void *)&g_value_list),
 };
 
 static int32_t agent_init_call(void)
@@ -99,6 +117,8 @@ static int32_t agent_init_call(void)
 
     return RT_SUCCESS;
 }
+
+
 
 int32_t main(int32_t argc, int8_t **argv)
 {

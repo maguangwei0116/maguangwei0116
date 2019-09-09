@@ -269,6 +269,16 @@ char *rt_os_strchr(const char *str, int32_t chr)
     return strchr(str, chr);
 }
 
+char *rt_os_strrchr(const char *str, int32_t chr)
+{
+    if (NULL == str) {
+        MSG_PRINTF(LOG_WARN, "strstr is empty!\n");
+        return NULL;
+    }
+
+    return strrchr(str, chr);
+}
+
 int32_t rt_os_unlink(const char *pathname)
 {
     if (NULL == pathname) {

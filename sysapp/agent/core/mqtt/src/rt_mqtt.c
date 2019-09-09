@@ -52,7 +52,9 @@ typedef struct _mqtt_param_t {
     rt_bool                     alias_rc;           // need set alias flag                  
 } mqtt_param_t;
 
-static mqtt_param_t g_mqtt_param = {MQTTClient_connectOptions_initializer, 0};
+static mqtt_param_t g_mqtt_param    = {MQTTClient_connectOptions_initializer, 0};
+static const char *g_mqtt_eid       = NULL;
+static const char *g_mqtt_device_id = NULL;
 
 //TODO:
 static g_network_state = NETWORK_CONNECTING;
@@ -241,6 +243,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
     }
 
     if (!rt_os_strncmp(opts->rt_channel, "EMQ", 3)) {
+        MSG_PRINTF(LOG_INFO, "mqtt alias: %s\r\n", alias);
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", alias);
     }
 
@@ -445,10 +448,10 @@ static rt_bool my_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
     //MSG_PRINTF(LOG_WARN, "Connect mqtt broker [%s] !\n", opts->serverURIs);
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
         g_mqtt_param.mqtt_flag = RT_TRUE;
-        MSG_PRINTF(LOG_WARN, "Connect mqtt ok !\n", c);
+        MSG_PRINTF(LOG_WARN, "Connect mqtt ok ! [%p]\n", pthread_self());
         return RT_TRUE;
     } else {
-        MSG_PRINTF(LOG_WARN, "Failed to connect error:%d\n", c);
+        MSG_PRINTF(LOG_WARN, "Failed to connect error:%d [%p]\n", c, pthread_self());
         return RT_FALSE;
     }
 }
@@ -523,6 +526,8 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     opts->last_connect_status = MQTT_CONNECT_SUCCESS;
     opts->try_connect_timer = 0;
     param->alias_rc = 1;
+
+    upload_event_report("REGISTERED", NULL, 0, NULL);
     
     return RT_TRUE;
 }
@@ -580,27 +585,35 @@ static void mqtt_process_task(void)
             if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) || 
                 (GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
                 if(rt_os_strlen(g_mqtt_param.alias)) {
-                    // 如果alias还未订阅，那么订阅alias
+                    /* subscribe cid/eid */
                     if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
                             (MQTTClient_subscribe(g_mqtt_param.client, (const char *)g_mqtt_param.alias, 1) == 0)) {
-                        MSG_PRINTF(LOG_DBG, "MQTTClient subscribe : %s OK !\n", g_mqtt_param.alias);
+                        MSG_PRINTF(LOG_DBG, "MQTTClient subscribe cid : %s OK !\n", g_mqtt_param.alias);
                         SET_CID_FLAG(g_mqtt_param.subscribe_flag);
                     } else {
-                        MSG_PRINTF(LOG_WARN, "MQTTClient subscribe %s error !\n", g_mqtt_param.alias);
+                        MSG_PRINTF(LOG_WARN, "MQTTClient subscribe cid : %s error !\n", g_mqtt_param.alias);
                     }
                 } else {
                     MSG_PRINTF(LOG_WARN, "alias is error\n");
                 }
 
-#if 1
-                //如果agent的topic还未订阅，订阅agent
-                if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) && 
-                        (MQTTClient_subscribe(g_mqtt_param.client, "agent", 1) == 0)) {
-                    SET_AGENT_FLAG(g_mqtt_param.subscribe_flag);
+                /* subscribe device-id */
+                if ((GET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) && 
+                        (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_device_id, 1) == 0)) {
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe device id : %s OK !\n", g_mqtt_device_id);
+                    SET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag);                    
                 } else {
-                    MSG_PRINTF(LOG_WARN, "MQTTClient_subscribe agent error\n");
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe device id : %s error !\n", g_mqtt_device_id);
                 }
-#endif
+                
+                /* subscribe agent  */
+                if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) && 
+                        (MQTTClient_subscribe(g_mqtt_param.client, AGENT_ALIAS, 1) == 0)) {
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe %s OK !\n", AGENT_ALIAS);
+                    SET_AGENT_FLAG(g_mqtt_param.subscribe_flag);                    
+                } else {
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe %s error !\n", AGENT_ALIAS);
+                }
             }  
         }
         
@@ -624,6 +637,22 @@ static int32_t mqtt_create_task(void)
     return RT_SUCCESS;
 }
 
+static void rt_mqtt_set_alias(const char *eid, const char *device_id)
+{
+    rt_os_memset(g_mqtt_param.alias, 0, sizeof(g_mqtt_param.alias));
+    rt_os_memcpy(g_mqtt_param.alias, eid, rt_os_strlen(eid));
+    rt_os_memset(g_mqtt_param.opts.device_id, 0, sizeof(g_mqtt_param.opts.device_id));
+    rt_os_memcpy(g_mqtt_param.opts.device_id, device_id, rt_os_strlen(device_id));
+    rt_os_memset(g_mqtt_param.opts.client_id, 0, sizeof(g_mqtt_param.opts.client_id));
+    rt_os_memcpy(g_mqtt_param.opts.rt_channel, "EMQ", 3);  // default for EMQ
+    g_mqtt_param.alias_rc = 1;
+}
+
+int8_t *rt_mqtt_get_channel(void)
+{
+    return g_mqtt_param.opts.rt_channel;
+}
+
 //init parameter
 static void mqtt_init_param(void)
 {
@@ -634,7 +663,7 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.nodeName              = NULL;
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
     g_mqtt_param.opts.last_connect_status   = 0;  // Initialize the last link push the state of the system
-    rt_mqtt_set_alias("89086657727465610100000000000171");  // only for test
+    rt_mqtt_set_alias((int8_t *)g_mqtt_eid, g_mqtt_device_id);
     MQTTClient_init();
 }
 
@@ -644,6 +673,8 @@ int32_t init_mqtt(void *arg)
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
     
     public_value_list->push_channel = (const char *)g_mqtt_param.opts.rt_channel;
+    g_mqtt_eid = (const char *)public_value_list->card_info->eid;
+    g_mqtt_device_id = (const char *)public_value_list->device_info->device_id;
 
     mqtt_init_param();
 
@@ -655,21 +686,5 @@ int32_t init_mqtt(void *arg)
 exit_entry:
 
     return ret;
-}
-
-void rt_mqtt_set_alias(int8_t *obj)
-{
-    rt_os_memset(g_mqtt_param.alias, 0, sizeof(g_mqtt_param.alias));
-    rt_os_memcpy(g_mqtt_param.alias, obj, rt_os_strlen(obj));
-    rt_os_memset(g_mqtt_param.opts.device_id, 0,sizeof(g_mqtt_param.opts.device_id));
-    rt_os_memcpy(g_mqtt_param.opts.device_id, obj, rt_os_strlen(obj));
-    rt_os_memset(g_mqtt_param.opts.client_id, 0, sizeof(g_mqtt_param.opts.client_id));
-    rt_os_memcpy(g_mqtt_param.opts.rt_channel, "EMQ", 3);  // default for EMQ
-    g_mqtt_param.alias_rc = 1;
-}
-
-int8_t *rt_mqtt_get_channel(void)
-{
-    return g_mqtt_param.opts.rt_channel;
 }
 

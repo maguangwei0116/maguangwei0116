@@ -194,11 +194,37 @@ static void upload_get_random_tran_id(char *tran_id, uint16_t size)
 }
 #endif
 
+static rt_bool upload_check_memory(const void *buf, int32_t len, int32_t value)
+{
+    int32_t i = 0;
+    const uint8_t *p = (const uint8_t *)buf;
+
+    for (i = 0; i < len; i++) {
+        if (p[i] != value) {
+            return RT_FALSE;
+        }
+    }
+    return RT_TRUE;
+}
+
+static const char *upload_get_topic_name(void)
+{
+    if (g_upload_eid) {
+        if (upload_check_memory(g_upload_eid, MAX_EID_HEX_LEN, '0')) {
+            return g_upload_device_info->device_id;
+        } else {
+            return g_upload_eid;
+        }
+    } else {
+        return "";
+    }
+}
+
 static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
 {
     char random_tran_id[NORMAL_TRAN_ID_LEN + 1] = {0};
     const char *tranId = tran_id;
-    const char *topic = g_upload_eid ? g_upload_eid : "";
+    const char *topic = upload_get_topic_name();
     int32_t version = 0;
     time_t timestamp = time(NULL);
     
@@ -299,7 +325,6 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             char *upload_json_pag = NULL;
             cJSON *upload = NULL;
             cJSON *content = NULL;
-            int32_t status = 0; 
             int32_t ret;
             
             content = obj->packer(private_arg);
@@ -331,7 +356,7 @@ int32_t init_upload(void *arg)
     rt_bool report_all_info;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
     
-    g_upload_device_info    = (const char *)public_value_list->device_info;
+    g_upload_device_info    = (const devicde_info_t *)public_value_list->device_info;
     g_push_channel          = (const char *)public_value_list->push_channel;
     g_upload_eid            = (const char *)public_value_list->card_info->eid;
     g_upload_card_info      = (const card_info_t *)public_value_list->card_info->info;
@@ -355,3 +380,14 @@ int32_t init_upload(void *arg)
     return 0;
 }
 
+int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    static rt_bool g_report_boot_event = RT_FALSE;
+
+    if (MSG_NETWORK_CONNECTED == mode) {
+        if (g_report_boot_event == RT_FALSE) {
+            upload_event_report("BOOT", NULL, 0, NULL);  
+            g_report_boot_event = RT_TRUE;
+        }
+    }  
+}

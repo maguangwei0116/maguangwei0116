@@ -219,6 +219,7 @@ static cJSON *upload_event_boot_version_info(void)
     cJSON *app_version = NULL;
     const char *name = AGENT_LOCAL_NAME;
     const char *version = AGENT_LOCAL_VERSION;
+    const char *chipModel = AGENT_LOCAL_PLATFORM_TYPE;
 
     software = cJSON_CreateArray();
     if (!software) {
@@ -236,6 +237,7 @@ static cJSON *upload_event_boot_version_info(void)
 
     CJSON_ADD_NEW_STR_OBJ(app_version, name);
     CJSON_ADD_NEW_STR_OBJ(app_version, version);
+    CJSON_ADD_NEW_STR_OBJ(app_version, chipModel);
     cJSON_AddItemToArray(software, app_version);
     
     ret = 0;

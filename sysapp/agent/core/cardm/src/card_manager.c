@@ -62,7 +62,8 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
-    uint8_t eid[16];
+    uint8_t eid[MAX_EID_HEX_LEN] = {0};
+    int32_t i;
 
     ((public_value_list_t *)arg)->card_info = &g_p_info;
 
@@ -76,6 +77,14 @@ int32_t init_card_manager(void *arg)
     if (ret == RT_SUCCESS) {
         if ((g_p_info.info[0].class == 1) && (g_p_info.num == 1)) {
             msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
+        }
+
+        /* get current profile type */
+        for (i = 0; i < g_p_info.num; i++) {
+            if (g_p_info.info[i].state == 1) {
+                g_p_info.type = g_p_info.info[i].class;
+                break;
+            }
         }
     }
     return ret;

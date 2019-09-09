@@ -19,7 +19,11 @@ SYSAPP_GIT_PATH=$(SYSAPP_SOURCE_PATH)/../.git/
 GIT_PATH=$(SYSAPP_GIT_PATH)
 GIT_HEAD_FILE=$(GIT_PATH)/HEAD
 GIT_HASH_NUM_CNT=8
-SYSAPP_GIT_HASH= $(shell echo $(GIT_PATH)/$(shell cat $(GIT_HEAD_FILE) | awk '{ print $$2}') | xargs cat | cut -c1-$(GIT_HASH_NUM_CNT))
+ifeq ($(GIT_HEAD_FILE), $(wildcard $(GIT_HEAD_FILE)))
+SYSAPP_GIT_HASH=$(shell echo $(GIT_PATH)/$(shell cat $(GIT_HEAD_FILE) | awk '{ print $$2}') | xargs cat | cut -c1-$(GIT_HASH_NUM_CNT))
+else
+SYSAPP_GIT_HASH=xxxxxxxx
+endif
 
 SYSAPP_SUBDIR_ENV=SYSAPP_INSTALL_PATH=$(SYSAPP_INSTALL_PATH) \
            CROSS_COMPILE=$(TARGET_CROSS) \

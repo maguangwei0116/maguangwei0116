@@ -25,6 +25,7 @@ endif
 
 # Config your final release target name
 AGENT_LOCAL_NAME=$(SYSAPP_TARGET_NAME)
+AGENT_LOCAL_PLATFORM_TYPE=$(PLATFORM_TYPE)
 RELEASE_TARGET 	= $(SYSAPP_TARGET_NAME)_v$(AGENT_LOCAL_VERSION)_$(PLATFORM_TYPE)_$(ENV_TYPE)_$(DEBUG_TYPE)
 
 # Config your application target version with git hash and build time
@@ -34,6 +35,7 @@ RELEASE_TARGET_VERSION = $(RELEASE_TARGET)_$(SYSAPP_GIT_HASH)_$(shell date +%Y-%
 USER_CFLAGS		+= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
 USER_CFLAGS		+= -DAGENT_LOCAL_NAME=\"$(AGENT_LOCAL_NAME)\"
 USER_CFLAGS		+= -DAGENT_LOCAL_VERSION=\"$(AGENT_LOCAL_VERSION)\"
+USER_CFLAGS		+= -DAGENT_LOCAL_PLATFORM_TYPE=\"$(AGENT_LOCAL_PLATFORM_TYPE)\"
 
 # Config your own libraries
 QMI-LIB 		= dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
@@ -66,7 +68,6 @@ SRC-y 			                        += ./core/downstream/src/downstream_null_start.
 # Config your resource file list by += xxx.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/profile_parse.c
-SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
 
 SRC-y 		                            += $(wildcard ./core/mqtt/src/*.c)
 SRC-y 		                            += src/config.c
@@ -81,9 +82,7 @@ SRC-y 			                        += src/lpdd.c
 SRC-y 			                        += src/luid.c
 SRC-y 			                        += src/ldsd.c
 SRC-y 			                        += src/apdu.c
-
 SRC-y 			                        += ./core/random/src/random.c
-SRC-y 			                        += ./core/ota/src/upgrade.c
 
 # Add your upload-xxx cmd here
 SRC-y 			                        += ./core/upload/src/upload.c
@@ -100,6 +99,11 @@ SRC-y 			                        += ./core/cardm/src/msg_push_ac_cmd.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
+
+# OTA module
+SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
+SRC-$(CFG_AGENT_OTA_ON) 				+= src/upgrade.c
+SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota_upgrade.c
 
 ############################################################################
 # Never adjustment order of these files
