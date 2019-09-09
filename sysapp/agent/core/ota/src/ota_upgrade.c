@@ -381,6 +381,8 @@ static int32_t ota_upgrade_handler(const void *in, void **out)
         MSG_PRINTF(LOG_INFO, "param->policy.retryInterval   : %d\r\n", param->policy.retryInterval);
 
         ret = ota_upgrade_start(param);
+
+        *out = (void *)param;
     }
 
 exit_entry:
@@ -393,9 +395,18 @@ static cJSON *ota_upgrade_packer(void *arg)
 {
     int32_t ret = 0;
     cJSON *app_version = NULL;
+    const ota_upgrade_param_t *param = (const ota_upgrade_param_t *)arg;
     const char *name = AGENT_LOCAL_NAME;
     const char *version = AGENT_LOCAL_VERSION;
     const char *chipModel = AGENT_LOCAL_PLATFORM_TYPE;
+
+    if (param) {
+        name = param->target.name;
+        version = param->target.version;
+        chipModel = param->target.chipModel;
+    } else {
+        MSG_PRINTF(LOG_WARN, "error param input !\n");
+    }
 
     app_version = cJSON_CreateObject();
     if (!app_version) {
