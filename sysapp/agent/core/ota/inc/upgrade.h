@@ -17,7 +17,7 @@
 #define BACKUP_INFO_FILE                "/data/rt_upgrade_info"
 
 typedef enum {
-    UPGRADE_NO_FAILURE = 0,
+    UPGRADE_NO_FAILURE                  = 0,
     UPGRADE_CHECK_VERSION_ERROR         = -2001,
     UPGRADE_DOWNLOAD_PACKET_ERROR       = -2002,
     UPGRADE_CHECK_PACKET_ERROR          = -2003,
@@ -25,7 +25,11 @@ typedef enum {
     UPGRADE_SAVE_INFO_ERROR             = -2005,
     UPGRADE_FS_SPACE_NOT_ENOUGH_ERROR   = -2006,
     UPGRADE_DIR_PERMISSION_ERROR        = -2007,
-    UPGRADE_OTHER                       = -2010,
+    UPGRADE_FILE_NAME_ERROR             = -2008,
+    UPGRADE_PROFILE_TYPE_ERROR          = -2009,
+    UPGRADE_NULL_POINTER_ERROR          = -2010,
+    UPGRADE_START_UPGRADE_ERROR         = -2011,
+    UPGRADE_OTHER                       = -2099,
 } rt_upgrade_result_e;
 
 typedef struct upgrade_struct {
