@@ -108,6 +108,7 @@ static void agent_queue_task(void)
                 case MSG_ID_BROAD_CAST_NETWORK:
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    upload_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 case MSG_ID_IDLE:
