@@ -96,6 +96,8 @@ typedef struct _ota_upgrade_param_t {
         }\
     } while(0)
 
+extern const card_info_t *g_ota_card_info;
+
 static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
 {
     int32_t ret;
@@ -206,6 +208,85 @@ static rt_bool ota_upgrade_get_target_file_name(const char *fileName, char *targ
     return RT_FALSE;
 }
 
+static rt_bool ota_policy_compare_version(const char *old, const char *new)
+{
+    int32_t i;
+    uint8_t old_version[4] = {0};
+    uint8_t new_version[4] = {0};
+
+    MSG_PRINTF(LOG_INFO, "old version: %s\r\n", old); 
+    MSG_PRINTF(LOG_INFO, "new version: %s\r\n", new); 
+    sscanf(old, "%d.%d.%d.%d", &old_version[0], &old_version[1], &old_version[2], &old_version[3]);
+    sscanf(new, "%d.%d.%d.%d", &new_version[0], &new_version[1], &new_version[2], &new_version[3]);
+    MSG_PRINTF(LOG_INFO, "--old version: %d.%d.%d.%d\r\n", old_version[0], old_version[1], old_version[2], old_version[3]); 
+    MSG_PRINTF(LOG_INFO, "--new version: %d.%d.%d.%d\r\n", new_version[0], new_version[1], new_version[2], new_version[3]); 
+
+    for (i = 0; i < sizeof(new_version); i++) {
+        MSG_PRINTF(LOG_INFO, "%d -- %d\r\n", new_version[i], old_version[i]);
+        if (new_version[i] < old_version[i]) {
+            return RT_FALSE;
+        } else if (new_version[i] > old_version[i]) {
+            return RT_TRUE;
+        } else {  // ==
+            continue;
+        }
+    }
+
+    MSG_PRINTF(LOG_WARN, "unmsthed version [%s] = [%s]\r\n", old, new);
+    return RT_FALSE;
+}
+
+static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct_t *upgrade_info)
+{
+    int32_t ret;
+
+    if (!rt_os_strcmp(param->policy.executionType, "NOW")) {
+        upgrade_info->excute_app_now = RT_TRUE;
+    }
+
+    if (param->policy.profileType == 1 && g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
+        MSG_PRINTF(LOG_WARN, "unmathed profile type !\r\n");
+        ret = -1;
+        goto exit_entry;         
+    }
+
+    if (rt_os_strcmp(param->target.chipModel, AGENT_LOCAL_PLATFORM_TYPE)) {
+        MSG_PRINTF(LOG_WARN, "unmathed platform type !\r\n");
+        ret = -2;
+        goto exit_entry;         
+    }
+
+    if (param->policy.forced == 3) {
+        MSG_PRINTF(LOG_WARN, "no forced to upgrade !\r\n");
+        ret = 0;
+        goto exit_entry;   
+    } else {
+        if (param->policy.forced == 2 && !ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
+            MSG_PRINTF(LOG_WARN, "forced to upgrade !\r\n");
+            ret = -3;
+            goto exit_entry;   
+        } else if (param->policy.forced == 1 && \
+             rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
+            MSG_PRINTF(LOG_WARN, "unmathed file name!\r\n");
+            ret = -4;
+            goto exit_entry;  
+        } else if (param->policy.forced == 0 && \
+             !rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME) && \
+             !ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
+            MSG_PRINTF(LOG_WARN, "unmathed file name or version name !\r\n");
+            ret = -5;
+            goto exit_entry;  
+        }
+    }
+
+
+    ret = 0;
+
+exit_entry:
+
+    return ret;
+}
+
 static int32_t ota_upgrade_start(const void *in)
 {
     int32_t ret;
@@ -237,10 +318,17 @@ static int32_t ota_upgrade_start(const void *in)
         goto exit_entry;
     }
 
+    ret = ota_policy_check(param, upgrade_info);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "ota policy check error\n");
+        ret = -4;
+        goto exit_entry;
+    }
+    
     ret = upgrade_process_start(upgrade_info);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "Create upgrade start error\n");
-        ret = -4;
+        ret = -5;
         goto exit_entry;
     }
     
@@ -255,7 +343,7 @@ exit_entry:
 
     upgrade_process_wating(upgrade_info, MAX_DOWNLOAD_TIMEOUTS);
     if (!ret) {
-        ret = GET_DOWNLOAD_RET(upgrade_info, ret);
+        GET_DOWNLOAD_RET(upgrade_info, ret);
     }
 
     return ret;
@@ -293,6 +381,7 @@ static int32_t ota_upgrade_handler(const void *in, void **out)
 
 exit_entry:
 
+    MSG_PRINTF(LOG_WARN, "rer=%d\n", ret);
     return ret;
 }
 

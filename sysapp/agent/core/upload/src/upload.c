@@ -355,3 +355,14 @@ int32_t init_upload(void *arg)
     return 0;
 }
 
+int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    static rt_bool g_report_boot_event = RT_FALSE;
+
+    if (MSG_NETWORK_CONNECTED == mode) {
+        if (g_report_boot_event == RT_FALSE) {
+            upload_event_report("BOOT", NULL, 0, NULL);  
+            g_report_boot_event = RT_TRUE;
+        }
+    }  
+}

@@ -9,6 +9,7 @@
 #define __INCLUDE_UPGRADE_H__
 
 #include "stdint.h"
+#include "rt_type.h"
 
 #define MAX_DOWNLOAD_TIMEOUTS           120     // unit: second
 #define MAX_FILE_PATH_LEN               100
@@ -61,10 +62,10 @@ typedef struct upgrade_struct {
 #define GET_DOWNLOAD_RET(upgrade, ret)  ret = ((upgrade_struct_t *)(upgrade))->downloadResult
 
     int8_t      upgrade_flag;
-    /* 在线升级相关参数标志位     
-     * -bit0-1--updateMode，1为全量更新，2为FOTA更新     
-     * -bit2--是否支持降级操作     
-     * -bit3--升级是否成功，1成功，0失败     
+    /* 在线升级相关参数标志位
+     * -bit0-1--updateMode，1为全量更新，2为FOTA更新
+     * -bit2--是否支持降级操作
+     * -bit3--升级是否成功，1成功，0失败
      */
 
     int8_t      tranId[MAX_TRANID_LEN + 1];
@@ -81,6 +82,7 @@ typedef struct upgrade_struct {
     uint16_t    retryInterval;
     uint8_t     downloadLock;                           // lock for download process
     int32_t     downloadResult;                         // the result of download process
+    rt_bool     excute_app_now;                         // excute app right now after install app
 } upgrade_struct_t;
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info);
