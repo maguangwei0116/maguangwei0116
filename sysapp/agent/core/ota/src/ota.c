@@ -17,11 +17,6 @@
 #include "ota.h"
 #include "downstream.h"
 
-int32_t ota_main(void)
-{
-    return 0;
-}
-
 int32_t ota_upgrade_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t status = 0;
@@ -40,6 +35,19 @@ int32_t ota_upgrade_event(const uint8_t *buf, int32_t len, int32_t mode)
     status = downstream_msg->handler(downstream_msg->private_arg, &downstream_msg->out_arg);
 
     upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
+}
+
+const card_info_t *g_ota_card_info = NULL;
+
+int32_t init_ota(void *arg)
+{
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
+
+    g_ota_card_info = (const card_info_t *)public_value_list->card_info->info;
+
+    MSG_PRINTF(LOG_WARN, "sim car type : %p, %d\n", &g_ota_card_info->type, g_ota_card_info->type);
+
+    return 0;
 }
 
 #endif
