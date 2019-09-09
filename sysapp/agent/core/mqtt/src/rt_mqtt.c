@@ -523,6 +523,8 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     opts->last_connect_status = MQTT_CONNECT_SUCCESS;
     opts->try_connect_timer = 0;
     param->alias_rc = 1;
+
+    upload_event_report("REGISTERED", NULL, 0, NULL);
     
     return RT_TRUE;
 }
