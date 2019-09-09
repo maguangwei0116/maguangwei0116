@@ -241,6 +241,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
     }
 
     if (!rt_os_strncmp(opts->rt_channel, "EMQ", 3)) {
+        MSG_PRINTF(LOG_INFO, "mqtt alias: %s\r\n", alias);
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", alias);
     }
 
