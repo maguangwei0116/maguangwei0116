@@ -16,6 +16,13 @@
 #define TMP_DOWNLOAD_PATH               "/data/"
 #define BACKUP_INFO_FILE                "/data/rt_upgrade_info"
 
+typedef enum _upgrade_mode_e {
+    UPGRADE_MODE_FORCED                 = 0,
+    UPGRADE_MODE_CHK_FILE_NAME          = 1,
+    UPGRADE_MODE_CHK_VERSION            = 2,
+    UPGRADE_MODE_NO_FORCED              = 3,
+} upgrade_mode_e;
+
 typedef enum {
     UPGRADE_NO_FAILURE                  = 0,
     UPGRADE_CHECK_VERSION_ERROR         = -2001,

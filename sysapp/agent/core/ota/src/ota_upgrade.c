@@ -256,20 +256,21 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry;         
     }
 
-    if (param->policy.forced == 3) {
-        MSG_PRINTF(LOG_WARN, "no forced to upgrade !\r\n");
+    if (param->policy.forced == UPGRADE_MODE_FORCED) {
+        MSG_PRINTF(LOG_WARN, "forced to upgrade !\r\n");
         ret = 0;
         goto exit_entry;   
     } else {
-        if (param->policy.forced == 2 && !ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
-            MSG_PRINTF(LOG_WARN, "forced to upgrade !\r\n");
-            ret = UPGRADE_CHECK_VERSION_ERROR;
-            goto exit_entry;   
-        } else if (param->policy.forced == 1 && rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
+        if (param->policy.forced == UPGRADE_MODE_CHK_FILE_NAME && rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
             MSG_PRINTF(LOG_WARN, "unmathed file name!\r\n");
             ret = UPGRADE_FILE_NAME_ERROR;
             goto exit_entry;  
-        } else if (param->policy.forced == 0) {
+        } else if (param->policy.forced == UPGRADE_MODE_CHK_VERSION && \
+                        !ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
+            MSG_PRINTF(LOG_WARN, "forced to upgrade !\r\n");
+            ret = UPGRADE_CHECK_VERSION_ERROR;
+            goto exit_entry;   
+        } else if (param->policy.forced == UPGRADE_MODE_NO_FORCED) {
              if (rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
                 MSG_PRINTF(LOG_WARN, "unmathed file name!\r\n");
                 ret = UPGRADE_FILE_NAME_ERROR;

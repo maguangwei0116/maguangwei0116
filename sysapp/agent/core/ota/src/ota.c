@@ -45,7 +45,7 @@ int32_t init_ota(void *arg)
 
     g_ota_card_info = (const card_info_t *)public_value_list->card_info->info;
 
-    MSG_PRINTF(LOG_WARN, "sim car type : %p, %d\n", &g_ota_card_info->type, g_ota_card_info->type);
+    MSG_PRINTF(LOG_WARN, "profile type : %p, %d\n", &g_ota_card_info->type, g_ota_card_info->type);
 
     return 0;
 }
