@@ -33,6 +33,7 @@
 ********************************************************/
 static void display_progress(http_client_struct_t *obj)
 {
+    #if 0
     char buf[101];
     int percentage = ((float)obj->process_length / obj->file_length) * 100;
 
@@ -44,6 +45,10 @@ static void display_progress(http_client_struct_t *obj)
     if (percentage == 100) {
         MSG_PRINTF(LOG_WARN, "\n");
     }
+    #else
+    int percentage = ((float)obj->process_length / obj->file_length) * 100;
+    MSG_PRINTF(LOG_WARN, "file download [%s] : %3d%% (%7d/%-7d)\r\n", obj->file_path, percentage, obj->process_length, obj->file_length);
+    #endif
 }
 
 /********************************************************

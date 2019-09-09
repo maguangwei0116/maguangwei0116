@@ -17,12 +17,21 @@
 #include "rt_type.h"
 #include "lpa.h"
 
-#define THE_MAX_CARD_NUM         20
+#define THE_MAX_CARD_NUM            20
+#define THE_ICCID_LENGTH            10
 
-typedef struct _profiles_info_t {
-    profile_info_t info[THE_MAX_CARD_NUM];
-    uint8_t num;
-} profiles_info_t;
+typedef enum _profile_type_e {
+    PROFILE_TYPE_TEST               = 0,
+    PROFILE_TYPE_PROVISONING        = 1,
+    PROFILE_TYPE_OPERATIONAL        = 2,
+} profile_type_e;
+
+typedef struct PROFILE_INFO {
+    profile_info_t                  info[THE_MAX_CARD_NUM];
+    uint8_t                         num;
+    uint8_t                         eid[32];
+    profile_type_e                  type;
+} card_info_t;
 
 int32_t init_card_manager(void *arg);
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode);

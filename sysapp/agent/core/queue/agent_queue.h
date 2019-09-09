@@ -41,9 +41,10 @@ typedef enum MSG_MODE {
 } msg_mode_e;
 
 typedef struct PUBLIC_VALUE_LIST {
-    int8_t lpa_channel_type;
-    devicde_info_t *device_info;
-    card_info_t *card_info;
+    int8_t              lpa_channel_type;
+    devicde_info_t *    device_info;
+    card_info_t *       card_info;
+    const char *        push_channel;
 } public_value_list_t;
 
 int32_t init_queue(void *arg);

@@ -9,62 +9,88 @@
 #define __INCLUDE_UPGRADE_H__
 
 #include "stdint.h"
+#include "rt_type.h"
 
-#define MAX_FILE_PATH_LEN                  100
-#define BACKUP_PATH                        "/data/"
-#define AGENT_PATH                         "/usr/bin/agent"
-#define BACKUP_INFO_FILE                   "/data/rt_upgrade_info"
-
+#define MAX_DOWNLOAD_TIMEOUTS           120     // unit: second
+#define MAX_FILE_PATH_LEN               100
+#define TMP_DOWNLOAD_PATH               "/data/"
+#define BACKUP_INFO_FILE                "/data/rt_upgrade_info"
 
 typedef enum {
-    UPGRADE_NO_FAILURE = 0,
-    UPGRADE_VERSION_NUM_ERROR = 2001,
-    UPGRADE_DOWNLOAD_PACKET_ERROR = 2002,
-    UPGRADE_CHECK_PACKET_ERROR = 2003,
-    UPGRADE_REPLACE_APP_ERROR = 2004,
-    UPGRADE_SAVE_INFO_ERROR = 2005,
-    UPGRADE_OTHER = 2010
+    UPGRADE_NO_FAILURE                  = 0,
+    UPGRADE_CHECK_VERSION_ERROR         = -2001,
+    UPGRADE_DOWNLOAD_PACKET_ERROR       = -2002,
+    UPGRADE_CHECK_PACKET_ERROR          = -2003,
+    UPGRADE_INSTALL_APP_ERROR           = -2004,
+    UPGRADE_SAVE_INFO_ERROR             = -2005,
+    UPGRADE_FS_SPACE_NOT_ENOUGH_ERROR   = -2006,
+    UPGRADE_DIR_PERMISSION_ERROR        = -2007,
+    UPGRADE_FILE_NAME_ERROR             = -2008,
+    UPGRADE_PROFILE_TYPE_ERROR          = -2009,
+    UPGRADE_NULL_POINTER_ERROR          = -2010,
+    UPGRADE_START_UPGRADE_ERROR         = -2011,
+    UPGRADE_OTHER                       = -2099,
 } rt_upgrade_result_e;
 
 typedef struct upgrade_struct {
-#define MAX_TRANID_LEN              128
-#define MAX_MAKE_LEN                32
-#define MAX_VERSION_NAME_LEN        128
-#define MAX_FILE_NAME_LEN           128
-#define MAX_FILE_HASH_LEN           64
-#define MAX_TICKET_LEN              32
-#define HASH_CHECK_BLOCK            1024  // å“ˆå¸Œæ ¡éªŒæ¯å—çš„å¤§å°
+#define MAX_TRANID_LEN                  128
+#define MAX_MAKE_LEN                    32
+#define MAX_CHIP_MODEL_LEN              32
+#define MAX_VERSION_NAME_LEN            128
+#define MAX_FILE_NAME_LEN               128
+#define MAX_FILE_HASH_LEN               64
+#define MAX_TICKET_LEN                  32
+#define HASH_CHECK_BLOCK                1024  // ¹şÏ£Ğ£ÑéÃ¿¿éµÄ´óĞ¡
 
-    /* è¯¥å®ç”¨äºè®¾ç½®åœ¨çº¿å‡çº§çŠ¶æ€æ ‡ç¤ºä¸º */
+/* ¸ÃºêÓÃÓÚÉèÖÃÔÚÏßÉı¼¶×´Ì¬±êÊ¾Îª */
 #define SET_UPGRADE_FLAG(obj, update_mode, force_update) \
     (obj)->upgrade_flag = ((update_mode) | (force_update) << 3)
 
-/* è¯¥å®ç”¨äºè·å–åœ¨çº¿å‡çº§çŠ¶æ€æ ‡ç¤ºä¸º */
-#define GET_UPDATEMODE(obj)                      (((obj)->upgrade_flag >> 0) & 0x03)
-#define SET_UPDATEMODE(obj, data)                ((obj)->upgrade_flag |= (data))
-#define GET_FORCEUPDATE(obj)                     (((obj)->upgrade_flag >> 2) & 0x01)
-#define SET_FORCEUPDATE(obj, data)               ((obj)->upgrade_flag |= (data) << 2)
-#define GET_UPGRADE_STATUS(obj)                  (((obj)->upgrade_flag >> 3) & 0x01)
-#define SET_UPGRADE_STATUS(obj, data)            ((obj)->upgrade_flag |= (data) << 3)
+/* ¸ÃºêÓÃÓÚ»ñÈ¡ÔÚÏßÉı¼¶×´Ì¬±êÊ¾Îª */
+#define GET_UPDATEMODE(obj)             (((obj)->upgrade_flag >> 0) & 0x03)
+#define SET_UPDATEMODE(obj, data)       ((obj)->upgrade_flag |= (data))
+#define GET_FORCEUPDATE(obj)            (((obj)->upgrade_flag >> 2) & 0x01)
+#define SET_FORCEUPDATE(obj, data)      ((obj)->upgrade_flag |= (data) << 2)
+#define GET_UPGRADE_STATUS(obj)         (((obj)->upgrade_flag >> 3) & 0x01)
+#define SET_UPGRADE_STATUS(obj, data)   ((obj)->upgrade_flag |= (data) << 3)
 
-    int8_t upgrade_flag;
-    /* åœ¨çº¿å‡çº§ç›¸å…³å‚æ•°æ ‡å¿—ä½
-     * -bit0-1--updateModeï¼Œ1ä¸ºå…¨é‡æ›´æ–°ï¼Œ2ä¸ºFOTAæ›´æ–°
-     * -bit2--æ˜¯å¦æ”¯æŒé™çº§æ“ä½œ
-     * -bit3--å‡çº§æ˜¯å¦æˆåŠŸï¼Œ1æˆåŠŸï¼Œ0å¤±è´¥
+/* lock for download process */
+#define DOWNLOAD_LOCKED                 1
+#define DOWNLOAD_UNLOCKED               0
+#define DOWNLOAD_LOCK(upgrade)          ((upgrade_struct_t *)(upgrade))->downloadLock = DOWNLOAD_LOCKED
+#define DOWNLOAD_UNLOCK(upgrade)        ((upgrade_struct_t *)(upgrade))->downloadLock = DOWNLOAD_UNLOCKED
+#define DOWNLOAD_LOCK_CHECK(upgrade)    (((upgrade_struct_t *)(upgrade))->downloadLock == DOWNLOAD_LOCKED)
+
+/* download result code */
+#define SET_DOWNLOAD_RET(upgrade, ret)  ((upgrade_struct_t *)(upgrade))->downloadResult = ret
+#define GET_DOWNLOAD_RET(upgrade, ret)  ret = ((upgrade_struct_t *)(upgrade))->downloadResult
+
+    int8_t      upgrade_flag;
+    /* ÔÚÏßÉı¼¶Ïà¹Ø²ÎÊı±êÖ¾Î»
+     * -bit0-1--updateMode£¬1ÎªÈ«Á¿¸üĞÂ£¬2ÎªFOTA¸üĞÂ
+     * -bit2--ÊÇ·ñÖ§³Ö½µ¼¶²Ù×÷
+     * -bit3--Éı¼¶ÊÇ·ñ³É¹¦£¬1³É¹¦£¬0Ê§°Ü
      */
 
-    int8_t tranid[MAX_TRANID_LEN + 1];
-    int8_t make[MAX_MAKE_LEN + 1];
-    int8_t versioncode;  // ç‰ˆæœ¬æ ‡è¯†
-    int8_t versionName[MAX_VERSION_NAME_LEN + 1];
-    int8_t fileName[MAX_FILE_NAME_LEN + 1];
-    int8_t fileHash[MAX_FILE_HASH_LEN + 1];  // å¹³å°ä¸‹è½½æ–‡ä»¶çš„hashç 
-    int8_t ticket[MAX_TICKET_LEN + 1];
-    int8_t buffer[HASH_CHECK_BLOCK];
+    int8_t      tranId[MAX_TRANID_LEN + 1];
+    int8_t      make[MAX_MAKE_LEN + 1];
+    int8_t      versioncode;
+    int8_t      chipModel[MAX_CHIP_MODEL_LEN + 1];
+    int8_t      versionName[MAX_VERSION_NAME_LEN + 1];
+    int8_t      targetFileName[MAX_FILE_NAME_LEN + 1];  // the full path in local file system
+    int8_t      fileName[MAX_FILE_NAME_LEN + 1];        // file name of push file name, such as "linux-euicc-agent-general"
+    int8_t      fileHash[MAX_FILE_HASH_LEN + 1];        // hash code of the upgrade file
+    int8_t      ticket[MAX_TICKET_LEN + 1];
+    int8_t      buffer[HASH_CHECK_BLOCK];
+    uint16_t    retryAttempts;
+    uint16_t    retryInterval;
+    uint8_t     downloadLock;                           // lock for download process
+    int32_t     downloadResult;                         // the result of download process
+    rt_bool     excute_app_now;                         // excute app right now after install app
 } upgrade_struct_t;
 
-extern void check_upgrade_process(void *args);
-extern void upgrade_check_info(void);
+int32_t upgrade_process_create(upgrade_struct_t **d_info);
+int32_t upgrade_process_start(upgrade_struct_t *d_info);
+int32_t upgrade_process_wating(upgrade_struct_t *d_info, int32_t timeous);
 
 #endif /* __INCLUDE_UPGRADE_H__ */

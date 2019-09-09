@@ -110,6 +110,82 @@ int32_t rt_qmi_get_model(uint8_t *model)
     return ret;
 }
 
+static const char *radio_str[] =
+{
+    "No Service",
+    "cdma2000 1X",
+    "cdma2000 HRPD (1xEV-DO)",
+    "AMPS",
+    "GSM",
+    "UMTS",
+    "",
+    "",
+    "LTE",
+    "TD-SCDMA",
+};
+
+
+//get network type, return type is the index of radio_str array
+static rt_bool qmi_get_radio_interface(int8_t *type)
+{
+    rt_bool ret = RT_FALSE;
+    qmi_serving_system_info_t info;
+    int8_t index = 0;
+
+    int err = qmi_get_serving_system(&info);
+    if (err == 0) {
+        index = info.serving_system.radio_if[info.serving_system.radio_if_len - 1];
+        MSG_PRINTF(LOG_INFO, "Radio Interface %d: %s\n", info.serving_system.radio_if_len + 1,
+                info.serving_system.radio_if[index] <= 9 ?
+                radio_str[index] : "Invalid value");
+        if (type != NULL) {
+            *type = index;
+        }
+        ret = RT_TRUE;
+    }
+    return ret;
+}
+
+// get network type
+int32_t rt_qmi_get_network_type(uint8_t *network_type)
+{    
+    int32_t ret = RT_ERROR;
+    int8_t radio_index;
+    int32_t type;
+   
+    ret = qmi_get_radio_interface(&radio_index);
+    if (RT_TRUE == ret) {
+        switch(radio_index) {        
+            case 8 :        
+            case 9 :            
+                type = 7;           
+                break; 
+                
+            case 4:        
+            case 5:            
+                type = 0;           
+                break;        
+
+            default:            
+                type = 5;            
+                break;    
+        }
+
+        if(type == 7){            
+            rt_os_strcpy((char *)network_type, "4g");        
+        } else if ((type > 3) && (type < 7)) {            
+            rt_os_strcpy((char *)network_type, "3g");        
+        } else {            
+            rt_os_strcpy((char *)network_type, "2g");        
+        }
+        ret = RT_SUCCESS;
+    } else {
+        ret = RT_ERROR;
+    }
+
+    return ret;
+}
+
 /*****************************************************************************
  * FUNCTION
  *  rt_modify_profile

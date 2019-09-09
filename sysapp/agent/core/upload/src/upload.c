@@ -26,9 +26,9 @@ do{                 \
 #define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
 
 static const char *g_upload_eid     = NULL;
-const char *g_upload_imei    = NULL;
 const char *g_push_channel   = NULL;
-const profiles_info_t *g_upload_profiles_info = NULL;
+const devicde_info_t *g_upload_device_info    = NULL;
+const card_info_t *g_upload_card_info = NULL;
 static uint8_t g_current_mcc[8]     = "460";
 
 int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
@@ -298,7 +298,6 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             char *upload_json_pag = NULL;
             cJSON *upload = NULL;
             cJSON *content = NULL;
-            int32_t status = 0; 
             int32_t ret;
             
             content = obj->packer(private_arg);
@@ -330,12 +329,13 @@ int32_t init_upload(void *arg)
     rt_bool report_all_info;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
     
-    MSG_PRINTF(LOG_WARN, "eid : %p, %s\n", public_value_list->eid, public_value_list->eid);
-    MSG_PRINTF(LOG_WARN, "imei: %p, %s\n", public_value_list->imei, public_value_list->imei);
-    g_upload_eid = (const char *)public_value_list->eid;
-    g_upload_imei = (const char *)public_value_list->imei;
-    g_push_channel = (const char *)public_value_list->push_channel;
-    g_upload_profiles_info = (const profiles_info_t *)public_value_list->profiles;
+    g_upload_device_info    = (const devicde_info_t *)public_value_list->device_info;
+    g_push_channel          = (const char *)public_value_list->push_channel;
+    g_upload_eid            = (const char *)public_value_list->card_info->eid;
+    g_upload_card_info      = (const card_info_t *)public_value_list->card_info->info;
+
+    MSG_PRINTF(LOG_WARN, "imei: %p, %s\n", g_upload_device_info->imei, g_upload_device_info->imei);
+    MSG_PRINTF(LOG_WARN, "eid : %p, %s\n", g_upload_eid, g_upload_eid);
 
     return 0;
 
@@ -353,3 +353,14 @@ int32_t init_upload(void *arg)
     return 0;
 }
 
+int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    static rt_bool g_report_boot_event = RT_FALSE;
+
+    if (MSG_NETWORK_CONNECTED == mode) {
+        if (g_report_boot_event == RT_FALSE) {
+            upload_event_report("BOOT", NULL, 0, NULL);  
+            g_report_boot_event = RT_TRUE;
+        }
+    }  
+}

@@ -41,6 +41,8 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
 int32_t init_upload(void *arg);
 int32_t upload_cmd_no_cert(void *arg);
 
+int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode);
+
 #ifdef __cplusplus
 }
 #endif

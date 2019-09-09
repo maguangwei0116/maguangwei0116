@@ -15,6 +15,8 @@
 #include "bootstrap.h"
 #include "card_manager.h"
 #include "downstream.h"
+#include "rt_type.h"
+#include "rt_os.h"
 
 /*
 queue msg type must large than 0, it's a nonpositive mtype value !
@@ -88,7 +90,7 @@ static void agent_queue_task(void)
                     break;
                     
                 case MSG_ID_OTA_UPGRADE:
-
+                    ota_upgrade_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
                     
                 case MSG_ID_PERSONLLISE:
@@ -106,6 +108,7 @@ static void agent_queue_task(void)
                 case MSG_ID_BROAD_CAST_NETWORK:
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    upload_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 case MSG_ID_IDLE:
