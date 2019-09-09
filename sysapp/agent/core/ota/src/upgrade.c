@@ -1,7 +1,7 @@
 /*
  * upgrade.c
  *
- *  Created on: 2018Äê11ÔÂ26ÈÕ
+ *  Created on: 2018??11??26??
  *      Author: xiangyinglai
  */
 
@@ -51,17 +51,17 @@ static rt_bool ugrade_check_dir_permission()
 }
 
 /********************************************************
-* name£ºint32_t upgrade_compare_version(upgrade_struct_t *d_info)
-* funcition£º±È½Ï²ÎÊý´«ÈëµÄ°æ±¾Óë¸ÃÈí¼þµÄ°æ±¾
-* parameter£º
-* -d_info--ÐèÒª½øÐÐÉý¼¶µÄÐÅÏ¢
+* name??int32_t upgrade_compare_version(upgrade_struct_t *d_info)
+* funcition?????????????ï¿½ï¿½????????ï¿½ï¿½
+* parameter??
+* -d_info--????????????????
 * return value:
-* -0--ÐèÒª½øÐÐÈí¼þ¸üÐÂ
+* -0--??????????????
 ********************************************************/
 static rt_bool upgrade_compare_version(upgrade_struct_t *d_info)
 {
 #if 0
-    /* ¶Ô±È¿Í»§ÀàÐÍ */
+    /* ï¿½Ô±È¿Í»ï¿½ï¿½ï¿½ï¿½ï¿½ */
     if (rt_os_strncmp(d_info->make, MAKE, rt_os_strlen(MAKE)) != 0) {
         return RT_FALSE;
     }
@@ -69,7 +69,7 @@ static rt_bool upgrade_compare_version(upgrade_struct_t *d_info)
 
 #if 0
     if (GET_FORCEUPDATE(d_info) == 0) {
-        /* ¶Ô±È°æ±¾ºÅ */
+        /* ???ï¿½ï¿½?? */
         if (d_info->versioncode > VERSION_CODE) {
             return RT_TRUE;
         } else {
@@ -101,7 +101,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.if_continue = 1;
     dw_struct.buf = NULL;
 
-    /* ¹¹½¨ÎÄ¼þÏÂÔØHttpÇëÇóbody */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½Httpï¿½ï¿½ï¿½ï¿½body */
     upgrade_get_file_path((char *)file_path, sizeof(file_path), d_info);
     dw_struct.file_path = (const char *)file_path;
     dw_struct.manager_type = 1;
@@ -128,7 +128,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     snprintf((char *)buf, sizeof(buf), "%d", rt_os_strlen(dw_struct.http_header.buf));
     http_set_header_record(&dw_struct, "Content-Length", (const char *)buf);
 
-    /* ¼ÆËãbodyµÄmd5Ð£ÑéÂë */
+    /* ????body??md5ï¿½ï¿½???? */
     get_md5_string((int8_t *)dw_struct.http_header.buf, buf);
     buf[MD5_STRING_LENGTH] = '\0';
     http_set_header_record(&dw_struct, "md5sum", (const char *)buf);
@@ -162,7 +162,7 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
     sha256_ctx sha_ctx;
     FILE *fp = NULL;
     int8_t file_path[MAX_FILE_PATH_LEN + 1];
-    int8_t hash_result[MAX_FILE_HASH_LEN + 1];  // hashÔËËã¼ÆËã½á¹û
+    int8_t hash_result[MAX_FILE_HASH_LEN + 1];  // hash?????????
     int8_t hash_out[MAX_FILE_HASH_LEN + 1];
     uint32_t check_size;
     int32_t partlen;
@@ -211,7 +211,7 @@ end:
     return ret;
 }
 
-/* ½øÐÐ±¾µØÎÄ¼þÌæ»» */
+/* ???ï¿½ï¿½???????ï¿½I */
 static rt_bool replace_process(upgrade_struct_t *d_info)
 {
     rt_bool ret = RT_FALSE;
@@ -219,17 +219,17 @@ static rt_bool replace_process(upgrade_struct_t *d_info)
 
     upgrade_get_file_path((char *)file_path, sizeof(file_path), d_info);
 
-    /* ½øÐÐagentÌæ»» */
+    /* ï¿½ï¿½ï¿½ï¿½agentï¿½æ»» */
     MSG_PRINTF(LOG_INFO, "file_path:%s, targetFileName=%s\r\n", file_path, d_info->targetFileName);
     RT_CHECK_NEQ(rt_os_rename(file_path, d_info->targetFileName), 0);
 
-    /* È¨ÏÞÉèÖÃ */
+    /* È¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     RT_CHECK_NEQ(chmod(d_info->targetFileName, S_IRWXU | S_IRWXG | S_IRWXO), 0);
 
-    /* ÉèÖÃÉý¼¶³É¹¦±êÖ¾Î» */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¹ï¿½ï¿½ï¿½Ö¾Î» */
     SET_UPGRADE_STATUS(d_info, 1);
 
-    /* Á¬ÐøÁ½´Îsync±£Ö¤ÐÂÈí¼þÍ¬²½µ½±¾µØflash */
+    /* ????????sync?????????????????flash */
     rt_os_sync();
     rt_os_sync();
 
@@ -247,40 +247,40 @@ static void upgrade_package_cleanup(upgrade_struct_t *d_info)
     rt_os_unlink(file_path);
 }
 
-/* ½øÐÐÆÕÍ¨Éý¼¶²Ù×÷ */
+/* ??????????????? */
 static rt_upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
 {
     rt_upgrade_result_e ret;
     
-    /* ¼ì²âÏµÍ³ÄÚ´æ */
+    /* ï¿½ï¿½ï¿½ÏµÍ³ï¿½Ú´ï¿½ */
     if (upgrade_check_sys_memory() != RT_TRUE) {
         ret = UPGRADE_FS_SPACE_NOT_ENOUGH_ERROR;
         MSG_PRINTF(LOG_WARN, "upgrade_sys space not enough False\n");
         goto exit_entry;
     }
 
-    /* ¼ì²âÎÄ¼þÏµÍ³È¨ÏÞ */
+    /* ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ÏµÍ³È¨ï¿½ï¿½ */
     if (ugrade_check_dir_permission() != RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "upgrade_dir permission False\n");
         ret = UPGRADE_DIR_PERMISSION_ERROR;
         goto exit_entry;
     }
 
-    /* ¶Ô±È°æ±¾ºÅ */
+    /* ???ï¿½ï¿½?? */
     if (upgrade_compare_version(d_info) != RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "upgrade_compare version False\n");
         ret = UPGRADE_CHECK_VERSION_ERROR;
         goto exit_entry;
     }
 
-    /* ÏÂÔØÉý¼¶°ü */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     if (upgrade_download_package(d_info) != RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "upgrade_download package False\n");
         ret = UPGRADE_DOWNLOAD_PACKET_ERROR;
         goto exit_entry;
     }
 
-    /* Ð£ÑéÉý¼¶°ü */
+    /* Ð£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     if (upgrade_check_package(d_info) != RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "Check Upgrade Packet Error \n");
         upgrade_package_cleanup(d_info);
@@ -288,7 +288,7 @@ static rt_upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info
         goto exit_entry;
     }
 
-    /* Ìæ»»Éý¼¶°ü */
+    /* ï¿½æ»»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     if (replace_process(d_info) != RT_TRUE) {
         upgrade_package_cleanup(d_info);
         ret = UPGRADE_INSTALL_APP_ERROR;
@@ -305,7 +305,7 @@ exit_entry:
 }
 
 
-/* ½øÐÐfotaÉý¼¶*/
+/* ????fota????*/
 static rt_upgrade_result_e start_fota_upgrade_process(upgrade_struct_t *d_info)
 {
     return RT_TRUE;
@@ -318,13 +318,13 @@ static void * check_upgrade_process(void *args)
 
     MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
     
-    if (GET_UPDATEMODE(d_info) == 1) { /* È«Á¿Éý¼¶Ä£Ê½ */
+    if (GET_UPDATEMODE(d_info) == 1) { /* È«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½ */
         result = start_comman_upgrade_process(d_info);
-    } else if (GET_UPDATEMODE(d_info) == 2) { /* TODO: FOTAÉý¼¶Ä£Ê½ */
+    } else if (GET_UPDATEMODE(d_info) == 2) { /* TODO: FOTAï¿½ï¿½ï¿½ï¿½Ä£Ê½ */
         result = start_fota_upgrade_process(d_info);
     }
 
-    /* ÉÏ±¨Éý¼¶½á¹û */
+    /* ï¿½Ï±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     //msg_upload_data(d_info->tranid, ON_UPGRADE, (int)result, (void *)d_info);
 
     DOWNLOAD_UNLOCK(d_info);

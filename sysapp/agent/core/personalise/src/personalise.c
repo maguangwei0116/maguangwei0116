@@ -16,12 +16,12 @@
 #include "device_info.h"
 #include "upload.h"
 
-int32_t personalise_main(void *arg)
+int32_t init_personalise(void *arg)
 {
-    int32_t ret;
-    MSG_PRINTF(LOG_WARN, "0------------\n", ret);
-    ret = upload_cmd_no_cert(NULL);
-    MSG_PRINTF(LOG_WARN, "---------ret:%d\n", ret);
-    return ret;
+    rt_bool report_all_info;
+    MSG_PRINTF(LOG_WARN, "0------------\n");
+    upload_event_report("NO_CERT", NULL, 0, NULL);
+    MSG_PRINTF(LOG_WARN, "---------report_all_info:%s\n",report_all_info);
+    return 0;
 }
 

@@ -197,7 +197,8 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
 {
     char random_tran_id[NORMAL_TRAN_ID_LEN + 1] = {0};
     const char *tranId = tran_id;
-    const char *topic = g_upload_eid ? g_upload_eid : "";
+//    const char *topic = g_upload_eid ? g_upload_eid : "";
+    const char *topic = "6e9d01b1f732b2704d9b2c8db0f6800e";
     int32_t version = 0;
     time_t timestamp = time(NULL);
 
@@ -328,7 +329,7 @@ int32_t init_upload(void *arg)
 {
     rt_bool report_all_info;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
-    
+
     g_upload_device_info    = (const devicde_info_t *)public_value_list->device_info;
     g_push_channel          = (const char *)public_value_list->push_channel;
     g_upload_eid            = (const char *)public_value_list->card_info->eid;
@@ -349,7 +350,7 @@ int32_t init_upload(void *arg)
     upload_event_report("INFO", NULL, 0, &report_all_info);
     report_all_info = RT_TRUE;
     upload_event_report("INFO", NULL, 0, &report_all_info);
-    
+
     return 0;
 }
 
@@ -359,8 +360,8 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     if (MSG_NETWORK_CONNECTED == mode) {
         if (g_report_boot_event == RT_FALSE) {
-            upload_event_report("BOOT", NULL, 0, NULL);  
-            g_report_boot_event = RT_TRUE;
+//            upload_event_report("BOOT", NULL, 0, NULL);
+//            g_report_boot_event = RT_TRUE;
         }
     }  
 }

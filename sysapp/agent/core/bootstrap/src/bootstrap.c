@@ -62,6 +62,6 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
         MSG_PRINTF(LOG_INFO, "g_single_interval_time:%d\n", g_single_interval_time);
         register_timer(g_single_interval_time, 0, &bootstrap_select_profile);
     } else if (mode == MSG_NETWORK_CONNECTED) {
-        personalise_main(NULL);
+        init_personalise(NULL);
     }
 }

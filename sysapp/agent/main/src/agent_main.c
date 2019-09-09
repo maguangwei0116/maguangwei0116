@@ -104,7 +104,7 @@ static int32_t agent_init_call(void)
 
 int32_t main(int32_t argc, int8_t **argv)
 {
-    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
+//    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
     MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION);  
     
     g_value_list.lpa_channel_type = LPA_CHANNEL_BY_QMI;
