@@ -18,7 +18,7 @@
 #define  MD5_STRING_LENGTH                            32
 #define  MSG_ONE_BLOCK_SIZE                           128
 #define  APN_LIST                                     "/data/redtea/rt_apn_list"
-#define  PROXY_SERVER_ADDR                            "smdp.redtea.io" // stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)
+#define  PROXY_SERVER_ADDR                            "smdp-test.redtea.io" // stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)
 
 
 int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])

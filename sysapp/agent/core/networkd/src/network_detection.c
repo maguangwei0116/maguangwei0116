@@ -54,7 +54,6 @@ void network_state(int32_t state)
 {
     g_network_state = state;
     if (g_network_state == DSI_STATE_CALL_CONNECTED) {
-        register_timer(0, 0 , &network_timer_callback);
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
     }
 }

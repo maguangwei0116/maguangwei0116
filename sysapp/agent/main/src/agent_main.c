@@ -70,13 +70,13 @@ static int32_t init_monitor(void *arg)
 static int32_t init_files(void *arg)
 {
 #define DATA_REDTEA_PATH    "/data/redtea"
-    
+
     if (rt_os_access(DATA_REDTEA_PATH, 0)) {
         rt_os_mkdir(DATA_REDTEA_PATH);
     }
-    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
-    MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION); 
-    
+    log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO);
+    MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION);
+
 #undef DATA_REDTEA_PATH
 
     return RT_SUCCESS;

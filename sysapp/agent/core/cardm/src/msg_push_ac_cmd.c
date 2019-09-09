@@ -38,7 +38,6 @@ static int32_t push_ac_parser(const void *in, char *tranid, void **out)
     uint8_t *buf = NULL;
     int32_t len = 0;
 
-    out = (void **)&buf;
     get_md5_string((int8_t *)in, md5_out_now);
     md5_out_now[MD5_STRING_LENGTH] = '\0';
     if (rt_os_strcmp(md5_out_pro, md5_out_now) == 0) {
@@ -69,8 +68,10 @@ static int32_t push_ac_parser(const void *in, char *tranid, void **out)
             break;
         }
         rt_os_memcpy(buf, payload->valuestring, len);
+        MSG_PRINTF(LOG_INFO, "payload:%s,len:%d\n", buf, len);
         ret = RT_SUCCESS;
     } while(0);
+    *out = (void *)buf;
     if (agent_msg != NULL) {
         cJSON_Delete(agent_msg);
     }
@@ -107,8 +108,8 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
     while(1) {
         //debug_json_data(activation_code, activation_code);
         MSG_PRINTF(LOG_INFO, "AC: %s\r\n", activation_code->valuestring);
-        msg_download_profile(activation_code->valuestring, cc, iccid);
-        if ((state==-302) || (state==-309) || (state==-310) || (state==-311)) {  // retry three times
+        state = msg_download_profile(activation_code->valuestring, cc, iccid);
+        if ((state == -302) || (state == -309) || (state == -310) || (state == -311)) {  // retry three times
             count++;
             rt_os_sleep(10);
             if (count > 2) {        // Retry 2 times. Max total 3 times !!!
@@ -160,8 +161,8 @@ static int32_t push_ac_handler(const void *in, void **out)
     cJSON *install_result = NULL;
     cJSON *to_enable = NULL;
     cJSON *content = NULL;
+    cJSON *content_d = NULL;
 
-    out = (void **)&content;
     install_result = cJSON_CreateArray();
     if (!install_result) {
         MSG_PRINTF(LOG_ERR, "Install result buffer is empty\n");
@@ -174,17 +175,23 @@ static int32_t push_ac_handler(const void *in, void **out)
     }
 
     do {
+        MSG_PRINTF(LOG_INFO, "payload:%s\n", (uint8_t *)in);
         payload = cJSON_Parse((uint8_t *)in);
         if (!payload) {
             MSG_PRINTF(LOG_ERR, "Parse payload failed!!\n");
             break;
         }
-        to_enable = cJSON_GetObjectItem(payload, "toEnable");
+        content_d = cJSON_GetObjectItem(payload, "content");
+        if (!content_d) {
+            MSG_PRINTF(LOG_ERR, "Parse content failed!!\n");
+            break;
+        }
+        to_enable = cJSON_GetObjectItem(content_d, "toEnable");
         if (!to_enable) {
             MSG_PRINTF(LOG_ERR, "Parse to_enable failed!!\n");
             break;
         }
-        ac_infos = cJSON_GetObjectItem(payload, "acInfos");
+        ac_infos = cJSON_GetObjectItem(content_d, "acInfos");
         if (!ac_infos) {
             MSG_PRINTF(LOG_ERR, "Parse acInfos failed!!\n");
             break;
@@ -199,7 +206,7 @@ static int32_t push_ac_handler(const void *in, void **out)
                 MSG_PRINTF(LOG_ERR, "Code info create error\n");
                 continue;
             }
-            cJSON_AddItemToObject(code_info, "code", cJSON_CreateNumber((double)state));
+            cJSON_AddItemToObject(code_info, "code", cJSON_CreateNumber((double)code));
             cJSON_AddItemToObject(code_info, "iccid", cJSON_CreateString(iccid_t));
             cJSON_AddItemToArray(install_result, code_info);
             MSG_PRINTF(LOG_WARN, "add %d, code:%d, iccid_t=%s\r\n", ii, code, iccid_t);
@@ -220,9 +227,10 @@ static int32_t push_ac_handler(const void *in, void **out)
     } while(0);
     MSG_PRINTF(LOG_WARN, "\n");
     content = cJSON_CreateObject();
-    if (code_info != NULL) {
+    if (install_result != NULL) {
         cJSON_AddItemToObject(content, "results", install_result);
     }
+    *out = (void *)content;
 end:
     if (payload != NULL) {
         cJSON_Delete(payload);
