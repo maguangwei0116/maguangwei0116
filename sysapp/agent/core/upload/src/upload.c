@@ -299,7 +299,6 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             char *upload_json_pag = NULL;
             cJSON *upload = NULL;
             cJSON *content = NULL;
-            int32_t status = 0; 
             int32_t ret;
             
             content = obj->packer(private_arg);
