@@ -320,7 +320,7 @@ end:
     return ret;
 }
 
-int lpa_download_profile(const char *ac, const char *cc, char iccid[21],uint8_t *server_url)
+int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t *server_url)
 {
     int ret = RT_ERR_UNKNOWN_ERROR;
     bool need_cc;

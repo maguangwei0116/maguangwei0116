@@ -18,7 +18,7 @@
 #include "lpa.h"
 
 #define THE_MAX_CARD_NUM         20
-#define THE_ICCID_LENGTH         10
+#define THE_ICCID_LENGTH         20
 
 typedef struct PROFILE_INFO {
     profile_info_t info[THE_MAX_CARD_NUM];

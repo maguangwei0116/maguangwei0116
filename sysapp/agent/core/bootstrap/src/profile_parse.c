@@ -242,7 +242,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     rt_qmi_get_mcc_mnc(&mcc, NULL);
     for (i = 0; i < ARRAY_SIZE(rt_plmn); ++i) {
         if (mcc == rt_plmn[i].mcc) {
-            hexstring2bytes(rt_plmn[i].rplmn, bytes, &length);
+            hexstring2bytes(rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
             bootstrap_request->tbhRequest.rplmn = OCTET_STRING_new_fromBuf(
                     &asn_DEF_TBHRequest, bytes, length);
             // bootstrap_request->tbhRequest.hplmn = OCTET_STRING_new_fromBuf(

@@ -15,4 +15,3 @@ exit_entry:
 }
 
 UPLOAD_EVENT_OBJ_INIT(NO_CERT, upload_nocert_packer);
-
