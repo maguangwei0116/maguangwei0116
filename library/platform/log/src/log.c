@@ -21,18 +21,27 @@
 #include "log.h"
 
 #define LOG_NAME            "/data/redtea/rt_log"
-#define LOG_FILE_SIZE       1024
+#define LOG_FILE_SIZE       1024 * 1024  // 1MB
 #define LOG_BUF_SIZE        1024
 
 static int32_t g_file_fd = -1;
-static int32_t g_log_printf_type = LOG_PRINTF_TERMINAL;
+static int32_t g_log_printf_mode = LOG_PRINTF_TERMINAL;
 static int32_t g_log_level = LOG_INFO;
+
+int32_t log_set_param(log_mode_e mode, log_level_e level)
+{
+	g_log_printf_mode = mode;
+	g_log_level = level;
+
+	return 0;
+}
 
 int32_t log_file(void)
 {
     g_file_fd = open(LOG_NAME, O_RDWR|O_CREAT|O_APPEND, 0666);
-    if(g_file_fd != -1) {
+    if(g_file_fd < 0) {
         printf("log file open error\n");
+        return -1;
     }
     return 0;
 }
@@ -55,30 +64,35 @@ static int32_t clear_file(void)
         return -1;
     }
     close(ret);
-    log_file();
     return 0;
 }
 
 static void close_file(void)
 {
     close(g_file_fd);
+    g_file_fd = -1;
 }
 
 static void printf_log(int8_t *data)
 {
     int32_t size = 0;
-    if (g_log_printf_type == LOG_PRINTF_TERMINAL) {
+    if (g_log_printf_mode == LOG_PRINTF_TERMINAL) {
         printf("%s", data);
     } else {
         size = log_file_size();
         if (size > LOG_FILE_SIZE) {
             clear_file();
+            close_file();
+        }
+        if (g_file_fd < 0) {
+        	log_file();
         }
         write(g_file_fd, data, rt_os_strlen(data));
+        fsync(g_file_fd);
     }
 }
 
-int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const char *msg, ...)
+int32_t write_log_fun(log_level_e level, log_level_flag_e level_flag, const char *msg, ...)
 {
     char content[LOG_BUF_SIZE] = {0};
     time_t  time_write;
@@ -86,12 +100,12 @@ int32_t write_log_fun(log_leve_e leve, log_leve_flag_e leve_flag, const char *ms
     int32_t len = 0;
     va_list vl_list;
 
-    if (leve > g_log_level) {
+    if (level > g_log_level) {
         return -1;
     }
 
-    if (leve_flag == LOG_HAVE_LEVE_PRINTF) {
-        switch(leve) {
+    if (level_flag == LOG_HAVE_LEVEL_PRINTF) {
+        switch(level) {
             case LOG_ERR:
                 rt_os_memcpy(content, "ERR ", 4);
             break;
