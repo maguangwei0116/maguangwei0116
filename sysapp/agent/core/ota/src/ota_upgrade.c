@@ -265,20 +265,24 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
             MSG_PRINTF(LOG_WARN, "forced to upgrade !\r\n");
             ret = UPGRADE_CHECK_VERSION_ERROR;
             goto exit_entry;   
-        } else if (param->policy.forced == 1 && \
-             rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
+        } else if (param->policy.forced == 1 && rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
             MSG_PRINTF(LOG_WARN, "unmathed file name!\r\n");
-            ret = -4;
+            ret = UPGRADE_FILE_NAME_ERROR;
             goto exit_entry;  
-        } else if (param->policy.forced == 0 && \
-             !rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME) && \
-             !ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
-            MSG_PRINTF(LOG_WARN, "unmathed file name or version name !\r\n");
-            ret = -5;
-            goto exit_entry;  
+        } else if (param->policy.forced == 0) {
+             if (rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
+                MSG_PRINTF(LOG_WARN, "unmathed file name!\r\n");
+                ret = UPGRADE_FILE_NAME_ERROR;
+                goto exit_entry; 
+             }
+
+             if (!ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
+                MSG_PRINTF(LOG_WARN, "unmathed version name !\r\n");
+                ret = UPGRADE_CHECK_VERSION_ERROR;
+                goto exit_entry; 
+             }
         }
     }
-
 
     ret = 0;
 
