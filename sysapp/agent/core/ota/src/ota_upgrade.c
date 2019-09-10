@@ -5,7 +5,8 @@
 #include "downstream.h"
 #include "upload.h"
 #include "upgrade.h"
-
+#include "hash.h"
+#include "http_client.h"
 #include "cJSON.h"
 
 #if 0
@@ -96,6 +97,8 @@ typedef struct _ota_upgrade_param_t {
     } while(0)
 
 #define MAX_RESTART_WAIT_TIMEOUT    10
+#define PRIVATE_HASH_STR_LEN        64
+#define HASH_CHECK_BLOCK            1024    /* block size for HASH check */
 
 extern const card_info_t *g_ota_card_info;
 
@@ -320,9 +323,60 @@ exit_entry:
 
 static rt_bool ota_file_check(const void *arg)
 {
-    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
+    const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
+    rt_bool ret = RT_FALSE;
+    sha256_ctx sha_ctx;
+    FILE *fp = NULL;
+    int8_t hash_result[MAX_FILE_HASH_LEN + 1];  // hash???????
+    int8_t hash_out[MAX_FILE_HASH_LEN + 1];
+    int8_t hash_buffer[HASH_CHECK_BLOCK];
+    int8_t last_hash_buffer[PRIVATE_HASH_STR_LEN + 1] = {0};
+    uint32_t check_size;
+    int32_t partlen;
+    struct  stat f_info;
 
-    return RT_TRUE;
+    RT_CHECK_ERR(stat((char *)d_info->tmpFileName, &f_info), -1);
+
+    RT_CHECK_ERR(fp = fopen((char *)d_info->tmpFileName, "r") , NULL);
+
+    sha256_init(&sha_ctx);
+    f_info.st_size -= PRIVATE_HASH_STR_LEN;
+    if (f_info.st_size < HASH_CHECK_BLOCK) {
+        rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
+        RT_CHECK_ERR(fread(hash_buffer, f_info.st_size, 1, fp), 0);
+        sha256_update(&sha_ctx,(uint8_t *)hash_buffer, f_info.st_size);
+    } else {
+        for (check_size = HASH_CHECK_BLOCK; check_size < f_info.st_size; check_size += HASH_CHECK_BLOCK) {
+            rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
+            RT_CHECK_ERR(fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp), 0);
+            sha256_update(&sha_ctx,(uint8_t *)hash_buffer, HASH_CHECK_BLOCK);
+        }
+
+        partlen = f_info.st_size + HASH_CHECK_BLOCK - check_size;
+        if (partlen > 0) {
+            rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
+            RT_CHECK_ERR(fread(hash_buffer, partlen, 1, fp), 0);
+            sha256_update(&sha_ctx,(uint8_t *)hash_buffer, partlen);
+        }
+
+        RT_CHECK_ERR(fread(last_hash_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
+    }
+
+    sha256_final(&sha_ctx,(uint8_t *)hash_out);
+    bytestring_to_charstring(hash_out, hash_result, 32);
+
+    MSG_PRINTF(LOG_WARN, "calc hash_result: %s\r\n", hash_result);
+    MSG_PRINTF(LOG_WARN, "tail hash_result: %s\r\n", last_hash_buffer);
+    RT_CHECK_NEQ(strncpy_case_insensitive(hash_result, last_hash_buffer, MAX_FILE_HASH_LEN), RT_TRUE);
+    MSG_PRINTF(LOG_WARN, "private file hash check ok !\r\n");
+    ret = RT_TRUE;
+
+end:
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+    return ret;
 }
 
 static rt_bool ota_file_install(const void *arg)
