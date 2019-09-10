@@ -1,5 +1,4 @@
 
-
 #include "rt_type.h"
 #include "rt_os.h"
 #include "log.h"
@@ -180,7 +179,7 @@ exit_entry:
 #define ARRAY_SIZE(a)           (sizeof((a)) / sizeof((a)[0]))
 #endif
 
-static rt_bool ota_upgrade_get_target_file_name(const char *fileName, char *targetFileName)
+static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param, char *targetFileName, int32_t len)
 {
     const char *g_target_files[] = 
     {
@@ -191,13 +190,14 @@ static rt_bool ota_upgrade_get_target_file_name(const char *fileName, char *targ
     int32_t i = 0;
     int32_t cnt = ARRAY_SIZE(g_target_files);
     char *p;
+    const char *fileName = param->target.name;
 
     for (i = 0; i < cnt; i++) {
         p = rt_os_strrchr(g_target_files[i], '/');
         if (p) {
             p++;
             if (rt_os_strstr(fileName, p)) {
-                rt_os_strcpy(targetFileName, g_target_files[i]);
+                snprintf(targetFileName, len, g_target_files[i]);
                 MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
                 return RT_TRUE;
             }
@@ -208,16 +208,28 @@ static rt_bool ota_upgrade_get_target_file_name(const char *fileName, char *targ
     return RT_FALSE;
 }
 
-static rt_bool ota_policy_compare_version(const char *old, const char *new)
+static rt_bool ota_upgrade_get_tmp_file_name(const ota_upgrade_param_t *param, char *tmpFileName, int32_t len)
+{
+#define TMP_DOWNLOAD_PATH "/data/xxxx"
+
+    /* Build a complete path to download files */
+    snprintf(tmpFileName, len, "%s%s_v%s_%s.tmp", \
+                TMP_DOWNLOAD_PATH, param->target.name, param->target.version, param->target.chipModel);  
+
+    return RT_TRUE;
+#undef TMP_DOWNLOAD_PATH
+}
+
+static rt_bool ota_policy_compare_version(const char *old_in, const char *new_in)
 {
     int32_t i;
     int32_t old_version[4] = {0};
     int32_t new_version[4] = {0};
 
-    MSG_PRINTF(LOG_INFO, "old version: %s\r\n", old); 
-    MSG_PRINTF(LOG_INFO, "new version: %s\r\n", new); 
-    sscanf(old, "%d.%d.%d.%d", &old_version[0], &old_version[1], &old_version[2], &old_version[3]);
-    sscanf(new, "%d.%d.%d.%d", &new_version[0], &new_version[1], &new_version[2], &new_version[3]);
+    MSG_PRINTF(LOG_INFO, "old version: %s\r\n", old_in); 
+    MSG_PRINTF(LOG_INFO, "new version: %s\r\n", new_in); 
+    sscanf(old_in, "%d.%d.%d.%d", &old_version[0], &old_version[1], &old_version[2], &old_version[3]);
+    sscanf(new_in, "%d.%d.%d.%d", &new_version[0], &new_version[1], &new_version[2], &new_version[3]);
     MSG_PRINTF(LOG_INFO, "--old version: %d.%d.%d.%d\r\n", old_version[0], old_version[1], old_version[2], old_version[3]); 
     MSG_PRINTF(LOG_INFO, "--new version: %d.%d.%d.%d\r\n", new_version[0], new_version[1], new_version[2], new_version[3]); 
 
@@ -232,16 +244,16 @@ static rt_bool ota_policy_compare_version(const char *old, const char *new)
         }
     }
 
-    MSG_PRINTF(LOG_WARN, "unmsthed version [%s] = [%s]\r\n", old, new);
+    MSG_PRINTF(LOG_WARN, "unmathed version [%s] = [%s]\r\n", old_in, new_in);
     return RT_FALSE;
 }
 
-static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct_t *upgrade_info)
+static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct_t *upgrade)
 {
     int32_t ret;
 
     if (!rt_os_strcmp(param->policy.executionType, "NOW")) {
-        upgrade_info->excute_app_now = RT_TRUE;
+        upgrade->excute_app_now = RT_TRUE;
     }
 
     if (param->policy.profileType == 1 && g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
@@ -292,44 +304,93 @@ exit_entry:
     return ret;
 }
 
-static int32_t ota_upgrade_start(const void *in)
+static rt_bool ota_file_check(const void *arg)
+{
+    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
+
+    return RT_TRUE;
+}
+
+static rt_bool ota_file_install(const void *arg)
+{
+    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
+    rt_bool ret = RT_FALSE;
+    
+    /* 进行app替换 */
+    MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
+    if (rt_os_rename(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
+        MSG_PRINTF(LOG_WARN, "re-name error\n");
+        goto exit_entry;
+    }
+
+    /* 权限设置 */
+    if (rt_os_chmod(upgrade->targetFileName, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) != 0) {
+        MSG_PRINTF(LOG_WARN, "change mode error\n");
+        goto exit_entry;
+    }
+
+    /* 设置升级成功标志位 */
+    //SET_UPGRADE_STATUS(upgrade, 1);
+
+    /* 连续两次sync保证新软件同步到本地flash */
+    rt_os_sync();
+    rt_os_sync();
+
+    ret = RT_TRUE;
+    
+exit_entry:
+    
+    return ret;
+}
+
+static rt_bool ota_file_cleanup(const void *arg)
+{
+    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
+
+    rt_os_unlink(upgrade->tmpFileName);
+
+    return RT_TRUE;
+}
+
+static int32_t ota_upgrade_start(const void *in, const char *upload_event)
 {
     int32_t ret;
     rt_task id;
     uint8_t update_mode = 1;
     uint8_t force_update = 0;
     const ota_upgrade_param_t *param = (const ota_upgrade_param_t *)in;
-    upgrade_struct_t *upgrade_info = NULL;  
+    upgrade_struct_t *upgrade = NULL;  
 
-    OTA_CHK_PINTER_NULL(param, UPGRADE_NULL_POINTER_ERROR);
-    upgrade_process_create(&upgrade_info);
-    OTA_CHK_PINTER_NULL(upgrade_info, UPGRADE_NULL_POINTER_ERROR);
+    upgrade_process_create(&upgrade);
+    OTA_CHK_PINTER_NULL(upgrade, UPGRADE_NULL_POINTER_ERROR);
 
     /* set upgrade information */
-    rt_os_memset(upgrade_info, 0, sizeof(upgrade_struct_t));
-    SET_UPDATEMODE(upgrade_info, update_mode);
-    SET_FORCEUPDATE(upgrade_info, force_update);
-    snprintf(upgrade_info->tranId, sizeof(upgrade_info->tranId), "%s", param->tranId);
-    snprintf(upgrade_info->chipModel, sizeof(upgrade_info->chipModel), "%s", param->target.chipModel);
-    snprintf(upgrade_info->fileName, sizeof(upgrade_info->fileName), "%s", param->target.name);
-    snprintf(upgrade_info->versionName, sizeof(upgrade_info->versionName), "%s", param->target.version);
-    snprintf(upgrade_info->fileHash, sizeof(upgrade_info->fileHash), "%s", param->target.fileHash);
-    snprintf(upgrade_info->ticket, sizeof(upgrade_info->ticket), "%s", param->target.ticket);
-    upgrade_info->retryAttempts = param->policy.retryAttempts;
-    upgrade_info->retryInterval = param->policy.retryInterval;
-    if (ota_upgrade_get_target_file_name(upgrade_info->fileName, upgrade_info->targetFileName) != RT_TRUE) {
-        MSG_PRINTF(LOG_WARN, "Unknow target file name: %s\r\n", upgrade_info->fileName);
+    rt_os_memset(upgrade, 0, sizeof(upgrade_struct_t));
+    SET_UPDATEMODE(upgrade, update_mode);
+    SET_FORCEUPDATE(upgrade, force_update);
+    snprintf(upgrade->tranId, sizeof(upgrade->tranId), "%s", param->tranId);
+    snprintf(upgrade->fileHash, sizeof(upgrade->fileHash), "%s", param->target.fileHash);
+    snprintf(upgrade->ticket, sizeof(upgrade->ticket), "%s", param->target.ticket);
+    snprintf(upgrade->event, sizeof(upgrade->event), "%s", upload_event);
+    upgrade->retryAttempts = param->policy.retryAttempts;
+    upgrade->retryInterval = param->policy.retryInterval;    
+    ota_upgrade_get_tmp_file_name(param, upgrade->tmpFileName, sizeof(upgrade->tmpFileName));
+    if (ota_upgrade_get_target_file_name(param, upgrade->targetFileName, sizeof(upgrade->targetFileName)) != RT_TRUE) {
         ret = UPGRADE_FILE_NAME_ERROR;
         goto exit_entry;
     }
 
-    ret = ota_policy_check(param, upgrade_info);
+    upgrade->check = ota_file_check;
+    upgrade->install = ota_file_install;
+    upgrade->cleanup = ota_file_cleanup;
+
+    ret = ota_policy_check(param, upgrade);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "ota policy check error\n");
         goto exit_entry;
     }
     
-    ret = upgrade_process_start(upgrade_info);
+    ret = upgrade_process_start(upgrade);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "Create upgrade start error\n");
         ret = UPGRADE_START_UPGRADE_ERROR;
@@ -345,9 +406,9 @@ exit_entry:
         param = NULL;
     }
 
-    upgrade_process_wating(upgrade_info, MAX_DOWNLOAD_TIMEOUTS);
+    upgrade_process_wating(upgrade, MAX_DOWNLOAD_TIMEOUTS);
     if (!ret) {
-        GET_DOWNLOAD_RET(upgrade_info, ret);
+        GET_DOWNLOAD_RET(upgrade, ret);
     }
 
     return ret;
@@ -368,6 +429,7 @@ static int32_t ota_upgrade_handler(const void *in, const char *event, void **out
     const ota_upgrade_param_t *param = (const ota_upgrade_param_t *)in;
     
     if (param) {
+        MSG_PRINTF(LOG_INFO, "upload_event                  : %s\r\n", event);
         MSG_PRINTF(LOG_INFO, "param->tranId                 : %s\r\n", param->tranId);
         MSG_PRINTF(LOG_INFO, "param->target.name            : %s\r\n", param->target.name);
         MSG_PRINTF(LOG_INFO, "param->target.version         : %s\r\n", param->target.version);
@@ -380,7 +442,7 @@ static int32_t ota_upgrade_handler(const void *in, const char *event, void **out
         MSG_PRINTF(LOG_INFO, "param->policy.retryAttempts   : %d\r\n", param->policy.retryAttempts);
         MSG_PRINTF(LOG_INFO, "param->policy.retryInterval   : %d\r\n", param->policy.retryInterval);
 
-        ret = ota_upgrade_start(param);
+        ret = ota_upgrade_start(param, event);
 
         *out = (void *)param;
     }

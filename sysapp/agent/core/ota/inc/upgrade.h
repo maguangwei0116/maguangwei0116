@@ -12,9 +12,6 @@
 #include "rt_type.h"
 
 #define MAX_DOWNLOAD_TIMEOUTS           120     // unit: second
-#define MAX_FILE_PATH_LEN               100
-#define TMP_DOWNLOAD_PATH               "/data/"
-#define BACKUP_INFO_FILE                "/data/rt_upgrade_info"
 
 typedef enum _upgrade_mode_e {
     UPGRADE_MODE_FORCED                 = 0,
@@ -23,6 +20,7 @@ typedef enum _upgrade_mode_e {
     UPGRADE_MODE_NO_FORCED              = 3,
 } upgrade_mode_e;
 
+/* OTA upgrade error code list */
 typedef enum {
     UPGRADE_NO_FAILURE                  = 0,
     UPGRADE_CHECK_VERSION_ERROR         = -2001,
@@ -37,17 +35,20 @@ typedef enum {
     UPGRADE_NULL_POINTER_ERROR          = -2010,
     UPGRADE_START_UPGRADE_ERROR         = -2011,
     UPGRADE_OTHER                       = -2099,
-} rt_upgrade_result_e;
+} upgrade_result_e;
+
+typedef rt_bool (*file_check)(const void *arg);
+typedef rt_bool (*file_install)(const void *arg);
+typedef rt_bool (*file_cleanup)(const void *arg);
 
 typedef struct upgrade_struct {
 #define MAX_TRANID_LEN                  128
-#define MAX_MAKE_LEN                    32
 #define MAX_CHIP_MODEL_LEN              32
 #define MAX_VERSION_NAME_LEN            128
 #define MAX_FILE_NAME_LEN               128
 #define MAX_FILE_HASH_LEN               64
 #define MAX_TICKET_LEN                  32
-#define HASH_CHECK_BLOCK                1024  // 哈希校验每块的大小
+#define MAX_UPLOAD_EVENT_LEN            32
 
 /* 该宏用于设置在线升级状态标示为 */
 #define SET_UPGRADE_FLAG(obj, update_mode, force_update) \
@@ -72,28 +73,29 @@ typedef struct upgrade_struct {
 #define SET_DOWNLOAD_RET(upgrade, ret)  ((upgrade_struct_t *)(upgrade))->downloadResult = ret
 #define GET_DOWNLOAD_RET(upgrade, ret)  ret = ((upgrade_struct_t *)(upgrade))->downloadResult
 
-    int8_t      upgrade_flag;
+    uint8_t         upgrade_flag;
     /* 在线升级相关参数标志位
      * -bit0-1--updateMode，1为全量更新，2为FOTA更新
      * -bit2--是否支持降级操作
      * -bit3--升级是否成功，1成功，0失败
      */
 
-    int8_t      tranId[MAX_TRANID_LEN + 1];
-    int8_t      make[MAX_MAKE_LEN + 1];
-    int8_t      versioncode;
-    int8_t      chipModel[MAX_CHIP_MODEL_LEN + 1];
-    int8_t      versionName[MAX_VERSION_NAME_LEN + 1];
-    int8_t      targetFileName[MAX_FILE_NAME_LEN + 1];  // the full path in local file system
-    int8_t      fileName[MAX_FILE_NAME_LEN + 1];        // file name of push file name, such as "linux-euicc-agent-general"
-    int8_t      fileHash[MAX_FILE_HASH_LEN + 1];        // hash code of the upgrade file
-    int8_t      ticket[MAX_TICKET_LEN + 1];
-    int8_t      buffer[HASH_CHECK_BLOCK];
-    uint16_t    retryAttempts;
-    uint16_t    retryInterval;
-    uint8_t     downloadLock;                           // lock for download process
-    int32_t     downloadResult;                         // the result of download process
-    rt_bool     excute_app_now;                         // excute app right now after install app
+    char            tranId[MAX_TRANID_LEN + 1];
+    char            targetFileName[MAX_FILE_NAME_LEN + 1];  // the full path in local file system
+    char            tmpFileName[MAX_FILE_NAME_LEN + 1];     // the full path in local file system  
+    char            fileHash[MAX_FILE_HASH_LEN + 1];        // hash code of the upgrade file
+    char            ticket[MAX_TICKET_LEN + 1];
+    uint16_t        retryAttempts;
+    uint16_t        retryInterval;
+    uint8_t         downloadLock;                           // lock for download process
+    int32_t         downloadResult;                         // the result of download process
+    rt_bool         excute_app_now;                         // excute app right now after install app
+    char          event[MAX_UPLOAD_EVENT_LEN + 1];
+
+    /* callback functions */
+    file_check      check;
+    file_install    install;
+    file_cleanup    cleanup;
 } upgrade_struct_t;
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info);
