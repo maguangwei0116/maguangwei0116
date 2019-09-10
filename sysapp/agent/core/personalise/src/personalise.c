@@ -20,7 +20,6 @@
 
 int32_t init_personalise(void *arg)
 {
-    init_device_info(arg);
     return RT_SUCCESS;
 }
 
