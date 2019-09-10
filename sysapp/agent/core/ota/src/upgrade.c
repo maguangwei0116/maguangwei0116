@@ -84,6 +84,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
     rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
     dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
+    cJSON_free(out);
 
     snprintf((char *)buf, sizeof(buf), "%s:%d", OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
     http_set_header_record(&dw_struct, "HOST", buf);
@@ -99,7 +100,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     buf[MD5_STRING_LENGTH] = '\0';
     http_set_header_record(&dw_struct, "md5sum", (const char *)buf);
 
-    do {        
+    while (1) {        
         /* There is file need to download in system */
         if (rt_os_access((const int8_t *)dw_struct.file_path, F_OK) == RT_SUCCESS){
             snprintf(buf, sizeof(buf), "%d", get_file_size(dw_struct.file_path));
@@ -113,11 +114,13 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         }
         cnt++;
         MSG_PRINTF(LOG_WARN, "Download fail cnt: %d\r\n", cnt);
-        
+        if (cnt >= d_info->retryAttempts) {
+            MSG_PRINTF(LOG_WARN, "Download fail too many times !\r\n");
+            break;
+        }        
         rt_os_sleep(d_info->retryInterval);
-    } while(cnt < d_info->retryAttempts);
+    }
     
-    cJSON_free(out);
     cJSON_Delete(post_info);
     return ret;
 }

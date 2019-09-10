@@ -20,6 +20,11 @@ typedef enum _upgrade_mode_e {
     UPGRADE_MODE_NO_FORCED              = 3,
 } upgrade_mode_e;
 
+typedef enum _upgrade_profile_type_e {
+    UPGRADE_PRO_TYPE_ANY                = 0,
+    UPGRADE_PRO_TYPE_OPERATIONAL        = 1,
+} upgrade_profile_type_e;
+
 /* OTA upgrade error code list */
 typedef enum {
     UPGRADE_NO_FAILURE                  = 0,
