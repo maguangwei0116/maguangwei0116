@@ -95,6 +95,8 @@ typedef struct _ota_upgrade_param_t {
         }\
     } while(0)
 
+#define MAX_RESTART_WAIT_TIMEOUT    10
+
 extern const card_info_t *g_ota_card_info;
 
 static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
@@ -210,11 +212,12 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
 
 static rt_bool ota_upgrade_get_tmp_file_name(const ota_upgrade_param_t *param, char *tmpFileName, int32_t len)
 {
-#define TMP_DOWNLOAD_PATH "/data/xxxx"
+#define TMP_DOWNLOAD_PATH "/data/redtea/"
+    static int32_t tmp_file_index = 0;
 
     /* Build a complete path to download files */
-    snprintf(tmpFileName, len, "%s%s_v%s_%s.tmp", \
-                TMP_DOWNLOAD_PATH, param->target.name, param->target.version, param->target.chipModel);  
+    snprintf(tmpFileName, len, "%s%s_v%s_%s.%d.tmp", \
+                TMP_DOWNLOAD_PATH, param->target.name, param->target.version, param->target.chipModel, ++tmp_file_index);  
 
     return RT_TRUE;
 #undef TMP_DOWNLOAD_PATH
@@ -262,10 +265,15 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry; 
     }
 
-    if (param->policy.profileType == 1 && g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
+    if (param->policy.profileType == UPGRADE_PRO_TYPE_ANY) {
+    } else if (param->policy.profileType == UPGRADE_PRO_TYPE_OPERATIONAL && g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
         MSG_PRINTF(LOG_WARN, "unmathed profile type !\r\n");
         ret = UPGRADE_PROFILE_TYPE_ERROR;
         goto exit_entry;         
+    } else {
+        MSG_PRINTF(LOG_WARN, "unknow profile type !\r\n");
+        ret = UPGRADE_PROFILE_TYPE_ERROR;
+        goto exit_entry; 
     }
 
     if (rt_os_strcmp(param->target.chipModel, AGENT_LOCAL_PLATFORM_TYPE)) {
@@ -363,6 +371,13 @@ static rt_bool ota_on_upload_event(const void *arg)
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
     upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade); 
+
+    /* restart app right now */
+    if (UPGRADE_NO_FAILURE == upgrade->downloadResult && upgrade->execute_app_now) {
+        MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);
+        rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
+        rt_os_exit(-1);
+    }
 
     /* release upgrade struct memory */
     if (upgrade) {
