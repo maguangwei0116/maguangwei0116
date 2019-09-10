@@ -98,7 +98,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_queue,                NULL),
     INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
-    INIT_OBJ(init_network_detection,    NULL),
+    INIT_OBJ(init_network_detection,    (void *)&g_value_list),
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),
@@ -118,11 +118,9 @@ static int32_t agent_init_call(void)
     return RT_SUCCESS;
 }
 
-
-
 int32_t main(int32_t argc, int8_t **argv)
 {
-    g_value_list.lpa_channel_type = LPA_CHANNEL_BY_IPC;
+    g_value_list.lpa_channel_type = LPA_CHANNEL_BY_QMI;
     agent_init_call();
     MSG_PRINTF(LOG_INFO, "Device id:%s\n", g_value_list.device_info->device_id);
     while (!toStop) {

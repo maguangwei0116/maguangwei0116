@@ -301,6 +301,7 @@ exit_entry:
     return !ret ? upload : NULL;
 }
 
+#if 0
 static int32_t init_upload_obj(void)
 {
     const upload_event_t *obj = NULL;
@@ -314,6 +315,7 @@ static int32_t init_upload_obj(void)
 
     return 0;
 }
+#endif
 
 int32_t upload_event_report(const char *event, const char *tran_id, int32_t status, void *private_arg)
 {
@@ -328,11 +330,11 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             int32_t ret;
             
             content = obj->packer(private_arg);
-            MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
+            //MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
             upload = upload_packet_all(tran_id, event, status, content);
-            MSG_PRINTF(LOG_WARN, "upload [%p] !!!\r\n", upload);
+            //MSG_PRINTF(LOG_WARN, "upload [%p] !!!\r\n", upload);
             upload_json_pag = (char *)cJSON_PrintUnformatted(upload); 
-            MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
+            //MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
             ret = upload_send_request((const char *)upload_json_pag);
             
             if (upload) {
@@ -365,19 +367,6 @@ int32_t init_upload(void *arg)
     MSG_PRINTF(LOG_WARN, "eid : %p, %s\n", g_upload_eid, g_upload_eid);
 
     return 0;
-
-    rt_os_sleep(10);
-
-    init_upload_obj();
-    
-    upload_event_report("REGISTERED", NULL, 0, NULL);
-    upload_event_report("BOOT", NULL, 0, NULL);
-    report_all_info = RT_FALSE;
-    upload_event_report("INFO", NULL, 0, &report_all_info);
-    report_all_info = RT_TRUE;
-    upload_event_report("INFO", NULL, 0, &report_all_info);
-    
-    return 0;
 }
 
 int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
@@ -388,6 +377,9 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
         if (g_report_boot_event == RT_FALSE) {
             upload_event_report("BOOT", NULL, 0, NULL);  
             g_report_boot_event = RT_TRUE;
+        } else {
+            rt_bool report_all_info = RT_FALSE;
+            upload_event_report("INFO", NULL, 0, &report_all_info);
         }
     }  
 }

@@ -79,7 +79,7 @@ static int32_t delete_parser(const void *in, char *tranid, void **out)
     return ret;
 }
 
-static int32_t delete_handler(const void *in, void **out)
+static int32_t delete_handler(const void *in, const char *event, void **out)
 {
     int32_t state = RT_SUCCESS;
     int32_t all_iccid_num = 0;

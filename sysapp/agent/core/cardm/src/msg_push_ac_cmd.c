@@ -145,7 +145,7 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
     return state;
 }
 
-static int32_t push_ac_handler(const void *in, void **out)
+static int32_t push_ac_handler(const void *in, const char *event, void **out)
 {
     int32_t item = 0;
     int32_t ii = 0;

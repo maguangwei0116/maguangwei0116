@@ -42,9 +42,12 @@ define CREATE_ADB_PUSH_SHELL
     echo "###### Auto-generated adb push shell ######" >$(1);\
     echo "" >>$(1);\
 	echo "#!/bin/bash" >>$(1);\
-    echo "adb push ./targets/*agent* /data/" >>$(1);\
-	echo "adb push ./targets/*monitor* /data/" >>$(1);\
-	echo "adb push ./targets/*libcomm.so* /lib/" >>$(1);\
+    echo "adb push ./targets/*agent* /usr/bin/agent" >>$(1);\
+	echo "adb shell chmod + /usr/bin/agent" >>$(1);\
+	echo "adb push ./targets/*monitor* /usr/bin/monitor" >>$(1);\
+	echo "adb shell chmod + /usr/bin/monitor" >>$(1);\
+	echo "adb push ./targets/*libcomm.so* /usr/lib/libcomm.so" >>$(1);\
+	echo "adb shell chmod + /usr/lib/libcomm.so" >>$(1);\
     echo "" >>$(1);\
 	chmod +x $(1)
 endef

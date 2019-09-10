@@ -78,7 +78,7 @@ static int32_t enable_parser(const void *in, char *tranid, void **out)
     return ret;
 }
 
-static int32_t enable_handler(const void *in, void **out)
+static int32_t enable_handler(const void *in, const char *event, void **out)
 {
     int32_t state = RT_SUCCESS;
     cJSON *payload = NULL;

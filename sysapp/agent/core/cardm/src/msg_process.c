@@ -316,7 +316,7 @@ int32_t mqtt_msg_event(const uint8_t *buf, int32_t len)
         downstream_msg->msg = NULL;
     }
     // MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
-    status = downstream_msg->handler(downstream_msg->private_arg, &downstream_msg->out_arg);
+    status = downstream_msg->handler(downstream_msg->private_arg,  downstream_msg->event, &downstream_msg->out_arg);
 
     upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
 

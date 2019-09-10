@@ -16,15 +16,21 @@
 #include "dial_up.h"
 #include "rt_timer.h"
 #include "agent_main.h"
+#include "card_manager.h"
 
 #define MAX_WAIT_REGIST_TIME     180
 
 static int32_t g_network_state = 0;
+static card_info_t *g_card_info;
 
 static void network_timer_callback(void)
 {
-    if (g_network_state != DSI_STATE_CALL_CONNECTED) {
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
+    if (g_network_state == DSI_STATE_CALL_CONNECTED) {  // network connected
+        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
+    } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
+        if (g_card_info->profile_type_e == PROFILE_TYPE_PROVISONING) {
+            msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
+        }
     }
     MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
 }
@@ -53,20 +59,20 @@ int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 void network_state(int32_t state)
 {
     g_network_state = state;
-    if (g_network_state == DSI_STATE_CALL_CONNECTED) {
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
-    }
 }
 
 int32_t init_network_detection(void *arg)
 {
     rt_task task_id = 0;
     int32_t ret = RT_ERROR;
+
+    g_card_info = ((public_value_list_t *)arg)->card_info;
     regist_dial_callback((void *)network_state);
     ret = rt_create_task(&task_id, (void *) network_detection_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");
         return RT_ERROR;
     }
+
     return RT_SUCCESS;
 }

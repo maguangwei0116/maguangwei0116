@@ -297,6 +297,11 @@ int32_t rt_os_rename(const char *oldname, const char *newname)
     return rename(oldname, newname);
 }
 
+int32_t rt_os_chmod(const char *pathname, RT_MODE mode)
+{
+    return chmod(pathname, mode);
+}
+
 int32_t rt_os_rmdir(const char *pathname)
 {
     if (NULL == pathname) {
