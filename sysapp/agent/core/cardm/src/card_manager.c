@@ -30,13 +30,15 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
         for (i = 0; i < g_p_info.num; i++) {
             if (g_p_info.info[i].state == 1) {
                 g_p_info.type = g_p_info.info[i].class;
-                if ((bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) &&
-                    (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
-                    msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
-                }
                 rt_os_memcpy(g_p_info.iccid, g_p_info.info[i].iccid, THE_MAX_CARD_NUM);
                 g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';
                 break;
+            }
+        }
+        if ((g_p_info.type == PROFILE_TYPE_TEST) ||
+            (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
+            if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+                msg_send_agent_queue(MSG_ID_BOOT_STRAP, 0, NULL, 0);
             }
         }
     }
@@ -94,7 +96,7 @@ int32_t init_card_manager(void *arg)
     bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
 
     rt_os_sleep(1);
-
+    rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
     ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     return ret;
 }

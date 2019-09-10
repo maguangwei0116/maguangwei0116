@@ -427,6 +427,7 @@ int lpa_load_cert(const uint8_t *data, uint16_t data_len)
     open_channel(&channel);
     load_cert(data, data_len, channel);
     close_channel(channel);
+
     return RT_SUCCESS;
 }
 
@@ -438,5 +439,6 @@ int lpa_load_profile(const uint8_t *data, uint16_t data_len)
     MSG_INFO("data[0]:%02X, data_len:%d\n", data[0], data_len);
     load_profile(data, data_len, channel);
     close_channel(channel);
+
     return RT_SUCCESS;
 }
