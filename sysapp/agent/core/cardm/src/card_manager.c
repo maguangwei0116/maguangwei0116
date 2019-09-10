@@ -82,7 +82,10 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
 
 static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 {
-    return lpa_load_cert(buf, len);
+    int32_t ret = RT_ERROR;
+    ret = lpa_load_cert(buf, len);
+    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+    return ret;
 }
 
 int32_t init_card_manager(void *arg)

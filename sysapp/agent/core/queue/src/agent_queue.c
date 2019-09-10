@@ -46,6 +46,7 @@ typedef struct UPLOAD_QUEUE {
 
 static int32_t g_queue_id = -1;
 static int32_t g_upload_queue_id = -1;
+static card_info_t **g_card_info;
 
 static void idle_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
@@ -105,7 +106,9 @@ static void agent_queue_task(void)
 
                 case MSG_ID_BROAD_CAST_NETWORK:
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
-                    bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    if ((*g_card_info)->type == PROFILE_TYPE_PROVISONING) {
+                        bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    }
                     upload_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
@@ -153,6 +156,7 @@ int32_t init_queue(void *arg)
     rt_task upload_task_id = 0;
     int32_t ret = RT_ERROR;
 
+    g_card_info = &(((public_value_list_t *)arg)->card_info);
     ret = rt_create_task(&task_id, (void *) agent_queue_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");
