@@ -70,13 +70,13 @@ static int32_t init_monitor(void *arg)
 static int32_t init_files(void *arg)
 {
 #define DATA_REDTEA_PATH    "/data/redtea"
-    
+
     if (rt_os_access(DATA_REDTEA_PATH, 0)) {
         rt_os_mkdir(DATA_REDTEA_PATH);
     }
-    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
-    MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION); 
-    
+    log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO);
+    MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION);
+
 #undef DATA_REDTEA_PATH
 
     return RT_SUCCESS;
@@ -95,10 +95,10 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(rt_config_init,            NULL),
     INIT_OBJ(rt_qmi_init,               NULL),
-    INIT_OBJ(init_queue,                NULL),
+    INIT_OBJ(init_queue,                (void *)&g_value_list),
     INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
-    INIT_OBJ(init_network_detection,    NULL),
+    INIT_OBJ(init_network_detection,    (void *)&g_value_list),
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),

@@ -46,6 +46,7 @@ typedef struct UPLOAD_QUEUE {
 
 static int32_t g_queue_id = -1;
 static int32_t g_upload_queue_id = -1;
+static card_info_t **g_card_info;
 
 static void idle_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
@@ -54,14 +55,12 @@ static void idle_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     (void)mode;
     MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
-    
+
     downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
     if (downstream_msg->msg) {
         rt_os_free(downstream_msg->msg);
         downstream_msg->msg = NULL;
     }
-    //MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
-
     status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
 
     upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
@@ -79,24 +78,24 @@ static void agent_queue_task(void)
                 case MSG_ID_BOOT_STRAP:
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
-                    
+
                 case MSG_ID_CARD_MANAGER:
                     MSG_INFO_ARRAY("que_t.data_buf:", (uint8_t *) que_t.data_buf, que_t.data_len);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
-                    
+
                 case MSG_ID_LOG_MANAGER:
-                    
+
                     break;
-                    
+
                 case MSG_ID_OTA_UPGRADE:
                     ota_upgrade_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
-                    
+
                 case MSG_ID_PERSONLLISE:
 
                     break;
-                    
+
                 case MSG_ID_REMOTE_CONFIG:
 
                     break;
@@ -104,22 +103,24 @@ static void agent_queue_task(void)
                 case MSG_ID_NETWORK_DECTION:
                     network_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
-                    
+
                 case MSG_ID_BROAD_CAST_NETWORK:
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
-                    bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    if ((*g_card_info)->type == PROFILE_TYPE_PROVISONING) {
+                        bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    }
                     upload_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 case MSG_ID_IDLE:
                     idle_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
-                    
+
                 default: {
                     break;
                 }
             }
-            
+
             //MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, que_t.data_buf:%p\n", que_t.data_len, que_t.data_buf);
             if (que_t.data_len != 0) {
                 rt_os_free(que_t.data_buf);
@@ -155,6 +156,7 @@ int32_t init_queue(void *arg)
     rt_task upload_task_id = 0;
     int32_t ret = RT_ERROR;
 
+    g_card_info = &(((public_value_list_t *)arg)->card_info);
     ret = rt_create_task(&task_id, (void *) agent_queue_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");

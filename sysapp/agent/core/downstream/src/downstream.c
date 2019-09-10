@@ -22,7 +22,7 @@ static int32_t string_trim_single(const char *str_in, int32_t len_in, char *str_
 
     while(str_in[j] == ch)
         --j;
-    
+
     strncpy(str_out, str_in + i , j - i + 1);
     str_out[j - i + 1] = '\0';
 
@@ -120,9 +120,9 @@ int32_t downstream_msg_handle(const void *data, uint32_t len)
             downstream_msg.private_arg  = NULL;
             downstream_msg.out_arg      = NULL;
             MSG_PRINTF(LOG_WARN, "tranId: %p, msg: %p\r\n", downstream_msg.tranId, downstream_msg.msg);
-            
+
             ret = msg_send_agent_queue(obj->msg_id, MSG_FROM_MQTT, &downstream_msg, sizeof(downstream_msg_t));
-            
+
             return ret;
         }
     }
