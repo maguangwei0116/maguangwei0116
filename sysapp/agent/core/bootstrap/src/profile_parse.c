@@ -28,9 +28,9 @@
 #include "rt_qmi.h"
 
 #define ARRAY_SIZE(a)           (sizeof((a)) / sizeof((a)[0]))
-#define SHARE_PROFILE "profile_list.der"
+#define SHARE_PROFILE           "profile_list.der"
 
-typedef struct profile_data {
+typedef struct PROFILE_DATA {
     uint32_t file_info_offset;
     uint32_t root_sk_offset;
     uint32_t aes_key_offset;
