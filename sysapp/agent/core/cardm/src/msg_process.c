@@ -14,6 +14,7 @@
 #include "msg_process.h"
 #include "downstream.h"
 #include "cJSON.h"
+#include "rt_qmi.h"
 
 #define  MD5_STRING_LENGTH                            32
 #define  MSG_ONE_BLOCK_SIZE                           128
@@ -43,6 +44,9 @@ int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])
 
 int32_t msg_enable_profile(const char *iccid)
 {
+    uint8_t apn_name[100];
+    msg_get_op_apn_name((uint8_t *)iccid, NULL, apn_name);
+    rt_qmi_modify_profile(1, 0, apn_name, 0);
     return lpa_enable_profile(iccid);
 }
 
@@ -121,7 +125,7 @@ static int32_t msg_select(uint8_t *iccid, uint8_t *buffer)
         if (agent_msg != NULL) {
             s_iccid = cJSON_GetObjectItem(agent_msg, "iccid");
             if (s_iccid != NULL) {
-                if(! rt_os_memcmp(iccid,s_iccid->valuestring,rt_os_strlen(s_iccid->valuestring))) {
+                if(! rt_os_memcmp(iccid, s_iccid->valuestring, rt_os_strlen(s_iccid->valuestring))) {
                     cJSON_Delete(agent_msg);
                     memcpy(buffer, tmp_buffer, MSG_ONE_BLOCK_SIZE);
                     return ii;
@@ -149,7 +153,7 @@ static int32_t msg_select(uint8_t *iccid, uint8_t *buffer)
  * RETURNS
  *  int32_t
  *****************************************************************************/
-static int32_t msg_insert(uint8_t *iccid,uint8_t *buffer)
+static int32_t msg_insert(uint8_t *iccid, uint8_t *buffer)
 {
     int32_t num = 0;
     uint8_t buff[MSG_ONE_BLOCK_SIZE];
@@ -200,6 +204,7 @@ static int32_t msg_delete(uint8_t *iccid)
     rt_truncate_data(APN_LIST, (num - 1) * MSG_ONE_BLOCK_SIZE);
     msg_debug_apn_list();
     MSG_PRINTF(LOG_INFO, "delete iccid: %s\r\n", iccid);
+
     return RT_SUCCESS;
 }
 
@@ -214,7 +219,7 @@ static int32_t msg_delete(uint8_t *iccid)
  * RETURNS
  *  void
  *****************************************************************************/
-void msg_get_op_apn_name(uint8_t * iccid,uint8_t *apn_name, uint8_t *imsi)
+void msg_get_op_apn_name(uint8_t * iccid, uint8_t *imsi, uint8_t *apn_name)
 {
     cJSON *agent_msg = NULL;
     cJSON *apn_list = NULL;
@@ -271,7 +276,7 @@ void msg_get_op_apn_name(uint8_t * iccid,uint8_t *apn_name, uint8_t *imsi)
  * RETURNS
  *  int
  *****************************************************************************/
-int32_t msg_analyse_apn(cJSON *command_content,uint8_t *iccid)
+int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid)
 {
     cJSON *apn_list = NULL;
     int8_t *out = NULL;

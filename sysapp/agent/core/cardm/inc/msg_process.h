@@ -54,4 +54,6 @@ int32_t msg_enable_profile(const char *iccid);
 int32_t msg_delete_profile(const char *iccid);
 int32_t card_update_profile_info(judge_term_e bootstrap_flag);
 int32_t init_msg_process(void *arg);
+void msg_get_op_apn_name(uint8_t * iccid, uint8_t *imsi, uint8_t *apn_name);
+
 #endif // __MSG_PROCESS_H__
