@@ -26,6 +26,16 @@ int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])
     return lpa_download_profile(ac, cc, iccid, PROXY_SERVER_ADDR);
 }
 
+int32_t msg_enable_profile(const char *iccid)
+{
+    return lpa_enable_profile(iccid);
+}
+
+int32_t msg_delete_profile(const char *iccid)
+{
+    return lpa_delete_profile(iccid);
+}
+
 int32_t msg_debug_apn_list(void)
 {
     int32_t ret;

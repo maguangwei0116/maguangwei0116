@@ -1,7 +1,7 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : msg_process.h
+ * File name   : msg_push_ac_cmd.c
  * Date        : 2019.09.04
  * Note        :
  * Description :
@@ -16,7 +16,6 @@
 #include "rt_type.h"
 #include "cJSON.h"
 #include "md5.h"
-#include "lpa.h"
 
 static cJSON *upload_push_ac_packer(void *arg)
 {
@@ -44,6 +43,8 @@ static int32_t push_ac_parser(const void *in, char *tranid, void **out)
         MSG_PRINTF(LOG_ERR, "The data are the same!!\n");
         return ret;
     }
+    rt_os_strcpy(md5_out_pro, md5_out_now);
+
     do {
         agent_msg = cJSON_Parse(in);
         if (!agent_msg) {
@@ -226,7 +227,6 @@ static int32_t push_ac_handler(const void *in, void **out)
         }
     } while(0);
     MSG_PRINTF(LOG_WARN, "\n");
-    content = cJSON_CreateObject();
     if (install_result != NULL) {
         cJSON_AddItemToObject(content, "results", install_result);
     }

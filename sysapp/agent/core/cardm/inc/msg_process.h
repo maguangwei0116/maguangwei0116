@@ -45,5 +45,7 @@
 
 int32_t mqtt_msg_event(const uint8_t *buf, int32_t len);
 int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21]);
+int32_t msg_enable_profile(const char *iccid);
+int32_t msg_delete_profile(const char *iccid);
 
 #endif // __MSG_PROCESS_H__
