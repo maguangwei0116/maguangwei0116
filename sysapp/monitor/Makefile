@@ -30,7 +30,7 @@ RELEASE_TARGET 			= $(SYSAPP_TARGET_NAME)_v$(MONITOR_LOCAL_VERSION)_$(PLATFORM_T
 RELEASE_TARGET_VERSION 	= $(RELEASE_TARGET)_$(SYSAPP_GIT_HASH)_$(shell date +%Y-%m-%d_%H:%M:%S)
 
 # Config your own CFLAGS
-USER_CFLAGS				+= -DRELEASE_TARGET_VERSION=$(RELEASE_TARGET_VERSION)
+USER_CFLAGS				+= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
 
 QMI-LIB 				= dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
 COMM-LIB 				= comm crypto ssl pthread

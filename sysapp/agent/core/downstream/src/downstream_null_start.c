@@ -8,32 +8,28 @@
 
 static int32_t downstream_null_start_parser(const void *in, char *tranId, void **out)
 {
-    int32_t id = -1;
-    char cmd_id_str[64] = {0};
-    const char *p = NULL;
-    const char *p0 = NULL;
-    const char *p1 = NULL;
+    (void)in;
+    (void)tranId;
+    (void)out;
 
     MSG_PRINTF(LOG_WARN, "\n");
 
 exit_entry:
 
-    return id;
+    return 0;
 }
 
-static int32_t downstream_null_start_handler(const void *in, void **out)
+static int32_t downstream_null_start_handler(const void *in, const char *event, void **out)
 {
-    int32_t id = -1;
-    char cmd_id_str[64] = {0};
-    const char *p = NULL;
-    const char *p0 = NULL;
-    const char *p1 = NULL;
+    (void)in;
+    (void)event;
+    (void)out;
 
     MSG_PRINTF(LOG_WARN, "\n");
 
 exit_entry:
 
-    return id;
+    return 0;
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(START, MSG_ID_IDLE, START, downstream_null_start_parser, downstream_null_start_handler);

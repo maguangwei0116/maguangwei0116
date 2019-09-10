@@ -118,8 +118,6 @@ static int32_t agent_init_call(void)
     return RT_SUCCESS;
 }
 
-
-
 int32_t main(int32_t argc, int8_t **argv)
 {
     g_value_list.lpa_channel_type = LPA_CHANNEL_BY_QMI;

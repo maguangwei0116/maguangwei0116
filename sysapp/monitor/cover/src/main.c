@@ -51,6 +51,7 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
 
 int32_t main(void)
 {
+	MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION); 
     softsim_logic_start(write_log_fun);
     init_system_signal(NULL);
     ipc_regist_callback(monitor_cmd);
