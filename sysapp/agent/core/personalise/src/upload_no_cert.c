@@ -2,10 +2,11 @@
 #include "upload.h"
 #include "rt_type.h"
 #include "rt_os.h"
+#include "device_info.h"
 
 #include "cJSON.h"
 
-extern const char *g_push_channel;
+extern const devicde_info_t *g_upload_device_info;
 
 static cJSON *upload_no_cert_packer(void *arg)
 {
@@ -15,8 +16,8 @@ static cJSON *upload_no_cert_packer(void *arg)
     cJSON *content = NULL;
     char *upload_json_pag = NULL;
     const char *event = "NO_CERT";
-    const char *imei = "866713030010830";
-    const char *deviceId = "6e9d01b1f732b2704d9b2c8db0f6800e";
+    const char *imei = g_upload_device_info->imei;
+    const char *deviceId = g_upload_device_info->device_id;
     char *model = NULL;
     char *fileVersion = NULL;
 
