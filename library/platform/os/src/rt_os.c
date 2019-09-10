@@ -327,6 +327,11 @@ void rt_os_reboot(void)
     reboot(LINUX_REBOOT_CMD_POWER_OFF);
 }
 
+void rt_os_exit(int status)
+{
+    exit(status);
+}
+
 void rt_os_sync(void)
 {
     sync();
