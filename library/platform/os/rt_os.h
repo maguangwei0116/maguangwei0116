@@ -14,6 +14,7 @@
 #define __RT_OS_H__
 
 #include <signal.h>
+#include <sys/stat.h>
 #include "rt_type.h"
 
 #define  RT_FILE_HANDLE                     FILE *
@@ -23,6 +24,22 @@
 #define  RT_SIGINT                          SIGINT
 #define  RT_SIGTERM                         SIGTERM
 #define  RT_SIGALRM                         SIGALRM
+#define  RT_MODE                            mode_t
+#define  RT_S_ISUID                         S_ISUID  // (04000)  set-user-ID (set process effective user ID on execve(2))
+#define  RT_S_ISGID                         S_ISGID  // (02000)  
+#define  RT_S_ISVTX                         S_ISVTX  // (01000)  sticky bit (restricted deletion flag, as described in unlink(2))
+#define  RT_S_IRUSR                         S_IRUSR  // (00400)  read by owner
+#define  RT_S_IWUSR                         S_IWUSR  // (00200)  write by owner
+#define  RT_S_IXUSR                         S_IXUSR  // (00100)  
+#define  RT_S_IRGRP                         S_IRGRP  // (00040)  read by group
+#define  RT_S_IWGRP                         S_IWGRP  // (00020)  write by group
+#define  RT_S_IXGRP                         S_IXGRP  // (00010)  execute/search by group
+#define  RT_S_IROTH                         S_IROTH  // (00004)  read by others
+#define  RT_S_IWOTH                         S_IWOTH  // (00002)  write by others
+#define  RT_S_IXOTH                         S_IXOTH  // (00001)  execu
+#define  RT_S_IRWXU                         (RT_S_IRUSR | RT_S_IWUSR | RT_S_IXUSR)
+#define  RT_S_IRWXG                         (RT_S_IRGRP | RT_S_IWGRP | RT_S_IXGRP)
+#define  RT_S_IRWXO                         (RT_S_IROTH | RT_S_IWOTH | RT_S_IXOTH)
 
 typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);
@@ -65,6 +82,7 @@ void *rt_os_strcpy(char* dest, const char *src);
 int32_t rt_os_access(const char *filenpath, int32_t mode);
 int32_t rt_os_unlink(const char *pathname);
 int32_t rt_os_rename(const char *oldname, const char *newname);
+int32_t rt_os_chmod(const char *pathname, RT_MODE mode);
 
 void  rt_os_reboot(void);
 void  rt_os_sync(void);
