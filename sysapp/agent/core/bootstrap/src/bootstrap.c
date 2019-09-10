@@ -19,7 +19,6 @@
 #include "rt_manage_data.h"
 #include "agent_queue.h"
 #include "rt_type.h"
-#include "personalise.h"
 
 #define RANDOM_FILE                     "/dev/urandom"
 
@@ -57,11 +56,11 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     MSG_PRINTF(LOG_INFO, "The current mode is %d.\n", mode);
     if (mode == 0) {
-        // bootstrap_select_profile();
+        bootstrap_select_profile();
     } else if (mode == MSG_NETWORK_DISCONNECTED) {
         MSG_PRINTF(LOG_INFO, "g_single_interval_time:%d\n", g_single_interval_time);
         register_timer(g_single_interval_time, 0, &bootstrap_select_profile);
     } else if (mode == MSG_NETWORK_CONNECTED) {
-        init_personalise(NULL);
+
     }
 }

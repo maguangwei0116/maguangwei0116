@@ -19,7 +19,6 @@
 #include "rt_mqtt.h"
 #include "config.h"
 #include "bootstrap.h"
-#include "personalise.h"
 #include "upload.h"
 #include "rt_qmi.h"
 #include "lpa.h"
@@ -101,7 +100,6 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_network_detection,    NULL),
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
-    INIT_OBJ(init_personalise,          (void *)&g_value_list),
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
 };
 

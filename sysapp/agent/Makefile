@@ -94,7 +94,6 @@ SRC-y 			                        += ./core/downstream/src/downstream.c
 SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
 
 # Personalise module
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/downstream_issue_cert.c
