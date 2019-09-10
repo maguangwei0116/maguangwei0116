@@ -255,7 +255,7 @@ static void * check_upgrade_process(void *args)
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
     upgrade_result_e result;
 
-    MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
+    //MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
     
     if (GET_UPDATEMODE(d_info) == 1) { /* 全量升级模式 */
         result = start_comman_upgrade_process(d_info);
