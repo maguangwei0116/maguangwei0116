@@ -18,6 +18,17 @@
 
 static card_info_t g_p_info;
 
+static int32_t card_update_eid(void)
+{
+    int32_t ret = RT_ERROR;
+
+    uint8_t eid[MAX_EID_HEX_LEN] = {0};
+    ret = lpa_get_eid(eid);
+    bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
+
+    return ret;
+}
+
 int32_t card_update_profile_info(judge_term_e bootstrap_flag)
 {
     int32_t ret = RT_ERROR;
@@ -84,22 +95,19 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 {
     int32_t ret = RT_ERROR;
     ret = lpa_load_cert(buf, len);
-    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+    card_update_eid();
     return ret;
 }
 
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
-    uint8_t eid[MAX_EID_HEX_LEN] = {0};
 
     ((public_value_list_t *)arg)->card_info = &g_p_info;
     init_msg_process(&g_p_info);
-    lpa_get_eid(eid);
-    bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
-
-    rt_os_sleep(1);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
+    card_update_eid();
+    rt_os_sleep(1);
     ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     return ret;
 }
