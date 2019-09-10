@@ -15,6 +15,7 @@
 #include "downstream.h"
 #include "rt_type.h"
 #include "cJSON.h"
+#include "md5.h"
 
 static cJSON *upload_on_enable_packer(void *arg)
 {

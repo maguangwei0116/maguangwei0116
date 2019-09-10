@@ -94,6 +94,8 @@ SRC-y 			                        += ./core/upload/src/upload_info.c
 SRC-y 			                        += ./core/downstream/src/downstream.c
 SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
 SRC-y 			                        += ./core/cardm/src/msg_push_ac_cmd.c
+SRC-y 			                        += ./core/cardm/src/msg_delete_cmd.c
+SRC-y 			                        += ./core/cardm/src/msg_enable_cmd.c
 
 # Personalise module
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c

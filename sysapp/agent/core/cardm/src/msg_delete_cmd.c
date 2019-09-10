@@ -15,6 +15,7 @@
 #include "downstream.h"
 #include "rt_type.h"
 #include "cJSON.h"
+#include "md5.h"
 
 static cJSON *upload_on_delete_packer(void *arg)
 {
@@ -92,6 +93,8 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
     cJSON *iccids = NULL;
     cJSON *iccid = NULL;
     cJSON *code_info = NULL;
+    cJSON *delete_result = NULL;
+
     delete_result = cJSON_CreateArray();
     if (!delete_result) {
         MSG_PRINTF(LOG_ERR, "Install result buffer is empty\n");
@@ -140,11 +143,11 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 state = 1;
                 fail_times ++;
             }
-            if (fail_times == item) {
-                state = -1;  // All failed
-            }
         }
-        cJSON_AddItemToObject(content, "results", cJSON_CreateString(delete_result));
+        if (fail_times == all_iccid_num) {
+            state = -1;  // All failed
+        }
+        cJSON_AddItemToObject(content, "results", delete_result);
     } while(0);
     card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     *out = content;
