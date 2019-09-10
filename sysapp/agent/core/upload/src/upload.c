@@ -193,12 +193,37 @@ static void upload_get_random_tran_id(char *tran_id, uint16_t size)
 }
 #endif
 
+static rt_bool upload_check_memory(const void *buf, int32_t len, int32_t value)
+{
+    int32_t i = 0;
+    const uint8_t *p = (const uint8_t *)buf;
+
+    for (i = 0; i < len; i++) {
+        if (p[i] != value) {
+            return RT_FALSE;
+        }
+    }
+    return RT_TRUE;
+}
+
+static const char *upload_get_topic_name(void)
+{
+    if (g_upload_eid) {
+        if (upload_check_memory(g_upload_eid, MAX_EID_HEX_LEN, '0')) {
+            return g_upload_device_info->device_id;
+        } else {
+            return g_upload_eid;
+        }
+    } else {
+        return "";
+    }
+}
+
 static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
 {
     char random_tran_id[NORMAL_TRAN_ID_LEN + 1] = {0};
     const char *tranId = tran_id;
-//    const char *topic = g_upload_eid ? g_upload_eid : "";
-    const char *topic = "6e9d01b1f732b2704d9b2c8db0f6800e";
+    const char *topic = upload_get_topic_name();
     int32_t version = 0;
     time_t timestamp = time(NULL);
 

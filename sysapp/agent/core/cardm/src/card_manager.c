@@ -62,7 +62,7 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
-    uint8_t eid[16];
+    uint8_t eid[MAX_EID_HEX_LEN] = {0};
     int32_t i;
     
     ((public_value_list_t *)arg)->card_info = &g_p_info;
