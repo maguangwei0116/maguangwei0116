@@ -35,7 +35,7 @@
 #define ERROR_NO_APN_LIST                            1020
 #define ERROR_NO_REQUIRED_DATA                       1021
 #define ERROR_CARD_OVERFLOW                          1023
-#define ERROR_MALOCC                                 1024
+#define ERROR_MALLOC                                 1024
 #define ERROR_VERSION_INFO                           2001
 #define ERROR_DOWNLOAD_FILE                          2002
 #define ERROR_CHECK_HASH                             2003
@@ -43,9 +43,15 @@
 #define ERROR_FILE_NAME                              2005
 #define ERROR_CONFIG                                 1030
 
+typedef enum {
+    UPDATE_NOT_JUDGE_BOOTSTRAP = 0,
+    UPDATE_JUDGE_BOOTSTRAP
+} judge_term_e;
+
 int32_t mqtt_msg_event(const uint8_t *buf, int32_t len);
 int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21]);
 int32_t msg_enable_profile(const char *iccid);
 int32_t msg_delete_profile(const char *iccid);
-
+int32_t card_update_profile_info(judge_term_e bootstrap_flag);
+int32_t init_msg_process(void *arg);
 #endif // __MSG_PROCESS_H__

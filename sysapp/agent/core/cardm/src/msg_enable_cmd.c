@@ -114,6 +114,7 @@ static int32_t enable_handler(const void *in, void **out)
         state = msg_enable_profile(iccid->valuestring);
         cJSON_AddItemToObject(content, "iccid", cJSON_CreateString(iccid->valuestring));
     } while(0);
+    card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     *out = content;
 end:
     return state;

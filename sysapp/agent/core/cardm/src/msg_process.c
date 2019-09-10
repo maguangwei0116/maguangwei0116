@@ -20,6 +20,21 @@
 #define  APN_LIST                                     "/data/redtea/rt_apn_list"
 #define  PROXY_SERVER_ADDR                            "smdp-test.redtea.io" // stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)
 
+static card_info_t *g_card_info;
+
+int32_t init_msg_process(void *arg)
+{
+    g_card_info = (card_info_t *)arg;
+    return RT_SUCCESS;
+}
+
+rt_bool msg_check_iccid_state(const char *iccid)
+{
+    if (rt_os_strncmp(g_card_info->iccid, iccid, THE_ICCID_LENGTH) == 0){
+        return RT_TRUE;
+    }
+    return RT_FALSE;
+}
 
 int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])
 {
@@ -33,8 +48,13 @@ int32_t msg_enable_profile(const char *iccid)
 
 int32_t msg_delete_profile(const char *iccid)
 {
+    if (msg_check_iccid_state(iccid) == RT_TRUE) {
+        lpa_disable_profile(iccid);
+        rt_os_sleep(1);
+    }
     return lpa_delete_profile(iccid);
 }
+
 
 int32_t msg_debug_apn_list(void)
 {

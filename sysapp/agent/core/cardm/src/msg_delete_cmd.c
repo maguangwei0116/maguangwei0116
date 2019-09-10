@@ -127,12 +127,12 @@ static int32_t delete_handler(const void *in, void **out)
                 MSG_PRINTF(LOG_ERR, "Parse iccid failed!!\n");
                 continue;
             }
-            code = msg_delete_profile(iccid->valuestring);
             code_info = cJSON_CreateObject();
             if (!code_info) {
                 MSG_PRINTF(LOG_ERR, "Code info create error\n");
                 continue;
             }
+            code = msg_delete_profile(iccid->valuestring);
             cJSON_AddItemToObject(code_info, "code", cJSON_CreateNumber((double)code));
             cJSON_AddItemToObject(code_info, "iccid", cJSON_CreateString(iccid->valuestring));
             cJSON_AddItemToArray(delete_result, code_info);
@@ -146,6 +146,7 @@ static int32_t delete_handler(const void *in, void **out)
         }
         cJSON_AddItemToObject(content, "results", cJSON_CreateString(delete_result));
     } while(0);
+    card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     *out = content;
 end:
     return state;

@@ -58,7 +58,7 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
     if (rval != DSI_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "Couldn't get ipv4 rmnet name. rval %d\n", rval);
         strncpy((int8_t *)iface, "rmnet0", DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 1);
-        return RT_ERROR;
+        //return RT_ERROR;
     }
 
     rval = dsi_get_ip_addr(phndl->handle, &addr_info, num_entries);

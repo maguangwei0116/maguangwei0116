@@ -231,6 +231,7 @@ static int32_t push_ac_handler(const void *in, void **out)
         cJSON_AddItemToObject(content, "results", install_result);
     }
     *out = (void *)content;
+    card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
 end:
     if (payload != NULL) {
         cJSON_Delete(payload);
