@@ -68,7 +68,6 @@ SRC-y 			                        += ./core/downstream/src/downstream_null_start.
 # Config your resource file list by += xxx.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
 SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/profile_parse.c
-
 SRC-y 		                            += $(wildcard ./core/mqtt/src/*.c)
 SRC-y 		                            += src/config.c
 SRC-y 			                        += src/agent_main.c
@@ -96,9 +95,9 @@ SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
 SRC-y 			                        += ./core/cardm/src/msg_push_ac_cmd.c
 
 # Personalise module
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/downstream_issue_cert.c
 
 # OTA module
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c

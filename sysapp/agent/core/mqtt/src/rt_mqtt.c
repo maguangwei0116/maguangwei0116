@@ -82,7 +82,7 @@ static void msg_parse(int8_t *message, int32_t len)
     downstream_msg_handle(message, len);
 }
 
-//±¾µØ»º´æÖ®Ç°µÄ´Óadapter»ñÈ¡µÄticket server
+//ï¿½ï¿½ï¿½Ø»ï¿½ï¿½ï¿½Ö®Ç°ï¿½Ä´ï¿½adapterï¿½ï¿½È¡ï¿½ï¿½ticket server
 static rt_bool save_ticket_server(mqtt_info *opts)
 {
     cJSON   *obj = NULL;
@@ -137,7 +137,7 @@ exit_entry:
     return ret;
 }
 
-//»ñÈ¡±¾µØ»º´æµÄ´Óadapter»ñÈ¡µÄticket server
+//ï¿½ï¿½È¡ï¿½ï¿½ï¿½Ø»ï¿½ï¿½ï¿½Ä´ï¿½adapterï¿½ï¿½È¡ï¿½ï¿½ticket server
 static rt_bool get_ticket_server(mqtt_info *opts)
 {
     int8_t  *save_info;
@@ -228,7 +228,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
     set_reg_url(OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
     MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
 
-    //Á¬½ÓÎÒÃÇºì²è×Ô¼ºµÄticket server adopter,×î¶à³¢ÊÔ3´Î
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çºï¿½ï¿½ï¿½Ô¼ï¿½ï¿½ï¿½ticket server adopter,ï¿½ï¿½à³¢ï¿½ï¿½3ï¿½ï¿½
     do {
         if (rt_mqtt_setup_with_appkey(ADAPTER_APPKEY, opts) == 0) {
             break;
@@ -247,7 +247,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", alias);
     }
 
-    //±£´æ»ñÈ¡µ½µÄticket server
+    //ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ticket server
     save_ticket_server(opts);
     
     return RT_TRUE;
@@ -275,7 +275,7 @@ static rt_bool rt_mqtt_connect_yunba(mqtt_param_t *param, int8_t *ticket_server)
         MSG_PRINTF(LOG_WARN, "ticket_server:%s, yunba addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
-    //Á¬½Óyunba server ×î¶à³¢ÊÔ3´Î
+    //ï¿½ï¿½ï¿½ï¿½yunba server ï¿½ï¿½à³¢ï¿½ï¿½3ï¿½ï¿½
     do {
         int ret;
         if ((ret = MQTTClient_setup_with_appkey_and_deviceid(YUNBA_APPKEY, (char *)opts->device_id, opts)) == 0) {
@@ -376,14 +376,14 @@ FORCE_TO_ADAPTER:
             }
             
             if (get_ticket_server(&param->opts) == RT_TRUE) {
-                //Èç¹ûÖ®Ç°Á¬½ÓµÄÊÇyunbaµÄticket server£¬ÄÇÃ´³¢ÊÔÁ¬½Ó
+                //ï¿½ï¿½ï¿½Ö®Ç°ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½yunbaï¿½ï¿½ticket serverï¿½ï¿½ï¿½ï¿½Ã´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 if (!rt_os_strncmp(param->opts.rt_channel, "YUNBA", 5) &&
                       (rt_mqtt_connect_yunba(param, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_DBG, "connect YUNBA mqtt server successfull\n");
                     break;
                 }
 
-                //Èç¹ûÖ®Ç°Á¬½ÓµÄÊÇEMQµÄticket server£¬ÄÇÃ´³¢ÊÔÁ¬½Ó
+                //ï¿½ï¿½ï¿½Ö®Ç°ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½EMQï¿½ï¿½ticket serverï¿½ï¿½ï¿½ï¿½Ã´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 if (!rt_os_strncmp(param->opts.rt_channel, "EMQ", 3) &&
                       (rt_mqtt_connect_emq(param, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_DBG, "connect EMQ mqtt server successfull\n");
@@ -392,7 +392,7 @@ FORCE_TO_ADAPTER:
             }
         }
 
-        //Èç¹ûadapter ºÍ ÏµÍ³»º´æµÄticket server¶¼ÎÞ·¨Ê¹ÓÃ£¬ÓÃ±¾µØÐ´ËÀµÄticket serverµØÖ·½øÐÐÁ¬½Ó
+        //ï¿½ï¿½ï¿½adapter ï¿½ï¿½ ÏµÍ³ï¿½ï¿½ï¿½ï¿½ï¿½ticket serverï¿½ï¿½ï¿½Þ·ï¿½Ê¹ï¿½Ã£ï¿½ï¿½Ã±ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ticket serverï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (!rt_os_strncmp(param->opts.rt_channel, "YUNBA", 5)) {
 FORCE_TO_EMQ:
             if (rt_mqtt_connect_emq(param, NULL) == RT_TRUE) {
@@ -527,7 +527,8 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     opts->try_connect_timer = 0;
     param->alias_rc = 1;
 
-    upload_event_report("REGISTERED", NULL, 0, NULL);
+   upload_event_report("REGISTERED", NULL, 0, NULL);
+   upload_event_report("NO_CERT", NULL, 0, NULL);
     
     return RT_TRUE;
 }
@@ -540,25 +541,25 @@ static void mqtt_process_task(void)
     while(1) {
         if (get_network_state() == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
-                //Èç¹û±¾µØÒÑ¾­»º´æÁËmqttµØÖ·£¬ÇÒµØÖ·¿ÉÓÃ£¬¾Í²»ÔÙÈ¥ticket server»ñÈ¡mqttµØÖ·
+                //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½mqttï¿½ï¿½Ö·ï¿½ï¿½ï¿½Òµï¿½Ö·ï¿½ï¿½ï¿½Ã£ï¿½ï¿½Í²ï¿½ï¿½ï¿½È¥ticket serverï¿½ï¿½È¡mqttï¿½ï¿½Ö·
                 if (g_mqtt_param.mqtt_get_addr == RT_FALSE) {
-                    //Õâ±ßÓÉÓÚÖØÐÂÇëÇómqttÁ¬½ÓËùÒÔÐèÒªÖØÐÂ½øÐÐ¶©ÔÄ
+                    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½mqttï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½Â½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½
                     if (mqtt_get_server_addr(&g_mqtt_param) == RT_FALSE) {
                         continue;
                     }
                 }
 
-                //Á¬½Ómqtt·þÎñÆ÷£¬Á¬½ÓÇ°ÒÑ¾­´Ó±¾µØ»º´æ»òÕßticket server adapter »ñÈ¡mqttµØÖ·¡£
+                //ï¿½ï¿½ï¿½ï¿½mqttï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½Ñ¾ï¿½ï¿½Ó±ï¿½ï¿½Ø»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ticket server adapter ï¿½ï¿½È¡mqttï¿½ï¿½Ö·ï¿½ï¿½
                 if (rt_mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
                     //if (get_boot_flag() != BOOT_STRAP_PROCESS) {
                         //upload_set_values(REGISTER_PUSH_ID, NULL);
                     //}
 
-                    //³É¹¦Á¬½Ó·þÎñÆ÷ºó½«ÍøÂç×´Ì¬ÖÃÎªÒÑÁ¬½Ó
+                    //ï¿½É¹ï¿½ï¿½ï¿½ï¿½Ó·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                     set_network_state(NETWORK_USING);
                     continue;
                 } else {
-                    //Èç¹û±¾µØ»º´æµÄmqtt serverºÍhardcodeµÄmqtt server¶¼ÎÞ·¨Ê¹ÓÃ£¬ÄÇÃ´ÖØÐÂÈ¥»ñticket server»ñÈ¡Ò»ÏÂmqtt server
+                    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø»ï¿½ï¿½ï¿½ï¿½mqtt serverï¿½ï¿½hardcodeï¿½ï¿½mqtt serverï¿½ï¿½ï¿½Þ·ï¿½Ê¹ï¿½Ã£ï¿½ï¿½ï¿½Ã´ï¿½ï¿½ï¿½ï¿½È¥ï¿½ï¿½ticket serverï¿½ï¿½È¡Ò»ï¿½ï¿½mqtt server
                     g_mqtt_param.mqtt_get_addr = RT_FALSE;
                 }
             }
@@ -568,7 +569,7 @@ static void mqtt_process_task(void)
                 MQTTClient_disconnect(g_mqtt_param.client, 0);
                 MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
                 g_mqtt_param.mqtt_flag      = RT_FALSE;
-                g_mqtt_param.subscribe_flag = RT_FALSE;  // ¸´Î»¶©ÔÄ±êÖ¾  
+                g_mqtt_param.subscribe_flag = RT_FALSE;  // ï¿½ï¿½Î»ï¿½ï¿½ï¿½Ä±ï¿½Ö¾  
             }
         } else if (get_network_state() == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.rt_channel);
@@ -607,7 +608,7 @@ static void mqtt_process_task(void)
                 }
                 
                 /* subscribe agent  */
-                if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) && 
+                if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
                         (MQTTClient_subscribe(g_mqtt_param.client, AGENT_ALIAS, 1) == 0)) {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe %s OK !\n", AGENT_ALIAS);
                     SET_AGENT_FLAG(g_mqtt_param.subscribe_flag);                    

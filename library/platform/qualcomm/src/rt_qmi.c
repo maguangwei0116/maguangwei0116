@@ -110,7 +110,7 @@ int32_t rt_qmi_get_model(uint8_t *model)
     return ret;
 }
 
-static const char *radio_str[] = 
+static const char *radio_str[] =
 {
     "No Service",
     "cdma2000 1X",

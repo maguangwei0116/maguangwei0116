@@ -25,6 +25,14 @@
 #define MAX_APN_LENGTH                           100
 #define MCC_MNC_LENGTH                           5
 
+#define ICCID_LEN                                20
+#define MCC_LEN                                  3
+#define EID_LENGTH                               32
+#define IMEI_LENGTH                              15
+#define IMSI_LENGTH                              16
+#define MAX_APN_LENGTH                           100
+#define MCC_MNC_LENGTH                           5
+
 typedef struct INFO_VUICC_DATA {
     uint8_t start[7]; // Agent message flag, 0xFFFF
     int8_t vuicc_switch; // lpa_channel_type_e, IPC used for vuicc

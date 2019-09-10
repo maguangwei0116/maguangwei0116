@@ -66,6 +66,22 @@ static void idle_event(const uint8_t *buf, int32_t len, int32_t mode)
     upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
 }
 
+static void issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    int32_t status = 0;
+    downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
+
+    (void)mode;
+    MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
+
+    downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
+    if (downstream_msg->msg) {
+        rt_os_free(downstream_msg->msg);
+        downstream_msg->msg = NULL;
+    }
+    status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
+}
+
 // agent queue, communication between modules
 static void agent_queue_task(void)
 {
@@ -93,7 +109,7 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_PERSONLLISE:
-
+                    issue_cert_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 case MSG_ID_REMOTE_CONFIG:
