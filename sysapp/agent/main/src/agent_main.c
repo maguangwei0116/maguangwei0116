@@ -74,7 +74,7 @@ static int32_t init_files(void *arg)
         rt_os_mkdir(DATA_REDTEA_PATH);
     }
 
-    log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO);
+    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
     MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION);
 
 #undef DATA_REDTEA_PATH

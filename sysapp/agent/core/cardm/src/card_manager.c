@@ -22,7 +22,14 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
 {
     int32_t ret = RT_ERROR;
     int32_t i;
+    uint8_t eid[MAX_EID_HEX_LEN] = {0};
 
+    lpa_get_eid(eid);
+    bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
+    MSG_PRINTF(LOG_INFO, "g_p_info.eid:%p, %s\n", g_p_info.eid, g_p_info.eid);
+
+    rt_os_sleep(1);
+    
     ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
     if (ret == RT_SUCCESS) {
@@ -91,14 +98,10 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
-    uint8_t eid[MAX_EID_HEX_LEN] = {0};
 
     ((public_value_list_t *)arg)->card_info = &g_p_info;
     init_msg_process(&g_p_info);
-    lpa_get_eid(eid);
-    bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
-
-    rt_os_sleep(1);
+    
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
     ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     return ret;

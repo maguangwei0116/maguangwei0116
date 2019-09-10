@@ -227,6 +227,9 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
     int32_t version = 0;
     time_t timestamp = time(NULL);
 
+    MSG_PRINTF(LOG_INFO, "The upload g_upload_eid: %s\n", g_upload_eid);
+    MSG_PRINTF(LOG_INFO, "The upload device_id: %s\n", g_upload_device_info->device_id);
+    MSG_PRINTF(LOG_INFO, "The upload topic: %s\n", topic);
     if (!tranId || !rt_os_strlen(tranId)) {        
         upload_get_random_tran_id(random_tran_id, sizeof(random_tran_id) - 1);
         tranId = (const char *) random_tran_id;
