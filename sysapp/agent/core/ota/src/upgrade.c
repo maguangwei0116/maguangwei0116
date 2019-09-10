@@ -241,7 +241,7 @@ exit_entry:
 }
 
 
-/* 进行fota升级*/
+/* 进行FOTA升级*/
 static upgrade_result_e start_fota_upgrade_process(upgrade_struct_t *d_info)
 {
     return RT_TRUE;
@@ -260,11 +260,11 @@ static void * check_upgrade_process(void *args)
         result = start_fota_upgrade_process(d_info);
     }
 
-    /* 上报升级结果 */
-    //msg_upload_data(d_info->tranid, ON_UPGRADE, (int)result, (void *)d_info);
+    d_info->downloadResult = result;
 
-    DOWNLOAD_UNLOCK(d_info);
-    SET_DOWNLOAD_RET(d_info, result);
+    if (d_info->on_event) {
+        d_info->on_event(d_info);   
+    }
 }
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info)
@@ -281,31 +281,11 @@ int32_t upgrade_process_start(upgrade_struct_t *d_info)
 {
     rt_task id;
     
-    DOWNLOAD_LOCK(d_info);
     if (rt_create_task(&id, check_upgrade_process, (void *)d_info) != RT_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
         return -1;
     } 
 
-    return 0;
-}
-
-int32_t upgrade_process_wating(upgrade_struct_t *d_info, int32_t timeous)
-{
-    if (d_info) {        
-        while (timeous--) {
-            rt_os_sleep(1);
-            if (!DOWNLOAD_LOCK_CHECK(d_info)) {
-                MSG_PRINTF(LOG_WARN, "upgrade process done !\r\n");
-                break;
-            }
-            timeous--;
-        }
-
-        rt_os_free(d_info);
-        d_info = NULL;
-    }
-    
     return 0;
 }
 

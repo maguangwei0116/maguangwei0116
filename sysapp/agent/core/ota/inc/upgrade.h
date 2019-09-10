@@ -34,17 +34,19 @@ typedef enum {
     UPGRADE_PROFILE_TYPE_ERROR          = -2009,
     UPGRADE_NULL_POINTER_ERROR          = -2010,
     UPGRADE_START_UPGRADE_ERROR         = -2011,
+    UPGRADE_EXECUTION_TYPE_ERROR        = -2012,
     UPGRADE_OTHER                       = -2099,
 } upgrade_result_e;
 
 typedef rt_bool (*file_check)(const void *arg);
 typedef rt_bool (*file_install)(const void *arg);
 typedef rt_bool (*file_cleanup)(const void *arg);
+typedef rt_bool (*upload_on_event)(const void *arg);
 
 typedef struct upgrade_struct {
 #define MAX_TRANID_LEN                  128
 #define MAX_CHIP_MODEL_LEN              32
-#define MAX_VERSION_NAME_LEN            128
+#define MAX_VERSION_NAME_LEN            16
 #define MAX_FILE_NAME_LEN               128
 #define MAX_FILE_HASH_LEN               64
 #define MAX_TICKET_LEN                  32
@@ -62,13 +64,6 @@ typedef struct upgrade_struct {
 #define GET_UPGRADE_STATUS(obj)         (((obj)->upgrade_flag >> 3) & 0x01)
 #define SET_UPGRADE_STATUS(obj, data)   ((obj)->upgrade_flag |= (data) << 3)
 
-/* lock for download process */
-#define DOWNLOAD_LOCKED                 1
-#define DOWNLOAD_UNLOCKED               0
-#define DOWNLOAD_LOCK(upgrade)          ((upgrade_struct_t *)(upgrade))->downloadLock = DOWNLOAD_LOCKED
-#define DOWNLOAD_UNLOCK(upgrade)        ((upgrade_struct_t *)(upgrade))->downloadLock = DOWNLOAD_UNLOCKED
-#define DOWNLOAD_LOCK_CHECK(upgrade)    (((upgrade_struct_t *)(upgrade))->downloadLock == DOWNLOAD_LOCKED)
-
 /* download result code */
 #define SET_DOWNLOAD_RET(upgrade, ret)  ((upgrade_struct_t *)(upgrade))->downloadResult = ret
 #define GET_DOWNLOAD_RET(upgrade, ret)  ret = ((upgrade_struct_t *)(upgrade))->downloadResult
@@ -81,25 +76,27 @@ typedef struct upgrade_struct {
      */
 
     char            tranId[MAX_TRANID_LEN + 1];
+    char            targetName[MAX_FILE_NAME_LEN + 1];
+    char            targetVersion[MAX_VERSION_NAME_LEN + 1];
+    char            targetChipModel[MAX_CHIP_MODEL_LEN + 1];
     char            targetFileName[MAX_FILE_NAME_LEN + 1];  // the full path in local file system
     char            tmpFileName[MAX_FILE_NAME_LEN + 1];     // the full path in local file system  
     char            fileHash[MAX_FILE_HASH_LEN + 1];        // hash code of the upgrade file
     char            ticket[MAX_TICKET_LEN + 1];
     uint16_t        retryAttempts;
     uint16_t        retryInterval;
-    uint8_t         downloadLock;                           // lock for download process
     int32_t         downloadResult;                         // the result of download process
-    rt_bool         excute_app_now;                         // excute app right now after install app
-    char          event[MAX_UPLOAD_EVENT_LEN + 1];
+    rt_bool         execute_app_now;                        // execute app right now after install app
+    char            event[MAX_UPLOAD_EVENT_LEN + 1];
 
     /* callback functions */
     file_check      check;
     file_install    install;
     file_cleanup    cleanup;
+    upload_on_event on_event;
 } upgrade_struct_t;
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info);
 int32_t upgrade_process_start(upgrade_struct_t *d_info);
-int32_t upgrade_process_wating(upgrade_struct_t *d_info, int32_t timeous);
 
 #endif /* __INCLUDE_UPGRADE_H__ */

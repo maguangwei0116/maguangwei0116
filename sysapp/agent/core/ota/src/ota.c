@@ -34,7 +34,7 @@ int32_t ota_upgrade_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
 
-    upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
+    return 0;
 }
 
 const card_info_t *g_ota_card_info = NULL;
