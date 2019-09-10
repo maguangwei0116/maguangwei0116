@@ -92,6 +92,7 @@ SRC-y 			                        += ./core/upload/src/upload_info.c
 # Add your downstream-xxx cmd here
 SRC-y 			                        += ./core/downstream/src/downstream.c
 SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
+SRC-y 			                        += ./core/cardm/src/msg_push_ac_cmd.c
 
 # Personalise module
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c

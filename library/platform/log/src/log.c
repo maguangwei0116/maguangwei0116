@@ -30,10 +30,9 @@ static int32_t g_log_level = LOG_INFO;
 
 int32_t log_set_param(log_mode_e mode, log_level_e level)
 {
-	g_log_printf_mode = mode;
-	g_log_level = level;
-
-	return 0;
+    g_log_printf_mode = mode;
+    g_log_level = level;
+    return 0;
 }
 
 int32_t log_file(void)
@@ -89,7 +88,7 @@ static void printf_log(int8_t *data)
             close_file();
         }
         if (g_file_fd < 0) {
-        	log_file();
+            log_file();
         }
         write(g_file_fd, data, rt_os_strlen(data));
         fsync(g_file_fd);
@@ -130,7 +129,7 @@ int32_t write_log_fun(log_level_e level, log_level_flag_e level_flag, const char
         strftime((char *)&content[len], LOG_BUF_SIZE, "[%Y-%m-%d %H:%M:%S]", &tm_Log);
         len = rt_os_strlen(&content[len]) + 4;
     }
-	
+
     va_start(vl_list, msg);
     vsnprintf((char *)&content[len], LOG_BUF_SIZE - len, (const char *)msg, vl_list);   //
     va_end(vl_list);

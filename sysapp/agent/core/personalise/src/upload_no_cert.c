@@ -32,9 +32,10 @@ static cJSON *upload_no_cert_packer(void *arg)
 
     ret = 0;
 
-    exit_entry:
+exit_entry:
 
     return !ret ? content : NULL;
 }
 
 UPLOAD_EVENT_OBJ_INIT(NO_CERT, upload_no_cert_packer);
+

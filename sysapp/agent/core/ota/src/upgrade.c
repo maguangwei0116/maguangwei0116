@@ -13,7 +13,6 @@
 #include "upgrade.h"
 #include "md5.h"
 #include "hash.h"
-//#include "agent.h"
 #include "rt_os.h"
 #include "http_client.h"
 #include "cJSON.h"
@@ -33,16 +32,16 @@ typedef enum NETWORK_STATE {
 
 #define MAX_FILE_PATH_LEN           100
 
-#define HASH_CHECK_BLOCK            1024    /* ??ϣУ?ÿ????? */          
+#define HASH_CHECK_BLOCK            1024    /* block size for HASH check */
 
 #define MAX_DOWNLOAD_RETRY_CNT      9       /* plus 1 for max total download times */
 
 int8_t g_download_flag = 0;
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
-do{                 \
+do {                 \
     snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
-}while(0)
+} while(0)
 
 static rt_bool upgrade_check_sys_memory()
 {
@@ -77,7 +76,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
     dw_struct.http_header.version = 0;
     dw_struct.http_header.record_size = 0;
-    
+
     post_info = cJSON_CreateObject();
     cJSON_AddItemToObject(post_info, "ticket", cJSON_CreateString((char *)d_info->ticket));
     cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(""));  // must have a empty "imei"
@@ -120,7 +119,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         }        
         rt_os_sleep(d_info->retryInterval);
     }
-    
+  
     cJSON_Delete(post_info);
     return ret;
 }
@@ -163,13 +162,13 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
 
     sha256_final(&sha_ctx,(uint8_t *)hash_out);
     bytestring_to_charstring(hash_out, hash_result, 32);
-    
+
     MSG_PRINTF(LOG_WARN, "download  hash_result: %s\r\n", hash_result);
     MSG_PRINTF(LOG_WARN, "push file hash_result: %s\r\n", d_info->fileHash);
     RT_CHECK_NEQ(strncpy_case_insensitive(hash_result, d_info->fileHash, MAX_FILE_HASH_LEN), RT_TRUE);
     MSG_PRINTF(LOG_WARN, "file hash check ok !\r\n");
     ret = RT_TRUE;
-    
+
 end:
 
     if (fp != NULL) {
@@ -182,7 +181,6 @@ end:
 static upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
 {
     upgrade_result_e ret;
-    
     /* check FS space */
     if (upgrade_check_sys_memory() != RT_TRUE) {
         ret = UPGRADE_FS_SPACE_NOT_ENOUGH_ERROR;
@@ -243,7 +241,6 @@ exit_entry:
     return ret;
 }
 
-/* ???FOTA???*/
 static upgrade_result_e start_fota_upgrade_process(upgrade_struct_t *d_info)
 {
     return RT_TRUE;
@@ -254,18 +251,18 @@ static void * check_upgrade_process(void *args)
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
     upgrade_result_e result;
 
-    MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
+    //MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
     
-    if (GET_UPDATEMODE(d_info) == 1) { /* ȫ������ģʽ */
+    if (GET_UPDATEMODE(d_info) == 1) { /* full upgrade */
         result = start_comman_upgrade_process(d_info);
-    } else if (GET_UPDATEMODE(d_info) == 2) { /* TODO: FOTA����ģʽ */
+    } else if (GET_UPDATEMODE(d_info) == 2) { /* TODO: FOTA upgrade mode */
         result = start_fota_upgrade_process(d_info);
     }
 
     d_info->downloadResult = result;
 
     if (d_info->on_event) {
-        d_info->on_event(d_info);   
+        d_info->on_event(d_info);
     }
 }
 
@@ -282,12 +279,10 @@ int32_t upgrade_process_create(upgrade_struct_t **d_info)
 int32_t upgrade_process_start(upgrade_struct_t *d_info)
 {
     rt_task id;
-    
     if (rt_create_task(&id, check_upgrade_process, (void *)d_info) != RT_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
         return -1;
-    } 
+    }
 
     return 0;
 }
-
