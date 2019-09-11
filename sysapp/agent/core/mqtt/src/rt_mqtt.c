@@ -55,9 +55,8 @@ typedef struct _mqtt_param_t {
 static mqtt_param_t g_mqtt_param    = {MQTTClient_connectOptions_initializer, 0};
 static const char *g_mqtt_eid       = NULL;
 static const char *g_mqtt_device_id = NULL;
+static network_state_info_e g_network_state = NETWORK_STATE_INIT;
 
-//TODO:
-static g_network_state = NETWORK_CONNECTING;
 network_state_info_e get_network_state(void)
 {
     return g_network_state;
@@ -67,12 +66,6 @@ void set_network_state(network_state_info_e state)
 {
     //MSG_PRINTF(LOG_INFO("set network state: %d\r\n", state);
     g_network_state = state;
-}
-
-boot_state_info_e get_boot_flag(void)
-{
-    //return g_boot_flag;
-    return 1;
 }
 
 static void msg_parse(int8_t *message, int32_t len)
@@ -531,9 +524,10 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
         MSG_PRINTF(LOG_DBG, "connecting emq mqtt server ...\n");
         pconn_opts->MQTTVersion = MQTTVERSION_3_1;
     }
-    pconn_opts->keepAliveInterval   = 300;
+    pconn_opts->keepAliveInterval   = MQTT_KEEP_ALIVE_INTERVAL;
     pconn_opts->reliable            = 0;
     pconn_opts->cleansession        = 0;
+    
     //MSG_PRINTF(LOG_DBG, "pconn_opts->struct_version=%d\n", pconn_opts->struct_version);
     if (my_connect(c, pconn_opts) == RT_FALSE) {
         if (++opts->try_connect_timer > MAX_TRY_CONNECT_TIME) {
@@ -545,8 +539,6 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
         }
         return RT_FALSE;
     }
-
-    //rt_os_sleep(10);
 
     opts->last_connect_status = MQTT_CONNECT_SUCCESS;
     opts->try_connect_timer = 0;
@@ -561,10 +553,10 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
 #include "upload.h"
 static void mqtt_process_task(void)
 {
-    rt_os_sleep(10);
-
-    while(1) {
-        if (get_network_state() == NETWORK_CONNECTING) {
+    while(1) {        
+        if (get_network_state() == NETWORK_STATE_INIT) {
+            ;
+        } else if (get_network_state() == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
                 /* If cache mqtt server addr ok, and then needn't to conenct ticket server to get mqtt server */
                 if (g_mqtt_param.mqtt_get_addr == RT_FALSE) {
@@ -576,10 +568,6 @@ static void mqtt_process_task(void)
 
                 /* conenct mqtt server which has been got from cache ticket server or from adapter server */
                 if (rt_mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
-                    //if (get_boot_flag() != BOOT_STRAP_PROCESS) {
-                        //upload_set_values(REGISTER_PUSH_ID, NULL);
-                    //}
-
                     /* set network using */
                     set_network_state(NETWORK_USING);
                     continue;
@@ -718,8 +706,14 @@ int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     (void)buf;
     (void)len;
-    if (MSG_NETWORK_CONNECTED == mode) {
 
-    }  
+    MSG_PRINTF(LOG_INFO, "mqtt connect event, mode: %d\r\n", mode);
+    if (MSG_NETWORK_CONNECTED == mode) {
+        set_network_state(NETWORK_CONNECTING);
+    } else if (MSG_NETWORK_CONNECTED == mode) {
+        set_network_state(NETWORK_DIS_CONNECTED);
+    } 
+
+    return RT_SUCCESS;
 }
 
