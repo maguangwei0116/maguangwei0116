@@ -522,6 +522,7 @@ static rt_bool ota_on_upload_event(const void *arg)
     if (UPGRADE_NO_FAILURE == upgrade->downloadResult && upgrade->execute_app_now) {
         MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);
         rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
+        MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");
         rt_os_exit(-1);
     }
 
