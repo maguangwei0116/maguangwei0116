@@ -471,6 +471,29 @@ static void connection_lost(void *context, char *cause)
     }
 }
 
+static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
+{
+    int32_t i = 0;
+    const uint8_t *p = (const uint8_t *)buf;
+
+    for (i = 0; i < len; i++) {
+        if (p[i] != value) {
+            return RT_FALSE;
+        }
+    }
+    return RT_TRUE;
+}
+
+static rt_bool eid_check_upload(void)
+{
+    if (!g_mqtt_eid || !rt_os_strlen(g_mqtt_eid) || eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')){
+        upload_event_report("NO_CERT", NULL, 0, NULL);
+        return RT_TRUE;
+    }  
+
+    return RT_FALSE;
+}
+
 //connect mqtt server
 static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
 {
@@ -527,10 +550,8 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     opts->try_connect_timer = 0;
     param->alias_rc = 1;
 
-   upload_event_report("REGISTERED", NULL, 0, NULL);
-   if (g_mqtt_eid == NULL){
-        upload_event_report("NO_CERT", NULL, 0, NULL);
-   }
+    upload_event_report("REGISTERED", NULL, 0, NULL);
+    eid_check_upload();
     
     return RT_TRUE;
 }
