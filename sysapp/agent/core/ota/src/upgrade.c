@@ -67,7 +67,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.if_continue = 1;
     dw_struct.buf = NULL;
 
-    /* ?????????Http??body */
+    /* build http body */
     dw_struct.file_path = (const char *)d_info->tmpFileName;
     dw_struct.manager_type = 1;
     dw_struct.http_header.method = 0;  // POST
@@ -94,7 +94,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     snprintf((char *)buf, sizeof(buf), "%d", rt_os_strlen(dw_struct.http_header.buf));
     http_set_header_record(&dw_struct, "Content-Length", (const char *)buf);
 
-    /* ????body??md5��???? */
+    /* build body with md5sum */
     get_md5_string((int8_t *)dw_struct.http_header.buf, buf);
     buf[MD5_STRING_LENGTH] = '\0';
     http_set_header_record(&dw_struct, "md5sum", (const char *)buf);
@@ -102,13 +102,17 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     while (1) {        
         /* There is file need to download in system */
         if (rt_os_access((const int8_t *)dw_struct.file_path, F_OK) == RT_SUCCESS){
-            snprintf(buf, sizeof(buf), "%d", get_file_size(dw_struct.file_path));
+            uint32_t file_path_size = get_file_size(dw_struct.file_path);
+            snprintf(buf, sizeof(buf), "%d", file_path_size);
             http_set_header_record(&dw_struct, "Range", (const char *)buf);
+            dw_struct.range = file_path_size;
         }
+        MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, get_file_size(dw_struct.file_path));
 
         if (http_client_file_download(&dw_struct) == 0) {
             g_download_flag = 0;  // download success reset flag
             ret = RT_TRUE;
+            MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, get_file_size(dw_struct.file_path));
             break;
         }
         cnt++;
@@ -177,7 +181,6 @@ end:
     return ret;
 }
 
-/* ????ͨ?????? */
 static upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
 {
     upgrade_result_e ret;

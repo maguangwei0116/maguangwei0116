@@ -10,6 +10,7 @@
 #include "upgrade.h"
 #include "hash.h"
 #include "http_client.h"
+#include "file.h"
 #include "cJSON.h"
 
 #if 0
@@ -102,8 +103,92 @@ typedef struct _ota_upgrade_param_t {
 #define MAX_RESTART_WAIT_TIMEOUT    10
 #define PRIVATE_HASH_STR_LEN        64
 #define HASH_CHECK_BLOCK            1024    /* block size for HASH check */
+#define OTA_UPGRADE_TMP_TASK        "/data/redtea/ota.task.tmp"
 
 static const card_info_t *g_ota_card_info = NULL;
+
+typedef struct _ota_task_info_t {
+    uint32_t            param_len;
+    char                tmp_file[MAX_FILE_NAME_LEN + 1];     // the full path in local file system 
+    char                event[64 + 1];
+    ota_upgrade_param_t param;
+} ota_task_info_t;
+
+static int32_t ota_upgrade_start(const void *in, const char *upload_event, const char *tmp_file);
+
+static int32_t ota_upgrade_task_record(const void *param, uint32_t param_len, const char *tmp_file, const char *event)
+{  
+    int32_t ret = -1;
+    rt_fshandle_t fp = NULL;
+    ota_task_info_t task = {0};
+    
+    fp = rt_fopen(OTA_UPGRADE_TMP_TASK, "w+");
+    OTA_CHK_PINTER_NULL(fp, -1);
+
+    task.param_len = param_len;
+    rt_os_memcpy(&task.param, param, param_len);
+    snprintf(task.tmp_file, sizeof(task.tmp_file), "%s", tmp_file);
+    snprintf(task.event, sizeof(task.event), "%s", event);
+    rt_fwrite(&task, 1, sizeof(task), fp);
+    
+    rt_fclose(fp);
+
+    ret = 0;
+
+exit_entry:
+
+    return ret;
+}
+
+int32_t ota_upgrade_task_check(void)
+{
+    static int32_t g_task_check = 0;    
+    int32_t ret = -1;
+    
+    if (!g_task_check && rt_file_exist(OTA_UPGRADE_TMP_TASK)) {
+        rt_fshandle_t fp = NULL;
+        ota_task_info_t task = {0};
+        ota_upgrade_param_t *param = NULL;
+
+        g_task_check = 1;
+        fp = rt_fopen(OTA_UPGRADE_TMP_TASK, "r"); 
+        OTA_CHK_PINTER_NULL(fp, -1);
+        rt_fread(&task, 1, sizeof(task), fp);
+        rt_fclose(fp);
+        OTA_CHK_PINTER_NULL(task.param_len, -2);
+
+        MSG_PRINTF(LOG_INFO, "OTA remain task list          : \r\n");
+        MSG_PRINTF(LOG_INFO, "param->tranId                 : %s\r\n", task.param.tranId);
+        MSG_PRINTF(LOG_INFO, "param->target.name            : %s\r\n", task.param.target.name);
+        MSG_PRINTF(LOG_INFO, "param->target.version         : %s\r\n", task.param.target.version);
+        MSG_PRINTF(LOG_INFO, "param->target.chipModel       : %s\r\n", task.param.target.chipModel);
+        MSG_PRINTF(LOG_INFO, "param->target.ticket          : %s\r\n", task.param.target.ticket);
+        MSG_PRINTF(LOG_INFO, "param->target.fileHash        : %s\r\n", task.param.target.fileHash);
+        MSG_PRINTF(LOG_INFO, "param->policy.forced          : %d\r\n", task.param.policy.forced);
+        MSG_PRINTF(LOG_INFO, "param->policy.executionType   : %s\r\n", task.param.policy.executionType);
+        MSG_PRINTF(LOG_INFO, "param->policy.profileType     : %d\r\n", task.param.policy.profileType);
+        MSG_PRINTF(LOG_INFO, "param->policy.retryAttempts   : %d\r\n", task.param.policy.retryAttempts);
+        MSG_PRINTF(LOG_INFO, "param->policy.retryInterval   : %d\r\n", task.param.policy.retryInterval);        
+        MSG_PRINTF(LOG_WARN, "ota task, len=%d, tmp-file: %s, event: %s\r\n", task.param_len, task.tmp_file, task.event); 
+
+        param = (ota_upgrade_param_t *)rt_os_malloc(sizeof(ota_upgrade_param_t));
+        OTA_CHK_PINTER_NULL(param, -3);
+        rt_os_memcpy(param, &task.param, sizeof(ota_upgrade_param_t));
+        ota_upgrade_start(param, task.event, task.tmp_file);
+
+        ret = 0;
+    }
+
+exit_entry:
+
+    return ret;
+}
+
+static int32_t ota_upgrade_task_cleanup(void)
+{
+    rt_os_unlink(OTA_UPGRADE_TMP_TASK);
+    return 0;  
+}
 
 static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
 {
@@ -427,7 +512,9 @@ static rt_bool ota_on_upload_event(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
-    upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade); 
+    upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade);
+
+    ota_upgrade_task_cleanup();
 
     /* restart app right now */
     if (UPGRADE_NO_FAILURE == upgrade->downloadResult && upgrade->execute_app_now) {
@@ -445,7 +532,7 @@ static rt_bool ota_on_upload_event(const void *arg)
     return RT_TRUE;
 }
 
-static int32_t ota_upgrade_start(const void *in, const char *upload_event)
+static int32_t ota_upgrade_start(const void *in, const char *upload_event, const char *tmp_file)
 {
     int32_t ret;
     rt_task id;
@@ -471,7 +558,11 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event)
     snprintf(upgrade->event, sizeof(upgrade->event), "%s", upload_event);
     upgrade->retryAttempts = param->policy.retryAttempts;
     upgrade->retryInterval = param->policy.retryInterval;    
-    ota_upgrade_get_tmp_file_name(param, upgrade->tmpFileName, sizeof(upgrade->tmpFileName));
+    if (!tmp_file) {
+        ota_upgrade_get_tmp_file_name(param, upgrade->tmpFileName, sizeof(upgrade->tmpFileName));
+    } else {
+        snprintf(upgrade->tmpFileName, sizeof(upgrade->tmpFileName), "%s", tmp_file);
+    }
     if (ota_upgrade_get_target_file_name(param, upgrade->targetFileName, sizeof(upgrade->targetFileName)) != RT_TRUE) {
         ret = UPGRADE_FILE_NAME_ERROR;
         goto exit_entry;
@@ -482,6 +573,8 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event)
     upgrade->install    = ota_file_install;
     upgrade->cleanup    = ota_file_cleanup;
     upgrade->on_event   = ota_on_upload_event;
+
+    ota_upgrade_task_record(param, sizeof(ota_upgrade_param_t), upgrade->tmpFileName, upload_event);
 
     /* check private uprade policy */
     ret = ota_policy_check(param, upgrade);
@@ -531,7 +624,7 @@ static int32_t ota_upgrade_handler(const void *in, const char *event, void **out
         MSG_PRINTF(LOG_INFO, "param->policy.retryAttempts   : %d\r\n", param->policy.retryAttempts);
         MSG_PRINTF(LOG_INFO, "param->policy.retryInterval   : %d\r\n", param->policy.retryInterval);
 
-        ret = ota_upgrade_start(param, event);
+        ret = ota_upgrade_start(param, event, NULL);
 
         /* release input param memory */
         if (param) {
@@ -587,7 +680,8 @@ int32_t ota_upgrade_event(const uint8_t *buf, int32_t len, int32_t mode)
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
     (void)mode;
-    MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
+    MSG_PRINTF(LOG_INFO, "msg: %s (%d bytes) ==> method: %s ==> event: %s\n", 
+        downstream_msg->msg, downstream_msg->msg_len, downstream_msg->method, downstream_msg->event);
     
     downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
     if (downstream_msg->msg) {

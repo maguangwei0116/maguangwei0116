@@ -16,5 +16,6 @@
 
 int32_t ota_upgrade_event(const uint8_t *buf, int32_t len, int32_t mode);
 int32_t init_ota(void *arg);
+int32_t ota_upgrade_task_check(void);
 
 #endif // __OTA_H__
