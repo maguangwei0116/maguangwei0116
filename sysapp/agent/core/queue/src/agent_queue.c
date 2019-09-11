@@ -126,7 +126,7 @@ static void agent_queue_task(void)
                         bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     }
                     upload_event(que_t.data_buf, que_t.data_len, que_t.mode);
-                    ota_upgrade_task_check();
+                    ota_upgrade_task_check_event();
                     break;
 
                 case MSG_ID_IDLE:

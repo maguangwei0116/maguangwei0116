@@ -140,12 +140,12 @@ exit_entry:
     return ret;
 }
 
-int32_t ota_upgrade_task_check(void)
+int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     static int32_t g_task_check = 0;    
     int32_t ret = -1;
-    
-    if (!g_task_check && rt_file_exist(OTA_UPGRADE_TMP_TASK)) {
+
+    if (MSG_NETWORK_CONNECTED == mode && !g_task_check && rt_file_exist(OTA_UPGRADE_TMP_TASK)) {
         rt_fshandle_t fp = NULL;
         ota_task_info_t task = {0};
         ota_upgrade_param_t *param = NULL;
@@ -357,12 +357,14 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
     }
 
     if (param->policy.profileType == UPGRADE_PRO_TYPE_ANY) {
-    } else if (param->policy.profileType == UPGRADE_PRO_TYPE_OPERATIONAL && g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
-        MSG_PRINTF(LOG_WARN, "unmathed profile type !\r\n");
-        ret = UPGRADE_PROFILE_TYPE_ERROR;
-        goto exit_entry;         
+    } else if (param->policy.profileType == UPGRADE_PRO_TYPE_OPERATIONAL) {
+        if (g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
+            MSG_PRINTF(LOG_WARN, "unmathed profile type %d/%d !\r\n", param->policy.profileType, g_ota_card_info->type);
+            ret = UPGRADE_PROFILE_TYPE_ERROR;
+            goto exit_entry;  
+        }
     } else {
-        MSG_PRINTF(LOG_WARN, "unknow profile type !\r\n");
+        MSG_PRINTF(LOG_WARN, "unknow profile type %d/%d !\r\n", param->policy.profileType, g_ota_card_info->type);
         ret = UPGRADE_PROFILE_TYPE_ERROR;
         goto exit_entry; 
     }
@@ -415,7 +417,7 @@ static rt_bool ota_file_check(const void *arg)
     rt_bool ret = RT_FALSE;
     sha256_ctx sha_ctx;
     FILE *fp = NULL;
-    int8_t hash_result[MAX_FILE_HASH_LEN + 1];  // hash???????
+    int8_t hash_result[MAX_FILE_HASH_LEN + 1];
     int8_t hash_out[MAX_FILE_HASH_LEN + 1];
     int8_t hash_buffer[HASH_CHECK_BLOCK];
     int8_t last_hash_buffer[PRIVATE_HASH_STR_LEN + 1] = {0};
