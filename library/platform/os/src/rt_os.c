@@ -151,13 +151,6 @@ void *_rt_os_malloc(const char *file, uint32_t line, uint32_t size)
     return ret;
 }
 
-void *_rt_os_realloc(const char *file, uint32_t line, void *mem, uint32_t size)
-{
-    void *ret = realloc(mem, size);
-	printf("[%-50s, %5d] ++++++++ (%5d) realloc: %p, %p\r\n", file, line, ++g_mem_cnt, mem, ret);
-    return ret;
-}
-
 void _rt_os_free(const char *file, uint32_t line, void *mem)
 {
     if (NULL == mem) {
@@ -167,6 +160,22 @@ void _rt_os_free(const char *file, uint32_t line, void *mem)
     free(mem);
     mem = NULL;
 }
+
+void *_rt_os_realloc(const char *file, uint32_t line, void *mem, uint32_t size)
+{
+    if (mem) {        
+        if (!size) {
+            _rt_os_free(file, line, mem);
+            return NULL;
+        } else {
+            _rt_os_free(file, line, mem);
+            return _rt_os_malloc(file, line, size);
+        }
+    } else {
+        return _rt_os_malloc(file, line, size);
+    }
+}
+
 #endif
 
 void *rt_os_memset(void *mem, int32_t value, int32_t len)
