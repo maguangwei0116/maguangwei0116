@@ -77,6 +77,7 @@ boot_state_info_e get_boot_flag(void)
 
 static void msg_parse(int8_t *message, int32_t len)
 {
+    message[len] = '\0';
     MSG_PRINTF(LOG_WARN, "mqtt recv msg (%d bytes): %s\r\n", len, message);
 
     downstream_msg_handle(message, len);
