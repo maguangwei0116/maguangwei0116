@@ -528,7 +528,9 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     param->alias_rc = 1;
 
    upload_event_report("REGISTERED", NULL, 0, NULL);
-   upload_event_report("NO_CERT", NULL, 0, NULL);
+   if (g_mqtt_eid == NULL){
+        upload_event_report("NO_CERT", NULL, 0, NULL);
+   }
     
     return RT_TRUE;
 }
