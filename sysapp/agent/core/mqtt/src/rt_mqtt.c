@@ -83,7 +83,7 @@ static void msg_parse(int8_t *message, int32_t len)
     downstream_msg_handle(message, len);
 }
 
-//���ػ���֮ǰ�Ĵ�adapter��ȡ��ticket server
+/* save cache ticket server which got from adapter into cache file */
 static rt_bool save_ticket_server(mqtt_info *opts)
 {
     cJSON   *obj = NULL;
@@ -138,7 +138,7 @@ exit_entry:
     return ret;
 }
 
-//��ȡ���ػ���Ĵ�adapter��ȡ��ticket server
+/* get cache ticket server which got from adapter from cache file */
 static rt_bool get_ticket_server(mqtt_info *opts)
 {
     int8_t  *save_info;
@@ -229,7 +229,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
     set_reg_url(OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
     MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
 
-    //�������Ǻ���Լ���ticket server adopter,��ೢ��3��
+    /* connect redtea adpater server with max 3 times to get ticket server addr and port */
     do {
         if (rt_mqtt_setup_with_appkey(ADAPTER_APPKEY, opts) == 0) {
             break;
@@ -248,7 +248,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", alias);
     }
 
-    //�����ȡ����ticket server
+    /* save ticket server into cache file */
     save_ticket_server(opts);
     
     return RT_TRUE;
@@ -276,7 +276,7 @@ static rt_bool rt_mqtt_connect_yunba(mqtt_param_t *param, int8_t *ticket_server)
         MSG_PRINTF(LOG_WARN, "ticket_server:%s, yunba addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
-    //����yunba server ��ೢ��3��
+    /* connect yunba mqtt server with max 3 times */
     do {
         int ret;
         if ((ret = MQTTClient_setup_with_appkey_and_deviceid(YUNBA_APPKEY, (char *)opts->device_id, opts)) == 0) {
@@ -320,6 +320,7 @@ static rt_bool rt_mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
         MSG_PRINTF(LOG_WARN, "ticket_server:%s, EMQ addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
+    /* connect EMQ mqtt server with max 3 times */
     do {
         if ((MQTTClient_setup_with_appkey(EMQ_APPKEY, opts) == 0) && 
            (MQTTClient_get_host((char *)opts->nodeName, (char *)opts->rt_url, EMQ_APPKEY) == 0)) {
@@ -377,14 +378,14 @@ FORCE_TO_ADAPTER:
             }
             
             if (get_ticket_server(&param->opts) == RT_TRUE) {
-                //���֮ǰ���ӵ���yunba��ticket server����ô��������
+                /* If connect yunba ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.rt_channel, "YUNBA", 5) &&
                       (rt_mqtt_connect_yunba(param, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_DBG, "connect YUNBA mqtt server successfull\n");
                     break;
                 }
 
-                //���֮ǰ���ӵ���EMQ��ticket server����ô��������
+                /* If connect EMQ ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.rt_channel, "EMQ", 3) &&
                       (rt_mqtt_connect_emq(param, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_DBG, "connect EMQ mqtt server successfull\n");
@@ -393,7 +394,7 @@ FORCE_TO_ADAPTER:
             }
         }
 
-        //���adapter �� ϵͳ�����ticket server���޷�ʹ�ã��ñ���д����ticket server��ַ��������
+        /* If connect adapter and ticket server all fail, and then try dead yunba server or EMQ server */
         if (!rt_os_strncmp(param->opts.rt_channel, "YUNBA", 5)) {
 FORCE_TO_EMQ:
             if (rt_mqtt_connect_emq(param, NULL) == RT_TRUE) {
@@ -565,25 +566,25 @@ static void mqtt_process_task(void)
     while(1) {
         if (get_network_state() == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
-                //��������Ѿ�������mqtt��ַ���ҵ�ַ���ã��Ͳ���ȥticket server��ȡmqtt��ַ
+                /* If cache mqtt server addr ok, and then needn't to conenct ticket server to get mqtt server */
                 if (g_mqtt_param.mqtt_get_addr == RT_FALSE) {
-                    //���������������mqtt����������Ҫ���½��ж���
+                    /* re-subcribe when re-connect mqtt server */
                     if (mqtt_get_server_addr(&g_mqtt_param) == RT_FALSE) {
                         continue;
                     }
                 }
 
-                //����mqtt������������ǰ�Ѿ��ӱ��ػ������ticket server adapter ��ȡmqtt��ַ��
+                /* conenct mqtt server which has been got from cache ticket server or from adapter server */
                 if (rt_mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
                     //if (get_boot_flag() != BOOT_STRAP_PROCESS) {
                         //upload_set_values(REGISTER_PUSH_ID, NULL);
                     //}
 
-                    //�ɹ����ӷ�����������״̬��Ϊ������
+                    /* set network using */
                     set_network_state(NETWORK_USING);
                     continue;
                 } else {
-                    //������ػ����mqtt server��hardcode��mqtt server���޷�ʹ�ã���ô����ȥ��ticket server��ȡһ��mqtt server
+                    /* If cache mqtt server and hardcode mqtt server all fail, and then connect ticket server to get mqtt server */
                     g_mqtt_param.mqtt_get_addr = RT_FALSE;
                 }
             }
@@ -593,7 +594,7 @@ static void mqtt_process_task(void)
                 MQTTClient_disconnect(g_mqtt_param.client, 0);
                 MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
                 g_mqtt_param.mqtt_flag      = RT_FALSE;
-                g_mqtt_param.subscribe_flag = RT_FALSE;  // ��λ���ı�־  
+                g_mqtt_param.subscribe_flag = RT_FALSE;  // reset subscribe flag
             }
         } else if (get_network_state() == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.rt_channel);
@@ -711,5 +712,14 @@ int32_t init_mqtt(void *arg)
 exit_entry:
 
     return ret;
+}
+
+int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    (void)buf;
+    (void)len;
+    if (MSG_NETWORK_CONNECTED == mode) {
+
+    }  
 }
 
