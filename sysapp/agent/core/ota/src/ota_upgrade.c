@@ -1,4 +1,7 @@
 
+#ifdef CFG_AGENT_OTA_ON
+#warning AGENT_OTA_ON on ...
+
 #include "rt_type.h"
 #include "rt_os.h"
 #include "log.h"
@@ -100,7 +103,7 @@ typedef struct _ota_upgrade_param_t {
 #define PRIVATE_HASH_STR_LEN        64
 #define HASH_CHECK_BLOCK            1024    /* block size for HASH check */
 
-extern const card_info_t *g_ota_card_info;
+static const card_info_t *g_ota_card_info = NULL;
 
 static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
 {
@@ -384,23 +387,23 @@ static rt_bool ota_file_install(const void *arg)
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
     rt_bool ret = RT_FALSE;
     
-    /* 进行app替换 */
+    /* app replace */
     MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
     if (rt_os_rename(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
         MSG_PRINTF(LOG_WARN, "re-name error\n");
         goto exit_entry;
     }
 
-    /* 权限设置 */
+    /* add app executable mode */
     if (rt_os_chmod(upgrade->targetFileName, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) != 0) {
         MSG_PRINTF(LOG_WARN, "change mode error\n");
         goto exit_entry;
     }
 
-    /* 设置升级成功标志位 */
+    /* set upgrade ok flag */
     //SET_UPGRADE_STATUS(upgrade, 1);
 
-    /* 连续两次sync保证新软件同步到本地flash */
+    /* sync data to flash */
     rt_os_sync();
     rt_os_sync();
 
@@ -578,7 +581,40 @@ exit_entry:
     return !ret ? app_version : NULL;   
 }
 
+int32_t ota_upgrade_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    int32_t status = 0;
+    downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
+
+    (void)mode;
+    MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
+    
+    downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
+    if (downstream_msg->msg) {
+        rt_os_free(downstream_msg->msg);
+        downstream_msg->msg = NULL;
+    }
+    //MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
+
+    status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
+
+    return 0;
+}
+
+int32_t init_ota(void *arg)
+{
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
+
+    g_ota_card_info = (const card_info_t *)public_value_list->card_info->info;
+
+    MSG_PRINTF(LOG_WARN, "profile type : %p, %d\n", &g_ota_card_info->type, g_ota_card_info->type);
+
+    return 0;
+}
+
 DOWNSTREAM_METHOD_OBJ_INIT(UPGRADE, MSG_ID_OTA_UPGRADE, ON_UPGRADE, ota_upgrade_parser, ota_upgrade_handler);
 
 UPLOAD_EVENT_OBJ_INIT(ON_UPGRADE, ota_upgrade_packer);
+
+#endif
 

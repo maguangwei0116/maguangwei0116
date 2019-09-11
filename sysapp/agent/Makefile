@@ -100,7 +100,6 @@ SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/downstream_issue_cert.c
 
 # OTA module
-SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/upgrade.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota_upgrade.c
 

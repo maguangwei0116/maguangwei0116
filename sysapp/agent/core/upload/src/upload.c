@@ -209,7 +209,7 @@ static rt_bool upload_check_memory(const void *buf, int32_t len, int32_t value)
 static const char *upload_get_topic_name(void)
 {
     if (g_upload_eid) {
-        if (upload_check_memory(g_upload_eid, MAX_EID_HEX_LEN, '0') || !rt_os_strlen(g_upload_eid)) {
+        if (upload_check_memory(g_upload_eid, MAX_EID_LEN, '0') || !rt_os_strlen(g_upload_eid)) {
             return g_upload_device_info->device_id;
         } else {
             return g_upload_eid;
