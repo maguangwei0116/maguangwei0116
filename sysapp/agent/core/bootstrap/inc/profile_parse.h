@@ -32,6 +32,20 @@
 #define PROFILE_VERSION                         0x81
 #define PROFILE                                 0x81
 
+#define ARRAY_SIZE(a)           (sizeof((a)) / sizeof((a)[0]))
+#define SHARE_PROFILE           "profile_list.der"
+
+typedef struct PROFILE_DATA {
+    uint32_t file_info_offset;
+    uint32_t root_sk_offset;
+    uint32_t aes_key_offset;
+    uint32_t operator_info_offset;
+    uint32_t file_version_offset;
+    int32_t priority;
+    int32_t operator_num;
+    uint32_t hash_code_offset;
+} profile_data_t;
+
 int32_t init_profile_file(int32_t *arg);
 int32_t selected_profile(int32_t random);
 
