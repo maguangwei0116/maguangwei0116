@@ -10,6 +10,7 @@ CFLAGS			+= $(patsubst %,-I%,$(INC-y))
 CFLAGS			+= -I$(SDK_INSTALL_PATH)/include
 CFLAGS			+= $(patsubst %,-I%,$(addprefix $(SYSROOT),$(SYSINC)))
 CFLAGS			+= $(USER_CFLAGS)
+CFLAGS			+= -g
 
 # Config link flags
 LDFLAGS			+= $(LIB-y)

@@ -39,6 +39,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
 int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len);
 
 int32_t init_upload(void *arg);
+int32_t upload_cmd_no_cert(void *arg);
 
 int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode);
 

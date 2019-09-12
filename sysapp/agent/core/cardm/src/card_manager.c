@@ -33,6 +33,13 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
 {
     int32_t ret = RT_ERROR;
     int32_t i;
+    uint8_t eid[MAX_EID_HEX_LEN] = {0};
+
+    lpa_get_eid(eid);
+    bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
+    MSG_PRINTF(LOG_INFO, "g_p_info.eid:%p, %s\n", g_p_info.eid, g_p_info.eid);
+
+    rt_os_sleep(1);
 
     ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
     MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
@@ -56,7 +63,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     return ret;
 }
 
-static int32_t card_enable_profile(const int8_t *iccid)
+static int32_t card_enable_profile(const uint8_t *iccid)
 {
     int32_t ret = RT_ERROR;
     int32_t ii = 0;
@@ -94,8 +101,10 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
 static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 {
     int32_t ret = RT_ERROR;
+
     ret = lpa_load_cert(buf, len);
     card_update_eid();
+
     return ret;
 }
 
@@ -109,6 +118,7 @@ int32_t init_card_manager(void *arg)
     card_update_eid();
     rt_os_sleep(1);
     ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+
     return ret;
 }
 
@@ -130,6 +140,9 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
         case MSG_NETWORK_DISCONNECTED:
             ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
             break;
+        case MSG_CARD_ENABLE_EXIST_CARD:
+            MSG_PRINTF(LOG_INFO, "iccid:%s, len:%d\n", buf, rt_os_strlen(buf));
+            card_enable_profile(buf);
         default:
             MSG_PRINTF(LOG_ERR, "unknow command\n");
             break;

@@ -25,7 +25,7 @@ static rt_bool g_network_timer_flag = RT_TRUE;
 static void network_timer_callback(void)
 {
     if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
+        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_BOOTSTRAP_DISCONNECTED, NULL, 0);
     }
     g_network_timer_flag = RT_FALSE;
     MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);

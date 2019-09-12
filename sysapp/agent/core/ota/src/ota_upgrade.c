@@ -5,7 +5,8 @@
 #include "downstream.h"
 #include "upload.h"
 #include "upgrade.h"
-
+#include "hash.h"
+#include "http_client.h"
 #include "cJSON.h"
 
 #if 0
@@ -94,6 +95,10 @@ typedef struct _ota_upgrade_param_t {
             goto exit_entry;\
         }\
     } while(0)
+
+#define MAX_RESTART_WAIT_TIMEOUT    10
+#define PRIVATE_HASH_STR_LEN        64
+#define HASH_CHECK_BLOCK            1024    /* block size for HASH check */
 
 extern const card_info_t *g_ota_card_info;
 
@@ -210,11 +215,12 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
 
 static rt_bool ota_upgrade_get_tmp_file_name(const ota_upgrade_param_t *param, char *tmpFileName, int32_t len)
 {
-#define TMP_DOWNLOAD_PATH "/data/xxxx"
+#define TMP_DOWNLOAD_PATH "/data/redtea/"
+    static int32_t tmp_file_index = 0;
 
     /* Build a complete path to download files */
-    snprintf(tmpFileName, len, "%s%s_v%s_%s.tmp", \
-                TMP_DOWNLOAD_PATH, param->target.name, param->target.version, param->target.chipModel);  
+    snprintf(tmpFileName, len, "%s%s_v%s_%s.%d.tmp", \
+                TMP_DOWNLOAD_PATH, param->target.name, param->target.version, param->target.chipModel, ++tmp_file_index);  
 
     return RT_TRUE;
 #undef TMP_DOWNLOAD_PATH
@@ -262,10 +268,15 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry; 
     }
 
-    if (param->policy.profileType == 1 && g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
+    if (param->policy.profileType == UPGRADE_PRO_TYPE_ANY) {
+    } else if (param->policy.profileType == UPGRADE_PRO_TYPE_OPERATIONAL && g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
         MSG_PRINTF(LOG_WARN, "unmathed profile type !\r\n");
         ret = UPGRADE_PROFILE_TYPE_ERROR;
         goto exit_entry;         
+    } else {
+        MSG_PRINTF(LOG_WARN, "unknow profile type !\r\n");
+        ret = UPGRADE_PROFILE_TYPE_ERROR;
+        goto exit_entry; 
     }
 
     if (rt_os_strcmp(param->target.chipModel, AGENT_LOCAL_PLATFORM_TYPE)) {
@@ -312,9 +323,60 @@ exit_entry:
 
 static rt_bool ota_file_check(const void *arg)
 {
-    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
+    const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
+    rt_bool ret = RT_FALSE;
+    sha256_ctx sha_ctx;
+    FILE *fp = NULL;
+    int8_t hash_result[MAX_FILE_HASH_LEN + 1];  // hash???????
+    int8_t hash_out[MAX_FILE_HASH_LEN + 1];
+    int8_t hash_buffer[HASH_CHECK_BLOCK];
+    int8_t last_hash_buffer[PRIVATE_HASH_STR_LEN + 1] = {0};
+    uint32_t check_size;
+    int32_t partlen;
+    struct  stat f_info;
 
-    return RT_TRUE;
+    RT_CHECK_ERR(stat((char *)d_info->tmpFileName, &f_info), -1);
+
+    RT_CHECK_ERR(fp = fopen((char *)d_info->tmpFileName, "r") , NULL);
+
+    sha256_init(&sha_ctx);
+    f_info.st_size -= PRIVATE_HASH_STR_LEN;
+    if (f_info.st_size < HASH_CHECK_BLOCK) {
+        rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
+        RT_CHECK_ERR(fread(hash_buffer, f_info.st_size, 1, fp), 0);
+        sha256_update(&sha_ctx,(uint8_t *)hash_buffer, f_info.st_size);
+    } else {
+        for (check_size = HASH_CHECK_BLOCK; check_size < f_info.st_size; check_size += HASH_CHECK_BLOCK) {
+            rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
+            RT_CHECK_ERR(fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp), 0);
+            sha256_update(&sha_ctx,(uint8_t *)hash_buffer, HASH_CHECK_BLOCK);
+        }
+
+        partlen = f_info.st_size + HASH_CHECK_BLOCK - check_size;
+        if (partlen > 0) {
+            rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
+            RT_CHECK_ERR(fread(hash_buffer, partlen, 1, fp), 0);
+            sha256_update(&sha_ctx,(uint8_t *)hash_buffer, partlen);
+        }
+
+        RT_CHECK_ERR(fread(last_hash_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
+    }
+
+    sha256_final(&sha_ctx,(uint8_t *)hash_out);
+    bytestring_to_charstring(hash_out, hash_result, 32);
+
+    MSG_PRINTF(LOG_WARN, "calc hash_result: %s\r\n", hash_result);
+    MSG_PRINTF(LOG_WARN, "tail hash_result: %s\r\n", last_hash_buffer);
+    RT_CHECK_NEQ(strncpy_case_insensitive(hash_result, last_hash_buffer, MAX_FILE_HASH_LEN), RT_TRUE);
+    MSG_PRINTF(LOG_WARN, "private file hash check ok !\r\n");
+    ret = RT_TRUE;
+
+end:
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+    return ret;
 }
 
 static rt_bool ota_file_install(const void *arg)
@@ -363,6 +425,13 @@ static rt_bool ota_on_upload_event(const void *arg)
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
     upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade); 
+
+    /* restart app right now */
+    if (UPGRADE_NO_FAILURE == upgrade->downloadResult && upgrade->execute_app_now) {
+        MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);
+        rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
+        rt_os_exit(-1);
+    }
 
     /* release upgrade struct memory */
     if (upgrade) {

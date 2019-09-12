@@ -18,14 +18,14 @@
 
 #define     DEVICE_ID_LEN                32
 #define     DEVICE_IMEI_LEN              15
-#define     DEVICE_SN_LEN                32
-#define     DEVICE_MODEL_LEN             32
+#define     DEVICE_SN_LEN                12
+#define     DEVICE_MODEL_LEN             8
 
 typedef struct DEVICE_INFO {
     uint8_t device_id[DEVICE_ID_LEN + 1];
     uint8_t imei[DEVICE_IMEI_LEN + 1];
     uint8_t sn[DEVICE_SN_LEN + 1];
-    uint8_t model[DEVICE_MODEL_LEN + 1];
+    uint8_t model[DEVICE_MODEL_LEN*4 + 1];
 } devicde_info_t;
 
 int32_t init_device_info(void  *arg);

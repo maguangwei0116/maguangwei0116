@@ -189,13 +189,23 @@ void MD5Final(MD5_CTX *context, unsigned char digest[16])
     MD5Encode(digest, context->state, 16);
 }
 
-unsigned char to_ascii(unsigned char ch)
+static unsigned char to_ascii(unsigned char ch, uint8_t flag)
 {
-    if (ch <= 9) {
+    if(ch <= 9)
+    {
         ch += ('0' - 0);
-    }
-    else if (ch >= 0xa && ch <= 0xf) {
-        ch += ('A' - 0xa);
+    } else if(ch >= 0xa && ch <= 0xf) {
+        if (flag==0) {
+            ch += ('A' - 0xa);
+        } else {
+            ch += ('a' - 0xa);
+        }
+    } else if (ch >= 0xA && ch <= 0xF) {
+        if (flag==0) {
+            ch += ('A' - 0xa);
+        } else {
+            ch += ('a' - 0xa);
+        }
     } else {
         ch = 'F';
     }
@@ -216,29 +226,29 @@ void get_md5_string(int8_t *input, int8_t *output)
     MD5Final(&md5, md5_out);
 
     for (i = 0; i < 16; i ++) {
-        *(output + 2 * i) = to_ascii((md5_out[i] >> 4) & 0xF);
-        *(output + 2 * i + 1) = to_ascii(md5_out[i] & 0xF);
+        *(output + 2 * i) = to_ascii((md5_out[i] >> 4) & 0xF, 0);
+        *(output + 2 * i + 1) = to_ascii(md5_out[i] & 0xF, 0);
     }
     //md5_printf("md5 string = %s\n", output);
     return ;
 }
 
-void get_ascii_string(uint8_t *input, uint8_t *output,uint16_t len)
+void get_ascii_string(uint8_t *input, uint16_t len, uint8_t *output)
 {
     uint8_t i;
     for (i = 0; i < len; i ++) {
-        *(output + 2 * i) = to_ascii((input[i] >> 4) & 0xF);
-        *(output + 2 * i + 1) = to_ascii(input[i] & 0xF);
+        *(output + 2 * i) = to_ascii((input[i] >> 4) & 0xF, 0);
+        *(output + 2 * i + 1) = to_ascii(input[i] & 0xF, 0);
     }
     return ;
 }
 
-void get_ascii_data(uint8_t *input,uint16_t len,uint8_t *output)
+void get_ascii_data(uint8_t *input, uint16_t len, uint8_t *output)
 {
     uint8_t i;
     for (i = 0; i < len; i ++) {
-        *(output + 2 * i) = to_ascii((input[i]) & 0xf);
-        *(output + 2 * i + 1) = to_ascii(input[i] >> 4 & 0xf);
+        *(output + 2 * i) = to_ascii((input[i]) & 0xf, 1);
+        *(output + 2 * i + 1) = to_ascii(input[i] >> 4 & 0xf, 1);
     }
     output[2*i] = '\0';
     return ;

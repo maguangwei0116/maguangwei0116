@@ -1,7 +1,7 @@
 /*
  * upgrade.c
  *
- *  Created on: 2018年11月26日
+ *  Created on: 2018??11??26??
  *      Author: xiangyinglai
  */
 
@@ -32,7 +32,7 @@ typedef enum NETWORK_STATE {
 
 #define MAX_FILE_PATH_LEN           100
 
-#define HASH_CHECK_BLOCK            1024    /* 哈希校验每块的大小 */
+#define HASH_CHECK_BLOCK            1024    /* block size for HASH check */
 
 #define MAX_DOWNLOAD_RETRY_CNT      9       /* plus 1 for max total download times */
 
@@ -67,7 +67,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.if_continue = 1;
     dw_struct.buf = NULL;
 
-    /* 构建文件下载Http请求body */
+    /* ?????????Http??body */
     dw_struct.file_path = (const char *)d_info->tmpFileName;
     dw_struct.manager_type = 1;
     dw_struct.http_header.method = 0;  // POST
@@ -83,6 +83,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
     rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
     dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
+    cJSON_free(out);
 
     snprintf((char *)buf, sizeof(buf), "%s:%d", OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
     http_set_header_record(&dw_struct, "HOST", buf);
@@ -93,12 +94,12 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     snprintf((char *)buf, sizeof(buf), "%d", rt_os_strlen(dw_struct.http_header.buf));
     http_set_header_record(&dw_struct, "Content-Length", (const char *)buf);
 
-    /* 计算body的md5校验码 */
+    /* ????body??md5锟斤拷???? */
     get_md5_string((int8_t *)dw_struct.http_header.buf, buf);
     buf[MD5_STRING_LENGTH] = '\0';
     http_set_header_record(&dw_struct, "md5sum", (const char *)buf);
 
-    do {
+    while (1) {        
         /* There is file need to download in system */
         if (rt_os_access((const int8_t *)dw_struct.file_path, F_OK) == RT_SUCCESS){
             snprintf(buf, sizeof(buf), "%d", get_file_size(dw_struct.file_path));
@@ -112,11 +113,13 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         }
         cnt++;
         MSG_PRINTF(LOG_WARN, "Download fail cnt: %d\r\n", cnt);
-
+        if (cnt >= d_info->retryAttempts) {
+            MSG_PRINTF(LOG_WARN, "Download fail too many times !\r\n");
+            break;
+        }        
         rt_os_sleep(d_info->retryInterval);
-    } while(cnt < d_info->retryAttempts);
-
-    cJSON_free(out);
+    }
+  
     cJSON_Delete(post_info);
     return ret;
 }
@@ -126,7 +129,7 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
     rt_bool ret = RT_FALSE;
     sha256_ctx sha_ctx;
     FILE *fp = NULL;
-    int8_t hash_result[MAX_FILE_HASH_LEN + 1];  // hash运算计算结果
+    int8_t hash_result[MAX_FILE_HASH_LEN + 1];  // hash???????
     int8_t hash_out[MAX_FILE_HASH_LEN + 1];
     int8_t hash_buffer[HASH_CHECK_BLOCK];
     uint32_t check_size;
@@ -174,7 +177,7 @@ end:
     return ret;
 }
 
-/* 进行普通升级操作 */
+/* ????通?????? */
 static upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
 {
     upgrade_result_e ret;
@@ -238,7 +241,6 @@ exit_entry:
     return ret;
 }
 
-/* 进行FOTA升级*/
 static upgrade_result_e start_fota_upgrade_process(upgrade_struct_t *d_info)
 {
     return RT_TRUE;
@@ -249,11 +251,11 @@ static void * check_upgrade_process(void *args)
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
     upgrade_result_e result;
 
-    MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
-
-    if (GET_UPDATEMODE(d_info) == 1) { /* 全量升级模式 */
+    //MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
+    
+    if (GET_UPDATEMODE(d_info) == 1) { /* full upgrade */
         result = start_comman_upgrade_process(d_info);
-    } else if (GET_UPDATEMODE(d_info) == 2) { /* TODO: FOTA升级模式 */
+    } else if (GET_UPDATEMODE(d_info) == 2) { /* TODO: FOTA upgrade mode */
         result = start_fota_upgrade_process(d_info);
     }
 

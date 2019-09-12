@@ -211,7 +211,6 @@ void *rt_os_strcpy(char* dest, const char *src)
 int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, int32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
-        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
         return RT_ERROR;
     }
 
@@ -325,6 +324,11 @@ void rt_os_reboot(void)
     sync();
     sync();
     reboot(LINUX_REBOOT_CMD_POWER_OFF);
+}
+
+void rt_os_exit(int status)
+{
+    exit(status);
 }
 
 void rt_os_sync(void)

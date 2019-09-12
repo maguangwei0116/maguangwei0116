@@ -19,7 +19,6 @@
 #include "rt_mqtt.h"
 #include "config.h"
 #include "bootstrap.h"
-#include "personalise.h"
 #include "upload.h"
 #include "rt_qmi.h"
 #include "lpa.h"
@@ -74,6 +73,7 @@ static int32_t init_files(void *arg)
     if (rt_os_access(DATA_REDTEA_PATH, 0)) {
         rt_os_mkdir(DATA_REDTEA_PATH);
     }
+
     log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO);
     MSG_PRINTF(LOG_WARN, "App version: %s\n", RELEASE_TARGET_VERSION);
 
@@ -101,7 +101,6 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_network_detection,    (void *)&g_value_list),
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
-    INIT_OBJ(init_personalise,          (void *)&g_value_list),
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
 };
 

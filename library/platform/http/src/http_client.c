@@ -293,11 +293,12 @@ static int http_client_get_resp_header(http_client_struct_t *obj)
             }
         } else {
             obj->buf[obj->process_length] = '\0';
+            MSG_PRINTF(LOG_WARN,"success--------flag:%d    buf:%s\n",flag,obj->buf);
             return 0;
         }
         obj->process_length++;
     }
-
+    MSG_PRINTF(LOG_WARN,"fail--------flag:%d    buf:%s\n",flag,obj->buf);
     return -1;
 }
 

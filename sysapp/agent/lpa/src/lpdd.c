@@ -992,7 +992,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     // Handle notification
     if (*out_size > 0) {
         int tmp = sizeof(g_buf);
-        ret = handle_notification(smdp_addr, out, *out_size, (char *)g_buf, &tmp);
+        // ret = handle_notification(smdp_addr, out, *out_size, (char *)g_buf, &tmp);
     }
 
 end:
