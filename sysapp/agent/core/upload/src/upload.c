@@ -330,11 +330,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             cJSON *upload = NULL;
             cJSON *content = NULL;
             int32_t ret;
-            char *buf;
-            MSG_PRINTF(LOG_INFO, "private_arg:%p\n", private_arg);
-            buf = cJSON_Print((cJSON *)private_arg);
-            MSG_PRINTF(LOG_INFO, "private_arg:%p %s\n", buf, buf);
-            rt_os_free(buf);
+            
             content = obj->packer(private_arg);
             MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
             upload = upload_packet_all(tran_id, event, status, content);
