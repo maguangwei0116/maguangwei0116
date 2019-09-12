@@ -708,8 +708,10 @@ int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     MSG_PRINTF(LOG_INFO, "mqtt connect event, mode: %d\r\n", mode);
     if (MSG_NETWORK_CONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "mqtt network connected\r\n", mode);
         set_network_state(NETWORK_CONNECTING);
-    } else if (MSG_NETWORK_CONNECTED == mode) {
+    } else if (MSG_NETWORK_DISCONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "mqtt network disconnected\r\n", mode);
         set_network_state(NETWORK_DIS_CONNECTED);
     } 
 
