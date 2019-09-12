@@ -217,9 +217,9 @@ static cJSON *upload_event_boot_version_info(void)
     int32_t ret = 0;
     cJSON *software = NULL;
     cJSON *app_version = NULL;
-    const char *name = AGENT_LOCAL_NAME;
-    const char *version = AGENT_LOCAL_VERSION;
-    const char *chipModel = AGENT_LOCAL_PLATFORM_TYPE;
+    const char *name = LOCAL_TARGET_NAME;
+    const char *version = LOCAL_TARGET_VERSION;
+    const char *chipModel = LOCAL_TARGET_PLATFORM_TYPE;
 
     software = cJSON_CreateArray();
     if (!software) {

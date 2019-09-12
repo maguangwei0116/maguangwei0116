@@ -369,8 +369,8 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry; 
     }
 
-    if (rt_os_strcmp(param->target.chipModel, AGENT_LOCAL_PLATFORM_TYPE)) {
-        MSG_PRINTF(LOG_WARN, "unmathed platform type [%s] => [%s]\r\n", AGENT_LOCAL_PLATFORM_TYPE, param->target.chipModel);
+    if (rt_os_strcmp(param->target.chipModel, LOCAL_TARGET_PLATFORM_TYPE)) {
+        MSG_PRINTF(LOG_WARN, "unmathed platform type [%s] => [%s]\r\n", LOCAL_TARGET_PLATFORM_TYPE, param->target.chipModel);
         ret = UPGRADE_FILE_NAME_ERROR;
         goto exit_entry;         
     }
@@ -379,25 +379,25 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         MSG_PRINTF(LOG_WARN, "forced to upgrade\r\n");   
     } else {
         if (param->policy.forced == UPGRADE_MODE_CHK_FILE_NAME) {
-            if (rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
-                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", AGENT_LOCAL_NAME, param->target.name);
+            if (rt_os_strcmp(param->target.name, LOCAL_TARGET_NAME)) {
+                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", LOCAL_TARGET_NAME, param->target.name);
                 ret = UPGRADE_FILE_NAME_ERROR;
                 goto exit_entry;  
             }
         } else if (param->policy.forced == UPGRADE_MODE_CHK_VERSION ) {
-            if (!ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
+            if (!ota_policy_compare_version(LOCAL_TARGET_VERSION, param->target.version)) {
                 MSG_PRINTF(LOG_WARN, "unmathed version name\r\n");
                 ret = UPGRADE_CHECK_VERSION_ERROR;
                 goto exit_entry; 
             }
         } else if (param->policy.forced == UPGRADE_MODE_NO_FORCED) {
-             if (rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
-                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", AGENT_LOCAL_NAME, param->target.name);
+             if (rt_os_strcmp(param->target.name, LOCAL_TARGET_NAME)) {
+                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", LOCAL_TARGET_NAME, param->target.name);
                 ret = UPGRADE_FILE_NAME_ERROR;
                 goto exit_entry; 
              }
 
-             if (!ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
+             if (!ota_policy_compare_version(LOCAL_TARGET_VERSION, param->target.version)) {
                 MSG_PRINTF(LOG_WARN, "unmathed version name\r\n");
                 ret = UPGRADE_CHECK_VERSION_ERROR;
                 goto exit_entry; 
@@ -647,9 +647,9 @@ static cJSON *ota_upgrade_packer(void *arg)
     int32_t ret = 0;
     cJSON *app_version = NULL;
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
-    const char *name = AGENT_LOCAL_NAME;
-    const char *version = AGENT_LOCAL_VERSION;
-    const char *chipModel = AGENT_LOCAL_PLATFORM_TYPE;
+    const char *name = LOCAL_TARGET_NAME;
+    const char *version = LOCAL_TARGET_VERSION;
+    const char *chipModel = LOCAL_TARGET_PLATFORM_TYPE;
 
     if (upgrade) {
         name = upgrade->targetName;
