@@ -67,6 +67,7 @@ void network_state(int32_t state)
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
     } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
         network_start_timer();
+        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
     }
 }
 
