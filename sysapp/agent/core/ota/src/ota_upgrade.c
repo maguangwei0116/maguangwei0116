@@ -338,7 +338,7 @@ static rt_bool ota_policy_compare_version(const char *old_in, const char *new_in
         }
     }
 
-    MSG_PRINTF(LOG_WARN, "unmathed version [%s] = [%s]\r\n", old_in, new_in);
+    MSG_PRINTF(LOG_WARN, "unmathed version [%s] => [%s]\r\n", old_in, new_in);
     return RT_FALSE;
 }
 
@@ -351,7 +351,7 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
     } else if (!rt_os_strcmp(param->policy.executionType, "REBOOT")) {
         upgrade->execute_app_now = RT_FALSE;
     } else {
-        MSG_PRINTF(LOG_WARN, "unknow execution type !\r\n");
+        MSG_PRINTF(LOG_WARN, "unknow execution type %s\r\n", param->policy.executionType);
         ret = UPGRADE_EXECUTION_TYPE_ERROR;
         goto exit_entry; 
     }
@@ -359,45 +359,46 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
     if (param->policy.profileType == UPGRADE_PRO_TYPE_ANY) {
     } else if (param->policy.profileType == UPGRADE_PRO_TYPE_OPERATIONAL) {
         if (g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
-            MSG_PRINTF(LOG_WARN, "unmathed profile type %d/%d !\r\n", param->policy.profileType, g_ota_card_info->type);
+            MSG_PRINTF(LOG_WARN, "unmathed profile type %d/%d\r\n", param->policy.profileType, g_ota_card_info->type);
             ret = UPGRADE_PROFILE_TYPE_ERROR;
             goto exit_entry;  
         }
     } else {
-        MSG_PRINTF(LOG_WARN, "unknow profile type %d/%d !\r\n", param->policy.profileType, g_ota_card_info->type);
+        MSG_PRINTF(LOG_WARN, "unknow profile type %d/%d\r\n", param->policy.profileType, g_ota_card_info->type);
         ret = UPGRADE_PROFILE_TYPE_ERROR;
         goto exit_entry; 
     }
 
     if (rt_os_strcmp(param->target.chipModel, AGENT_LOCAL_PLATFORM_TYPE)) {
-        MSG_PRINTF(LOG_WARN, "unmathed platform type !\r\n");
+        MSG_PRINTF(LOG_WARN, "unmathed platform type [%s] => [%s]\r\n", AGENT_LOCAL_PLATFORM_TYPE, param->target.chipModel);
         ret = UPGRADE_FILE_NAME_ERROR;
         goto exit_entry;         
     }
 
     if (param->policy.forced == UPGRADE_MODE_FORCED) {
-        MSG_PRINTF(LOG_WARN, "forced to upgrade !\r\n");
-        ret = 0;
-        goto exit_entry;   
+        MSG_PRINTF(LOG_WARN, "forced to upgrade\r\n");   
     } else {
-        if (param->policy.forced == UPGRADE_MODE_CHK_FILE_NAME && rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
-            MSG_PRINTF(LOG_WARN, "unmathed file name!\r\n");
-            ret = UPGRADE_FILE_NAME_ERROR;
-            goto exit_entry;  
-        } else if (param->policy.forced == UPGRADE_MODE_CHK_VERSION && \
-                        !ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
-            MSG_PRINTF(LOG_WARN, "unmathed version name !\r\n");
-            ret = UPGRADE_CHECK_VERSION_ERROR;
-            goto exit_entry;   
+        if (param->policy.forced == UPGRADE_MODE_CHK_FILE_NAME) {
+            if (rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
+                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", AGENT_LOCAL_NAME, param->target.name);
+                ret = UPGRADE_FILE_NAME_ERROR;
+                goto exit_entry;  
+            }
+        } else if (param->policy.forced == UPGRADE_MODE_CHK_VERSION ) {
+            if (!ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
+                MSG_PRINTF(LOG_WARN, "unmathed version name\r\n");
+                ret = UPGRADE_CHECK_VERSION_ERROR;
+                goto exit_entry; 
+            }
         } else if (param->policy.forced == UPGRADE_MODE_NO_FORCED) {
              if (rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
-                MSG_PRINTF(LOG_WARN, "unmathed file name!\r\n");
+                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", AGENT_LOCAL_NAME, param->target.name);
                 ret = UPGRADE_FILE_NAME_ERROR;
                 goto exit_entry; 
              }
 
              if (!ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
-                MSG_PRINTF(LOG_WARN, "unmathed version name !\r\n");
+                MSG_PRINTF(LOG_WARN, "unmathed version name\r\n");
                 ret = UPGRADE_CHECK_VERSION_ERROR;
                 goto exit_entry; 
              }
@@ -418,7 +419,7 @@ static rt_bool ota_file_check(const void *arg)
     sha256_ctx sha_ctx;
     FILE *fp = NULL;
     int8_t hash_result[MAX_FILE_HASH_LEN + 1];
-    int8_t hash_out[MAX_FILE_HASH_LEN + 1];
+    int8_t hash_out[MAX_FILE_HASH_BYTE_LEN + 1];
     int8_t hash_buffer[HASH_CHECK_BLOCK];
     int8_t last_hash_buffer[PRIVATE_HASH_STR_LEN + 1] = {0};
     uint32_t check_size;
@@ -434,26 +435,26 @@ static rt_bool ota_file_check(const void *arg)
     if (f_info.st_size < HASH_CHECK_BLOCK) {
         rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
         RT_CHECK_ERR(fread(hash_buffer, f_info.st_size, 1, fp), 0);
-        sha256_update(&sha_ctx,(uint8_t *)hash_buffer, f_info.st_size);
+        sha256_update(&sha_ctx, (uint8_t *)hash_buffer, f_info.st_size);
     } else {
         for (check_size = HASH_CHECK_BLOCK; check_size < f_info.st_size; check_size += HASH_CHECK_BLOCK) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             RT_CHECK_ERR(fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp), 0);
-            sha256_update(&sha_ctx,(uint8_t *)hash_buffer, HASH_CHECK_BLOCK);
+            sha256_update(&sha_ctx, (uint8_t *)hash_buffer, HASH_CHECK_BLOCK);
         }
 
         partlen = f_info.st_size + HASH_CHECK_BLOCK - check_size;
         if (partlen > 0) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             RT_CHECK_ERR(fread(hash_buffer, partlen, 1, fp), 0);
-            sha256_update(&sha_ctx,(uint8_t *)hash_buffer, partlen);
+            sha256_update(&sha_ctx, (uint8_t *)hash_buffer, partlen);
         }
 
         RT_CHECK_ERR(fread(last_hash_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
     }
 
-    sha256_final(&sha_ctx,(uint8_t *)hash_out);
-    bytestring_to_charstring(hash_out, hash_result, 32);
+    sha256_final(&sha_ctx, (uint8_t *)hash_out);
+    bytestring_to_charstring(hash_out, hash_result, MAX_FILE_HASH_BYTE_LEN);
 
     MSG_PRINTF(LOG_WARN, "calc hash_result: %s\r\n", hash_result);
     MSG_PRINTF(LOG_WARN, "tail hash_result: %s\r\n", last_hash_buffer);
@@ -638,7 +639,6 @@ static int32_t ota_upgrade_handler(const void *in, const char *event, void **out
 
 exit_entry:
 
-    MSG_PRINTF(LOG_WARN, "ret=%d\n", ret);
     return ret;
 }
 

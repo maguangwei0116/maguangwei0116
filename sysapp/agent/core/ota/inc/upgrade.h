@@ -54,6 +54,7 @@ typedef struct upgrade_struct {
 #define MAX_VERSION_NAME_LEN            16
 #define MAX_FILE_NAME_LEN               128
 #define MAX_FILE_HASH_LEN               64
+#define MAX_FILE_HASH_BYTE_LEN          32
 #define MAX_TICKET_LEN                  32
 #define MAX_UPLOAD_EVENT_LEN            32
 
