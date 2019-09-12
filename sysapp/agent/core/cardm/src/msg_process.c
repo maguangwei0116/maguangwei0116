@@ -16,7 +16,6 @@
 #include "cJSON.h"
 #include "rt_qmi.h"
 
-#define  MD5_STRING_LENGTH                            32
 #define  MSG_ONE_BLOCK_SIZE                           128
 #define  APN_LIST                                     "/data/redtea/rt_apn_list"
 #define  PROXY_SERVER_ADDR                            "smdp-test.redtea.io" // stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)
@@ -283,7 +282,7 @@ int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid)
     uint8_t buffer[MSG_ONE_BLOCK_SIZE] = {0};  // must avoid stack buffer overflow
     int32_t ret = RT_ERROR;
 
-    apn_list = cJSON_GetObjectItem(command_content, "apnList");
+    apn_list = cJSON_GetObjectItem(command_content, "apnInfos");
     if (!apn_list) {
         MSG_PRINTF(LOG_WARN, "Error before JSON: [%s]\n", cJSON_GetErrorPtr());
         return ret;
@@ -306,18 +305,21 @@ int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid)
 int32_t mqtt_msg_event(const uint8_t *buf, int32_t len)
 {
     int32_t status = 0;
+    int32_t ret = RT_ERROR;
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
     MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
 
-    downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
+    ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
+    if (ret == RT_ERROR) {
+        return ret;
+    }
     if (downstream_msg->msg) {
         rt_os_free(downstream_msg->msg);
         downstream_msg->msg = NULL;
     }
     // MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
     status = downstream_msg->handler(downstream_msg->private_arg,  downstream_msg->event, &downstream_msg->out_arg);
-
     upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
 
     return RT_SUCCESS;

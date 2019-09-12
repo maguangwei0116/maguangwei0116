@@ -26,11 +26,11 @@
 #define  RT_SIGALRM                         SIGALRM
 #define  RT_MODE                            mode_t
 #define  RT_S_ISUID                         S_ISUID  // (04000)  set-user-ID (set process effective user ID on execve(2))
-#define  RT_S_ISGID                         S_ISGID  // (02000)  
+#define  RT_S_ISGID                         S_ISGID  // (02000)
 #define  RT_S_ISVTX                         S_ISVTX  // (01000)  sticky bit (restricted deletion flag, as described in unlink(2))
 #define  RT_S_IRUSR                         S_IRUSR  // (00400)  read by owner
 #define  RT_S_IWUSR                         S_IWUSR  // (00200)  write by owner
-#define  RT_S_IXUSR                         S_IXUSR  // (00100)  
+#define  RT_S_IXUSR                         S_IXUSR  // (00100)
 #define  RT_S_IRGRP                         S_IRGRP  // (00040)  read by group
 #define  RT_S_IWGRP                         S_IWGRP  // (00020)  write by group
 #define  RT_S_IXGRP                         S_IXGRP  // (00010)  execute/search by group
@@ -50,7 +50,7 @@ int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id);
 int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg);
 int32_t rt_send_queue_msg(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg);
 
-int32_t rt_os_memcmp(const void *mem_des, const void *mem_src,int32_t len);
+int32_t rt_os_memcmp(const void *mem_des, const void *mem_src, int32_t len);
 int32_t rt_os_strcmp(const char *mem_des, const char *mem_src);
 int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, int32_t len);
 uint32_t rt_os_strlen(const char *string);

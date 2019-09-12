@@ -60,7 +60,7 @@ void MD5Transform(unsigned int state[4], unsigned char block[64]);
 void MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen);
 void MD5Final(MD5_CTX *context, unsigned char digest[16]);
 void get_md5_string(int8_t *input, int8_t *output);
-void get_ascii_string(uint8_t *input, uint8_t *output,uint16_t len);
-void get_ascii_data(uint8_t *input,uint16_t len,uint8_t *output);
+void get_ascii_string(uint8_t *input ,uint16_t len, uint8_t *output);
+void get_ascii_data(uint8_t *input, uint16_t len, uint8_t *output);
 
 #endif /*__MD5_H__*/

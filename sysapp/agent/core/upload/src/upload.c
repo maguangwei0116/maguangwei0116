@@ -127,7 +127,7 @@ static int32_t upload_send_request(const char *out)
     int32_t send_len;
 
     if (!out) {
-        MSG_PRINTF(LOG_WARN, "out buffer error\n");
+        // MSG_PRINTF(LOG_WARN, "out buffer error\n");
         ret = HTTP_PARAMETER_ERROR;
         return ret;
     }
@@ -230,7 +230,7 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
     // MSG_PRINTF(LOG_INFO, "The upload g_upload_eid: %s\n", g_upload_eid);
     //MSG_PRINTF(LOG_INFO, "The upload device_id: %s\n", g_upload_device_info->device_id);
     //MSG_PRINTF(LOG_INFO, "The upload topic: %s\n", topic);
-    if (!tranId || !rt_os_strlen(tranId)) {        
+    if (!tranId || !rt_os_strlen(tranId)) {
         upload_get_random_tran_id(random_tran_id, sizeof(random_tran_id) - 1);
         tranId = (const char *) random_tran_id;
     }
@@ -248,7 +248,7 @@ static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t s
     int32_t ret;
     cJSON *payload_json = NULL;
     char *payload = NULL;
-     
+
     payload_json = cJSON_CreateObject();
     if (!payload_json) {
         MSG_PRINTF(LOG_WARN, "The payload_json is error\n");
@@ -261,7 +261,7 @@ static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t s
     CJSON_ADD_STR_OBJ(payload_json, content);
 
     payload = (char *)cJSON_PrintUnformatted(payload_json);
-    
+
     CJSON_ADD_NEW_STR_OBJ(upload, payload);
 
     ret = 0;
@@ -308,7 +308,7 @@ static int32_t init_upload_obj(void)
 {
     const upload_event_t *obj = NULL;
     cJSON *ret;
-    
+
     MSG_PRINTF(LOG_WARN, "event_START ~ event_END : %p ~ %p\r\n", g_upload_event_START, g_upload_event_END);
     for (obj = g_upload_event_START; obj <= g_upload_event_END; obj++) {
         MSG_PRINTF(LOG_WARN, "upload %p, %s ...\r\n", obj, obj->event);
@@ -330,19 +330,23 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             cJSON *upload = NULL;
             cJSON *content = NULL;
             int32_t ret;
-            
+            char *buf;
+            MSG_PRINTF(LOG_INFO, "private_arg:%p\n", private_arg);
+            buf = cJSON_Print((cJSON *)private_arg);
+            MSG_PRINTF(LOG_INFO, "private_arg:%p %s\n", buf, buf);
+            rt_os_free(buf);
             content = obj->packer(private_arg);
-            //MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
+            MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
             upload = upload_packet_all(tran_id, event, status, content);
-            //MSG_PRINTF(LOG_WARN, "upload [%p] !!!\r\n", upload);
-            upload_json_pag = (char *)cJSON_PrintUnformatted(upload); 
-            //MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
+            MSG_PRINTF(LOG_WARN, "upload [%p] !!!\r\n", upload);
+            upload_json_pag = (char *)cJSON_PrintUnformatted(upload);
+            MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
             ret = upload_send_request((const char *)upload_json_pag);
-            
+
             if (upload) {
                 cJSON_Delete(upload);
             }
-            
+
             if (upload_json_pag) {
                 cJSON_free(upload_json_pag);
             }
@@ -352,7 +356,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
     }
 
     MSG_PRINTF(LOG_WARN, "Unknow upload event [%s] !!!\r\n", event);
-    return 0;  
+    return 0;
 }
 
 int32_t init_upload(void *arg)
@@ -377,11 +381,11 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     if (MSG_NETWORK_CONNECTED == mode) {
         if (g_report_boot_event == RT_FALSE) {
-            upload_event_report("BOOT", NULL, 0, NULL);  
+            upload_event_report("BOOT", NULL, 0, NULL);
             g_report_boot_event = RT_TRUE;
         } else {
             rt_bool report_all_info = RT_FALSE;
             upload_event_report("INFO", NULL, 0, &report_all_info);
         }
-    }  
+    }
 }
