@@ -598,13 +598,13 @@ static void mqtt_process_task(void)
             if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) ||
                 (GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
                 if(rt_os_strlen(g_mqtt_param.alias)) {
-                    /* subscribe cid/eid */
+                    /* subscribe [cid/eid] */
                     if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
                             (MQTTClient_subscribe(g_mqtt_param.client, (const char *)g_mqtt_param.alias, 1) == 0)) {
-                        MSG_PRINTF(LOG_DBG, "MQTTClient subscribe cid : %s OK !\n", g_mqtt_param.alias);
+                        MSG_PRINTF(LOG_DBG, "MQTTClient subscribe eid : %s OK !\n", g_mqtt_param.alias);
                         SET_CID_FLAG(g_mqtt_param.subscribe_flag);
                     } else {
-                        MSG_PRINTF(LOG_WARN, "MQTTClient subscribe cid : %s error !\n", g_mqtt_param.alias);
+                        MSG_PRINTF(LOG_WARN, "MQTTClient subscribe eid : %s error !\n", g_mqtt_param.alias);
                     }
                 } else {
                     MSG_PRINTF(LOG_WARN, "alias is error\n");
