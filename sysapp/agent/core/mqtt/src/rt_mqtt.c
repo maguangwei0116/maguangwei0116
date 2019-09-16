@@ -549,7 +549,25 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     return RT_TRUE;
 }
 
-#include "upload.h"
+static void rt_mqtt_set_alias(const char *eid, const char *device_id, rt_bool init_flag)
+{
+    rt_os_memset(g_mqtt_param.alias, 0, sizeof(g_mqtt_param.alias));
+    if (eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
+        rt_os_memcpy(g_mqtt_param.alias, device_id, rt_os_strlen(device_id));
+    } else {
+        rt_os_memcpy(g_mqtt_param.alias, eid, rt_os_strlen(eid));
+    }
+    
+    rt_os_memset(g_mqtt_param.opts.device_id, 0, sizeof(g_mqtt_param.opts.device_id));
+    rt_os_memcpy(g_mqtt_param.opts.device_id, device_id, rt_os_strlen(device_id));
+    
+    if (init_flag) {
+        rt_os_memset(g_mqtt_param.opts.client_id, 0, sizeof(g_mqtt_param.opts.client_id));
+        rt_os_memcpy(g_mqtt_param.opts.rt_channel, "EMQ", 3);  // default for EMQ
+        g_mqtt_param.alias_rc = 1;
+    }
+}
+
 static void mqtt_process_task(void)
 {
     while(1) {        
@@ -564,6 +582,9 @@ static void mqtt_process_task(void)
                         continue;
                     }
                 }
+
+                /* set mqtt global alias */
+                rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_FALSE);
 
                 /* conenct mqtt server which has been got from cache ticket server or from adapter server */
                 if (rt_mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
@@ -597,7 +618,7 @@ static void mqtt_process_task(void)
 
             if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) ||
                 (GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-                if(rt_os_strlen(g_mqtt_param.alias) && !eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
+                if(rt_os_strlen(g_mqtt_param.alias)) {
                     /* subscribe [cid/eid] */
                     if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
                             (MQTTClient_subscribe(g_mqtt_param.client, (const char *)g_mqtt_param.alias, 1) == 0)) {
@@ -650,17 +671,6 @@ static int32_t mqtt_create_task(void)
     return RT_SUCCESS;
 }
 
-static void rt_mqtt_set_alias(const char *eid, const char *device_id)
-{
-    rt_os_memset(g_mqtt_param.alias, 0, sizeof(g_mqtt_param.alias));
-    rt_os_memcpy(g_mqtt_param.alias, eid, rt_os_strlen(eid));
-    rt_os_memset(g_mqtt_param.opts.device_id, 0, sizeof(g_mqtt_param.opts.device_id));
-    rt_os_memcpy(g_mqtt_param.opts.device_id, device_id, rt_os_strlen(device_id));
-    rt_os_memset(g_mqtt_param.opts.client_id, 0, sizeof(g_mqtt_param.opts.client_id));
-    rt_os_memcpy(g_mqtt_param.opts.rt_channel, "EMQ", 3);  // default for EMQ
-    g_mqtt_param.alias_rc = 1;
-}
-
 int8_t *rt_mqtt_get_channel(void)
 {
     return g_mqtt_param.opts.rt_channel;
@@ -676,7 +686,7 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.nodeName              = NULL;
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
     g_mqtt_param.opts.last_connect_status   = 0;  // Initialize the last link push the state of the system
-    rt_mqtt_set_alias((int8_t *)g_mqtt_eid, g_mqtt_device_id);
+    rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_TRUE);
     MQTTClient_init();
 }
 
