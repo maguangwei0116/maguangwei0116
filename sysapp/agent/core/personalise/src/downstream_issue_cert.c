@@ -205,7 +205,8 @@ static int32_t upgrade_download_package(const void *in, const char *upload_event
     snprintf(upgrade_info->ticket, sizeof(upgrade_info->ticket), "%s", param->ticket);
     snprintf(upgrade_info->tmpFileName, sizeof(upgrade_info->tmpFileName), "%s", RT_TEP_CERTIFICATE);
     snprintf(upgrade_info->targetFileName, sizeof(upgrade_info->targetFileName), "%s", RT_CERTIFICATE);
-    snprintf(upgrade_info->event, sizeof(upgrade_info->event), "%s", upload_event);
+    upgrade_info->retryAttempts = 2;
+    upgrade_info->retryInterval = 10;
 
      /* set callback functions */
     upgrade_info->check      = on_issue_cert_file_check;
