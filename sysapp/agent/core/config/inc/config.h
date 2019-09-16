@@ -29,6 +29,7 @@
 #define DEFAULT_MBN_CONFIGURATION               1  // 默认开启MBN配置功能
 #define DEFAULT_INIT_PROFILE_TYPE               2  // 默认启用上一张卡
 #define DEFAULT_RPLMN_ENABLE                    1  //默认开启rplmn配置功能
+#define DEFAULT_LPA_CHANNEL                     1  //默认使用QMI通道，即实体卡模式
 
 /********************************platform**************************************/
 
@@ -44,7 +45,8 @@ typedef enum config_type {
     _MBN_CONFIGURATION,
     _LOG_FILE_SIZE,
     _INIT_PROFILE_TYPE,
-    _RPLMN_ENABLE
+    _RPLMN_ENABLE,
+    _LPA_CHANNEL
 } config_type_e;
 
 extern int32_t DIS_CONNECT_WAIT_TIME;

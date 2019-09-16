@@ -12,6 +12,7 @@
 #include "rt_type.h"
 #include "file.h"
 #include "rt_os.h"
+#include "agent_queue.h"
 
 #define MAX_VALUE_SIZE                      30
 #define LINK_SYMBOL                         "="  // key - value pair 之间的连接符
@@ -28,7 +29,8 @@ static const char *keys[] = {
         "MBN_CONFIGURATION",
         "LOG_FILE_SIZE",
         "INIT_PROFILE_TYPE",
-        "RPLMN_ENABLE"
+        "RPLMN_ENABLE",
+        "DEFAULT_LPA_CHANNEL",
 };
 
 /* The description of config item */
@@ -39,8 +41,9 @@ static const char *annotations[] = {
         "The address of SMDP server stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)",
         "Whether the config MBN",
         "The max size of rt_log file (M)",
-        "The rules of the first boot option profile （0：Provisioning 1:Operational 2:last）",
-        "Whether set the rplmn"
+        "The rules of the first boot option profile (0:Provisioning 1:Operational 2:last)",
+        "Whether set the rplmn",
+        "Default LPA channel (0:IPC  1:QMI)"
 };
 
 /* the keyvalue of config item */
@@ -54,6 +57,7 @@ int32_t MBN_CONFIGURATION = DEFAULT_MBN_CONFIGURATION;  // MBN配置开关
 int32_t LOG_FILE_SIZE = DEFAULT_LOG_FILE_SIZE;  // 默认log文件的大小
 int32_t INIT_PROFILE_TYPE = DEFAULT_INIT_PROFILE_TYPE;  // 默认使用上一张卡登网
 int32_t RPLMN_ENABLE = DEFAULT_RPLMN_ENABLE;  //rplmn默认打开设置
+int32_t LPA_CHANNEL = DEFAULT_LPA_CHANNEL;  // LPA默认走QMI通道
 
 /*****************************************************************************
  * FUNCTION
@@ -318,6 +322,7 @@ static int32_t read_config_file(int8_t *file_path, const char **key_array, int8_
 int32_t rt_config_init(void *arg)
 {
     int32_t i;
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
     for(i=0; i < ARRAY_SIZE(keys); i++) {
         values[i] = (int8_t *)rt_os_malloc( MAX_VALUE_SIZE * sizeof(int8_t));
@@ -332,6 +337,8 @@ int32_t rt_config_init(void *arg)
     } else {
         parse_config_file();
     }
+
+    public_value_list->lpa_channel_type = (LPA_CHANNEL == LPA_CHANNEL_BY_IPC) ? LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
 
     return RT_SUCCESS;
 }
@@ -372,6 +379,10 @@ void parse_config_file(void)
     if (get_config_data(_RPLMN_ENABLE, &value_p) == RT_SUCCESS)
         RPLMN_ENABLE = msg_string_to_int(value_p);
     MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE:%d\n", RPLMN_ENABLE);
+
+    if (get_config_data(_LPA_CHANNEL, &value_p) == RT_SUCCESS)
+        LPA_CHANNEL = msg_string_to_int(value_p);
+    MSG_PRINTF(LOG_DBG, "LPA_CHANNEL:%d\n", LPA_CHANNEL);
 }
 
 /**
@@ -398,6 +409,9 @@ void modify_config_file(void)
 
     snprintf(buf, 10, "%d", RPLMN_ENABLE);
     set_config_data(_RPLMN_ENABLE, buf);
+
+    snprintf(buf, 10, "%d", LPA_CHANNEL);
+    set_config_data(_LPA_CHANNEL, buf);
 
     write_config_file(CONFIG_FILE_PATH, keys, values, annotations, ARRAY_SIZE(keys));
 }

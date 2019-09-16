@@ -74,7 +74,7 @@ static int32_t init_files(void *arg)
         rt_os_mkdir(DATA_REDTEA_PATH);
     }
 
-    log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO);
+    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
 
 #undef DATA_REDTEA_PATH
@@ -88,12 +88,12 @@ List your init call here !
 static const init_obj_t g_init_objs[] =
 {
     INIT_OBJ(init_files,                NULL),
+    INIT_OBJ(rt_config_init,            (void *)&g_value_list),    
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),
     INIT_OBJ(init_system_signal,        NULL),
-    INIT_OBJ(init_timer,                NULL),
-    INIT_OBJ(rt_config_init,            NULL),
+    INIT_OBJ(init_timer,                NULL),    
     INIT_OBJ(rt_qmi_init,               NULL),
     INIT_OBJ(init_queue,                (void *)&g_value_list),
     INIT_OBJ(init_bootstrap,            NULL),
@@ -119,7 +119,6 @@ static int32_t agent_init_call(void)
 
 int32_t main(int32_t argc, int8_t **argv)
 {
-    g_value_list.lpa_channel_type = LPA_CHANNEL_BY_IPC;
     agent_init_call();
     MSG_PRINTF(LOG_INFO, "Device id:%s\n", g_value_list.device_info->device_id);
     while (!toStop) {
