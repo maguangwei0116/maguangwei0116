@@ -17,7 +17,7 @@
 #include "agent_queue.h"
 
 #if 0
-IMEI不足15位，model不足8位，serialNo不足12位; 都要使用0x00补齐
+IMEI less than 15 bytes，model less than 8 bytes，serialNo less than 12 bytes; fill up with 0x00
 #endif
 
 #define MAX_IMEI_LEN    15
