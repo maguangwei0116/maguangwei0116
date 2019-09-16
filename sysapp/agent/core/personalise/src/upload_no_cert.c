@@ -26,7 +26,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     const char *deviceId = g_upload_device_info->device_id;
     const char *model = g_upload_device_info->model;
     char fileVersion[128] = {0};
-    char *p = NULL;
+    uint8_t *p = NULL;
 
     content = cJSON_CreateObject();
     if (!content) {
@@ -42,7 +42,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     }
     rt_fseek(fp, g_data.file_version_offset, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 100, fp);
-    p = get_value_buffer(buf);
+    p = (uint8_t * )get_value_buffer(buf);
     length = get_length(buf,0);
     rt_os_memcpy(fileVersion, p, length);
 
