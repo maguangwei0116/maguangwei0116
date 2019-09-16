@@ -177,10 +177,29 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
     #else
             ssize_t  i= read(sockfd, buf, sizeof(buf));
     #endif
+
+    #if 0  // only for test
+        const char *tmp_data =  "HTTP/1.1 502 Bad Gateway\r\n"
+                                "Server: nginx\r\n"
+                                "Date: Mon, 16 Sep 2019 09:02:08 GMT\r\n"
+                                "Content-Type: text/html\r\n"
+                                "Content-Length: 166\r\n"
+                                "Connection: keep-alive\r\n"
+                                "Keep-Alive: timeout=20\r\n"
+                                "\r\n"
+                                "<html>\r\n"
+                                "<head><title>502 Bad Gateway</title></head>\r\n"
+                                "<body bgcolor=\"white\">\r\n"
+                                "<center><h1>502 Bad Gateway</h1></center>\r\n"
+                                "<hr><center>nginx</center>\r\n"
+                                "</body>\r\n"
+                                "</html>\r\n";
+        memset(buf, 0, sizeof(buf));
+        rt_os_memcpy(buf, tmp_data, strlen(tmp_data));
+    #endif
             //ȡbody
             RT_MQTT_COMMAN_DEBUG("rcv buff:%s\n",buf);
             char *temp = strstr(buf, "\r\n\r\n");
-            //printf("temp:%s\n",temp);
             if (temp) {
                 temp += 4;
                 char *tran = rt_os_strstr(buf,"Transfer-Encoding");
@@ -296,6 +315,11 @@ static int reg_cb1(const char *json_data)
     snprintf(buf, sizeof(buf), "%s", json_data);
 
     data = cJSON_Parse(buf);
+    if (!data) {
+        MSG_PRINTF(LOG_ERR, "json data parse fail !\r\n"); 
+        return ret;
+    }
+    
     root = cJSON_GetObjectItem(data, "data");
     if (root) {
         int ret_size = cJSON_GetArraySize(root);
