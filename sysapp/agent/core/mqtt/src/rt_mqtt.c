@@ -55,6 +55,7 @@ typedef struct _mqtt_param_t {
 static mqtt_param_t g_mqtt_param    = {MQTTClient_connectOptions_initializer, 0};
 static const char *g_mqtt_eid       = NULL;
 static const char *g_mqtt_device_id = NULL;
+static const char *g_mqtt_imei      = NULL;
 static network_state_info_e g_network_state = NETWORK_STATE_INIT;
 
 network_state_info_e get_network_state(void)
@@ -640,6 +641,15 @@ static void mqtt_process_task(void)
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe device id : %s error !\n", g_mqtt_device_id);
                 }
 
+                /* subscribe imei */
+                if ((GET_IMEI_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
+                        (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_imei, 1) == 0)) {
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe imei : %s OK !\n", g_mqtt_imei);
+                    SET_IMEI_FLAG(g_mqtt_param.subscribe_flag);
+                } else {
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe imei : %s error !\n", g_mqtt_imei);
+                }
+
                 /* subscribe agent  */
                 if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
                         (MQTTClient_subscribe(g_mqtt_param.client, AGENT_ALIAS, 1) == 0)) {
@@ -698,6 +708,7 @@ int32_t init_mqtt(void *arg)
     public_value_list->push_channel = (const char *)g_mqtt_param.opts.rt_channel;
     g_mqtt_eid = (const char *)public_value_list->card_info->eid;
     g_mqtt_device_id = (const char *)public_value_list->device_info->device_id;
+    g_mqtt_imei = (const char *)public_value_list->device_info->imei;
 
     mqtt_init_param();
 

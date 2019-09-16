@@ -21,9 +21,11 @@
 #define GET_CID_FLAG(flag)              ((flag) & 0x01)
 #define GET_AGENT_FLAG(flag)            (((flag) >> 1) & 0x01)
 #define GET_DEVICE_ID_FLAG(flag)        (((flag) >> 2) & 0x01)
+#define GET_IMEI_FLAG(flag)             (((flag) >> 3) & 0x01)
 #define SET_CID_FLAG(flag)              ((flag) |= 0x01)
 #define SET_AGENT_FLAG(flag)            ((flag) |= (0x01 << 1))
 #define SET_DEVICE_ID_FLAG(flag)        ((flag) |= (0x01 << 2))
+#define SET_IMEI_FLAG(flag)             ((flag) |= (0x01 << 3))
 
 int32_t rt_mqtt_task(void);
 int8_t *rt_mqtt_get_channel(void);
