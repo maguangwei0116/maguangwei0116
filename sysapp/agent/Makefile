@@ -14,7 +14,7 @@ TARGET 			                    = $(shell pwd | sed 's/^\(.*\)[/]//')
 ENV_TYPE		                    = prod
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
-LOCAL_TARGET_VERSION	            = 1.2.4.6
+LOCAL_TARGET_VERSION	            = 0.0.0.1
 
 # Check input tag version
 ifdef AGENT_VERSION
