@@ -44,14 +44,12 @@ static uint32_t get_offset(rt_fshandle_t fp, uint8_t type, uint8_t *asset, uint3
         return RT_ERROR;
     }
     offset += get_length(buf, 1);
-    MSG_INFO_ARRAY("111file info:", buf, 8);
     rt_fseek(fp, offset, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 8, fp);
     if ((buf[0] != SHARED_PROFILE)) {
         return RT_ERROR;
     }
     offset += get_length(buf, 1);
-    MSG_INFO_ARRAY("222file info:", buf, 8);
     rt_fseek(fp, offset, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 8, fp);
     while (buf[0] != type) {
@@ -237,6 +235,8 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         bootstrap_request->tbhRequest.imsi.buf[8] = imsi_buffer[1];
     }
 
+    MSG_INFO_ARRAY("selected imsi:", bootstrap_request->tbhRequest.imsi.buf, bootstrap_request->tbhRequest.imsi.size);
+    MSG_INFO_ARRAY("selected iccid:", bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
     rt_qmi_get_mcc_mnc(&mcc, NULL);
     for (i = 0; i < ARRAY_SIZE(rt_plmn); ++i) {
         if (mcc == rt_plmn[i].mcc) {
@@ -278,7 +278,7 @@ end:
     return ret;
 }
 
-static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, int32_t random)
+static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t random)
 {
     uint32_t selected_profile_index, profile_len, size;
     uint8_t *profile_buffer = NULL;
@@ -313,6 +313,8 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, int32_t rando
     rt_qmi_modify_profile(1, 0, request->apn.list.array[0]->apnName.buf, 0);
 
     selected_profile_index = random % request->totalNum;
+    MSG_PRINTF(LOG_INFO, "The selected index is %d\n", selected_profile_index);
+
     if (request->sequential == 0xFF) {
         profile_len = get_length(buf, 0);
     } else {
@@ -332,7 +334,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, int32_t rando
     return RT_SUCCESS;
 }
 
-int32_t selected_profile(int32_t random)
+int32_t selected_profile(uint32_t random)
 {
     rt_fshandle_t fp;
     uint8_t buf[8];

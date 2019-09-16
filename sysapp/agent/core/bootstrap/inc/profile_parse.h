@@ -47,6 +47,6 @@ typedef struct PROFILE_DATA {
 } profile_data_t;
 
 int32_t init_profile_file(int32_t *arg);
-int32_t selected_profile(int32_t random);
+int32_t selected_profile(uint32_t random);
 
 #endif // __PROFILE_PARSE_H__

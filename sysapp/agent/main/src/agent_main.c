@@ -74,7 +74,7 @@ static int32_t init_files(void *arg)
         rt_os_mkdir(DATA_REDTEA_PATH);
     }
 
-    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
+    log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO);
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
 
 #undef DATA_REDTEA_PATH
@@ -119,7 +119,7 @@ static int32_t agent_init_call(void)
 
 int32_t main(int32_t argc, int8_t **argv)
 {
-    g_value_list.lpa_channel_type = LPA_CHANNEL_BY_QMI;
+    g_value_list.lpa_channel_type = LPA_CHANNEL_BY_IPC;
     agent_init_call();
     MSG_PRINTF(LOG_INFO, "Device id:%s\n", g_value_list.device_info->device_id);
     while (!toStop) {
