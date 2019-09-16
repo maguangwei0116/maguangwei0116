@@ -92,6 +92,8 @@ SRC-y 			                        += ./core/upload/src/upload_info.c
 # Add your downstream-xxx cmd here
 SRC-y 			                        += ./core/downstream/src/downstream.c
 SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
+SRC-y 			                        += ./core/downstream/src/downstream_reboot.c
+SRC-y 			                        += ./core/downstream/src/downstream_reset.c
 SRC-y 			                        += ./core/cardm/src/msg_push_ac_cmd.c
 SRC-y 			                        += ./core/cardm/src/msg_delete_cmd.c
 SRC-y 			                        += ./core/cardm/src/msg_enable_cmd.c
