@@ -26,13 +26,13 @@ static uint32_t g_single_interval_time = 10; // 激活失败单次间隔时间
 static uint32_t g_max_retry_times = 7; // 最大重试次数
 static uint32_t g_sleep_time = 24 * 60 * 60; // 休眠时长
 
-static int32_t get_random(void)
+static uint32_t get_random(void)
 {
-    int32_t random = 0;
+    uint32_t random = 0;
     if (rt_read_data(RANDOM_FILE, 0, (uint8_t * ) & random, sizeof(random)) == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "read urandom error\n");
     }
-    return rand();
+    return random;
 }
 
 static void bootstrap_select_profile(void)
