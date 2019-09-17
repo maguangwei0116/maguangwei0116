@@ -171,6 +171,7 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
         if (fp != NULL) {
             rt_fclose(fp);
         }
+        rt_os_unlink(RT_CERTIFICATE);
     }
 
     /* release upgrade struct memory */
@@ -214,7 +215,8 @@ static int32_t upgrade_download_package(const void *in, const char *upload_event
     upgrade_info->install    = on_issue_cert_install;
     upgrade_info->cleanup    = on_issue_cert_cleanup;
     upgrade_info->on_event   = on_issue_cert_upload_event;
-    
+
+    on_issue_cert_cleanup(NULL);
     ret = upgrade_process_start(upgrade_info);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "Create upgrade start error\n");
