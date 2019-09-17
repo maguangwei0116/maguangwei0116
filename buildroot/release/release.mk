@@ -59,11 +59,11 @@ define COPY_RELEASE_TARGETS
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(RELEASE_INSTALL_PATH)/targets
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(RELEASE_INSTALL_PATH)/targets
 	-$(Q)cp -rf $(SDK_PATH)/lib/*libcomm.so $(RELEASE_INSTALL_PATH)/targets
+	-$(Q)cp -rf $(CHANGE_LOG) $(RELEASE_INSTALL_PATH)
 endef
 
 # Tar release targets
 define TAR_RELEASE_TARGETS
-	-$(Q)cp -rf $(CHANGE_LOG) $(1)/
 	cd $(1)/../; rm -rf $(1)/*.zip; zip -q -r $(2) ./$(shell basename $(1)); mv $(2) $(1) 
 endef
 
