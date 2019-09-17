@@ -55,6 +55,7 @@ typedef struct _mqtt_param_t {
 static mqtt_param_t g_mqtt_param    = {MQTTClient_connectOptions_initializer, 0};
 static const char *g_mqtt_eid       = NULL;
 static const char *g_mqtt_device_id = NULL;
+static const char *g_mqtt_imei      = NULL;
 static network_state_info_e g_network_state = NETWORK_STATE_INIT;
 
 network_state_info_e get_network_state(void)
@@ -616,33 +617,45 @@ static void mqtt_process_task(void)
                 }
             }
 
-            if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) ||
-                (GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
+            /* subscribe [cid/eid] */
+            if ((GET_EID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
                 if(rt_os_strlen(g_mqtt_param.alias)) {
-                    /* subscribe [cid/eid] */
-                    if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
-                            (MQTTClient_subscribe(g_mqtt_param.client, (const char *)g_mqtt_param.alias, 1) == 0)) {
-                        MSG_PRINTF(LOG_DBG, "MQTTClient subscribe eid : %s OK !\n", g_mqtt_param.alias);
-                        SET_CID_FLAG(g_mqtt_param.subscribe_flag);
-                    } else {
-                        MSG_PRINTF(LOG_WARN, "MQTTClient subscribe eid : %s error !\n", g_mqtt_param.alias);
+                    if (rt_os_strcmp((const char *)g_mqtt_param.alias, g_mqtt_device_id)) {
+                        if ((MQTTClient_subscribe(g_mqtt_param.client, (const char *)g_mqtt_param.alias, 1) == 0)) {
+                            MSG_PRINTF(LOG_DBG, "MQTTClient subscribe eid : %s OK !\n", g_mqtt_param.alias);
+                            SET_EID_FLAG(g_mqtt_param.subscribe_flag);
+                        } else {
+                            MSG_PRINTF(LOG_WARN, "MQTTClient subscribe eid : %s error !\n", g_mqtt_param.alias);
+                        }
                     }
                 } else {
                     MSG_PRINTF(LOG_WARN, "alias is error\n");
                 }
+            }
 
-                /* subscribe device-id */
-                if ((GET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
-                        (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_device_id, 1) == 0)) {
+            /* subscribe device-id */
+            if ((GET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
+                    if (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_device_id, 1) == 0) {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe device id : %s OK !\n", g_mqtt_device_id);
                     SET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag);
                 } else {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe device id : %s error !\n", g_mqtt_device_id);
                 }
+            }
 
-                /* subscribe agent  */
-                if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
-                        (MQTTClient_subscribe(g_mqtt_param.client, AGENT_ALIAS, 1) == 0)) {
+            /* subscribe imei */
+            if ((GET_IMEI_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
+                    if (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_imei, 1) == 0) {
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe imei : %s OK !\n", g_mqtt_imei);
+                    SET_IMEI_FLAG(g_mqtt_param.subscribe_flag);
+                } else {
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe imei : %s error !\n", g_mqtt_imei);
+                }
+            }
+
+            /* subscribe agent  */
+            if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
+                    if (MQTTClient_subscribe(g_mqtt_param.client, AGENT_ALIAS, 1) == 0) {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe %s OK !\n", AGENT_ALIAS);
                     SET_AGENT_FLAG(g_mqtt_param.subscribe_flag);
                 } else {
@@ -698,6 +711,7 @@ int32_t init_mqtt(void *arg)
     public_value_list->push_channel = (const char *)g_mqtt_param.opts.rt_channel;
     g_mqtt_eid = (const char *)public_value_list->card_info->eid;
     g_mqtt_device_id = (const char *)public_value_list->device_info->device_id;
+    g_mqtt_imei = (const char *)public_value_list->device_info->imei;
 
     mqtt_init_param();
 
@@ -718,12 +732,17 @@ int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     MSG_PRINTF(LOG_INFO, "mqtt connect event, mode: %d\r\n", mode);
     if (MSG_NETWORK_CONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "mqtt network connected\r\n", mode);
+        MSG_PRINTF(LOG_INFO, "mqtt network connected\r\n");
         set_network_state(NETWORK_CONNECTING);
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "mqtt network disconnected\r\n", mode);
+        MSG_PRINTF(LOG_INFO, "mqtt network disconnected\r\n");
         set_network_state(NETWORK_DIS_CONNECTED);
-    } 
+    } else if (MSG_MQTT_SUBSCRIBE_EID == mode) {
+        MSG_PRINTF(LOG_INFO, "mqtt subcsribe eid\r\n");
+        /* set mqtt global alias */
+        rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_FALSE);
+        CLR_EID_FLAG(g_mqtt_param.subscribe_flag);
+    }
 
     return RT_SUCCESS;
 }

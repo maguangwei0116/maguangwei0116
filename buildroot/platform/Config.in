@@ -58,6 +58,29 @@ config BR2_SOFTWARE_TYPE
 	default "debug"		if BR2_SOFTWARE_TYPE_DEBUG
 	default "release"	if BR2_SOFTWARE_TYPE_RELEASE
 
+choice
+	prompt "Environment Type"
+	default BR2_ENV_TYPE_PROD
+	help
+	  Select environment type, staging, prod ...
+
+config BR2_ENV_TYPE_PROD
+	bool "prod"
+	help
+	  Running at product environment.
+
+config BR2_ENV_TYPE_STAGING
+	bool "staging"
+	help
+	  Running at staging environment.
+
+endchoice
+
+config BR2_ENV_TYPE
+	string
+	default "staging"		if BR2_ENV_TYPE_STAGING
+	default "prod"	        if BR2_ENV_TYPE_PROD
+
 config BR2_OUTPUT_PATH
 	string "Output Path"
 	default "$(BR2_SOFTWARE_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"

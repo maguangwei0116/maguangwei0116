@@ -104,6 +104,7 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
     if (!ret) {
         MSG_PRINTF(LOG_WARN, "EID changed, upload INIT event\n");
         upload_event_report("INIT", NULL, 0, NULL);
+        msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
     }
 
     return ret;

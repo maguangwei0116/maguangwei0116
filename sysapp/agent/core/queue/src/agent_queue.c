@@ -130,6 +130,10 @@ static void agent_queue_task(void)
                     mqtt_connect_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
+                case MSG_ID_MQTT:
+                    mqtt_connect_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    break;
+
                 case MSG_ID_IDLE:
                     idle_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;

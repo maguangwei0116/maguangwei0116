@@ -355,7 +355,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                             MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NO_NET\n");
                             dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
                             if (dsi_get_call_end_reason(dsi_net_hndl->handle, &dsicallend, dsi_net_hndl->ip_type) == DSI_SUCCESS) {
-                                MSG_PRINTF(LOG_DBG, "dsi_get_call_end_reason handle＝％d type=%d reason code =%d \n",
+                                MSG_PRINTF(LOG_DBG, "dsi_get_call_end_reason handle reason type=%d, reason code=%d\n",
                                     dsicallend.reason_type,dsicallend.reason_code);
                             }
                         break;
