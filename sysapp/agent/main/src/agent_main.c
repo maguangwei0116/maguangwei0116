@@ -59,6 +59,7 @@ static int32_t init_monitor(void *arg)
 {
     info_vuicc_data_t info;
     uint16_t len = sizeof(info);
+
     rt_os_memset(info.start, 0xFF, sizeof(info.start));
     info.vuicc_switch = ((public_value_list_t *)arg)->lpa_channel_type;
     info.share_profile_state = 0;
@@ -69,7 +70,7 @@ static int32_t init_monitor(void *arg)
 
 static int32_t init_qmi(void *arg)
 {
-    return rt_qmi_init(arg);   
+    return rt_qmi_init(arg);
 }
 
 static int32_t init_files(void *arg)
@@ -88,8 +89,8 @@ static int32_t init_files(void *arg)
 static int32_t init_versions(void *arg)
 {
     char libcomm_ver[128] = {0};
-    
-    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
+
+    log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO);
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
@@ -104,12 +105,12 @@ static const init_obj_t g_init_objs[] =
 {
     INIT_OBJ(init_versions,             NULL),
     INIT_OBJ(init_files,                NULL),
-    INIT_OBJ(init_config,               (void *)&g_value_list),    
+    INIT_OBJ(init_config,               (void *)&g_value_list),
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),
     INIT_OBJ(init_system_signal,        NULL),
-    INIT_OBJ(init_timer,                NULL),    
+    INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_queue,                (void *)&g_value_list),
     INIT_OBJ(init_bootstrap,            NULL),
