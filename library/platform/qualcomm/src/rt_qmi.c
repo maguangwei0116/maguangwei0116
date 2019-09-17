@@ -96,6 +96,8 @@ int32_t rt_qmi_init(void *arg)
 {
     qmi_nas_init();
     qmi_uim_init();
+
+    return RT_SUCCESS;
 }
 
 // get MEID
