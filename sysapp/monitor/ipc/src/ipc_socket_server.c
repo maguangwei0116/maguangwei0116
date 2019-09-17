@@ -55,6 +55,7 @@ int32_t ipc_socket_server(void)
             break;
         }
         rcv_len = socket_recv(new_fd, buffer, THT_BUFFER_LEN);
+        rt_os_memset(rsp, 0x00, THT_BUFFER_LEN);
         ipc_cmd(buffer, rcv_len, rsp, &rsp_len);
         socket_send(new_fd, rsp, rsp_len);
         close(new_fd);

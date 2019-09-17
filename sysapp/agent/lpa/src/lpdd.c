@@ -966,7 +966,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     MSG_INFO_ARRAY("sequenceOf86\n", get_cb_data(), get_cb_size());
 
     // Send sequenceOf86 TL
-    buf = strchr(get_cb_data(),0x86);
+    buf = strchr(get_cb_data(), 0x86);
     p = get_cb_data();
     len = buf-get_cb_data();  // TODO: Make it general
     MSG_INFO("len: %d\n", len);
