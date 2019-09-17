@@ -18,6 +18,19 @@
 
 static card_info_t g_p_info;
 
+static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
+{
+    int32_t i = 0;
+    const uint8_t *p = (const uint8_t *)buf;
+
+    for (i = 0; i < len; i++) {
+        if (p[i] != value) {
+            return RT_FALSE;
+        }
+    }
+    return RT_TRUE;
+}
+
 static int32_t card_update_eid(void)
 {
     int32_t ret = RT_ERROR;
@@ -25,6 +38,11 @@ static int32_t card_update_eid(void)
     uint8_t eid[MAX_EID_HEX_LEN] = {0};
     ret = lpa_get_eid(eid);
     bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
+    MSG_PRINTF(LOG_INFO, "ret=%d, g_p_info.eid=%s\r\n", ret, g_p_info.eid);
+
+    if (eid_check_memory(g_p_info.eid, 2 * MAX_EID_HEX_LEN, '0')) {
+        ret = RT_ERROR;
+    }
 
     return ret;
 }
@@ -94,6 +112,8 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
     return ret;
 }
+
+
 
 static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 {
