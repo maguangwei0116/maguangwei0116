@@ -9,7 +9,7 @@ ALL_TMP_TARGETS            = $(foreach d,$(LIBRARY_ALL_TARGETS),$(addprefix $(O)
 ALL_TARGETS                = $(foreach d,$(ALL_TMP_TARGETS),$(addsuffix .a,$(d)))
 
 # Config your environment, [staging] or [prod]
-ENV_TYPE				   = prod
+ENV_TYPE				   = $(LIBRARY_ENV_TYPE)
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
 COMM_LOCAL_VERSION         = 0.0.0.1

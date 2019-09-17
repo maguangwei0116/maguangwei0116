@@ -8,13 +8,13 @@
 ############################################################################################
 
 # Config your target here !
-TARGET 					            = $(shell pwd | sed 's/^\(.*\)[/]//')
+TARGET                              = $(shell pwd | sed 's/^\(.*\)[/]//')
 
 # Config your environment, [staging] or [prod]
-ENV_TYPE				            = prod
+ENV_TYPE                            = $(SYSAPP_ENV_TYPE)
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
-LOCAL_TARGET_VERSION	            = 0.0.0.1
+LOCAL_TARGET_VERSION                = 0.0.0.1
 
 # Check input tag version
 ifdef MONITOR_VERSION
