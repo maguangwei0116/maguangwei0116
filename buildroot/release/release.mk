@@ -11,6 +11,7 @@ RELEASE_TARGET=$(call qstrip,$(BR2_RELEASE_TARGET))
 RELEASE_ENV_TYPE=$(call qstrip,$(BR2_ENV_TYPE))
 
 RELEASE_README=README.txt
+CHANGE_LOG=../doc/change-log.txt
 ADB_PUSH_SHELL=adb-push.sh
 RELEASE_AUTHOR=$(shell whoami)
 RELEASE_DATE=$(shell date +"%Y%m%d")
@@ -62,6 +63,7 @@ endef
 
 # Tar release targets
 define TAR_RELEASE_TARGETS
+	cp -rf $(CHANGE_LOG) $(1)/
 	cd $(1)/../; rm -rf $(1)/*.zip; zip -q -r $(2) ./$(shell basename $(1)); mv $(2) $(1) 
 endef
 
