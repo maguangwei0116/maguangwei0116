@@ -67,7 +67,11 @@ static int32_t card_enable_profile(const uint8_t *iccid)
     for (ii = 0; ii < g_p_info.num; ii++) {
         if (rt_os_strncmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
             if (g_p_info.info[ii].state == 0) {
-                ret = lpa_enable_profile(iccid);
+                if (g_p_info.info[ii].class == PROFILE_TYPE_PROVISONING) {
+                    ret = lpa_enable_profile(iccid);
+                } else if (g_p_info.info[ii].class == PROFILE_TYPE_OPERATIONAL) {
+                    ret = msg_enable_profile(iccid);
+                }
                 if (ret != RT_SUCCESS) {
                     MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n", ret);
                 }
