@@ -63,7 +63,7 @@ endef
 
 # Tar release targets
 define TAR_RELEASE_TARGETS
-	cp -rf $(CHANGE_LOG) $(1)/
+	-$(Q)cp -rf $(CHANGE_LOG) $(1)/
 	cd $(1)/../; rm -rf $(1)/*.zip; zip -q -r $(2) ./$(shell basename $(1)); mv $(2) $(1) 
 endef
 
