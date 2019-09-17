@@ -64,9 +64,8 @@ extern int32_t INIT_PROFILE_TYPE;
 extern int32_t RPLMN_ENABLE;
 extern int32_t UICC_MODE;
 
-int32_t rt_config_init(void *arg);
-void modify_config_file(void);
-void parse_config_file(void);
+int32_t init_config(void *arg);
+
 /**
 * 获取配置项的值
 * 如果配置项值为整形，那么data返回的是配置项的值。

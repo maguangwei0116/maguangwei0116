@@ -319,102 +319,78 @@ static int32_t read_config_file(int8_t *file_path, const char **key_array, int8_
     return RT_SUCCESS;
 }
 
-int32_t rt_config_init(void *arg)
-{
-    int32_t i;
-    public_value_list_t *public_value_list = (public_value_list_t *)arg;
-
-    for(i=0; i < ARRAY_SIZE(keys); i++) {
-        values[i] = (int8_t *)rt_os_malloc( MAX_VALUE_SIZE * sizeof(int8_t));
-        if (values[i] == NULL) {
-            return RT_ERROR;
-        }
-        values[i][0] = '\0';
-    }
-
-    if (rt_os_access(CONFIG_FILE_PATH, F_OK) == RT_ERROR) {
-        modify_config_file();
-    } else {
-        parse_config_file();
-    }
-
-    public_value_list->lpa_channel_type = (UICC_MODE == UICC_MODE_vUICC) ? LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
-
-    return RT_SUCCESS;
-}
-
 /**
 * 读取配置文件
 */
-void parse_config_file(void)
+static void parse_config_file(void)
 {
     int8_t *value_p;
 
     read_config_file(CONFIG_FILE_PATH, keys, values, MAX_VALUE_SIZE, ARRAY_SIZE(keys));
+    
     if (get_config_data(_DIS_CONNECT_WAIT_TIME, &value_p) == RT_SUCCESS)
         DIS_CONNECT_WAIT_TIME = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "DIS_CONNECT_WAIT_TIME : %d\n", DIS_CONNECT_WAIT_TIME);
 
     get_config_data(_OTI_ENVIRONMENT_ADDR, &OTI_ENVIRONMENT_ADDR);
-    MSG_PRINTF(LOG_DBG, "RT_ENVIRONMENT_ADDR   : %s\n", OTI_ENVIRONMENT_ADDR);
 
     get_config_data(_EMQ_SERVER_ADDR, &EMQ_SERVER_ADDR);
-    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", EMQ_SERVER_ADDR);
 
     get_config_data(_PROXY_SERVER_ADDR, &PROXY_SERVER_ADDR);
-    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", PROXY_SERVER_ADDR);
 
-    if (get_config_data(_LOG_FILE_SIZE, &value_p) == RT_SUCCESS)
+    if (get_config_data(_LOG_FILE_SIZE, &value_p) == RT_SUCCESS) {
         LOG_FILE_SIZE = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE         : %d\n", LOG_FILE_SIZE);
+    }
 
-    if (get_config_data(_MBN_CONFIGURATION, &value_p) == RT_SUCCESS)
+    if (get_config_data(_MBN_CONFIGURATION, &value_p) == RT_SUCCESS) {
         MBN_CONFIGURATION = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION     : %d\n", MBN_CONFIGURATION);
+    }
 
-    if (get_config_data(_INIT_PROFILE_TYPE, &value_p) == RT_SUCCESS)
+    if (get_config_data(_INIT_PROFILE_TYPE, &value_p) == RT_SUCCESS) {
         INIT_PROFILE_TYPE = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE     : %d\n", INIT_PROFILE_TYPE);
+    }
 
-    if (get_config_data(_RPLMN_ENABLE, &value_p) == RT_SUCCESS)
+    if (get_config_data(_RPLMN_ENABLE, &value_p) == RT_SUCCESS) {
         RPLMN_ENABLE = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE          : %d\n", RPLMN_ENABLE);
+    }
 
-    if (get_config_data(_UICC_MODE, &value_p) == RT_SUCCESS)
+    if (get_config_data(_UICC_MODE, &value_p) == RT_SUCCESS) {
         UICC_MODE = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "UICC_MODE             : %s\n", (UICC_MODE == UICC_MODE_vUICC) ? "vUICC" : "eUICC");
+    }
 }
 
 /**
 * 更新配置文件
 */
-void modify_config_file(void)
+static void modify_config_file(void)
 {
     int8_t buf[10];
-    snprintf(buf, 10, "%d", DIS_CONNECT_WAIT_TIME);
+    snprintf(buf, sizeof(buf), "%d", DIS_CONNECT_WAIT_TIME);
     set_config_data(_DIS_CONNECT_WAIT_TIME, buf);
 
     set_config_data(_OTI_ENVIRONMENT_ADDR, OTI_ENVIRONMENT_ADDR);
     set_config_data(_EMQ_SERVER_ADDR, EMQ_SERVER_ADDR);
     set_config_data(_PROXY_SERVER_ADDR, PROXY_SERVER_ADDR);
 
-    snprintf(buf, 10, "%d", MBN_CONFIGURATION);
+    snprintf(buf, sizeof(buf), "%d", MBN_CONFIGURATION);
     set_config_data(_MBN_CONFIGURATION, buf);
 
-    snprintf(buf, 10, "%d", LOG_FILE_SIZE);
+    snprintf(buf, sizeof(buf), "%d", LOG_FILE_SIZE);
     set_config_data(_LOG_FILE_SIZE, buf);
 
-    snprintf(buf, 10, "%d", INIT_PROFILE_TYPE);
+    snprintf(buf, sizeof(buf), "%d", INIT_PROFILE_TYPE);
     set_config_data(_INIT_PROFILE_TYPE, buf);
 
-    snprintf(buf, 10, "%d", RPLMN_ENABLE);
+    snprintf(buf, sizeof(buf), "%d", RPLMN_ENABLE);
     set_config_data(_RPLMN_ENABLE, buf);
 
-    snprintf(buf, 10, "%d", UICC_MODE);
+    snprintf(buf, sizeof(buf), "%d", UICC_MODE);
     set_config_data(_UICC_MODE, buf);
 
     write_config_file(CONFIG_FILE_PATH, keys, values, annotations, ARRAY_SIZE(keys));
+}
 
+static void config_debug_cur_param(void)
+{
     MSG_PRINTF(LOG_DBG, "DIS_CONNECT_WAIT_TIME : %d\n", DIS_CONNECT_WAIT_TIME);
     MSG_PRINTF(LOG_DBG, "RT_ENVIRONMENT_ADDR   : %s\n", OTI_ENVIRONMENT_ADDR);
     MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", EMQ_SERVER_ADDR);
@@ -423,7 +399,7 @@ void modify_config_file(void)
     MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION     : %d\n", MBN_CONFIGURATION);
     MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE     : %d\n", INIT_PROFILE_TYPE);
     MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE          : %d\n", RPLMN_ENABLE);
-    MSG_PRINTF(LOG_DBG, "UICC_MODE             : %s\n", (UICC_MODE == UICC_MODE_vUICC) ? "vUICC" : "eUICC");
+    MSG_PRINTF(LOG_DBG, "UICC_MODE             : %s\n", (UICC_MODE == UICC_MODE_vUICC) ? "vUICC" : "eUICC");   
 }
 
 /**
@@ -461,5 +437,32 @@ int32_t set_config_data(config_type_e config_type, int8_t *data)
 
     memcpy(values[config_type], data, rt_os_strlen(data));
     values[config_type][rt_os_strlen(data)] = '\0';
+    return RT_SUCCESS;
+}
+
+int32_t init_config(void *arg)
+{
+    int32_t i;
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
+
+    for(i=0; i < ARRAY_SIZE(keys); i++) {
+        values[i] = (int8_t *)rt_os_malloc( MAX_VALUE_SIZE * sizeof(int8_t));
+        if (values[i] == NULL) {
+            return RT_ERROR;
+        }
+        values[i][0] = '\0';
+    }
+
+    if (rt_os_access(CONFIG_FILE_PATH, F_OK) == RT_ERROR) {
+        modify_config_file();
+    } else {
+        parse_config_file();
+    }
+
+    config_debug_cur_param();
+
+    public_value_list->lpa_channel_type = (UICC_MODE == UICC_MODE_vUICC) ? LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
+    MSG_PRINTF(LOG_DBG, "public_value_list->lpa_channel_type=%d\r\n", public_value_list->lpa_channel_type);
+
     return RT_SUCCESS;
 }
