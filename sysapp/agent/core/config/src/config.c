@@ -17,7 +17,7 @@
 #define MAX_VALUE_SIZE                      30
 #define LINK_SYMBOL                         "="  // key - value pair 之间的连接符
 #define ANNOTATION_SYMBOL                   "#"  // 注释标识符
-#define CONFIG_FILE_PATH                    "/data/rt_config.ini"
+#define CONFIG_FILE_PATH                    "/data/redtea/rt_config.ini"
 #define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // 判定是否为空白符
 
 /* The keyname of config item*/

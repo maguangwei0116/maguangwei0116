@@ -10,7 +10,7 @@
 **************************************************************************************************/
 //#define TLS_VERIFY_CERT                         1
 //#define TLS_VERIFY_CERT_9_AS_OK                 1
-#define TLS_CERT_PATH                           "/data/ca-chain.pem"
+#define TLS_CERT_PATH                           "/data/redtea/ca-chain.pem"
 
 typedef enum ERR_HTTPS_CODE {
     RT_ERR_HTTPS_GET_HOSTNAME_FAIL = -300,

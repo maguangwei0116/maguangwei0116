@@ -32,8 +32,8 @@
 #define PROFILE_VERSION                         0x81
 #define PROFILE                                 0x81
 
-#define ARRAY_SIZE(a)           (sizeof((a)) / sizeof((a)[0]))
-#define SHARE_PROFILE           "profile_list.der"
+#define ARRAY_SIZE(a)                           (sizeof((a)) / sizeof((a)[0]))
+#define SHARE_PROFILE                           "/data/redtea/profile_list.der"
 
 typedef struct PROFILE_DATA {
     uint32_t file_info_offset;

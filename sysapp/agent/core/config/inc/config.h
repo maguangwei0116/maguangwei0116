@@ -23,7 +23,7 @@
 #define DEFAULT_OTI_ENVIRONMENT_PORT            7082
 #define DEFAULT_EMQ_SERVER_ADDR                 "18.136.190.97"  // 默认生产环境EMQ地址
 #define DEFAULT_PROXY_SERVER_ADDR               "smdp.redtea.io"  //默认生产环境smdp地址
-#define DEFAULT_CARD_TYPE_FLAG                  1  // 是否生成/data/card_type文件
+#define DEFAULT_CARD_TYPE_FLAG                  1  // 是否生成card_type文件
 #define DEFAULT_MBN_CONFIGURATION               1  // 默认开启MBN配置功能
 #define DEFAULT_LOG_FILE_SIZE                   1  // 默认log大小为1M
 #define DEFAULT_MBN_CONFIGURATION               1  // 默认开启MBN配置功能
