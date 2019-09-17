@@ -30,7 +30,7 @@ static const char *keys[] = {
         "LOG_FILE_SIZE",
         "INIT_PROFILE_TYPE",
         "RPLMN_ENABLE",
-        "DEFAULT_LPA_CHANNEL",
+        "UICC_MODE",
 };
 
 /* The description of config item */
@@ -43,7 +43,7 @@ static const char *annotations[] = {
         "The max size of rt_log file (M)",
         "The rules of the first boot option profile (0:Provisioning 1:Operational 2:last)",
         "Whether set the rplmn",
-        "Default LPA channel (0:IPC  1:QMI)"
+        "The mode of UICC (0:vUICC  1:eUICC)"
 };
 
 /* the keyvalue of config item */
@@ -57,7 +57,7 @@ int32_t MBN_CONFIGURATION = DEFAULT_MBN_CONFIGURATION;  // MBN配置开关
 int32_t LOG_FILE_SIZE = DEFAULT_LOG_FILE_SIZE;  // 默认log文件的大小
 int32_t INIT_PROFILE_TYPE = DEFAULT_INIT_PROFILE_TYPE;  // 默认使用上一张卡登网
 int32_t RPLMN_ENABLE = DEFAULT_RPLMN_ENABLE;  //rplmn默认打开设置
-int32_t LPA_CHANNEL = DEFAULT_LPA_CHANNEL;  // LPA默认走QMI通道
+int32_t UICC_MODE = DEFAULT_UICC_MODE;  // 默认使用eUICC
 
 /*****************************************************************************
  * FUNCTION
@@ -338,7 +338,7 @@ int32_t rt_config_init(void *arg)
         parse_config_file();
     }
 
-    public_value_list->lpa_channel_type = (LPA_CHANNEL == LPA_CHANNEL_BY_IPC) ? LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
+    public_value_list->lpa_channel_type = (UICC_MODE == UICC_MODE_vUICC) ? LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
 
     return RT_SUCCESS;
 }
@@ -353,36 +353,36 @@ void parse_config_file(void)
     read_config_file(CONFIG_FILE_PATH, keys, values, MAX_VALUE_SIZE, ARRAY_SIZE(keys));
     if (get_config_data(_DIS_CONNECT_WAIT_TIME, &value_p) == RT_SUCCESS)
         DIS_CONNECT_WAIT_TIME = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "DIS_CONNECT_WAIT_TIME:%d\n", DIS_CONNECT_WAIT_TIME);
+    MSG_PRINTF(LOG_DBG, "DIS_CONNECT_WAIT_TIME : %d\n", DIS_CONNECT_WAIT_TIME);
 
     get_config_data(_OTI_ENVIRONMENT_ADDR, &OTI_ENVIRONMENT_ADDR);
-    MSG_PRINTF(LOG_DBG, "RT_ENVIRONMENT_ADDR:%s\n", OTI_ENVIRONMENT_ADDR);
+    MSG_PRINTF(LOG_DBG, "RT_ENVIRONMENT_ADDR   : %s\n", OTI_ENVIRONMENT_ADDR);
 
     get_config_data(_EMQ_SERVER_ADDR, &EMQ_SERVER_ADDR);
-    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR:%s\n", EMQ_SERVER_ADDR);
+    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", EMQ_SERVER_ADDR);
 
     get_config_data(_PROXY_SERVER_ADDR, &PROXY_SERVER_ADDR);
-    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR:%s\n", PROXY_SERVER_ADDR);
+    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", PROXY_SERVER_ADDR);
 
     if (get_config_data(_LOG_FILE_SIZE, &value_p) == RT_SUCCESS)
         LOG_FILE_SIZE = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE:%d\n", LOG_FILE_SIZE);
+    MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE         : %d\n", LOG_FILE_SIZE);
 
     if (get_config_data(_MBN_CONFIGURATION, &value_p) == RT_SUCCESS)
         MBN_CONFIGURATION = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION:%d\n", MBN_CONFIGURATION);
+    MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION     : %d\n", MBN_CONFIGURATION);
 
     if (get_config_data(_INIT_PROFILE_TYPE, &value_p) == RT_SUCCESS)
         INIT_PROFILE_TYPE = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE:%d\n", INIT_PROFILE_TYPE);
+    MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE     : %d\n", INIT_PROFILE_TYPE);
 
     if (get_config_data(_RPLMN_ENABLE, &value_p) == RT_SUCCESS)
         RPLMN_ENABLE = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE:%d\n", RPLMN_ENABLE);
+    MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE          : %d\n", RPLMN_ENABLE);
 
-    if (get_config_data(_LPA_CHANNEL, &value_p) == RT_SUCCESS)
-        LPA_CHANNEL = msg_string_to_int(value_p);
-    MSG_PRINTF(LOG_DBG, "LPA_CHANNEL:%d\n", LPA_CHANNEL);
+    if (get_config_data(_UICC_MODE, &value_p) == RT_SUCCESS)
+        UICC_MODE = msg_string_to_int(value_p);
+    MSG_PRINTF(LOG_DBG, "UICC_MODE             : %s\n", (UICC_MODE == UICC_MODE_vUICC) ? "vUICC" : "eUICC");
 }
 
 /**
@@ -410,10 +410,20 @@ void modify_config_file(void)
     snprintf(buf, 10, "%d", RPLMN_ENABLE);
     set_config_data(_RPLMN_ENABLE, buf);
 
-    snprintf(buf, 10, "%d", LPA_CHANNEL);
-    set_config_data(_LPA_CHANNEL, buf);
+    snprintf(buf, 10, "%d", UICC_MODE);
+    set_config_data(_UICC_MODE, buf);
 
     write_config_file(CONFIG_FILE_PATH, keys, values, annotations, ARRAY_SIZE(keys));
+
+    MSG_PRINTF(LOG_DBG, "DIS_CONNECT_WAIT_TIME : %d\n", DIS_CONNECT_WAIT_TIME);
+    MSG_PRINTF(LOG_DBG, "RT_ENVIRONMENT_ADDR   : %s\n", OTI_ENVIRONMENT_ADDR);
+    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", EMQ_SERVER_ADDR);
+    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", PROXY_SERVER_ADDR);
+    MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE         : %d\n", LOG_FILE_SIZE);
+    MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION     : %d\n", MBN_CONFIGURATION);
+    MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE     : %d\n", INIT_PROFILE_TYPE);
+    MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE          : %d\n", RPLMN_ENABLE);
+    MSG_PRINTF(LOG_DBG, "UICC_MODE             : %s\n", (UICC_MODE == UICC_MODE_vUICC) ? "vUICC" : "eUICC");
 }
 
 /**

@@ -29,7 +29,7 @@
 #define DEFAULT_MBN_CONFIGURATION               1  // 默认开启MBN配置功能
 #define DEFAULT_INIT_PROFILE_TYPE               2  // 默认启用上一张卡
 #define DEFAULT_RPLMN_ENABLE                    1  //默认开启rplmn配置功能
-#define DEFAULT_LPA_CHANNEL                     1  //默认使用QMI通道，即实体卡模式
+#define DEFAULT_UICC_MODE                       UICC_MODE_eUICC  //默认使用QMI通道，即实体卡模式(eUICC)
 
 /********************************platform**************************************/
 
@@ -38,7 +38,7 @@
 #endif
 
 typedef enum config_type {
-    _DIS_CONNECT_WAIT_TIME = 0,
+    _DIS_CONNECT_WAIT_TIME  = 0,
     _OTI_ENVIRONMENT_ADDR,
     _EMQ_SERVER_ADDR,
     _PROXY_SERVER_ADDR,
@@ -46,8 +46,13 @@ typedef enum config_type {
     _LOG_FILE_SIZE,
     _INIT_PROFILE_TYPE,
     _RPLMN_ENABLE,
-    _LPA_CHANNEL
+    _UICC_MODE
 } config_type_e;
+
+typedef enum _uicc_mode_e {
+    UICC_MODE_vUICC         = 0,
+    UICC_MODE_eUICC         = 1,
+} uicc_mode_e;
 
 extern int32_t DIS_CONNECT_WAIT_TIME;
 extern int8_t *OTI_ENVIRONMENT_ADDR;
@@ -57,6 +62,7 @@ extern int32_t MBN_CONFIGURATION;
 extern int32_t LOG_FILE_SIZE;
 extern int32_t INIT_PROFILE_TYPE;
 extern int32_t RPLMN_ENABLE;
+extern int32_t UICC_MODE;
 
 int32_t rt_config_init(void *arg);
 void modify_config_file(void);
