@@ -8,25 +8,27 @@ RELEASE_BUILD_DIR=$(BUILD_DIR)/release
 RELEASE_VERSION=$(call qstrip,$(BR2_RELEASE_VERSION))
 #$(warning BR2_RELEASE_TARGET=$(BR2_RELEASE_TARGET))
 RELEASE_TARGET=$(call qstrip,$(BR2_RELEASE_TARGET))
+RELEASE_ENV_TYPE=$(call qstrip,$(BR2_ENV_TYPE))
 
 RELEASE_README=README.txt
 ADB_PUSH_SHELL=adb-push.sh
 RELEASE_AUTHOR=$(shell whoami)
 RELEASE_DATE=$(shell date +"%Y%m%d")
 RELEASE_TIME=$(shell date +"%Y-%m-%d %T")
-RELEASE_TAR_FILE=$(RELEASE_TARGET)-targets-$(RELEASE_VERSION)-$(RELEASE_DATE).zip
+RELEASE_TAR_FILE=$(RELEASE_TARGET)-$(RELEASE_ENV_TYPE)-targets-$(RELEASE_VERSION)-$(RELEASE_DATE).zip
 
 # Auto generate README.txt
 define CREATE_RELEASE_README
 	echo "" >$(1);\
     echo "/* Auto-generated readme for released targets ! */" >$(1);\
     echo "" >>$(1);\
-    echo "Author  : ${RELEASE_AUTHOR}" >>$(1);\
-    echo "Time    : ${RELEASE_TIME}" >>$(1);\
-	echo "Version : ${RELEASE_VERSION}" >>$(1);\
-	echo "Target  : ${RELEASE_TARGET}" >>$(1);\
+    echo "Author      : ${RELEASE_AUTHOR}" >>$(1);\
+    echo "Time        : ${RELEASE_TIME}" >>$(1);\
+	echo "Version     : ${RELEASE_VERSION}" >>$(1);\
+	echo "Target      : ${RELEASE_TARGET}" >>$(1);\
+	echo "Environment : ${RELEASE_ENV_TYPE}" >>$(1);\
 	echo "" >>$(1);\
-	echo "Tips    : " >>$(1);\
+	echo "Tips : " >>$(1);\
 	echo "1.Copy $(RELEASE_TAR_FILE) into your debug computer;" >>$(1);\
 	echo "2.Unzip $(RELEASE_TAR_FILE) with cmd [ unzip $(RELEASE_TAR_FILE) ];" >>$(1);\
 	echo "3.Read doc in ./$(shell basename $(RELEASE_INSTALL_PATH))/$(RELEASE_README) which you are reading;" >>$(1);\
