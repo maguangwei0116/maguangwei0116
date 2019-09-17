@@ -1,4 +1,7 @@
 
+#ifdef CFG_AGENT_OTA_ON
+#warning AGENT_OTA_ON on ...
+
 #include "rt_type.h"
 #include "rt_os.h"
 #include "log.h"
@@ -7,6 +10,7 @@
 #include "upgrade.h"
 #include "hash.h"
 #include "http_client.h"
+#include "file.h"
 #include "cJSON.h"
 
 #if 0
@@ -99,8 +103,92 @@ typedef struct _ota_upgrade_param_t {
 #define MAX_RESTART_WAIT_TIMEOUT    10
 #define PRIVATE_HASH_STR_LEN        64
 #define HASH_CHECK_BLOCK            1024    /* block size for HASH check */
+#define OTA_UPGRADE_TMP_TASK        "/data/redtea/ota.task.tmp"
 
-extern const card_info_t *g_ota_card_info;
+static const card_info_t *g_ota_card_info = NULL;
+
+typedef struct _ota_task_info_t {
+    uint32_t            param_len;
+    char                tmp_file[MAX_FILE_NAME_LEN + 1];     // the full path in local file system 
+    char                event[64 + 1];
+    ota_upgrade_param_t param;
+} ota_task_info_t;
+
+static int32_t ota_upgrade_start(const void *in, const char *upload_event, const char *tmp_file);
+
+static int32_t ota_upgrade_task_record(const void *param, uint32_t param_len, const char *tmp_file, const char *event)
+{  
+    int32_t ret = -1;
+    rt_fshandle_t fp = NULL;
+    ota_task_info_t task = {0};
+    
+    fp = rt_fopen(OTA_UPGRADE_TMP_TASK, "w+");
+    OTA_CHK_PINTER_NULL(fp, -1);
+
+    task.param_len = param_len;
+    rt_os_memcpy(&task.param, param, param_len);
+    snprintf(task.tmp_file, sizeof(task.tmp_file), "%s", tmp_file);
+    snprintf(task.event, sizeof(task.event), "%s", event);
+    rt_fwrite(&task, 1, sizeof(task), fp);
+    
+    rt_fclose(fp);
+
+    ret = 0;
+
+exit_entry:
+
+    return ret;
+}
+
+int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    static int32_t g_task_check = 0;    
+    int32_t ret = -1;
+
+    if (MSG_NETWORK_CONNECTED == mode && !g_task_check && rt_file_exist(OTA_UPGRADE_TMP_TASK)) {
+        rt_fshandle_t fp = NULL;
+        ota_task_info_t task = {0};
+        ota_upgrade_param_t *param = NULL;
+
+        g_task_check = 1;
+        fp = rt_fopen(OTA_UPGRADE_TMP_TASK, "r"); 
+        OTA_CHK_PINTER_NULL(fp, -1);
+        rt_fread(&task, 1, sizeof(task), fp);
+        rt_fclose(fp);
+        OTA_CHK_PINTER_NULL(task.param_len, -2);
+
+        MSG_PRINTF(LOG_INFO, "OTA remain task list          : \r\n");
+        MSG_PRINTF(LOG_INFO, "param->tranId                 : %s\r\n", task.param.tranId);
+        MSG_PRINTF(LOG_INFO, "param->target.name            : %s\r\n", task.param.target.name);
+        MSG_PRINTF(LOG_INFO, "param->target.version         : %s\r\n", task.param.target.version);
+        MSG_PRINTF(LOG_INFO, "param->target.chipModel       : %s\r\n", task.param.target.chipModel);
+        MSG_PRINTF(LOG_INFO, "param->target.ticket          : %s\r\n", task.param.target.ticket);
+        MSG_PRINTF(LOG_INFO, "param->target.fileHash        : %s\r\n", task.param.target.fileHash);
+        MSG_PRINTF(LOG_INFO, "param->policy.forced          : %d\r\n", task.param.policy.forced);
+        MSG_PRINTF(LOG_INFO, "param->policy.executionType   : %s\r\n", task.param.policy.executionType);
+        MSG_PRINTF(LOG_INFO, "param->policy.profileType     : %d\r\n", task.param.policy.profileType);
+        MSG_PRINTF(LOG_INFO, "param->policy.retryAttempts   : %d\r\n", task.param.policy.retryAttempts);
+        MSG_PRINTF(LOG_INFO, "param->policy.retryInterval   : %d\r\n", task.param.policy.retryInterval);        
+        MSG_PRINTF(LOG_WARN, "ota task, len=%d, tmp-file: %s, event: %s\r\n", task.param_len, task.tmp_file, task.event); 
+
+        param = (ota_upgrade_param_t *)rt_os_malloc(sizeof(ota_upgrade_param_t));
+        OTA_CHK_PINTER_NULL(param, -3);
+        rt_os_memcpy(param, &task.param, sizeof(ota_upgrade_param_t));
+        ota_upgrade_start(param, task.event, task.tmp_file);
+
+        ret = 0;
+    }
+
+exit_entry:
+
+    return ret;
+}
+
+static int32_t ota_upgrade_task_cleanup(void)
+{
+    rt_os_unlink(OTA_UPGRADE_TMP_TASK);
+    return 0;  
+}
 
 static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
 {
@@ -250,7 +338,7 @@ static rt_bool ota_policy_compare_version(const char *old_in, const char *new_in
         }
     }
 
-    MSG_PRINTF(LOG_WARN, "unmathed version [%s] = [%s]\r\n", old_in, new_in);
+    MSG_PRINTF(LOG_WARN, "unmathed version [%s] => [%s]\r\n", old_in, new_in);
     return RT_FALSE;
 }
 
@@ -263,51 +351,54 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
     } else if (!rt_os_strcmp(param->policy.executionType, "REBOOT")) {
         upgrade->execute_app_now = RT_FALSE;
     } else {
-        MSG_PRINTF(LOG_WARN, "unknow execution type !\r\n");
+        MSG_PRINTF(LOG_WARN, "unknow execution type %s\r\n", param->policy.executionType);
         ret = UPGRADE_EXECUTION_TYPE_ERROR;
         goto exit_entry; 
     }
 
     if (param->policy.profileType == UPGRADE_PRO_TYPE_ANY) {
-    } else if (param->policy.profileType == UPGRADE_PRO_TYPE_OPERATIONAL && g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
-        MSG_PRINTF(LOG_WARN, "unmathed profile type !\r\n");
-        ret = UPGRADE_PROFILE_TYPE_ERROR;
-        goto exit_entry;         
+    } else if (param->policy.profileType == UPGRADE_PRO_TYPE_OPERATIONAL) {
+        if (g_ota_card_info->type != PROFILE_TYPE_OPERATIONAL) {
+            MSG_PRINTF(LOG_WARN, "unmathed profile type %d/%d\r\n", param->policy.profileType, g_ota_card_info->type);
+            ret = UPGRADE_PROFILE_TYPE_ERROR;
+            goto exit_entry;  
+        }
     } else {
-        MSG_PRINTF(LOG_WARN, "unknow profile type !\r\n");
+        MSG_PRINTF(LOG_WARN, "unknow profile type %d/%d\r\n", param->policy.profileType, g_ota_card_info->type);
         ret = UPGRADE_PROFILE_TYPE_ERROR;
         goto exit_entry; 
     }
 
-    if (rt_os_strcmp(param->target.chipModel, AGENT_LOCAL_PLATFORM_TYPE)) {
-        MSG_PRINTF(LOG_WARN, "unmathed platform type !\r\n");
+    if (rt_os_strcmp(param->target.chipModel, LOCAL_TARGET_PLATFORM_TYPE)) {
+        MSG_PRINTF(LOG_WARN, "unmathed platform type [%s] => [%s]\r\n", LOCAL_TARGET_PLATFORM_TYPE, param->target.chipModel);
         ret = UPGRADE_FILE_NAME_ERROR;
         goto exit_entry;         
     }
 
     if (param->policy.forced == UPGRADE_MODE_FORCED) {
-        MSG_PRINTF(LOG_WARN, "forced to upgrade !\r\n");
-        ret = 0;
-        goto exit_entry;   
+        MSG_PRINTF(LOG_WARN, "forced to upgrade\r\n");   
     } else {
-        if (param->policy.forced == UPGRADE_MODE_CHK_FILE_NAME && rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
-            MSG_PRINTF(LOG_WARN, "unmathed file name!\r\n");
-            ret = UPGRADE_FILE_NAME_ERROR;
-            goto exit_entry;  
-        } else if (param->policy.forced == UPGRADE_MODE_CHK_VERSION && \
-                        !ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
-            MSG_PRINTF(LOG_WARN, "unmathed version name !\r\n");
-            ret = UPGRADE_CHECK_VERSION_ERROR;
-            goto exit_entry;   
+        if (param->policy.forced == UPGRADE_MODE_CHK_FILE_NAME) {
+            if (rt_os_strcmp(param->target.name, LOCAL_TARGET_NAME)) {
+                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", LOCAL_TARGET_NAME, param->target.name);
+                ret = UPGRADE_FILE_NAME_ERROR;
+                goto exit_entry;  
+            }
+        } else if (param->policy.forced == UPGRADE_MODE_CHK_VERSION ) {
+            if (!ota_policy_compare_version(LOCAL_TARGET_VERSION, param->target.version)) {
+                MSG_PRINTF(LOG_WARN, "unmathed version name\r\n");
+                ret = UPGRADE_CHECK_VERSION_ERROR;
+                goto exit_entry; 
+            }
         } else if (param->policy.forced == UPGRADE_MODE_NO_FORCED) {
-             if (rt_os_strcmp(param->target.name, AGENT_LOCAL_NAME)) {
-                MSG_PRINTF(LOG_WARN, "unmathed file name!\r\n");
+             if (rt_os_strcmp(param->target.name, LOCAL_TARGET_NAME)) {
+                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", LOCAL_TARGET_NAME, param->target.name);
                 ret = UPGRADE_FILE_NAME_ERROR;
                 goto exit_entry; 
              }
 
-             if (!ota_policy_compare_version(AGENT_LOCAL_VERSION, param->target.version)) {
-                MSG_PRINTF(LOG_WARN, "unmathed version name !\r\n");
+             if (!ota_policy_compare_version(LOCAL_TARGET_VERSION, param->target.version)) {
+                MSG_PRINTF(LOG_WARN, "unmathed version name\r\n");
                 ret = UPGRADE_CHECK_VERSION_ERROR;
                 goto exit_entry; 
              }
@@ -327,8 +418,8 @@ static rt_bool ota_file_check(const void *arg)
     rt_bool ret = RT_FALSE;
     sha256_ctx sha_ctx;
     FILE *fp = NULL;
-    int8_t hash_result[MAX_FILE_HASH_LEN + 1];  // hash???????
-    int8_t hash_out[MAX_FILE_HASH_LEN + 1];
+    int8_t hash_result[MAX_FILE_HASH_LEN + 1];
+    int8_t hash_out[MAX_FILE_HASH_BYTE_LEN + 1];
     int8_t hash_buffer[HASH_CHECK_BLOCK];
     int8_t last_hash_buffer[PRIVATE_HASH_STR_LEN + 1] = {0};
     uint32_t check_size;
@@ -344,26 +435,26 @@ static rt_bool ota_file_check(const void *arg)
     if (f_info.st_size < HASH_CHECK_BLOCK) {
         rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
         RT_CHECK_ERR(fread(hash_buffer, f_info.st_size, 1, fp), 0);
-        sha256_update(&sha_ctx,(uint8_t *)hash_buffer, f_info.st_size);
+        sha256_update(&sha_ctx, (uint8_t *)hash_buffer, f_info.st_size);
     } else {
         for (check_size = HASH_CHECK_BLOCK; check_size < f_info.st_size; check_size += HASH_CHECK_BLOCK) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             RT_CHECK_ERR(fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp), 0);
-            sha256_update(&sha_ctx,(uint8_t *)hash_buffer, HASH_CHECK_BLOCK);
+            sha256_update(&sha_ctx, (uint8_t *)hash_buffer, HASH_CHECK_BLOCK);
         }
 
         partlen = f_info.st_size + HASH_CHECK_BLOCK - check_size;
         if (partlen > 0) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             RT_CHECK_ERR(fread(hash_buffer, partlen, 1, fp), 0);
-            sha256_update(&sha_ctx,(uint8_t *)hash_buffer, partlen);
+            sha256_update(&sha_ctx, (uint8_t *)hash_buffer, partlen);
         }
 
         RT_CHECK_ERR(fread(last_hash_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
     }
 
-    sha256_final(&sha_ctx,(uint8_t *)hash_out);
-    bytestring_to_charstring(hash_out, hash_result, 32);
+    sha256_final(&sha_ctx, (uint8_t *)hash_out);
+    bytestring_to_charstring(hash_out, hash_result, MAX_FILE_HASH_BYTE_LEN);
 
     MSG_PRINTF(LOG_WARN, "calc hash_result: %s\r\n", hash_result);
     MSG_PRINTF(LOG_WARN, "tail hash_result: %s\r\n", last_hash_buffer);
@@ -384,23 +475,23 @@ static rt_bool ota_file_install(const void *arg)
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
     rt_bool ret = RT_FALSE;
     
-    /* 进行app替换 */
+    /* app replace */
     MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
     if (rt_os_rename(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
         MSG_PRINTF(LOG_WARN, "re-name error\n");
         goto exit_entry;
     }
 
-    /* 权限设置 */
+    /* add app executable mode */
     if (rt_os_chmod(upgrade->targetFileName, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) != 0) {
         MSG_PRINTF(LOG_WARN, "change mode error\n");
         goto exit_entry;
     }
 
-    /* 设置升级成功标志位 */
+    /* set upgrade ok flag */
     //SET_UPGRADE_STATUS(upgrade, 1);
 
-    /* 连续两次sync保证新软件同步到本地flash */
+    /* sync data to flash */
     rt_os_sync();
     rt_os_sync();
 
@@ -424,12 +515,15 @@ static rt_bool ota_on_upload_event(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
-    upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade); 
+    upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade);
+
+    ota_upgrade_task_cleanup();
 
     /* restart app right now */
     if (UPGRADE_NO_FAILURE == upgrade->downloadResult && upgrade->execute_app_now) {
         MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);
         rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
+        MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");
         rt_os_exit(-1);
     }
 
@@ -442,7 +536,7 @@ static rt_bool ota_on_upload_event(const void *arg)
     return RT_TRUE;
 }
 
-static int32_t ota_upgrade_start(const void *in, const char *upload_event)
+static int32_t ota_upgrade_start(const void *in, const char *upload_event, const char *tmp_file)
 {
     int32_t ret;
     rt_task id;
@@ -468,7 +562,11 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event)
     snprintf(upgrade->event, sizeof(upgrade->event), "%s", upload_event);
     upgrade->retryAttempts = param->policy.retryAttempts;
     upgrade->retryInterval = param->policy.retryInterval;    
-    ota_upgrade_get_tmp_file_name(param, upgrade->tmpFileName, sizeof(upgrade->tmpFileName));
+    if (!tmp_file) {
+        ota_upgrade_get_tmp_file_name(param, upgrade->tmpFileName, sizeof(upgrade->tmpFileName));
+    } else {
+        snprintf(upgrade->tmpFileName, sizeof(upgrade->tmpFileName), "%s", tmp_file);
+    }
     if (ota_upgrade_get_target_file_name(param, upgrade->targetFileName, sizeof(upgrade->targetFileName)) != RT_TRUE) {
         ret = UPGRADE_FILE_NAME_ERROR;
         goto exit_entry;
@@ -479,6 +577,8 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event)
     upgrade->install    = ota_file_install;
     upgrade->cleanup    = ota_file_cleanup;
     upgrade->on_event   = ota_on_upload_event;
+
+    ota_upgrade_task_record(param, sizeof(ota_upgrade_param_t), upgrade->tmpFileName, upload_event);
 
     /* check private uprade policy */
     ret = ota_policy_check(param, upgrade);
@@ -528,7 +628,7 @@ static int32_t ota_upgrade_handler(const void *in, const char *event, void **out
         MSG_PRINTF(LOG_INFO, "param->policy.retryAttempts   : %d\r\n", param->policy.retryAttempts);
         MSG_PRINTF(LOG_INFO, "param->policy.retryInterval   : %d\r\n", param->policy.retryInterval);
 
-        ret = ota_upgrade_start(param, event);
+        ret = ota_upgrade_start(param, event, NULL);
 
         /* release input param memory */
         if (param) {
@@ -539,7 +639,6 @@ static int32_t ota_upgrade_handler(const void *in, const char *event, void **out
 
 exit_entry:
 
-    MSG_PRINTF(LOG_WARN, "ret=%d\n", ret);
     return ret;
 }
 
@@ -548,9 +647,9 @@ static cJSON *ota_upgrade_packer(void *arg)
     int32_t ret = 0;
     cJSON *app_version = NULL;
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
-    const char *name = AGENT_LOCAL_NAME;
-    const char *version = AGENT_LOCAL_VERSION;
-    const char *chipModel = AGENT_LOCAL_PLATFORM_TYPE;
+    const char *name = LOCAL_TARGET_NAME;
+    const char *version = LOCAL_TARGET_VERSION;
+    const char *chipModel = LOCAL_TARGET_PLATFORM_TYPE;
 
     if (upgrade) {
         name = upgrade->targetName;
@@ -578,7 +677,41 @@ exit_entry:
     return !ret ? app_version : NULL;   
 }
 
+int32_t ota_upgrade_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    int32_t status = 0;
+    downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
+
+    (void)mode;
+    MSG_PRINTF(LOG_INFO, "msg: %s (%d bytes) ==> method: %s ==> event: %s\n", 
+        downstream_msg->msg, downstream_msg->msg_len, downstream_msg->method, downstream_msg->event);
+    
+    downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
+    if (downstream_msg->msg) {
+        rt_os_free(downstream_msg->msg);
+        downstream_msg->msg = NULL;
+    }
+    //MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
+
+    status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
+
+    return 0;
+}
+
+int32_t init_ota(void *arg)
+{
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
+
+    g_ota_card_info = (const card_info_t *)public_value_list->card_info->info;
+
+    MSG_PRINTF(LOG_WARN, "profile type : %p, %d\n", &g_ota_card_info->type, g_ota_card_info->type);
+
+    return 0;
+}
+
 DOWNSTREAM_METHOD_OBJ_INIT(UPGRADE, MSG_ID_OTA_UPGRADE, ON_UPGRADE, ota_upgrade_parser, ota_upgrade_handler);
 
 UPLOAD_EVENT_OBJ_INIT(ON_UPGRADE, ota_upgrade_packer);
+
+#endif
 

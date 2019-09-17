@@ -100,7 +100,11 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
     int32_t ret = RT_ERROR;
 
     ret = lpa_load_cert(buf, len);
-    card_update_eid();
+    ret = card_update_eid();
+    if (!ret) {
+        MSG_PRINTF(LOG_WARN, "EID changed, upload INIT event\n");
+        upload_event_report("INIT", NULL, 0, NULL);
+    }
 
     return ret;
 }

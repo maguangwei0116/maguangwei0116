@@ -48,6 +48,7 @@ static void display_progress(http_client_struct_t *obj)
     #else
     int percentage = ((float)obj->process_length / obj->file_length) * 100;
     MSG_PRINTF(LOG_WARN, "file download [%s] : %3d%% (%7d/%-7d)\r\n", obj->file_path, percentage, obj->process_length, obj->file_length);
+    //rt_os_sleep(1);  // only for test
     #endif
 }
 
@@ -84,7 +85,7 @@ static int http_client_upload_init(http_client_struct_t *obj)
                                 obj->http_header.url_interface,
                                 &obj->http_header.port), 0);
 
-    MSG_PRINTF(LOG_WARN, "addr:%s,port:%d\n", obj->http_header.addr, obj->http_header.port);
+    MSG_PRINTF(LOG_INFO, "addr:%s,port:%d\n", obj->http_header.addr, obj->http_header.port);
 
     ipAddr.s_addr = inet_addr((char *)obj->http_header.addr);
     server_addr.sin_family = AF_INET;
@@ -133,7 +134,7 @@ static int http_client_download_init(http_client_struct_t *obj)
                                 obj->http_header.url_interface,
                                 &obj->http_header.port), 0);
 
-    MSG_PRINTF(LOG_WARN, "addr:%s,port:%d\n", obj->http_header.addr, obj->http_header.port);
+    MSG_PRINTF(LOG_INFO, "addr:%s,port:%d\n", obj->http_header.addr, obj->http_header.port);
 
     ipAddr.s_addr = inet_addr((char *)obj->http_header.addr);
     server_addr.sin_family = AF_INET;
@@ -214,22 +215,23 @@ static int http_client_recv(http_client_struct_t *obj)
     recvnum = 0;
     memset(obj->buf, 0, MAX_BLOCK_LEN);
     while(1) {
-      cnt = (int)recv(obj->socket, obj->buf + recvnum, obj->process_set, MSG_WAITALL);
-      if (cnt > 0) {
-        recvnum += cnt;
-        break;
-      } else if (cnt == 0) {
-        MSG_PRINTF(LOG_WARN, "Recv error because socket disconnect!!!\n");
-        recvnum = -1;
-        break;
-      } else {
-        if((cnt < 0) && (errno == EINTR)){
-          continue;
+        cnt = (int)recv(obj->socket, obj->buf + recvnum, obj->process_set, MSG_WAITALL);
+        //MSG_PRINTF(LOG_WARN, "Recv cnt: %d, obj->process_set=%d !!!\n", cnt, obj->process_set);
+        if (cnt > 0) {
+            recvnum += cnt;
+            break;
+        } else if (cnt == 0) {
+            MSG_PRINTF(LOG_WARN, "Recv error because socket disconnect!!!\n");
+            recvnum = -1;
+            break;
+        } else {
+            if((cnt < 0) && (errno == EINTR)){
+              continue;
+            }
+            recvnum = -1;
+            MSG_PRINTF(LOG_WARN, "Recv data error result:%s\n", strerror(errno));
+            break;
         }
-        recvnum = -1;
-        MSG_PRINTF(LOG_WARN, "Recv data error result:%s\n", strerror(errno));
-        break;
-      }
     }
     return recvnum;
 }
@@ -269,7 +271,7 @@ static int http_client_send_header(http_client_struct_t *obj)
     }
     strcat(obj->buf, "\r\n");
 
-    MSG_PRINTF(LOG_WARN, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
+    MSG_PRINTF(LOG_INFO, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
     obj->process_set = strlen(obj->buf);
     return http_client_send(obj);
 
@@ -293,7 +295,7 @@ static int http_client_get_resp_header(http_client_struct_t *obj)
             }
         } else {
             obj->buf[obj->process_length] = '\0';
-            MSG_PRINTF(LOG_WARN,"success--------flag:%d    buf:%s\n",flag,obj->buf);
+            MSG_PRINTF(LOG_INFO,"success--------flag:%d    buf:%s\n",flag,obj->buf);
             return 0;
         }
         obj->process_length++;
@@ -369,20 +371,23 @@ static int http_client_recv_data(http_client_struct_t *obj)
 
     /* If the process for download, loop to receive data */
     while (obj->remain_length > 0) {
-      if (obj->remain_length >= MAX_BLOCK_LEN) {
-          obj->process_set = MAX_BLOCK_LEN;
-      } else {
-          obj->process_set = obj->remain_length;
-      }
+        if (obj->remain_length >= MAX_BLOCK_LEN) {
+            obj->process_set = MAX_BLOCK_LEN;
+        } else {
+            obj->process_set = obj->remain_length;
+        }
 
-      /* http_client_recv内部已经做了失败的重新接收的机制，所以函数调用失败直接认定为此次下载失败 */
-      RT_CHECK_NEQ(http_client_recv(obj), obj->process_set);
-      RT_CHECK_NEQ(fwrite(obj->buf, obj->process_set, 1, obj->fp), 1);
-
-      obj->remain_length -= obj->process_set;
-      obj->process_length += obj->process_set;
+        /* http_client_recv内部已经做了失败的重新接收的机制，所以函数调用失败直接认定为此次下载失败 */
+        RT_CHECK_NEQ(http_client_recv(obj), obj->process_set);        
+        obj->remain_length -= obj->process_set;
+        obj->process_length += obj->process_set;
+        
 #if (VERSION_TYPE == DEBUG)
-      display_progress(obj);
+        //MSG_PRINTF(LOG_WARN, "obj->process_length=%d, obj->range=%d\r\n", obj->process_length, obj->range);
+        if (obj->process_length > obj->range) {
+            RT_CHECK_NEQ(fwrite(obj->buf, obj->process_set, 1, obj->fp), 1);
+            display_progress(obj);
+        }
 #endif
     }
 

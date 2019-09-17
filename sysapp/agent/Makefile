@@ -8,38 +8,38 @@
 ############################################################################################
 
 # Config your target here !
-TARGET 			= $(shell pwd | sed 's/^\(.*\)[/]//')
+TARGET 			                    = $(shell pwd | sed 's/^\(.*\)[/]//')
 
 # Config your environment, [staging] or [prod]
-ENV_TYPE		= prod
+ENV_TYPE		                    = prod
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
-AGENT_LOCAL_VERSION	= 1.2.4.6
+LOCAL_TARGET_VERSION	            = 0.0.0.1
 
 # Check input tag version
 ifdef AGENT_VERSION
-ifneq ($(AGENT_VERSION),$(AGENT_LOCAL_VERSION))
-$(error "Input tag version error (tag version v$(AGENT_VERSION), local version v$(AGENT_LOCAL_VERSION))!")
+ifneq ($(AGENT_VERSION),$(LOCAL_TARGET_VERSION))
+$(error "Input tag version error (tag version v$(AGENT_VERSION), local version v$(LOCAL_TARGET_VERSION))!")
 endif
 endif
 
 # Config your final release target name
-AGENT_LOCAL_NAME=$(SYSAPP_TARGET_NAME)
-AGENT_LOCAL_PLATFORM_TYPE=$(PLATFORM_TYPE)
-RELEASE_TARGET 	= $(SYSAPP_TARGET_NAME)_v$(AGENT_LOCAL_VERSION)_$(PLATFORM_TYPE)_$(ENV_TYPE)_$(DEBUG_TYPE)
+LOCAL_TARGET_NAME                   = $(SYSAPP_TARGET_NAME)
+LOCAL_TARGET_PLATFORM_TYPE          = $(PLATFORM_TYPE)
+LOCAL_TARGET_RELEASE                = $(SYSAPP_TARGET_NAME)_v$(LOCAL_TARGET_VERSION)_$(PLATFORM_TYPE)_$(ENV_TYPE)_$(DEBUG_TYPE)
 
 # Config your application target version with git hash and build time
-RELEASE_TARGET_VERSION = $(RELEASE_TARGET)_$(SYSAPP_GIT_HASH)_$(shell date +%Y-%m-%d_%H:%M:%S)
+LOCAL_TARGET_RELEASE_VERSION_NAME   = $(LOCAL_TARGET_RELEASE)_$(SYSAPP_GIT_HASH)_$(shell date +%Y-%m-%d_%H:%M:%S)
 
-# Config your own CFLAGS
-USER_CFLAGS		+= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
-USER_CFLAGS		+= -DAGENT_LOCAL_NAME=\"$(AGENT_LOCAL_NAME)\"
-USER_CFLAGS		+= -DAGENT_LOCAL_VERSION=\"$(AGENT_LOCAL_VERSION)\"
-USER_CFLAGS		+= -DAGENT_LOCAL_PLATFORM_TYPE=\"$(AGENT_LOCAL_PLATFORM_TYPE)\"
+# Config your own MACROs in CFLAGS
+USER_CFLAGS		                    += -DLOCAL_TARGET_RELEASE_VERSION_NAME=\"$(LOCAL_TARGET_RELEASE_VERSION_NAME)\"
+USER_CFLAGS		                    += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME)\"
+USER_CFLAGS		                    += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
+USER_CFLAGS		                    += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
 # Config your own libraries
-QMI-LIB 		= dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
-COMM-LIB 		= comm crypto ssl pthread
+QMI-LIB 		                    = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
+COMM-LIB 		                    = comm crypto ssl pthread
 
 ############################################################################
 ### path
@@ -92,6 +92,8 @@ SRC-y 			                        += ./core/upload/src/upload_info.c
 # Add your downstream-xxx cmd here
 SRC-y 			                        += ./core/downstream/src/downstream.c
 SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
+SRC-y 			                        += ./core/downstream/src/downstream_reboot.c
+SRC-y 			                        += ./core/downstream/src/downstream_reset.c
 SRC-y 			                        += ./core/cardm/src/msg_push_ac_cmd.c
 SRC-y 			                        += ./core/cardm/src/msg_delete_cmd.c
 SRC-y 			                        += ./core/cardm/src/msg_enable_cmd.c
@@ -100,9 +102,9 @@ SRC-y 			                        += ./core/cardm/src/msg_enable_cmd.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/downstream_issue_cert.c
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_init.c
 
 # OTA module
-SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/upgrade.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota_upgrade.c
 

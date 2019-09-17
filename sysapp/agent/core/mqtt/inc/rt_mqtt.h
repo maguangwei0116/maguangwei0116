@@ -16,6 +16,8 @@
 
 #define AGENT_ALIAS                     "agent"
 
+#define MQTT_KEEP_ALIVE_INTERVAL        300
+
 #define GET_CID_FLAG(flag)              ((flag) & 0x01)
 #define GET_AGENT_FLAG(flag)            (((flag) >> 1) & 0x01)
 #define GET_DEVICE_ID_FLAG(flag)        (((flag) >> 2) & 0x01)

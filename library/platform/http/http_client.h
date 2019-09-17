@@ -78,6 +78,7 @@ typedef struct http_client_struct {
     unsigned int process_length;  // Has the length of the data processing
     unsigned int remain_length;  // Has the length of the data processing
     unsigned int process_set;  // The need to deal with the length of the data
+    unsigned int range;
     unsigned char try_count;  // Data processing of attempts count
 
     FILE *fp;

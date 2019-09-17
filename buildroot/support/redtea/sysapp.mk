@@ -24,7 +24,7 @@ info:
 	@echo "TARGET=$(TARGET)"
 	@echo "REDTEA_SUPPORT_SCRIPTS_PATH=$(REDTEA_SUPPORT_SCRIPTS_PATH)"
 	@echo "SYSAPP_TARGET_NAME=$(SYSAPP_TARGET_NAME)"
-	@echo "RELEASE_TARGET=$(RELEASE_TARGET)"
+	@echo "LOCAL_TARGET_RELEASE=$(LOCAL_TARGET_RELEASE)"
 #	@echo "$(.VARIABLES)"
 	@echo "BR2_CONF_MK=$(BR2_CONF_MK)"
 
@@ -53,12 +53,12 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	$($(quiet)do_strip) --strip-all "$@"
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(ELF_FILE_NAME)
 	-$(Q)$(call SYSAPP_ADD_SHA256SUM,$(O)/$(TARGET_FILE_NAME))
-	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(RELEASE_TARGET)
-	-$(Q)$(CP) -rf $(O)/$(RELEASE_TARGET) $(SYSAPP_INSTALL_PATH)/
+	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(LOCAL_TARGET_RELEASE)
+	-$(Q)$(CP) -rf $(O)/$(LOCAL_TARGET_RELEASE) $(SYSAPP_INSTALL_PATH)/
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) "|"
-	@$(ECHO) "|   Finished building target: $(RELEASE_TARGET)"
+	@$(ECHO) "|   Finished building target: $(LOCAL_TARGET_RELEASE)"
 	@$(ECHO) "|"
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""

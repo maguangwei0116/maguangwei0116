@@ -209,7 +209,7 @@ static rt_bool upload_check_memory(const void *buf, int32_t len, int32_t value)
 static const char *upload_get_topic_name(void)
 {
     if (g_upload_eid) {
-        if (upload_check_memory(g_upload_eid, MAX_EID_HEX_LEN, '0') || !rt_os_strlen(g_upload_eid)) {
+        if (upload_check_memory(g_upload_eid, MAX_EID_LEN, '0') || !rt_os_strlen(g_upload_eid)) {
             return g_upload_device_info->device_id;
         } else {
             return g_upload_eid;
@@ -330,11 +330,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             cJSON *upload = NULL;
             cJSON *content = NULL;
             int32_t ret;
-            char *buf;
-            MSG_PRINTF(LOG_INFO, "private_arg:%p\n", private_arg);
-            buf = cJSON_Print((cJSON *)private_arg);
-            MSG_PRINTF(LOG_INFO, "private_arg:%p %s\n", buf, buf);
-            rt_os_free(buf);
+            
             content = obj->packer(private_arg);
             MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
             upload = upload_packet_all(tran_id, event, status, content);

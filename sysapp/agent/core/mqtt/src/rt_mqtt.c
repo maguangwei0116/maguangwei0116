@@ -55,9 +55,8 @@ typedef struct _mqtt_param_t {
 static mqtt_param_t g_mqtt_param    = {MQTTClient_connectOptions_initializer, 0};
 static const char *g_mqtt_eid       = NULL;
 static const char *g_mqtt_device_id = NULL;
+static network_state_info_e g_network_state = NETWORK_STATE_INIT;
 
-//TODO:
-static g_network_state = NETWORK_CONNECTING;
 network_state_info_e get_network_state(void)
 {
     return g_network_state;
@@ -69,12 +68,6 @@ void set_network_state(network_state_info_e state)
     g_network_state = state;
 }
 
-boot_state_info_e get_boot_flag(void)
-{
-    //return g_boot_flag;
-    return 1;
-}
-
 static void msg_parse(int8_t *message, int32_t len)
 {
     message[len] = '\0';
@@ -82,7 +75,7 @@ static void msg_parse(int8_t *message, int32_t len)
     downstream_msg_handle(message, len);
 }
 
-//���ػ���֮ǰ�Ĵ�adapter��ȡ��ticket server
+/* save cache ticket server which got from adapter into cache file */
 static rt_bool save_ticket_server(mqtt_info *opts)
 {
     cJSON   *obj = NULL;
@@ -137,7 +130,7 @@ exit_entry:
     return ret;
 }
 
-//��ȡ���ػ���Ĵ�adapter��ȡ��ticket server
+/* get cache ticket server which got from adapter from cache file */
 static rt_bool get_ticket_server(mqtt_info *opts)
 {
     int8_t  *save_info;
@@ -228,7 +221,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
     set_reg_url(OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
     MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
 
-    //�������Ǻ���Լ���ticket server adopter,��ೢ��3��
+    /* connect redtea adpater server with max 3 times to get ticket server addr and port */
     do {
         if (rt_mqtt_setup_with_appkey(ADAPTER_APPKEY, opts) == 0) {
             break;
@@ -247,7 +240,7 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", alias);
     }
 
-    //�����ȡ����ticket server
+    /* save ticket server into cache file */
     save_ticket_server(opts);
 
     return RT_TRUE;
@@ -275,7 +268,7 @@ static rt_bool rt_mqtt_connect_yunba(mqtt_param_t *param, int8_t *ticket_server)
         MSG_PRINTF(LOG_WARN, "ticket_server:%s, yunba addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
-    //����yunba server ��ೢ��3��
+    /* connect yunba mqtt server with max 3 times */
     do {
         int ret;
         if ((ret = MQTTClient_setup_with_appkey_and_deviceid(YUNBA_APPKEY, (char *)opts->device_id, opts)) == 0) {
@@ -319,6 +312,7 @@ static rt_bool rt_mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
         MSG_PRINTF(LOG_WARN, "ticket_server:%s, EMQ addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
+    /* connect EMQ mqtt server with max 3 times */
     do {
         if ((MQTTClient_setup_with_appkey(EMQ_APPKEY, opts) == 0) &&
            (MQTTClient_get_host((char *)opts->nodeName, (char *)opts->rt_url, EMQ_APPKEY) == 0)) {
@@ -376,14 +370,14 @@ FORCE_TO_ADAPTER:
             }
 
             if (get_ticket_server(&param->opts) == RT_TRUE) {
-                //���֮ǰ���ӵ���yunba��ticket server����ô��������
+                /* If connect yunba ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.rt_channel, "YUNBA", 5) &&
                       (rt_mqtt_connect_yunba(param, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_DBG, "connect YUNBA mqtt server successfull\n");
                     break;
                 }
 
-                //���֮ǰ���ӵ���EMQ��ticket server����ô��������
+                /* If connect EMQ ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.rt_channel, "EMQ", 3) &&
                       (rt_mqtt_connect_emq(param, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_DBG, "connect EMQ mqtt server successfull\n");
@@ -392,7 +386,7 @@ FORCE_TO_ADAPTER:
             }
         }
 
-        //���adapter �� ϵͳ�����ticket server���޷�ʹ�ã��ñ���д����ticket server��ַ��������
+        /* If connect adapter and ticket server all fail, and then try dead yunba server or EMQ server */
         if (!rt_os_strncmp(param->opts.rt_channel, "YUNBA", 5)) {
 FORCE_TO_EMQ:
             if (rt_mqtt_connect_emq(param, NULL) == RT_TRUE) {
@@ -471,6 +465,29 @@ static void connection_lost(void *context, char *cause)
     }
 }
 
+static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
+{
+    int32_t i = 0;
+    const uint8_t *p = (const uint8_t *)buf;
+
+    for (i = 0; i < len; i++) {
+        if (p[i] != value) {
+            return RT_FALSE;
+        }
+    }
+    return RT_TRUE;
+}
+
+static rt_bool eid_check_upload(void)
+{
+    if (!g_mqtt_eid || !rt_os_strlen(g_mqtt_eid) || eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')){
+        upload_event_report("NO_CERT", NULL, 0, NULL);
+        return RT_TRUE;
+    }  
+
+    return RT_FALSE;
+}
+
 //connect mqtt server
 static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
 {
@@ -506,9 +523,10 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
         MSG_PRINTF(LOG_DBG, "connecting emq mqtt server ...\n");
         pconn_opts->MQTTVersion = MQTTVERSION_3_1;
     }
-    pconn_opts->keepAliveInterval   = 300;
+    pconn_opts->keepAliveInterval   = MQTT_KEEP_ALIVE_INTERVAL;
     pconn_opts->reliable            = 0;
     pconn_opts->cleansession        = 0;
+    
     //MSG_PRINTF(LOG_DBG, "pconn_opts->struct_version=%d\n", pconn_opts->struct_version);
     if (my_connect(c, pconn_opts) == RT_FALSE) {
         if (++opts->try_connect_timer > MAX_TRY_CONNECT_TIME) {
@@ -521,45 +539,60 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
         return RT_FALSE;
     }
 
-    //rt_os_sleep(10);
-
     opts->last_connect_status = MQTT_CONNECT_SUCCESS;
     opts->try_connect_timer = 0;
     param->alias_rc = 1;
 
-   upload_event_report("REGISTERED", NULL, 0, NULL);
-   upload_event_report("NO_CERT", NULL, 0, NULL);
-
+    upload_event_report("REGISTERED", NULL, 0, NULL);
+    eid_check_upload();
+    
     return RT_TRUE;
 }
 
-#include "upload.h"
+static void rt_mqtt_set_alias(const char *eid, const char *device_id, rt_bool init_flag)
+{
+    rt_os_memset(g_mqtt_param.alias, 0, sizeof(g_mqtt_param.alias));
+    if (eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
+        rt_os_memcpy(g_mqtt_param.alias, device_id, rt_os_strlen(device_id));
+    } else {
+        rt_os_memcpy(g_mqtt_param.alias, eid, rt_os_strlen(eid));
+    }
+    
+    rt_os_memset(g_mqtt_param.opts.device_id, 0, sizeof(g_mqtt_param.opts.device_id));
+    rt_os_memcpy(g_mqtt_param.opts.device_id, device_id, rt_os_strlen(device_id));
+    
+    if (init_flag) {
+        rt_os_memset(g_mqtt_param.opts.client_id, 0, sizeof(g_mqtt_param.opts.client_id));
+        rt_os_memcpy(g_mqtt_param.opts.rt_channel, "EMQ", 3);  // default for EMQ
+        g_mqtt_param.alias_rc = 1;
+    }
+}
+
 static void mqtt_process_task(void)
 {
-    rt_os_sleep(10);
-
-    while(1) {
-        if (get_network_state() == NETWORK_CONNECTING) {
+    while(1) {        
+        if (get_network_state() == NETWORK_STATE_INIT) {
+            ;
+        } else if (get_network_state() == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
-                //��������Ѿ�������mqtt��ַ���ҵ�ַ���ã��Ͳ���ȥticket server��ȡmqtt��ַ
+                /* If cache mqtt server addr ok, and then needn't to conenct ticket server to get mqtt server */
                 if (g_mqtt_param.mqtt_get_addr == RT_FALSE) {
-                    //���������������mqtt����������Ҫ���½��ж���
+                    /* re-subcribe when re-connect mqtt server */
                     if (mqtt_get_server_addr(&g_mqtt_param) == RT_FALSE) {
                         continue;
                     }
                 }
 
-                //����mqtt������������ǰ�Ѿ��ӱ��ػ������ticket server adapter ��ȡmqtt��ַ��
-                if (rt_mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
-                    //if (get_boot_flag() != BOOT_STRAP_PROCESS) {
-                        //upload_set_values(REGISTER_PUSH_ID, NULL);
-                    //}
+                /* set mqtt global alias */
+                rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_FALSE);
 
-                    //�ɹ����ӷ�����������״̬��Ϊ������
+                /* conenct mqtt server which has been got from cache ticket server or from adapter server */
+                if (rt_mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
+                    /* set network using */
                     set_network_state(NETWORK_USING);
                     continue;
                 } else {
-                    //������ػ����mqtt server��hardcode��mqtt server���޷�ʹ�ã���ô����ȥ��ticket server��ȡһ��mqtt server
+                    /* If cache mqtt server and hardcode mqtt server all fail, and then connect ticket server to get mqtt server */
                     g_mqtt_param.mqtt_get_addr = RT_FALSE;
                 }
             }
@@ -569,7 +602,7 @@ static void mqtt_process_task(void)
                 MQTTClient_disconnect(g_mqtt_param.client, 0);
                 MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
                 g_mqtt_param.mqtt_flag      = RT_FALSE;
-                g_mqtt_param.subscribe_flag = RT_FALSE;  // ��λ���ı�־
+                g_mqtt_param.subscribe_flag = RT_FALSE;  // reset subscribe flag
             }
         } else if (get_network_state() == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.rt_channel);
@@ -586,13 +619,13 @@ static void mqtt_process_task(void)
             if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) ||
                 (GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
                 if(rt_os_strlen(g_mqtt_param.alias)) {
-                    /* subscribe cid/eid */
+                    /* subscribe [cid/eid] */
                     if ((GET_CID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) &&
                             (MQTTClient_subscribe(g_mqtt_param.client, (const char *)g_mqtt_param.alias, 1) == 0)) {
-                        MSG_PRINTF(LOG_DBG, "MQTTClient subscribe cid : %s OK !\n", g_mqtt_param.alias);
+                        MSG_PRINTF(LOG_DBG, "MQTTClient subscribe eid : %s OK !\n", g_mqtt_param.alias);
                         SET_CID_FLAG(g_mqtt_param.subscribe_flag);
                     } else {
-                        MSG_PRINTF(LOG_WARN, "MQTTClient subscribe cid : %s error !\n", g_mqtt_param.alias);
+                        MSG_PRINTF(LOG_WARN, "MQTTClient subscribe eid : %s error !\n", g_mqtt_param.alias);
                     }
                 } else {
                     MSG_PRINTF(LOG_WARN, "alias is error\n");
@@ -638,17 +671,6 @@ static int32_t mqtt_create_task(void)
     return RT_SUCCESS;
 }
 
-static void rt_mqtt_set_alias(const char *eid, const char *device_id)
-{
-    rt_os_memset(g_mqtt_param.alias, 0, sizeof(g_mqtt_param.alias));
-    rt_os_memcpy(g_mqtt_param.alias, eid, rt_os_strlen(eid));
-    rt_os_memset(g_mqtt_param.opts.device_id, 0, sizeof(g_mqtt_param.opts.device_id));
-    rt_os_memcpy(g_mqtt_param.opts.device_id, device_id, rt_os_strlen(device_id));
-    rt_os_memset(g_mqtt_param.opts.client_id, 0, sizeof(g_mqtt_param.opts.client_id));
-    rt_os_memcpy(g_mqtt_param.opts.rt_channel, "EMQ", 3);  // default for EMQ
-    g_mqtt_param.alias_rc = 1;
-}
-
 int8_t *rt_mqtt_get_channel(void)
 {
     return g_mqtt_param.opts.rt_channel;
@@ -664,7 +686,7 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.nodeName              = NULL;
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
     g_mqtt_param.opts.last_connect_status   = 0;  // Initialize the last link push the state of the system
-    rt_mqtt_set_alias((int8_t *)g_mqtt_eid, g_mqtt_device_id);
+    rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_TRUE);
     MQTTClient_init();
 }
 
@@ -687,5 +709,22 @@ int32_t init_mqtt(void *arg)
 exit_entry:
 
     return ret;
+}
+
+int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    (void)buf;
+    (void)len;
+
+    MSG_PRINTF(LOG_INFO, "mqtt connect event, mode: %d\r\n", mode);
+    if (MSG_NETWORK_CONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "mqtt network connected\r\n", mode);
+        set_network_state(NETWORK_CONNECTING);
+    } else if (MSG_NETWORK_DISCONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "mqtt network disconnected\r\n", mode);
+        set_network_state(NETWORK_DIS_CONNECTED);
+    } 
+
+    return RT_SUCCESS;
 }
 
