@@ -23,7 +23,7 @@
 #define DEFAULT_OTI_ENVIRONMENT_PORT            7082
 #define DEFAULT_EMQ_SERVER_ADDR                 "18.136.190.97"  // 默认生产环境EMQ地址
 #define DEFAULT_PROXY_SERVER_ADDR               "smdp.redtea.io"  //默认生产环境smdp地址
-#define DEFAULT_CARD_TYPE_FLAG                  1  // 是否生成/data/card_type文件
+#define DEFAULT_CARD_TYPE_FLAG                  1  // 是否生成card_type文件
 #define DEFAULT_MBN_CONFIGURATION               1  // 默认开启MBN配置功能
 #define DEFAULT_LOG_FILE_SIZE                   1  // 默认log大小为1M
 #define DEFAULT_MBN_CONFIGURATION               1  // 默认开启MBN配置功能
@@ -64,9 +64,8 @@ extern int32_t INIT_PROFILE_TYPE;
 extern int32_t RPLMN_ENABLE;
 extern int32_t UICC_MODE;
 
-int32_t rt_config_init(void *arg);
-void modify_config_file(void);
-void parse_config_file(void);
+int32_t init_config(void *arg);
+
 /**
 * 获取配置项的值
 * 如果配置项值为整形，那么data返回的是配置项的值。

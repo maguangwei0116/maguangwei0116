@@ -68,6 +68,11 @@ static int32_t init_monitor(void *arg)
     return RT_SUCCESS;
 }
 
+static int32_t init_qmi(void *arg)
+{
+    return rt_qmi_init(arg);
+}
+
 static int32_t init_files(void *arg)
 {
 #define DATA_REDTEA_PATH    "/data/redtea"
@@ -100,13 +105,13 @@ static const init_obj_t g_init_objs[] =
 {
     INIT_OBJ(init_versions,             NULL),
     INIT_OBJ(init_files,                NULL),
-    INIT_OBJ(rt_config_init,            (void *)&g_value_list),
+    INIT_OBJ(init_config,               (void *)&g_value_list),
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),
     INIT_OBJ(init_system_signal,        NULL),
     INIT_OBJ(init_timer,                NULL),
-    INIT_OBJ(rt_qmi_init,               NULL),
+    INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_queue,                (void *)&g_value_list),
     INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
