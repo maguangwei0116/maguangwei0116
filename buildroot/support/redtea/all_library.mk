@@ -34,14 +34,30 @@ liba: $(O)/$(LIB_A_NAME)
 define GEN_LIBRARY_VERSION_C
     echo "/* Auto-generated configuration version file, never modify it ! */" >$(1);\
     echo -e -n "#include <stdio.h>\n\n" >>$(1);\
-    echo -e -n "int libcomm_get_version(char *version, int size)\n" >>$(1);\
+    echo -e -n "int lib$(TARGET)_get_version(char *version, int size)\n" >>$(1);\
     echo -e -n "{\n" >>$(1);\
-    echo -e -n "    snprintf(version, size, \"libcomm version: v%s\", RELEASE_TARGET_VERSION);\n" >>$(1);\
+    echo -e -n "    snprintf(version, size, \"lib$(TARGET) version: %s\", RELEASE_TARGET_VERSION);\n" >>$(1);\
     echo -e -n "}\n" >>$(1)
+endef
+
+# Fucntion to generate version header file
+define GEN_LIBRARY_VERSION_H
+    echo "/* Auto-generated configuration version file, never modify it ! */" >$(1);\
+    echo -e -n "\n#ifndef __LIB_$(TARGET)_H__\n" >>$(1);\
+	echo -e -n "#define __LIB_$(TARGET)_H__\n\n" >>$(1);\
+    echo -e -n "extern int lib$(TARGET)_get_version(char *version, int size);\n" >>$(1);\
+    echo -e -n "\n" >>$(1);\
+    echo -e -n "#endif\n" >>$(1);\
+    echo -e -n "\n" >>$(1)
+endef
+
+define INSTALL_LIBRARY_VERSION_H
+	cp -rf $(1) $(SDK_INSTALL_PATH)/include
 endef
 
 # Generate version C file
 VERSION_FILE 	= $(O)/lib$(TARGET)_version.c
+VERSION_H_FILE 	= $(O)/lib$(TARGET).h
 SRC-y        	+= $(VERSION_FILE)
 
 # Config your own CFLAGS
@@ -49,6 +65,8 @@ USER_CFLAGS  	= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
 
 $(VERSION_FILE):
 	$(Q)$(call GEN_LIBRARY_VERSION_C,$@)
+	$(Q)$(call GEN_LIBRARY_VERSION_H,$(VERSION_H_FILE))
+	$(Q)$(call INSTALL_LIBRARY_VERSION_H,$(VERSION_H_FILE))
 
 $(OBJS): $(VERSION_FILE)
 
