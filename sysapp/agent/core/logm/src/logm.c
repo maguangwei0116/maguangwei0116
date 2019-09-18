@@ -198,6 +198,8 @@ static void log_file_upload(void *arg)
             if (++up_try_count > MAX_UPLOAD_RETRY_TIMES) {
                 break;
             }
+        } else {
+            break;
         }
     }
 
