@@ -90,7 +90,7 @@ static int32_t init_versions(void *arg)
 {
     char libcomm_ver[128] = {0};
 
-    log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO);
+    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
