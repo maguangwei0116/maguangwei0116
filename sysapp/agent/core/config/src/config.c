@@ -421,7 +421,7 @@ static void modify_config_file(void)
 
 static void config_debug_cur_param(void)
 {
-    MSG_PRINTF(LOG_DBG, "RT_ENVIRONMENT_ADDR   : %s\n", OTI_ENVIRONMENT_ADDR);
+    MSG_PRINTF(LOG_DBG, "OTI_ENVIRONMENT_ADDR  : %s\n", OTI_ENVIRONMENT_ADDR);
     MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", EMQ_SERVER_ADDR);
     MSG_PRINTF(LOG_DBG, "PROXY_SERVER_ADDR     : %s\n", PROXY_SERVER_ADDR);
     MSG_PRINTF(LOG_DBG, "DIS_CONNECT_WAIT_TIME : %d\n", DIS_CONNECT_WAIT_TIME);
