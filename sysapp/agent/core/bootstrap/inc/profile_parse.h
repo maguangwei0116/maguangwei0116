@@ -43,7 +43,6 @@ typedef struct PROFILE_DATA {
     uint32_t file_version_offset;
     int32_t priority;
     int32_t operator_num;
-    uint32_t hash_code_offset;
 } profile_data_t;
 
 int32_t init_profile_file(int32_t *arg);
