@@ -108,6 +108,9 @@ SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_init.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/upgrade.c
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota_upgrade.c
 
+# logger manager module
+SRC-y 			                        += ./core/logm/src/logm.c
+
 ############################################################################
 # Never adjustment order of these files
 SRC-y 			                        += ./core/upload/src/upload_null_end.c
@@ -130,6 +133,7 @@ INC-PATH-y 		                        += ./core/upload/
 INC-PATH-y 		                        += ./core/random/
 INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
+INC-PATH-y 		                        += ./core/logm/
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)

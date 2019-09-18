@@ -23,6 +23,7 @@
 #include "rt_qmi.h"
 #include "lpa.h"
 #include "ota.h"
+#include "logm.h"
 #include "libcomm.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
@@ -119,6 +120,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
+    INIT_OBJ(init_logm,                 (void *)&g_value_list),
 };
 
 static int32_t agent_init_call(void)
