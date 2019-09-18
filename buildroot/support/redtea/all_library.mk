@@ -58,7 +58,10 @@ endef
 # Generate version C file
 VERSION_FILE 	= $(O)/lib$(TARGET)_version.c
 VERSION_H_FILE 	= $(O)/lib$(TARGET).h
-SRC-y        	+= $(VERSION_FILE)
+SRC-y        	+= lib$(TARGET)_version.c
+
+# All library objects
+ALL_OBJ_TARGETS = $(shell find $(O) -name *.o)
 
 # Config your own CFLAGS
 USER_CFLAGS  	= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
@@ -85,7 +88,8 @@ $(O)/$(LIB_SO_NAME): $(ALL_TARGETS) $(OBJS)
 	@$(ECHO) ""
 
 $(O)/$(LIB_A_NAME): $(ALL_TARGETS) $(OBJS)
-	$($(quiet)do_ar) cru "$@" $^
+#	echo ALL_OBJ_TARGETS=$(ALL_OBJ_TARGETS)
+	$($(quiet)do_ar) cru "$@" $(ALL_OBJ_TARGETS)
 	$($(quiet)do_ranlib) "$@"
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib/$(LIBRARY_STATIC_TARGET_NAME)
