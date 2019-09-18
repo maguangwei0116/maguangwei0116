@@ -13,7 +13,7 @@ SYSAPP_PRODUCT_NAME=$(call qstrip,$(BR2_PRODUCT_NAME))
 SYSAPP_SOFTWARE_NAME=$(call qstrip,$(BR2_SOFTWARE_NAME))
 SYSAPP_PLATFORM_TYPE=$(call qstrip,$(BR2_PLATFORM_TYPE))
 SYSAPP_SOFTWARE_TYPE=$(call qstrip,$(BR2_SOFTWARE_TYPE))
-SYSAPP_ENV_TYPE=$(call qstrip,$(BR2_ENV_TYPE))
+SYSAPP_ENV_TYPE=$(call qstrip,$(BR2_CFG_ENV_TYPE))
 
 # Get git head commit hash string (frist 8 chars)
 SYSAPP_GIT_PATH=$(SYSAPP_SOURCE_PATH)/../.git/

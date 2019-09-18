@@ -14,7 +14,7 @@ LIBRARY_PRODUCT_NAME=$(call qstrip,$(BR2_PRODUCT_NAME))
 LIBRARY_SOFTWARE_NAME=$(call qstrip,$(BR2_SOFTWARE_NAME))
 LIBRARY_PLATFORM_TYPE=$(call qstrip,$(BR2_PLATFORM_TYPE))
 LIBRARY_SOFTWARE_TYPE=$(call qstrip,$(BR2_SOFTWARE_TYPE))
-LIBRARY_ENV_TYPE=$(call qstrip,$(BR2_ENV_TYPE))
+LIBRARY_ENV_TYPE=$(call qstrip,$(BR2_CFG_ENV_TYPE))
 
 # Get git head commit hash string (frist 8 chars)
 SYSAPP_GIT_PATH=$(SYSAPP_SOURCE_PATH)/../.git/
