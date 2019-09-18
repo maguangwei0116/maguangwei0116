@@ -11,6 +11,7 @@
 
 #include "cJSON.h"
 
+#define MAX_UPLOAD_TIMES            3
 #define MAX_OTI_URL_LEN             100
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
@@ -25,13 +26,13 @@ do{                 \
 
 #define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
 
-static const char *g_upload_eid     = NULL;
-const char *g_push_channel   = NULL;
-const devicde_info_t *g_upload_device_info    = NULL;
-const card_info_t *g_upload_card_info = NULL;
-static uint8_t g_current_mcc[8]     = "460";
+static const char *g_upload_eid             = NULL;
+const char *g_push_channel                  = NULL;
+const devicde_info_t *g_upload_device_info  = NULL;
+const card_info_t *g_upload_card_info       = NULL;
+static rt_bool g_upload_network             = RT_FALSE;
 
-int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
+static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
     int32_t socket_fd = -1;
     int8_t *recv_buf = NULL;
@@ -83,6 +84,39 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
     }
 
     http_tcpclient_close(socket_fd);
+
+    return ret;
+}
+
+static int32_t upload_wait_network_connected(void)
+{
+    while (1) {
+        if (g_upload_network == RT_TRUE) {
+            break;
+        }
+        rt_os_sleep(1);
+    }
+
+    return 0;
+}
+
+int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
+{
+    int32_t ret;
+    int32_t i = 0;
+
+    for (i = 0; i < MAX_UPLOAD_TIMES; i++) {
+        upload_wait_network_connected();
+        ret = upload_http_post_single(host_addr, port, cb, buffer, len);
+        if (HTTP_SOCKET_CONNECT_ERROR == ret || \
+                        HTTP_SOCKET_SEND_ERROR == ret || \
+                        HTTP_SOCKET_RECV_ERROR == ret) {
+            MSG_PRINTF(LOG_WARN, "upload http post fail, ret=%d, retry i=%d\r\n", ret, i);
+            rt_os_sleep(2);
+            continue;
+        }
+        break;
+    }
 
     return ret;
 }
@@ -152,7 +186,7 @@ static int32_t upload_send_request(const char *out)
     ret = msg_send_upload_queue(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
     MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
 
-    exit_entry:
+exit_entry:
 
     return ret;
 }
@@ -383,5 +417,8 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
             rt_bool report_all_info = RT_FALSE;
             upload_event_report("INFO", NULL, 0, &report_all_info);
         }
+        g_upload_network = RT_TRUE;
+    } else if (MSG_NETWORK_DISCONNECTED == mode) {
+        g_upload_network = RT_FALSE;
     }
 }
