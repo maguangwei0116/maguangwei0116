@@ -20,7 +20,7 @@
 rt_fshandle_t rt_fopen(const char *filename, rt_fsmode_t mode)
 {
     rt_fshandle_t fp = NULL;
-    MSG_PRINTF(LOG_INFO, "filename:%s\n", filename);
+
     fp = fopen(filename, mode);
     if(fp != NULL) {
         setbuf(fp, NULL);
@@ -92,7 +92,6 @@ int rt_delete_file(const char *file)
 rt_fshandle_t linux_fopen(const char *filename, rt_fsmode_t mode)
 {
     rt_fshandle_t fp = NULL;
-    MSG_PRINTF(LOG_INFO, "filename:%s\n", filename);
     fp = fopen(filename, mode);
     if(fp != NULL) {
         setbuf(fp, NULL);
