@@ -16,10 +16,6 @@
 
 /************************************debug***********************************/
 
-/************************************fallback***********************************/
-#define DEFAULT_DIS_CONNECT_WAIT_TIME           100  // 默认fallback为5分
-// #define DEFAULT_SEED_CARD_FIRST                 0  // 默认不打开种子卡优先
-
 /************************************general***********************************/
 #if (CFG_ENV_TYPE_PROD)
 #define DEFAULT_OTI_ENVIRONMENT_ADDR        "52.220.34.227"         // 默认生产环境
@@ -49,7 +45,6 @@
 
 /* The keyname of config item*/
 static const char *keys[] = {
-        "DIS_CONNECT_WAIT_TIME",
         "OTI_ENVIRONMENT_ADDR",
         "EMQ_SERVER_ADDR",
         "PROXY_SERVER_ADDR",
@@ -62,7 +57,6 @@ static const char *keys[] = {
 
 /* The description of config item */
 static const char *annotations[] = {
-        "Broken network monitorning time",
         "The address of OTI server stage(54.222.248.186) or prod(52.220.34.227)",
         "The address of EMQ server stage(13.229.31.234) prod(18.136.190.97)",
         "The address of SMDP server stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)",
@@ -80,7 +74,6 @@ int8_t *OTI_ENVIRONMENT_ADDR = DEFAULT_OTI_ENVIRONMENT_ADDR;  // 默认环境为prod
 int8_t *EMQ_SERVER_ADDR = DEFAULT_EMQ_SERVER_ADDR;  // 默认prod emq 
 int8_t *PROXY_SERVER_ADDR = DEFAULT_PROXY_SERVER_ADDR;  // 默认smdp address
 
-int32_t DIS_CONNECT_WAIT_TIME = DEFAULT_DIS_CONNECT_WAIT_TIME;  // 断网监测时间，默认5分钟
 int32_t MBN_CONFIGURATION = DEFAULT_MBN_CONFIGURATION;  // MBN配置开关
 int32_t LOG_FILE_SIZE = DEFAULT_LOG_FILE_SIZE;  // 默认log文件的大小
 int32_t INIT_PROFILE_TYPE = DEFAULT_INIT_PROFILE_TYPE;  // 默认使用上一张卡登网
@@ -355,9 +348,6 @@ static void parse_config_file(void)
     int8_t *value_p;
 
     read_config_file(CONFIG_FILE_PATH, keys, values, MAX_VALUE_SIZE, ARRAY_SIZE(keys));
-    
-    if (get_config_data(_DIS_CONNECT_WAIT_TIME, &value_p) == RT_SUCCESS)
-        DIS_CONNECT_WAIT_TIME = msg_string_to_int(value_p);
 
     get_config_data(_OTI_ENVIRONMENT_ADDR, &OTI_ENVIRONMENT_ADDR);
 
@@ -393,9 +383,6 @@ static void modify_config_file(void)
 {
     int8_t buf[10];
     
-    snprintf(buf, sizeof(buf), "%d", DIS_CONNECT_WAIT_TIME);
-    set_config_data(_DIS_CONNECT_WAIT_TIME, buf);
-
     set_config_data(_OTI_ENVIRONMENT_ADDR, OTI_ENVIRONMENT_ADDR);
     set_config_data(_EMQ_SERVER_ADDR, EMQ_SERVER_ADDR);
     set_config_data(_PROXY_SERVER_ADDR, PROXY_SERVER_ADDR);
@@ -424,7 +411,6 @@ static void config_debug_cur_param(void)
     MSG_PRINTF(LOG_DBG, "OTI_ENVIRONMENT_ADDR  : %s\n", OTI_ENVIRONMENT_ADDR);
     MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", EMQ_SERVER_ADDR);
     MSG_PRINTF(LOG_DBG, "PROXY_SERVER_ADDR     : %s\n", PROXY_SERVER_ADDR);
-    MSG_PRINTF(LOG_DBG, "DIS_CONNECT_WAIT_TIME : %d\n", DIS_CONNECT_WAIT_TIME);
     MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE         : %d\n", LOG_FILE_SIZE);
     MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION     : %d\n", MBN_CONFIGURATION);
     MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE     : %d\n", INIT_PROFILE_TYPE);

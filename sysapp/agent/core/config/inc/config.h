@@ -16,7 +16,6 @@
 #endif
 
 typedef enum config_type {
-    _DIS_CONNECT_WAIT_TIME  = 0,
     _OTI_ENVIRONMENT_ADDR,
     _EMQ_SERVER_ADDR,
     _PROXY_SERVER_ADDR,
@@ -32,7 +31,6 @@ typedef enum _uicc_mode_e {
     UICC_MODE_eUICC         = 1,
 } uicc_mode_e;
 
-extern int32_t DIS_CONNECT_WAIT_TIME;
 extern int8_t *OTI_ENVIRONMENT_ADDR;
 extern int8_t *EMQ_SERVER_ADDR;
 extern int8_t *PROXY_SERVER_ADDR;
