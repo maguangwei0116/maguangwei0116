@@ -11,28 +11,6 @@
 
 #include "stdint.h"
 
-
-/************************************debug***********************************/
-
-/************************************fallback***********************************/
-#define DEFAULT_DIS_CONNECT_WAIT_TIME           100  // 默认fallback为5分
-// #define DEFAULT_SEED_CARD_FIRST                 0  // 默认不打开种子卡优先
-
-/************************************general***********************************/
-#define DEFAULT_OTI_ENVIRONMENT_ADDR            "52.220.34.227"  // 默认生产环境
-#define DEFAULT_OTI_ENVIRONMENT_PORT            7082
-#define DEFAULT_EMQ_SERVER_ADDR                 "18.136.190.97"  // 默认生产环境EMQ地址
-#define DEFAULT_PROXY_SERVER_ADDR               "smdp.redtea.io"  //默认生产环境smdp地址
-#define DEFAULT_CARD_TYPE_FLAG                  1  // 是否生成card_type文件
-#define DEFAULT_MBN_CONFIGURATION               1  // 默认开启MBN配置功能
-#define DEFAULT_LOG_FILE_SIZE                   1  // 默认log大小为1M
-#define DEFAULT_MBN_CONFIGURATION               1  // 默认开启MBN配置功能
-#define DEFAULT_INIT_PROFILE_TYPE               2  // 默认启用上一张卡
-#define DEFAULT_RPLMN_ENABLE                    1  //默认开启rplmn配置功能
-#define DEFAULT_UICC_MODE                       UICC_MODE_eUICC  //默认使用QMI通道，即实体卡模式(eUICC)
-
-/********************************platform**************************************/
-
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
 #endif
