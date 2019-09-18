@@ -30,11 +30,13 @@ typedef enum NETWORK_STATE {
     NETWORK_USING
 } network_state_info_e;
 
-#define MAX_FILE_PATH_LEN           100
+#define MAX_FILE_PATH_LEN               100
 
-#define HASH_CHECK_BLOCK            1024    /* block size for HASH check */
+#define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
 
-#define MAX_DOWNLOAD_RETRY_CNT      9       /* plus 1 for max total download times */
+#define MAX_DOWNLOAD_RETRY_CNT          9       /* plus 1 for max total download times */
+
+#define DEFAULT_OTI_ENVIRONMENT_PORT    7082
 
 int8_t g_download_flag = 0;
 
