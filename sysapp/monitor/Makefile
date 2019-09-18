@@ -38,7 +38,7 @@ USER_CFLAGS		                    += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERS
 USER_CFLAGS		                    += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
 QMI-LIB 				            = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
-COMM-LIB 				            = comm crypto ssl pthread
+COMM-LIB 				            = crypto ssl pthread
 VUICC-LIB 				            = libvuicc.a
 ############################################################################
 ### path
@@ -51,6 +51,7 @@ SRC-PATH	= ./src
 INC-PATH	= ./inc
 
 # Config your resource file list by += xxx.c
+SRC-y 		+= $(SRC-PATH)/vuicc_callback.c
 SRC-y 		+= $(SRC-PATH)/ipc_socket_server.c
 SRC-y 		+= $(SRC-PATH)/main.c
 
@@ -61,7 +62,9 @@ INC-y 		+= ./vuicc/
 INC-y 		+= ./vuicc/$(INC-PATH)
 
 # Config your lib
+#LIB-y 		= -lm -lcomm
 LIB-y 		= -lm -lcomm
+LIB-n 		+= -l/home/steve/Smart/output/general-9x07-debug/system/sdk/lib/libcomm.a
 LIB-y 		+= -l$(shell pwd)/vuicc/lib/$(VUICC-LIB)
 LIB-y 		+= $(patsubst %,-l%,$(COMM-LIB))
 LIB-y 		+= $(patsubst %,-l%,$(QMI-LIB))
