@@ -25,6 +25,7 @@ card_info_t *g_card_info;
 int32_t init_msg_process(void *arg)
 {
     g_card_info = (card_info_t *)arg;
+    rt_create_file(APN_LIST);
     return RT_SUCCESS;
 }
 
@@ -46,6 +47,7 @@ int32_t msg_enable_profile(const char *iccid)
 {
     uint8_t apn_name[100];
     msg_get_op_apn_name((uint8_t *)iccid, NULL, apn_name);
+    MSG_PRINTF(LOG_INFO, "apn_name:%s\n", apn_name);
     rt_qmi_modify_profile(1, 0, apn_name, 0);
     return lpa_enable_profile(iccid);
 }

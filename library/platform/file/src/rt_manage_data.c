@@ -23,14 +23,13 @@ int32_t rt_create_file(uint8_t *file_name)
     FILE *fp = NULL;
 
     if ((fp = fopen(file_name, "w+")) == NULL) {
-        MSG_PRINTF(LOG_WARN, "open error \n");
+        MSG_PRINTF(LOG_WARN, "open failed \n");
     } else {
         status = RT_SUCCESS;
     }
     if(fp != NULL) {
         fclose(fp);
     }
-
     return status;
 }
 
@@ -41,11 +40,11 @@ int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer
     fp = fopen(addr, "rb+");
 
     if (fp == NULL) {
-        MSG_PRINTF(LOG_WARN, "open config error\n");
+        MSG_PRINTF(LOG_WARN, "open file failed\n");
     } else {
         fseek(fp,offset,SEEK_SET);
         if (fwrite(data_buffer,len, 1, fp) != 1) {
-            MSG_PRINTF(LOG_WARN, "write error\n");
+            MSG_PRINTF(LOG_WARN, "write failed\n");
         } else {
             status = 0;
         }
@@ -63,7 +62,7 @@ int32_t rt_read_data(uint8_t *addr, uint32_t offset, uint8_t *data_buffer, uint3
 
     fp = fopen(addr, "r");
     if (NULL == fp) {
-        MSG_PRINTF(LOG_WARN, "open config file error\n");
+        MSG_PRINTF(LOG_WARN, "open file failed\n");
     } else {
         fseek(fp, offset, SEEK_SET);
         if (fread(data_buffer, len, 1, fp) != 1) {
