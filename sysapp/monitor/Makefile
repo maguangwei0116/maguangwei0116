@@ -38,7 +38,7 @@ USER_CFLAGS		                    += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERS
 USER_CFLAGS		                    += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
 QMI-LIB 				            = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
-COMM-LIB 				            = comm crypto ssl pthread
+COMM-LIB 				            = crypto ssl pthread m
 VUICC-LIB 				            = libvuicc.a
 ############################################################################
 ### path
@@ -60,11 +60,19 @@ INC-y 		+= ./ipc/$(INC-PATH)
 INC-y 		+= ./vuicc/
 INC-y 		+= ./vuicc/$(INC-PATH)
 
-# Config your lib
-LIB-y 		= -lm -lcomm
-LIB-y 		+= -l$(shell pwd)/vuicc/lib/$(VUICC-LIB)
+# Config your libraries
 LIB-y 		+= $(patsubst %,-l%,$(COMM-LIB))
 LIB-y 		+= $(patsubst %,-l%,$(QMI-LIB))
+
+# Config comm library and vuicc library, keep libvuicc.a before libcomm.a 
+# set LIBCOMM_STATIC to 'y'(YES) or 'n'(NO)
+LIBCOMM_STATIC  = n
+LIB-y           += -l$(shell pwd)/vuicc/lib/$(VUICC-LIB)
+ifeq ($(LIBCOMM_STATIC),y)
+LIB-y           += -l$(O)/../../../system/sdk/lib/libcomm.a
+else
+LIB-y			+= -lcomm
+endif
 
 ############################################################################################
 # Never modify from this line
