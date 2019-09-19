@@ -48,7 +48,10 @@ int open_channel(uint8_t *channel)
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len;
-        ipc_send_data(g_open_channel_cmd, sizeof(g_open_channel_cmd), rsp, &len);
+        ret = ipc_send_data(g_open_channel_cmd, sizeof(g_open_channel_cmd), rsp, &len);
+        if (ret != RT_SUCCESS) {
+            return RT_ERR_APDU_SEND_FAIL;
+        }
         sw = get_sw(rsp, len);
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
@@ -76,7 +79,10 @@ int close_channel(uint8_t channel)
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len;
-        ipc_send_data(g_close_channel_cmd, sizeof(g_close_channel_cmd), rsp, &len);
+        ret = ipc_send_data(g_close_channel_cmd, sizeof(g_close_channel_cmd), rsp, &len);
+        if (ret != RT_SUCCESS) {
+            return RT_ERR_APDU_SEND_FAIL;
+        }
         sw = get_sw(rsp, len);
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
@@ -124,13 +130,19 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
         apdu->lc = sizeof(euicc_aid);
         memcpy(&apdu->data, euicc_aid, apdu->lc);
         cbuf[apdu->lc+5] = 0x00;
-        lpa_send_apdu((uint8_t *)cbuf, apdu->lc+6, cbuf, rsp_len, channel);
+        ret = lpa_send_apdu((uint8_t *)cbuf, apdu->lc+6, cbuf, rsp_len, channel);
+        if (ret != RT_SUCCESS) {
+            return RT_ERR_APDU_SEND_FAIL;
+        }
         sw = get_sw(cbuf, *rsp_len);
         if ((sw & 0xFF00) == 0x6100) {
             *rsp_len = (sw & 0xFF);
             cmd[0] = (channel & 0x03) | 0x80;   // Channel should be 0~3, and convert to hexstring
             cmd[4] = *rsp_len;
-            lpa_send_apdu(cmd, 5, rsp, rsp_len, channel);
+            ret = lpa_send_apdu(cmd, 5, rsp, rsp_len, channel);
+            if (ret != RT_SUCCESS) {
+                return RT_ERR_APDU_SEND_FAIL;
+            }
             sw = get_sw(rsp, *rsp_len);
         }
         if (sw != SW_NORMAL) {

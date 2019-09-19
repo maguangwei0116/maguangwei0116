@@ -54,4 +54,5 @@ int linux_create_dir(const char *dir);
 int linux_delete_dir(const char *dir);
 int linux_delete_file(const char *file);
 
+size_t shell_cmd(const int8_t *cmd, uint8_t *buf, size_t size);
 #endif // __FILE_H__

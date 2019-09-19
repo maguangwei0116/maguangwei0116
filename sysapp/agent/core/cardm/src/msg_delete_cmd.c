@@ -152,6 +152,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
     card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     *out = content;
 end:
+    rt_os_free((void *)in);
     return state;
 }
 

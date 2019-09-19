@@ -14,6 +14,8 @@
 #include "ipc_socket_client.h"
 #include "socket.h"
 
+#define MAT_SOCKET_BUFFER   1024
+
 int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
     int32_t socket_id = -1;
@@ -34,9 +36,10 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
         MSG_PRINTF(LOG_ERR, "send data failed\n");
     }
 
-    *rsp_len = socket_recv(socket_id, rsp, 1024);
+    *rsp_len = socket_recv(socket_id, rsp, MAT_SOCKET_BUFFER);
     MSG_INFO_ARRAY("IPC RSP:", rsp, *rsp_len);
+    ret = RT_SUCCESS;
 end:
     socket_close(socket_id);
-    return RT_SUCCESS;
+    return ret;
 }

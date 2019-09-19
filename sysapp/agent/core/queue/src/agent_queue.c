@@ -137,6 +137,9 @@ static void agent_queue_task(void)
                 case MSG_ID_IDLE:
                     idle_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
+                case MSG_ID_DETECT_NETWORK:
+                    network_detect_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    break;
 
                 default: {
                     break;

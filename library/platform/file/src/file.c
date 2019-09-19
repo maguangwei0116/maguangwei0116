@@ -160,3 +160,19 @@ int linux_delete_file(const char *file)
     return remove(file);
 }
 
+size_t shell_cmd(const int8_t *cmd, uint8_t *buf, size_t size)
+{
+    rt_fshandle_t fp;
+    size_t num = 0;
+
+    fp = popen(cmd, RT_FS_READ);
+    if (fp == NULL) {
+        MSG_PRINTF(LOG_ERR, "Popen failed!!\n");
+        return num;
+    }
+    num = linux_fread(buf, 1, size, fp);
+    pclose(fp);
+
+    return num;
+}
+
