@@ -28,7 +28,9 @@ int lpa_get_eid(uint8_t *eid)
     uint8_t buf[21];
     uint16_t size = sizeof(buf);
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     hexstring2bytes((uint8_t *)eid, buf, &size);
     get_eid(buf, &size, channel);
     memcpy(eid, &buf[5], 16);
@@ -42,7 +44,9 @@ int lpa_switch_eid(const uint8_t *eid)
     int8_t channel;
     uint16_t rsp_size = sizeof(rsp);
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     MSG_INFO("eid:%s\n", eid);
     hexstring2bytes((uint8_t *)eid, rsp, &rsp_size);
     switch_eid(rsp, rsp_size, rsp, &rsp_size, channel);
@@ -61,7 +65,9 @@ int lpa_get_eid_list(uint8_t (*eid_list)[33])
     EIDInfo_t **p = NULL;
     int8_t channel;
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     MoreEIDOperateResponse_t *rsp = NULL;
     get_eid_list(buf, &size, channel);
     MSG_INFO_ARRAY("get eid list:\n", buf, size);
@@ -103,7 +109,9 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
     int i;
     uint8_t channel;
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     if (num == NULL) {
         return RT_ERR_NULL_POINTER;
     }
@@ -157,7 +165,9 @@ int lpa_delete_profile(const char *iccid)
     uint16_t rsp_size = sizeof(rsp);
     uint8_t channel;
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     hexstring2bytes(iccid, rsp, &rsp_size);
     swap_nibble(rsp, 10);
     MSG_INFO_ARRAY("ICCID: ", rsp, 10);
@@ -178,7 +188,9 @@ int lpa_enable_profile(const char *iccid)
     uint16_t rsp_size = sizeof(rsp);
     int8_t channel;
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     hexstring2bytes(iccid, rsp, &rsp_size);
     swap_nibble(rsp, 10);
     MSG_INFO_ARRAY("ICCID: ", rsp, 10);
@@ -202,7 +214,9 @@ int lpa_disable_profile(const char *iccid)
     uint16_t rsp_size = sizeof(rsp);
     uint8_t channel;
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     hexstring2bytes(iccid, rsp, &rsp_size);
     swap_nibble(rsp, 10);
     MSG_INFO_ARRAY("ICCID: ", rsp, 10);
@@ -335,7 +349,9 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     uint8_t bppcid, error;
     uint8_t channel;
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     buf1 = malloc(BUFFER_SIZE);
     if( buf1 == NULL) {
         goto end;
@@ -424,7 +440,9 @@ int lpa_load_cert(const uint8_t *data, uint16_t data_len)
 {
     uint8_t channel;
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     load_cert(data, data_len, channel);
     close_channel(channel);
 
@@ -435,7 +453,9 @@ int lpa_load_profile(const uint8_t *data, uint16_t data_len)
 {
     uint8_t channel;
 
-    open_channel(&channel);
+    if (open_channel(&channel) != RT_SUCCESS) {
+        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    }
     MSG_INFO("data[0]:%02X, data_len:%d\n", data[0], data_len);
     load_profile(data, data_len, channel);
     close_channel(channel);

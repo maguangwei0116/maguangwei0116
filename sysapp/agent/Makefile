@@ -97,6 +97,7 @@ SRC-y 			                        += ./core/downstream/src/downstream_reset.c
 SRC-y 			                        += ./core/cardm/src/msg_push_ac_cmd.c
 SRC-y 			                        += ./core/cardm/src/msg_delete_cmd.c
 SRC-y 			                        += ./core/cardm/src/msg_enable_cmd.c
+SRC-y 			                        += ./core/networkd/src/upload_network.c
 
 # Personalise module
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c

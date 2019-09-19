@@ -29,6 +29,7 @@ typedef enum AGENT_MSG_ID {
     MSG_ID_BROAD_CAST_NETWORK,
     MSG_ID_MQTT,
     MSG_ID_IDLE,
+    MSG_ID_DETECT_NETWORK
 } msg_id_e;
 
 typedef enum MSG_MODE {

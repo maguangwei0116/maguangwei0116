@@ -20,6 +20,7 @@
 
 static uint8_t g_rsp[2048];
 static uint16_t g_rsp_len;
+extern int init_file_ops(void);
 
 static void cfinish(int32_t sig)
 {
@@ -102,6 +103,7 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
 int32_t main(void)
 {
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
+    init_file_ops();
     softsim_logic_start(log_print);
     init_system_signal(NULL);
     ipc_regist_callback(monitor_cmd);

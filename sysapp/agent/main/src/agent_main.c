@@ -64,9 +64,7 @@ static int32_t init_monitor(void *arg)
     rt_os_memset(info.start, 0xFF, sizeof(info.start));
     info.vuicc_switch = ((public_value_list_t *)arg)->lpa_channel_type;
     info.share_profile_state = 0;
-    ipc_send_data((const uint8_t *)&info, len, (uint8_t *)&info, &len);
-
-    return RT_SUCCESS;
+    return ipc_send_data((const uint8_t *)&info, len, (uint8_t *)&info, &len);
 }
 
 static int32_t init_qmi(void *arg)
@@ -127,6 +125,7 @@ static int32_t agent_init_call(void)
 int32_t main(int32_t argc, int8_t **argv)
 {
     agent_init_call();
+
     MSG_PRINTF(LOG_INFO, "Device id:%s\n", g_value_list.device_info->device_id);
     while (!toStop) {
         rt_os_sleep(3);

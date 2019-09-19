@@ -16,6 +16,8 @@
 #include "dial_up.h"
 #include "rt_timer.h"
 #include "agent_main.h"
+#include "downstream.h"
+#include "upload_network.h"
 
 #define MAX_WAIT_REGIST_TIME     180
 
@@ -83,5 +85,29 @@ int32_t init_network_detection(void *arg)
         return RT_ERROR;
     }
     register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
+    return RT_SUCCESS;
+}
+
+int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    int32_t status = 0;
+    int32_t ret = RT_ERROR;
+    downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
+
+    (void)mode;
+    MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
+
+    ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
+    if (ret == RT_ERROR) {
+        return ret;
+    }
+    if (downstream_msg->msg) {
+        rt_os_free(downstream_msg->msg);
+        downstream_msg->msg = NULL;
+    }
+    // MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
+    status = downstream_msg->handler(downstream_msg->private_arg,  downstream_msg->event, &downstream_msg->out_arg);
+    upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
+
     return RT_SUCCESS;
 }
