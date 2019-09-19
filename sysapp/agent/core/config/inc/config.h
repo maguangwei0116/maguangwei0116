@@ -35,7 +35,6 @@ extern int8_t *OTI_ENVIRONMENT_ADDR;
 extern int8_t *EMQ_SERVER_ADDR;
 extern int8_t *PROXY_SERVER_ADDR;
 extern int32_t MBN_CONFIGURATION;
-extern int32_t LOG_FILE_SIZE;
 extern int32_t INIT_PROFILE_TYPE;
 extern int32_t RPLMN_ENABLE;
 extern int32_t UICC_MODE;

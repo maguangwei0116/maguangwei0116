@@ -72,10 +72,13 @@ static int32_t init_data_redtea_path(void *arg)
     return 0;
 }
 
-int32_t log_set_param(log_mode_e mode, log_level_e level, const char *log_file)
+int32_t log_set_param(log_mode_e mode, log_level_e level, const char *log_file, unsigned int max_size)
 {
     g_log_param.mode = mode;
     g_log_param.level = level;
+    if (max_size > 0) {
+        g_log_param.max_size = max_size;
+    }
     snprintf(g_log_param.file, sizeof(g_log_param.file), "%s", log_file);
     
     return 0;

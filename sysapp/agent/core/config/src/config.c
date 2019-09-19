@@ -480,5 +480,8 @@ int32_t init_config(void *arg)
     public_value_list->lpa_channel_type = (UICC_MODE == UICC_MODE_vUICC) ? LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
     MSG_PRINTF(LOG_DBG, "public_value_list->lpa_channel_type=%d\r\n", public_value_list->lpa_channel_type);
 
+    public_value_list->log_max_size = LOG_FILE_SIZE * 1024 * 1024;;
+    MSG_PRINTF(LOG_DBG, "public_value_list->lpa_max_size=%d bytes\r\n", public_value_list->log_max_size);
+
     return RT_SUCCESS;
 }

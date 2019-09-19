@@ -77,8 +77,9 @@ static int32_t init_qmi(void *arg)
 static int32_t init_versions(void *arg)
 {
     char libcomm_ver[128] = {0};
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
-    log_set_param(LOG_PRINTF_FILE, LOG_INFO, NULL);
+    log_set_param(LOG_PRINTF_FILE, LOG_INFO, NULL, public_value_list ? public_value_list->log_max_size: 0);
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
@@ -92,8 +93,8 @@ List your init call here !
 static const init_obj_t g_init_objs[] =
 {
     INIT_OBJ(init_log_file,             NULL),
-    INIT_OBJ(init_versions,             NULL),   
     INIT_OBJ(init_config,               (void *)&g_value_list),
+    INIT_OBJ(init_versions,             (void *)&g_value_list),   
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),

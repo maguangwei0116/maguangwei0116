@@ -47,7 +47,7 @@ typedef enum MSG_MODE {
 
 typedef struct PUBLIC_VALUE_LIST {
     int8_t              lpa_channel_type;
-    uint8_t             log_size;
+    uint32_t            log_max_size;
     devicde_info_t *    device_info;
     card_info_t *       card_info;
     const char *        push_channel;
