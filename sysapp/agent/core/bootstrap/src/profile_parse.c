@@ -388,7 +388,7 @@ int32_t selected_profile(uint32_t random)
 
 int32_t init_profile_file(int32_t *arg)
 {
-    int32_t ret = RT_SUCCESS;
+    int32_t ret = RT_ERROR;
     uint8_t buf[500];
     uint32_t len = 0;
     rt_fshandle_t fp;
@@ -402,7 +402,7 @@ int32_t init_profile_file(int32_t *arg)
     g_data.root_sk_offset = rt_get_root_sk_offset(fp, buf, &len);
     g_data.aes_key_offset = rt_get_aes_key_offset(fp, buf, &len);
     g_data.operator_info_offset = rt_get_operator_profile_offset(fp, buf, &len);
-    rt_check_hash_code_offset(fp);
+    ret = rt_check_hash_code_offset(fp);
 
     if (fp != NULL) {
         rt_fclose(fp);
