@@ -36,7 +36,7 @@
 #define DEFAULT_UICC_MODE                   UICC_MODE_eUICC  //默认使用QMI通道，即实体卡模式(eUICC)
 
 /********************************platform**************************************/
-
+#define M_BYTES                             (1024 * 1024)
 #define MAX_VALUE_SIZE                      30
 #define LINK_SYMBOL                         "="  // key - value pair 之间的连接符
 #define ANNOTATION_SYMBOL                   "#"  // 注释标识符
@@ -411,7 +411,7 @@ static void config_debug_cur_param(void)
     MSG_PRINTF(LOG_DBG, "OTI_ENVIRONMENT_ADDR  : %s\n", OTI_ENVIRONMENT_ADDR);
     MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", EMQ_SERVER_ADDR);
     MSG_PRINTF(LOG_DBG, "PROXY_SERVER_ADDR     : %s\n", PROXY_SERVER_ADDR);
-    MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE         : %d\n", LOG_FILE_SIZE);
+    MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE         : %d MB\n", LOG_FILE_SIZE);
     MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION     : %d\n", MBN_CONFIGURATION);
     MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE     : %d\n", INIT_PROFILE_TYPE);
     MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE          : %d\n", RPLMN_ENABLE);
@@ -480,8 +480,8 @@ int32_t init_config(void *arg)
     public_value_list->lpa_channel_type = (UICC_MODE == UICC_MODE_vUICC) ? LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
     MSG_PRINTF(LOG_DBG, "public_value_list->lpa_channel_type=%d\r\n", public_value_list->lpa_channel_type);
 
-    public_value_list->log_max_size = LOG_FILE_SIZE * 1024 * 1024;;
-    MSG_PRINTF(LOG_DBG, "public_value_list->lpa_max_size=%d bytes\r\n", public_value_list->log_max_size);
+    public_value_list->log_max_size = LOG_FILE_SIZE * M_BYTES;
+    MSG_PRINTF(LOG_DBG, "public_value_list->log_max_size=%d bytes\r\n", public_value_list->log_max_size);
 
     return RT_SUCCESS;
 }
