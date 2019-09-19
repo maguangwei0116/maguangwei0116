@@ -37,7 +37,7 @@ typedef enum MSG_MODE {
     MSG_CARD_SETTING_PROFILE,
     MSG_CARD_SETTING_CERTIFICATE,
     MSG_CARD_ENABLE_EXIST_CARD,
-    MSG_ALL_SWITCH_CARD,
+    MSG_ALL_SWITCH_CARD, // 5
     MSG_NETWORK_CONNECTED,
     MSG_NETWORK_DISCONNECTED,
     MSG_BOOTSTRAP_DISCONNECTED,
@@ -46,6 +46,7 @@ typedef enum MSG_MODE {
 
 typedef struct PUBLIC_VALUE_LIST {
     int8_t              lpa_channel_type;
+    uint8_t             log_size;
     devicde_info_t *    device_info;
     card_info_t *       card_info;
     const char *        push_channel;

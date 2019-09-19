@@ -74,24 +74,11 @@ static int32_t init_qmi(void *arg)
     return rt_qmi_init(arg);
 }
 
-static int32_t init_files(void *arg)
-{
-#define DATA_REDTEA_PATH    "/data/redtea"
-
-    if (rt_os_access(DATA_REDTEA_PATH, 0)) {
-        rt_os_mkdir(DATA_REDTEA_PATH);
-    }
-
-#undef DATA_REDTEA_PATH
-
-    return RT_SUCCESS;
-}
-
 static int32_t init_versions(void *arg)
 {
     char libcomm_ver[128] = {0};
 
-    log_set_param(LOG_PRINTF_FILE, LOG_INFO);
+    log_set_param(LOG_PRINTF_FILE, LOG_INFO, NULL);
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
@@ -104,8 +91,8 @@ List your init call here !
 **/
 static const init_obj_t g_init_objs[] =
 {
-    INIT_OBJ(init_versions,             NULL),
-    INIT_OBJ(init_files,                NULL),
+    INIT_OBJ(init_log_file,             NULL),
+    INIT_OBJ(init_versions,             NULL),   
     INIT_OBJ(init_config,               (void *)&g_value_list),
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
