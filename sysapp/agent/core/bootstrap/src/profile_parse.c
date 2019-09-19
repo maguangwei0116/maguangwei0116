@@ -98,17 +98,12 @@ static uint32_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint8_t *sk, ui
     return get_offset(fp, OPT_PROFILES, sk, size);
 }
 
-void check_hash_code()
+static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
 {
-    // sha256_init(hash_code);
-    // sha256_update(hash_code, hash_code_buf, int32_t len);
-    // sha256_final(sha256_ctx *ctx, uint8_t hash[]);
-}
-
-static uint32_t rt_get_hash_code_offset(rt_fshandle_t fp)
-{
-    uint8_t buf[8], hash_code_buf[32];
+    uint8_t buf[50], hash_code_buf[32], original_hash[32], p[512];
     uint32_t off = 0;
+    uint32_t i = 0;
+    uint32_t index = 0;
     sha256_ctx hash_code;
 
     off = g_data.operator_info_offset;
@@ -117,15 +112,28 @@ static uint32_t rt_get_hash_code_offset(rt_fshandle_t fp)
     off += get_length(buf, 0) + get_length(buf, 1);
 
     rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 4, fp);
+    rt_fread(buf, 1, 50, fp);
     if (buf[0] != 0x41 || buf[1] != 0x20) {
         return RT_ERROR;
     }
+    rt_os_memcpy(original_hash, get_value_buffer(buf), 32);
 
-    // rt_task *task_id;
-    // rt_create_task(&task_id, NULL, check_hash_code, NULL);
-    // pthread_join(task_id, NULL);
-    return off;
+    rt_fseek(fp, 0, RT_FS_SEEK_SET);
+    rt_fread(buf, 1, 8, fp);
+    i = get_length(buf,1);
+    rt_fseek(fp, i, RT_FS_SEEK_SET);
+    sha256_init(&hash_code);
+    for (i; i < off; i += index){
+        index = rt_fread(p, 1, (off-i > 512) ? 512 : off - i, fp);
+        sha256_update(&hash_code, p, index);
+    }
+    sha256_final(&hash_code, hash_code_buf);
+
+    if (rt_os_memcmp(original_hash, hash_code_buf, 32) != 0){
+        MSG_PRINTF(LOG_ERR, "Share profile hash check failed\n");
+        return RT_ERROR;
+    }
+    return RT_SUCCESS;
 }
 
 static int32_t decode_file_info(rt_fshandle_t fp)
@@ -394,7 +402,7 @@ int32_t init_profile_file(int32_t *arg)
     g_data.root_sk_offset = rt_get_root_sk_offset(fp, buf, &len);
     g_data.aes_key_offset = rt_get_aes_key_offset(fp, buf, &len);
     g_data.operator_info_offset = rt_get_operator_profile_offset(fp, buf, &len);
-    g_data.hash_code_offset = rt_get_hash_code_offset(fp);
+    rt_check_hash_code_offset(fp);
 
     if (fp != NULL) {
         rt_fclose(fp);
