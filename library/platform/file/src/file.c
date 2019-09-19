@@ -44,6 +44,11 @@ long int rt_ftell(rt_fshandle_t fp)
     return ftell(fp);
 }
 
+long int rt_fflush(rt_fshandle_t fp)
+{
+    return fflush(fp);
+}
+
 size_t rt_fread(void *ptr, size_t size, size_t count, rt_fshandle_t fp)
 {
     return fread(ptr, size, count, fp);
