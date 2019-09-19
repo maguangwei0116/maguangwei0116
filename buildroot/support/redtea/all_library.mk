@@ -4,7 +4,7 @@
 
 all: $(TARGET)
 
-$(TARGET): liba libso
+$(TARGET): liba libso COPY_VERSION_FILE_OUT
 
 info:
 	@echo "COBJS=$(COBJS)"
@@ -55,25 +55,34 @@ define INSTALL_LIBRARY_VERSION_H
 	cp -rf $(1) $(SDK_INSTALL_PATH)/include
 endef
 
-# Generate version C file
-VERSION_FILE 	= $(O)/lib$(TARGET)_version.c
-VERSION_H_FILE 	= $(O)/lib$(TARGET).h
-SRC-y        	+= lib$(TARGET)_version.c
+define INSTALL_LIBRARY_VERSION_C
+	mv $(1) $(2)
+endef
 
 # All library objects
 ALL_OBJ_TARGETS = $(shell find $(O) -name *.o)
 
+# Generate version C/H file
+VER_C_FILE      = lib$(TARGET)_version.c
+VER_H_FILE      = lib$(TARGET).h
+VER_C_FILE_OUT 	= $(O)/$(VER_C_FILE)
+VER_H_FILE_OUT 	= $(O)/$(VER_H_FILE)
+SRC-y        	+= $(VER_C_FILE)
+
+$(VER_C_FILE): GEN_VERSION_FILE
+
+COPY_VERSION_FILE_OUT: liba libso
+	$(Q)$(call INSTALL_LIBRARY_VERSION_C,$(VER_C_FILE),$(VER_C_FILE_OUT))
+
 # Config your own CFLAGS
 USER_CFLAGS  	= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
 
-$(VERSION_FILE):
-	$(Q)$(call GEN_LIBRARY_VERSION_C,$@)
-	$(Q)$(call GEN_LIBRARY_VERSION_H,$(VERSION_H_FILE))
-	$(Q)$(call INSTALL_LIBRARY_VERSION_H,$(VERSION_H_FILE))
+GEN_VERSION_FILE:
+	$(Q)$(call GEN_LIBRARY_VERSION_C,$(VER_C_FILE))
+	$(Q)$(call GEN_LIBRARY_VERSION_H,$(VER_H_FILE_OUT))
+	$(Q)$(call INSTALL_LIBRARY_VERSION_H,$(VER_H_FILE_OUT))
 
-$(OBJS): $(VERSION_FILE)
-
-$(O)/$(LIB_SO_NAME): $(ALL_TARGETS) $(OBJS)
+$(O)/$(LIB_SO_NAME): $(OBJS) $(ALL_TARGETS)
 	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
 	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
@@ -87,7 +96,7 @@ $(O)/$(LIB_SO_NAME): $(ALL_TARGETS) $(OBJS)
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
-$(O)/$(LIB_A_NAME): $(ALL_TARGETS) $(OBJS)
+$(O)/$(LIB_A_NAME): $(OBJS) $(ALL_TARGETS) 
 #	echo ALL_OBJ_TARGETS=$(ALL_OBJ_TARGETS)
 	$($(quiet)do_ar) cru "$@" $(ALL_OBJ_TARGETS)
 	$($(quiet)do_ranlib) "$@"
@@ -102,7 +111,7 @@ $(O)/$(LIB_A_NAME): $(ALL_TARGETS) $(OBJS)
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
-.PHONY: all clean info $(TARGET) liba libso
+.PHONY: all clean info $(TARGET) liba libso $(GEN_VERSION_FILE) $(COPY_VERSION_FILE_OUT)
 
 # Include the dependency files, should be the last of the makefile
 -include $(DEPS)
