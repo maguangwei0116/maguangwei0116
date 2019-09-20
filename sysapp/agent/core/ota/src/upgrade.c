@@ -22,14 +22,6 @@
 #include "convert.h"
 #include "config.h"
 
-typedef enum NETWORK_STATE {
-    NETWORK_STATE_INIT = 0,
-    NETWORK_GET_IP,
-    NETWORK_CONNECTING,
-    NETWORK_DIS_CONNECTED,
-    NETWORK_USING
-} network_state_info_e;
-
 #define MAX_FILE_PATH_LEN               100
 
 #define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
