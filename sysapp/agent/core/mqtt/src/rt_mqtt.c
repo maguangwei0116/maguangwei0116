@@ -48,8 +48,8 @@ typedef struct _mqtt_param_t {
     char                        alias[40];
     rt_bool                     mqtt_get_addr;
     rt_bool                     mqtt_flag;          // mqtt connect ok falg
-    rt_bool                     subscribe_flag;     // subscribe ok flag
     rt_bool                     alias_rc;           // need set alias flag
+    uint8_t                     subscribe_flag;     // subscribe ok flag
 } mqtt_param_t;
 
 static mqtt_param_t g_mqtt_param    = {MQTTClient_connectOptions_initializer, 0};
@@ -603,7 +603,7 @@ static void mqtt_process_task(void)
                 MQTTClient_disconnect(g_mqtt_param.client, 0);
                 MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
                 g_mqtt_param.mqtt_flag      = RT_FALSE;
-                g_mqtt_param.subscribe_flag = RT_FALSE;  // reset subscribe flag
+                g_mqtt_param.subscribe_flag = 0;  // reset subscribe flag
             }
         } else if (get_network_state() == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.rt_channel);
@@ -635,7 +635,7 @@ static void mqtt_process_task(void)
 
             /* subscribe device-id */
             if ((GET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-                    if (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_device_id, 1) == 0) {
+                if (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_device_id, 1) == 0) {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe device id : %s OK !\n", g_mqtt_device_id);
                     SET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag);
                 } else {
@@ -645,7 +645,7 @@ static void mqtt_process_task(void)
 
             /* subscribe imei */
             if ((GET_IMEI_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-                    if (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_imei, 1) == 0) {
+                if (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_imei, 1) == 0) {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe imei : %s OK !\n", g_mqtt_imei);
                     SET_IMEI_FLAG(g_mqtt_param.subscribe_flag);
                 } else {
@@ -655,7 +655,7 @@ static void mqtt_process_task(void)
 
             /* subscribe agent  */
             if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-                    if (MQTTClient_subscribe(g_mqtt_param.client, AGENT_ALIAS, 1) == 0) {
+                if (MQTTClient_subscribe(g_mqtt_param.client, AGENT_ALIAS, 1) == 0) {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe %s OK !\n", AGENT_ALIAS);
                     SET_AGENT_FLAG(g_mqtt_param.subscribe_flag);
                 } else {
