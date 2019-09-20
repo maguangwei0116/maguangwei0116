@@ -166,7 +166,7 @@ static int32_t upload_send_request(const char *out)
         return ret;
     }
 
-    MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", strlen((const char *) out), (const char *) out);
+    MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", rt_os_strlen((const char *)out), (const char *)out);
 
     get_md5_string((int8_t *) out, md5_out);
     md5_out[MD5_STRING_LENGTH] = '\0';

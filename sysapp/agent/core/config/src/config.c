@@ -270,7 +270,7 @@ static int32_t read_config_file(int8_t *file_path, const char **key_array, int8_
                 break;
             }
 
-            iResult = rt_fread(temp_key_buf, char_size, strlen(key_array[i]), fp);
+            iResult = rt_fread(temp_key_buf, char_size, rt_os_strlen(key_array[i]), fp);
             if (0 == iResult) {
                 is_end = 1;
                 break;

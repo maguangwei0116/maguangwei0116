@@ -332,7 +332,7 @@ static int http_client_send_body(http_client_struct_t *obj)
 
               if (rt_fread(obj->buf, obj->process_set , 1, obj->fp) != 1) {
                   MSG_PRINTF(LOG_WARN, "Read Block Data Error,result:%s\n", strerror(errno));
-                  sleep(1);
+                  rt_os_sleep(1);
                   continue;
               }
 
