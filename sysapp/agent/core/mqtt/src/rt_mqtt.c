@@ -455,12 +455,16 @@ static void connection_lost(void *context, char *cause)
 {
     MSG_PRINTF(LOG_WARN, "connection lost: %s, %s\r\n",(char *)context, cause);
     if (my_connect(&g_mqtt_param.client, &g_mqtt_param.conn_opts) != RT_TRUE) {
-        g_mqtt_param.mqtt_flag = RT_FALSE;
         MSG_PRINTF(LOG_WARN, "connect again fail after connection lost !!!\r\n");
+        if (!rt_os_strncmp(g_mqtt_param.opts.rt_channel, "EMQ", 3)) {
+            g_mqtt_param.opts.last_connect_status = MQTT_CONNECT_EMQ_ERROR;
+        } else {
+            g_mqtt_param.opts.last_connect_status = MQTT_CONNECT_YUNBA_ERROR;
+        }
 
-        //if (get_network_state() == NETWORK_USING) {
-        //    set_network_state(NETWORK_GET_IP);
-        //}
+        if (get_network_state() == NETWORK_USING) {
+            set_network_state(NETWORK_DIS_CONNECTED);
+        }
     } else {
         MSG_PRINTF(LOG_WARN, "connect again ok after connection lost !!!\r\n");
     }
@@ -536,6 +540,9 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
             } else {
                 opts->last_connect_status = MQTT_CONNECT_YUNBA_ERROR;
             }
+        } else {
+            /* connect same mqtt channel for MAX_TRY_CONNECT_TIME times */
+            opts->last_connect_status = MQTT_CONNECT_SUCCESS;
         }
         return RT_FALSE;
     }
@@ -571,6 +578,8 @@ static void rt_mqtt_set_alias(const char *eid, const char *device_id, rt_bool in
 
 static void mqtt_process_task(void)
 {
+    int32_t rc;
+    
     while(1) {        
         if (get_network_state() == NETWORK_STATE_INIT) {
             ;
@@ -604,6 +613,7 @@ static void mqtt_process_task(void)
                 MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
                 g_mqtt_param.mqtt_flag      = RT_FALSE;
                 g_mqtt_param.subscribe_flag = 0;  // reset subscribe flag
+                set_network_state(NETWORK_CONNECTING);
             }
         } else if (get_network_state() == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.rt_channel);
@@ -621,11 +631,17 @@ static void mqtt_process_task(void)
             if ((GET_EID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
                 if(rt_os_strlen(g_mqtt_param.alias)) {
                     if (rt_os_strcmp((const char *)g_mqtt_param.alias, g_mqtt_device_id)) {
-                        if ((MQTTClient_subscribe(g_mqtt_param.client, (const char *)g_mqtt_param.alias, 1) == 0)) {
+                        rc = MQTTClient_subscribe(g_mqtt_param.client, (const char *)g_mqtt_param.alias, 1);
+                        if (rc == 0) {
                             MSG_PRINTF(LOG_DBG, "MQTTClient subscribe eid : %s OK !\n", g_mqtt_param.alias);
                             SET_EID_FLAG(g_mqtt_param.subscribe_flag);
                         } else {
-                            MSG_PRINTF(LOG_WARN, "MQTTClient subscribe eid : %s error !\n", g_mqtt_param.alias);
+                            MSG_PRINTF(LOG_WARN, "MQTTClient subscribe eid : %s error, ret=%d !\n", g_mqtt_param.alias, rc);
+                            if (rc == MQTTCLIENT_DISCONNECTED) {
+                                set_network_state(NETWORK_DIS_CONNECTED);
+                                MSG_PRINTF(LOG_WARN, "mqtt disconnected !\r\n");
+                                continue;
+                            }
                         }
                     }
                 } else {
@@ -635,31 +651,49 @@ static void mqtt_process_task(void)
 
             /* subscribe device-id */
             if ((GET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-                if (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_device_id, 1) == 0) {
+                rc = MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_device_id, 1);
+                if (rc == 0) {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe device id : %s OK !\n", g_mqtt_device_id);
                     SET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag);
                 } else {
-                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe device id : %s error !\n", g_mqtt_device_id);
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe device id : %s error, ret=%d !\n", g_mqtt_device_id, rc);
+                    if (rc == MQTTCLIENT_DISCONNECTED) {
+                        set_network_state(NETWORK_DIS_CONNECTED);
+                        MSG_PRINTF(LOG_WARN, "mqtt disconnected !\r\n");
+                        continue;
+                    }
                 }
             }
 
             /* subscribe imei */
             if ((GET_IMEI_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-                if (MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_imei, 1) == 0) {
+                rc = MQTTClient_subscribe(g_mqtt_param.client, g_mqtt_imei, 1);
+                if (rc == 0) {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe imei : %s OK !\n", g_mqtt_imei);
                     SET_IMEI_FLAG(g_mqtt_param.subscribe_flag);
                 } else {
-                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe imei : %s error !\n", g_mqtt_imei);
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe imei : %s error, ret=%d !\n", g_mqtt_imei, rc);
+                    if (rc == MQTTCLIENT_DISCONNECTED) {
+                        set_network_state(NETWORK_DIS_CONNECTED);
+                        MSG_PRINTF(LOG_WARN, "mqtt disconnected !\r\n");
+                        continue;
+                    }
                 }
             }
 
             /* subscribe agent  */
             if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-                if (MQTTClient_subscribe(g_mqtt_param.client, AGENT_ALIAS, 1) == 0) {
+                rc = MQTTClient_subscribe(g_mqtt_param.client, AGENT_ALIAS, 1); 
+                if (rc == 0) {
                     MSG_PRINTF(LOG_DBG, "MQTTClient subscribe %s OK !\n", AGENT_ALIAS);
                     SET_AGENT_FLAG(g_mqtt_param.subscribe_flag);
                 } else {
-                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe %s error !\n", AGENT_ALIAS);
+                    MSG_PRINTF(LOG_DBG, "MQTTClient subscribe %s error, ret=%d !\n", AGENT_ALIAS, rc);
+                    if (rc == MQTTCLIENT_DISCONNECTED) {
+                        set_network_state(NETWORK_DIS_CONNECTED);
+                        MSG_PRINTF(LOG_WARN, "mqtt disconnected !\r\n");
+                        continue;
+                    }
                 }
             }
         }
@@ -698,7 +732,7 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.showtopics            = 0;
     g_mqtt_param.opts.nodeName              = NULL;
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
-    g_mqtt_param.opts.last_connect_status   = 0;  // Initialize the last link push the state of the system
+    g_mqtt_param.opts.last_connect_status   = MQTT_CONNECT_SUCCESS;  // Initialize the last link push the state of the system
     rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_TRUE);
     MQTTClient_init();
 }
