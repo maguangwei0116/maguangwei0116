@@ -46,8 +46,9 @@ static void display_progress(http_client_struct_t *obj)
         MSG_PRINTF(LOG_WARN, "\n");
     }
     #else
-    int percentage = ((float)obj->process_length / obj->file_length) * 100;
-    MSG_PRINTF(LOG_WARN, "file download [%s] : %3d%% (%7d/%-7d)\r\n", obj->file_path, percentage, obj->process_length, obj->file_length);
+    int percentage = ((float)obj->process_length / (obj->file_length + obj->range)) * 100;
+    MSG_PRINTF(LOG_WARN, "file download [%s] : %3d%% (%7d/%-7d)\r\n", \
+                    obj->file_path, percentage, obj->process_length, (obj->file_length + obj->range));
     //rt_os_sleep(1);  // only for test
     #endif
 }
@@ -367,7 +368,9 @@ static int http_client_recv_data(http_client_struct_t *obj)
 
     RT_CHECK_ERR(obj, NULL);
     obj->try_count = 0;
-    obj->process_length = 0;
+    obj->process_length = obj->range;
+
+    MSG_PRINTF(LOG_WARN, "obj->range=%d, obj->process_length=%d\n", obj->range, obj->process_length);
 
     /* If the process for download, loop to receive data */
     while (obj->remain_length > 0) {
@@ -505,7 +508,9 @@ int http_set_header_record(http_client_struct_t *obj, const char *key, const cha
 ********************************************************/
 int get_file_size(const char *file_name)
 {
-    struct  stat f_info;
+    struct stat f_info;
+
+    rt_os_memset(&f_info, 0, sizeof(f_info));
     if (file_name == NULL) {
         return -1;
     }
