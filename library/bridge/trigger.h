@@ -6,6 +6,12 @@
 // 9x07
 #include "user_identity_module_remote_v01.h"
 
+typedef enum {
+    ERR_QMI_RUIM_SERVICE_OBJ = 1,
+    ERR_QMI_UNSUPPORTED_SLOT,
+    ERR_QMI_GET_SERVICE_LIST
+} trigger_error_code_e;
+
 extern int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot);
 extern int t9x07_swap_card(uim_remote_slot_type_enum_v01 slot);
 extern int t9x07_remove_card(uim_remote_slot_type_enum_v01 slot);

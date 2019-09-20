@@ -47,7 +47,7 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
         if (data[7] == 0x00) {  // used vuicc
             trigegr_regist_reset(card_reset);
             trigegr_regist_cmd(card_cmd);
-            trigger_insert_card(1);
+            trigger_swap_card(1);
         }
 
     } else {
