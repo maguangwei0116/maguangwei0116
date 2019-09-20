@@ -51,6 +51,7 @@ static void bootstrap_select_profile(void)
 int32_t init_bootstrap(void *arg)
 {
     g_is_profile_damaged = init_profile_file(NULL);
+    MSG_PRINTF(LOG_ERR, "g_is_profile_damaged:%d\n",g_is_profile_damaged);
     return g_is_profile_damaged;
 }
 
@@ -58,7 +59,7 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     if (g_is_profile_damaged != RT_SUCCESS){
         MSG_PRINTF(LOG_INFO, "The share profile is damaged.\n");
-        return g_is_profile_damaged;
+        return;
     }
     MSG_PRINTF(LOG_INFO, "The current mode is %d.\n", mode);
     if (mode == MSG_BOOTSTRAP_SELECT_CARD) {

@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <sys/stat.h>
 #include "profile_parse.h"
 #include "rt_rplmn.h"
 #include "file.h"
@@ -101,30 +102,39 @@ static uint32_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint8_t *sk, ui
 static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
 {
     uint8_t buf[50], hash_code_buf[32], original_hash[32], p[512];
-    uint32_t off = 0;
-    uint32_t i = 0;
+    uint32_t hash_off = 0;
+    uint32_t profile_off = 0;
     uint32_t index = 0;
     sha256_ctx hash_code;
+    struct stat statbuf;
 
-    off = g_data.operator_info_offset;
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
+
+    stat(SHARE_PROFILE, &statbuf);
+
+    rt_fseek(fp, 0, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 8, fp);
-    off += get_length(buf, 0) + get_length(buf, 1);
+    profile_off = get_length(buf,1);
+    hash_off += profile_off;
+    
+    rt_fseek(fp, profile_off, RT_FS_SEEK_SET);
+    rt_fread(buf, 1, 8, fp);
+    hash_off += get_length(buf, 0) + get_length(buf, 1);
 
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
+    rt_fseek(fp, hash_off, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 50, fp);
     if (buf[0] != 0x41 || buf[1] != 0x20) {
         return RT_ERROR;
     }
     rt_os_memcpy(original_hash, get_value_buffer(buf), 32);
+    if (statbuf.st_size != hash_off + get_length(buf, 0) + get_length(buf, 1)){
+        MSG_PRINTF(LOG_ERR, "The share profile is damaged.\n");
+        return RT_ERROR;
+    }
 
-    rt_fseek(fp, 0, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
-    i = get_length(buf,1);
-    rt_fseek(fp, i, RT_FS_SEEK_SET);
+    rt_fseek(fp, profile_off, RT_FS_SEEK_SET);
     sha256_init(&hash_code);
-    for (i; i < off; i += index){
-        index = rt_fread(p, 1, (off-i > 512) ? 512 : off - i, fp);
+    for (profile_off; profile_off < hash_off; profile_off += index){
+        index = rt_fread(p, 1, (hash_off - profile_off > 512) ? 512 : hash_off - profile_off, fp);
         sha256_update(&hash_code, p, index);
     }
     sha256_final(&hash_code, hash_code_buf);
@@ -397,12 +407,14 @@ int32_t init_profile_file(int32_t *arg)
     if (fp == NULL) {
         return RT_ERROR;
     }
-    g_data.file_info_offset = rt_get_file_info_offset(fp, buf, &len);
-    rt_init_file_info(fp);
-    g_data.root_sk_offset = rt_get_root_sk_offset(fp, buf, &len);
-    g_data.aes_key_offset = rt_get_aes_key_offset(fp, buf, &len);
-    g_data.operator_info_offset = rt_get_operator_profile_offset(fp, buf, &len);
     ret = rt_check_hash_code_offset(fp);
+    if (ret == RT_SUCCESS){
+        g_data.file_info_offset = rt_get_file_info_offset(fp, buf, &len);
+        rt_init_file_info(fp);
+        g_data.root_sk_offset = rt_get_root_sk_offset(fp, buf, &len);
+        g_data.aes_key_offset = rt_get_aes_key_offset(fp, buf, &len);
+        g_data.operator_info_offset = rt_get_operator_profile_offset(fp, buf, &len);
+    }
 
     if (fp != NULL) {
         rt_fclose(fp);
