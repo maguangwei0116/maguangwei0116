@@ -33,15 +33,16 @@
 ********************************************************/
 static void display_progress(http_client_struct_t *obj)
 {
+#if (VERSION_TYPE == DEBUG)
     #if 0
     char buf[101];
     int percentage = ((float)obj->process_length / obj->file_length) * 100;
 
-    memset(buf,'-', 100);
+    rt_os_memset(buf,'-', 100);
     buf[100] = '\0';
-    memset(buf,'>', percentage);
+    rt_os_memset(buf,'>', percentage);
     MSG_PRINTF(LOG_WARN, "\r%s %d%%", buf, percentage);
-    fflush(stdout);
+    rt_fflush(stdout);
     if (percentage == 100) {
         MSG_PRINTF(LOG_WARN, "\n");
     }
@@ -51,6 +52,9 @@ static void display_progress(http_client_struct_t *obj)
                     obj->file_path, percentage, obj->process_length, (obj->file_length + obj->range));
     //rt_os_sleep(1);  // only for test
     #endif
+#else
+    (void)obj;
+#endif
 }
 
 /********************************************************
@@ -67,7 +71,7 @@ static int http_client_upload_init(http_client_struct_t *obj)
     int ret = -1;
     struct sockaddr_in server_addr;
     struct in_addr ipAddr;
-    struct timeval timeout = {10,0};
+    struct timeval timeout = {30,0};
 
     RT_CHECK_ERR(obj, NULL);
 
@@ -77,7 +81,7 @@ static int http_client_upload_init(http_client_struct_t *obj)
     obj->process_length = 0;
     MSG_PRINTF(LOG_WARN, "upload file_name:%s,file_size:%d\n", obj->file_path, obj->file_length);
 
-    RT_CHECK_ERR(obj->fp = fopen(obj->file_path, "r"), NULL);  // 打开文件
+    RT_CHECK_ERR(obj->fp = rt_fopen(obj->file_path, "r"), NULL);  // 打开文件
     RT_CHECK_ERR(obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN), NULL);
 
     /* 连接服务器 */
@@ -119,11 +123,11 @@ static int http_client_download_init(http_client_struct_t *obj)
     int ret = -1;
     struct sockaddr_in server_addr;
     struct in_addr ipAddr;
-    struct timeval timeout={4,0};
+    struct timeval timeout={30,0};
 
     RT_CHECK_ERR(obj, NULL);
 
-    RT_CHECK_ERR(obj->fp = fopen(obj->file_path, "a"), NULL);  // 打开文件
+    RT_CHECK_ERR(obj->fp = rt_fopen(obj->file_path, "a"), NULL);  // 打开文件
     obj->process_length = 0;
     obj->process_set = 0;
     obj->remain_length = 0;
@@ -170,7 +174,7 @@ static void http_client_release(http_client_struct_t *obj)
     }
 
     if (obj->fp != NULL) {
-        fclose(obj->fp);
+        rt_fclose(obj->fp);
     }
 
     if (obj->socket > 0) {
@@ -191,12 +195,12 @@ static int http_client_send(http_client_struct_t *obj)
     int tmpres = 0;
 
     while (sent < obj->process_set) {
-      tmpres = send(obj->socket, obj->buf + sent, obj->process_set - sent, MSG_NOSIGNAL);
-      if (tmpres == -1) {
-        MSG_PRINTF(LOG_WARN, "tmpres is error:%s\n", strerror(errno));
-        return -1;
-      }
-      sent += tmpres;
+        tmpres = send(obj->socket, obj->buf + sent, obj->process_set - sent, MSG_NOSIGNAL);
+        if (tmpres == -1) {
+            MSG_PRINTF(LOG_WARN, "tmpres is error:%s\n", strerror(errno));
+            return -1;
+        }
+        sent += tmpres;
     }
     return sent;
 }
@@ -211,10 +215,9 @@ static int http_client_send(http_client_struct_t *obj)
 static int http_client_recv(http_client_struct_t *obj)
 {
     int cnt = 0;
-    int recvnum;
+    int recvnum = 0;
 
-    recvnum = 0;
-    memset(obj->buf, 0, MAX_BLOCK_LEN);
+    rt_os_memset(obj->buf, 0, MAX_BLOCK_LEN);
     while(1) {
         cnt = (int)recv(obj->socket, obj->buf + recvnum, obj->process_set, MSG_WAITALL);
         //MSG_PRINTF(LOG_WARN, "Recv cnt: %d, obj->process_set=%d !!!\n", cnt, obj->process_set);
@@ -245,7 +248,7 @@ static int http_client_send_header(http_client_struct_t *obj)
 
     RT_CHECK_ERR(obj, NULL);
 
-    memset(obj->buf,0 ,MAX_BLOCK_LEN);
+    rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
     if (obj->http_header.method == 0) {
         strcat(obj->buf, "POST");
     } else {
@@ -273,7 +276,7 @@ static int http_client_send_header(http_client_struct_t *obj)
     strcat(obj->buf, "\r\n");
 
     MSG_PRINTF(LOG_INFO, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
-    obj->process_set = strlen(obj->buf);
+    obj->process_set = rt_os_strlen(obj->buf);
     return http_client_send(obj);
 
     ret = 0;
@@ -286,8 +289,10 @@ static int http_client_get_resp_header(http_client_struct_t *obj)
     int flag = 0;
 
     obj->process_length = 0;
-    memset(obj->buf,0 ,MAX_BLOCK_LEN);
+    rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
+    
     while (recv(obj->socket, obj->buf + obj->process_length, 1, 0) == 1) {
+        /* http header end with a empty line (at least 3 '\r' or '\n', normal for 4 '\r' or '\n') */
         if (flag < 3) {
             if (obj->buf[obj->process_length] == '\r' || obj->buf[obj->process_length] == '\n') {
                 flag++;
@@ -296,12 +301,13 @@ static int http_client_get_resp_header(http_client_struct_t *obj)
             }
         } else {
             obj->buf[obj->process_length] = '\0';
-            MSG_PRINTF(LOG_INFO,"success--------flag:%d    buf:%s\n",flag,obj->buf);
+            MSG_PRINTF(LOG_INFO,"recv http header ok, flag:%d, buf:%s\n", flag, obj->buf);
             return 0;
         }
+        //MSG_PRINTF(LOG_INFO,"->>> flag:%d, char:%c\n", flag, obj->buf[obj->process_length]);
         obj->process_length++;
     }
-    MSG_PRINTF(LOG_WARN,"fail--------flag:%d    buf:%s\n",flag,obj->buf);
+    MSG_PRINTF(LOG_WARN,"recv http header fail, flag:%d, buf:%s\n", flag, obj->buf);
     return -1;
 }
 
@@ -315,41 +321,41 @@ static int http_client_send_body(http_client_struct_t *obj)
     obj->process_length = 0;
 
    if (obj->manager_type == 0) {
-
        // If the upload process, cycle to send data
           while (obj->remain_length > 0) {
-              memset(obj->buf, 0, MAX_BLOCK_LEN);
+              rt_os_memset(obj->buf, 0, MAX_BLOCK_LEN);
               if (obj->remain_length >= MAX_BLOCK_LEN) {
                   obj->process_set = MAX_BLOCK_LEN;
               } else {
                   obj->process_set = obj->remain_length;
               }
 
-              if (fread(obj->buf, obj->process_set , 1, obj->fp) != 1) {
+              if (rt_fread(obj->buf, obj->process_set , 1, obj->fp) != 1) {
                   MSG_PRINTF(LOG_WARN, "Read Block Data Error,result:%s\n", strerror(errno));
                   sleep(1);
                   continue;
               }
 
               if (http_client_send(obj) <= 0) {
-
                   // 数据发送超过最大尝试次数
                   if (obj->try_count++ > MAX_TRY_COUNT) {
                       return -1;
                       MSG_PRINTF(LOG_WARN, "http_client_send More than most trying times\n");
                   }
                   MSG_PRINTF(LOG_WARN, "http_client_send error,continue\n");
-                  sleep(1);
-                  fseek(obj->fp, SEEK_SET, obj->process_length);
+                  rt_os_sleep(1);
+                  rt_fseek(obj->fp, SEEK_SET, obj->process_length);
               } else {
                   obj->remain_length -= obj->process_set;
                   obj->process_length += obj->process_set;
               }
+
+              MSG_PRINTF(LOG_WARN, "file upload [%s] : (%7d/%-7d)\r\n", obj->file_path, obj->process_length, obj->file_length);
           }
    } else {
-       memset(obj->buf,0 ,MAX_BLOCK_LEN);
-       memcpy(obj->buf, obj->http_header.buf, strlen(obj->http_header.buf));
-       obj->process_set = strlen(obj->http_header.buf);
+       rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
+       rt_os_memcpy(obj->buf, obj->http_header.buf, rt_os_strlen(obj->http_header.buf));
+       obj->process_set = rt_os_strlen(obj->http_header.buf);
        if (http_client_send(obj) <= 0) {
            MSG_PRINTF(LOG_WARN, "http_client_send error\n");
            return -1;
@@ -383,15 +389,14 @@ static int http_client_recv_data(http_client_struct_t *obj)
         /* http_client_recv内部已经做了失败的重新接收的机制，所以函数调用失败直接认定为此次下载失败 */
         RT_CHECK_NEQ(http_client_recv(obj), obj->process_set);        
         obj->remain_length -= obj->process_set;
-        obj->process_length += obj->process_set;
-        
-#if (VERSION_TYPE == DEBUG)
+        obj->process_length += obj->process_set;        
+
         //MSG_PRINTF(LOG_WARN, "obj->process_length=%d, obj->range=%d\r\n", obj->process_length, obj->range);
         if (obj->process_length > obj->range) {
-            RT_CHECK_NEQ(fwrite(obj->buf, obj->process_set, 1, obj->fp), 1);
+            RT_CHECK_NEQ(rt_fwrite(obj->buf, obj->process_set, 1, obj->fp), 1);
             display_progress(obj);
         }
-#endif
+
     }
 
     ret = 0;
@@ -429,8 +434,8 @@ static int http_client_error_prase(http_client_struct_t *obj)
     MSG_PRINTF(LOG_INFO, "respond header:\n%s\n", obj->buf);
     rt_os_memset(length, 0, sizeof(length));
 
-    RT_CHECK_ERR(pos = strstr(obj->buf, (const int8_t *)"HTTP/"), NULL);
-    memcpy(length,pos+9,3);
+    RT_CHECK_ERR(pos = rt_os_strstr(obj->buf, (const int8_t *)"HTTP/"), NULL);
+    rt_os_memcpy(length, pos+9, 3);
     length[3] = '\0';
     resp_status = msg_string_to_int((uint8_t *)length);
 
@@ -444,7 +449,7 @@ static int http_client_error_prase(http_client_struct_t *obj)
     } else {
         /* 如果为文件下载，解析返回头 */
 
-        memset(length,0,sizeof(length));
+        rt_os_memset(length,0,sizeof(length));
         RT_CHECK_ERR(pos = rt_os_strstr(obj->buf, (const int8_t *)"Content-Length"), NULL);
         RT_CHECK_ERR(end = rt_os_strstr(pos, (const int8_t *)"\r\n"), NULL);
         length_char_len = end - pos -16;
@@ -483,18 +488,18 @@ int http_set_header_record(http_client_struct_t *obj, const char *key, const cha
     }
 
     for (i = 0; i < obj->http_header.record_size; i++) {
-        if(strncmp(obj->http_header.record[i].key, key, strlen(key)) == 0) {
-            memset(obj->http_header.record[i].value, 0x00, MAX_VALUE_LEN + 1);
-            memcpy(obj->http_header.record[i].value, value, strlen(value));
+        if(rt_os_strncmp(obj->http_header.record[i].key, key, strlen(key)) == 0) {
+            rt_os_memset(obj->http_header.record[i].value, 0x00, MAX_VALUE_LEN + 1);
+            rt_os_memcpy(obj->http_header.record[i].value, value, rt_os_strlen(value));
             return 0;
         }
     }
 
-    memcpy(obj->http_header.record[obj->http_header.record_size].key, key, strlen(key));
-    obj->http_header.record[obj->http_header.record_size].key[strlen(key)] = '\0';
+    rt_os_memcpy(obj->http_header.record[obj->http_header.record_size].key, key, rt_os_strlen(key));
+    obj->http_header.record[obj->http_header.record_size].key[rt_os_strlen(key)] = '\0';
 
-    memcpy(obj->http_header.record[obj->http_header.record_size].value, value, strlen(value));
-    obj->http_header.record[obj->http_header.record_size].value[strlen(value)] = '\0';
+    rt_os_memcpy(obj->http_header.record[obj->http_header.record_size].value, value, rt_os_strlen(value));
+    obj->http_header.record[obj->http_header.record_size].value[rt_os_strlen(value)] = '\0';
     obj->http_header.record_size++;
     return 0;
 }

@@ -8,11 +8,27 @@
 #include "cJSON.h"
 
 typedef struct _log_param_t {
-    char tranId[64];
-    char level[8];
-    char startTime[32];
-    char endTime[32];
+    char            tranId[64];
+    char            level[8];
+    log_level_e     log_level;
+    char            startTime[32];
+    char            endTime[32];
 } log_param_t;
+
+typedef struct LOG_LEVEL_ITEM {
+    log_level_e     level;
+    const char *    label;
+} log_item_t;
+
+static log_item_t g_log_item_table[] = 
+{
+    {LOG_NONE,      "NONE",},
+    {LOG_ERR,       "ERROR",},  // default
+    {LOG_WARN,      "WARN",},
+    {LOG_DBG,       "DEBUG",},
+    {LOG_INFO,      "INFO",},
+    {LOG_ALL,       "ALL",},
+};
 
 #define cJSON_GET_STR_DATA(json, item, item_str_out, len, tmp)\
     do {\
@@ -35,6 +51,21 @@ typedef struct _log_param_t {
             goto exit_entry;\
         }\
     } while(0)
+
+static log_level_e downstream_log_get_level(const char *level_str)
+{
+    log_level_e ret_level = LOG_ALL;
+    int32_t i;
+
+    for (i = 0; i < ARRAY_SIZE(g_log_item_table); i++) {
+        if (!rt_os_strcmp(g_log_item_table[i].label, level_str)) {
+        	ret_level = g_log_item_table[i].level;
+        	break;
+        }
+    }
+
+    return ret_level;
+}
 
 static int32_t downstream_log_parser(const void *in, char *tran_id, void **out)
 {
@@ -74,6 +105,8 @@ static int32_t downstream_log_parser(const void *in, char *tran_id, void **out)
     cJSON_GET_STR_DATA(content, startTime, param->startTime, sizeof(param->startTime), tmp);
     cJSON_GET_STR_DATA(content, endTime, param->endTime, sizeof(param->endTime), tmp);
 
+    param->log_level = downstream_log_get_level(param->level);
+
     *out = param;
     ret = 0;
 
@@ -97,27 +130,21 @@ exit_entry:
     return ret;
 }
 
-#define MAX_OTI_URL_LEN             100
-#define LOG_NAME                    "/data/redtea/rt_log"
+#define MAX_OTI_URL_LEN             128
 #define BOUNDARY                    "2128e33d-b5b5-40e8-a5a6-aadd7db1c23f"
 
 #define RT_LOG_HEAD                 "--%s\r\n"\
-    "Content-Disposition: form-data; name=\"logfile\"; filename=\"%s\"\r\n"\
-    "Content-Type: application/octet-stream\r\n\r\n"
+                                    "Content-Disposition: form-data; name=\"logfile\"; filename=\"%s\"\r\n"\
+                                    "Content-Type: application/octet-stream\r\n\r\n"
     
 #define CONTENT_TYPE                "multipart/form-data;boundary=\"2128e33d-b5b5-40e8-a5a6-aadd7db1c23f\""
 
 #define LOG_NAME                    "/data/redtea/rt_log"
+#define LOG_CUT_TMP_FILE            "/data/redtea/log_tmp_cut"
 #define LOG_CUT_FILE                "/data/redtea/log_cut"
-#define LOG_CUT_LEVEL               INFORMATION
 #define LOG_API                     "/api/v2/log" 
 #define OTI_ENVIRONMENT_PORT        7082
 #define MAX_UPLOAD_RETRY_TIMES      3
-
-typedef enum {
-    ERROR = 0,
-    INFORMATION
-} _log_level_e;
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do {                 \
@@ -126,36 +153,54 @@ do {                 \
 
 static const char *g_upload_log_eid = NULL;
 
-static int32_t log_cut_file(const int8_t *file_name, log_level_e log_level)
+static int32_t log_file_cut(const char *file_name, log_level_e log_level)
 {
     char cmd[100];
     char buf[512];
     int32_t offset;
+    int32_t ret;
+    const char *tmp_file_name = LOG_CUT_TMP_FILE;
 
-    snprintf((char *)cmd, sizeof(cmd), "touch %s", file_name);
+    /* create a tmp log file */
+    snprintf((char *)cmd, sizeof(cmd), "cp -rf %s %s && touch %s", LOG_NAME, tmp_file_name, file_name);
     system(cmd);
     MSG_PRINTF(LOG_DBG, "1--> %s, g_upload_log_eid=%s\r\n", cmd, g_upload_log_eid);
 
+    /* add detail information on the header of the upload log file */
     snprintf((char *)buf, sizeof(buf), RT_LOG_HEAD, BOUNDARY, (char *)g_upload_log_eid);
     if (rt_write_data((uint8_t *)file_name, 0, buf, rt_os_strlen(buf)) == RT_ERROR) {
         MSG_PRINTF(LOG_WARN, "write %s error\n",file_name);
-        return RT_ERROR;
+        ret = RT_ERROR;
+        goto exit_entry;
     }
 
-    snprintf((char *)cmd, sizeof(cmd), "cat %s >> %s", LOG_NAME, file_name);
-    system(cmd);
-    MSG_PRINTF(LOG_DBG, "2--> %s\n", cmd);
+    /* copy out selective log data */
+    MSG_PRINTF(LOG_DBG, "----> log cut start ... log_level = %d\n", log_level);
+    log_file_copy_out(tmp_file_name, file_name, log_level);
+    MSG_PRINTF(LOG_DBG, "----> log cut end ...\n");
 
-    snprintf(buf, sizeof(buf), "\r\n--%s--", BOUNDARY);
+    /* delete tmp log file */
+    rt_os_unlink(tmp_file_name);
 
+    /* add boundary information on the tail of the upload log file */
     offset = get_file_size(file_name);
     if (offset <= 0) {
         MSG_PRINTF(LOG_WARN, "read file size error\n");
-        return RT_ERROR;
+        ret = RT_ERROR;
+        goto exit_entry;
+    } 
+    snprintf(buf, sizeof(buf), "\r\n--%s--", BOUNDARY);
+    if (rt_write_data((uint8_t *)file_name, offset, buf, rt_os_strlen(buf)) == RT_ERROR) {
+        MSG_PRINTF(LOG_WARN, "write %s error\n",file_name);
+        ret = RT_ERROR;
+        goto exit_entry;
     }
-    MSG_PRINTF(LOG_DBG, "3--> offset=%d\n", offset);
     
-    return rt_write_data((uint8_t *)file_name, offset, buf, rt_os_strlen(buf));
+    ret = RT_SUCCESS;
+
+ exit_entry:
+
+    return ret;
 }
 
 static void log_file_upload(void *arg)
@@ -168,11 +213,12 @@ static void log_file_upload(void *arg)
     char log_host[MAX_OTI_URL_LEN + 1];
     const log_param_t *param = (log_param_t *)arg;
     const char *tranId;
+    const char *log_cut_file = LOG_CUT_FILE;
 
     tranId = param->tranId;
     RT_CHECK_ERR(obj = (http_client_struct_t *)rt_os_malloc(sizeof(http_client_struct_t)), NULL);
-    RT_CHECK_NEQ(log_cut_file((const int8_t *)LOG_CUT_FILE, LOG_CUT_LEVEL), 0);  // log cut
-    RT_CHECK_LESE(log_length = get_file_size(LOG_CUT_FILE), 0);  // get log file size
+    RT_CHECK_NEQ(log_file_cut(log_cut_file, param->log_level), 0);  // log cut
+    RT_CHECK_LESE(log_length = get_file_size(log_cut_file), 0);  // get log file size
 
     snprintf((char *)log_length_char, sizeof(log_length_char), "%d", log_length);
     obj->manager_type = 0;  // uoload
@@ -189,7 +235,7 @@ static void log_file_upload(void *arg)
     http_set_header_record(obj, "Content-Length", (const char *)log_length_char);
     http_set_header_record(obj, "HOST", log_host);
     http_set_header_record(obj, "tranId", tranId);
-    obj->file_path = LOG_CUT_FILE;
+    obj->file_path = log_cut_file;
 
     while (1) {
         if (http_client_file_upload(obj) != 0) {
@@ -206,11 +252,11 @@ static void log_file_upload(void *arg)
 end:
     rt_os_free(obj);
     rt_os_free((void *)param);
-    rt_os_unlink(LOG_CUT_FILE);
+    rt_os_unlink(log_cut_file);
     return;
 }
 
-static void msg_deal_with_log(const log_param_t *param)
+static void downstream_log_start(const log_param_t *param)
 {
     rt_task task_id;
     if (rt_create_task(&task_id , (void *)log_file_upload, (void *)param) == RT_ERROR) {
@@ -231,7 +277,7 @@ static int32_t downstream_log_handler(const void *in, const char *event, void **
         MSG_PRINTF(LOG_INFO, "param->startTime  : %s\r\n", param->startTime);
         MSG_PRINTF(LOG_INFO, "param->endTime    : %s\r\n", param->endTime);
 
-        msg_deal_with_log(param);
+        downstream_log_start(param);
     }
  
     *out = NULL;

@@ -15,11 +15,13 @@
 #define __LOG_H__
 
 typedef enum LOG_LEVE {
-    LOG_ERR = 0,
-    LOG_WARN,
-    LOG_DBG,
-    LOG_INFO,
-    LOG_NONE,
+    LOG_UNKNOW  = -1,
+    LOG_NONE    = 0,
+    LOG_ERR     = 1,
+    LOG_WARN    = 2,
+    LOG_DBG     = 3,
+    LOG_INFO    = 4,
+    LOG_ALL     = 5,     
 } log_level_e;
 
 typedef enum LOG_MODE {
@@ -36,6 +38,7 @@ extern int32_t init_log_file(void *arg);
 extern int32_t log_set_param(log_mode_e mode, log_level_e level, const char *log_file, unsigned int max_size);
 extern int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *msg, ...);
 extern int32_t log_hexdump(const char *file, int32_t line, const char *title, const void *data, unsigned int len);
+extern int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e min_level);
 
 #define __FILENAME__            (strrchr("/"__FILE__, '/') + 1)
 #define ARRAY_PRINTF(tag, array, len)                                            \

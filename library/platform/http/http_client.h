@@ -9,6 +9,7 @@
 #define __HTTP_CLIENT_H__
 
 #include <stdio.h>
+#include "file.h"
 
 #if 0
 #define RT_CHECK_ERR(process, result) \
@@ -81,7 +82,7 @@ typedef struct http_client_struct {
     unsigned int range;
     unsigned char try_count;  // Data processing of attempts count
 
-    FILE *fp;
+    rt_fshandle_t fp;
     int socket;
     char *buf;
     /* the buffer which used to send block data in the upload process and

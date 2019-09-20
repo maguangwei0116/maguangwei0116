@@ -26,9 +26,13 @@
 #define LOG_NAME                "/data/redtea/rt_log"
 #define LOG_FILE_SIZE           1024 * 1024  // 1MB
 #define LOG_BUF_SIZE            1024
+#define LOG_MAX_LINE_SIZE       2 * 1024
 #define LOG_LEVEL_LEN           6
 #define LOG_FILE_NAME_LEN       64
 #define LOG_HEXDUMP_LEVEL       LOG_INFO
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a)	        sizeof(a)/sizeof(a[0])
+#endif
 
 typedef struct LOG_LEVEL_ITEM {
     log_level_e     level;
@@ -46,11 +50,12 @@ typedef struct LOG_PARAM {
 
 static log_item_t g_log_item_table[] = 
 {
+    {LOG_NONE,      "[NONE]",},
     {LOG_ERR,       "[ERR ]",},
     {LOG_WARN,      "[WARN]",},
     {LOG_DBG,       "[DBG ]",},
     {LOG_INFO,      "[INFO]",},
-    {LOG_NONE,      "[NONE]",},
+    {LOG_ALL,       "[ALL ]",},
 };
 
 static log_param_t g_log_param = 
@@ -252,5 +257,85 @@ int32_t log_hexdump(const char *file, int32_t line, const char *title, const voi
     MSG_PRINTF(LOG_HEXDUMP_LEVEL, "%s\r\n", dimm);
 
     return 0;
+}
+
+static rt_bool log_check_level(const char *header, log_level_e min_level)
+{
+	static log_level_e last_log_level = LOG_UNKNOW;
+	log_level_e cur_level = LOG_UNKNOW;
+	int32_t i;
+	
+	for (i = 0; i < ARRAY_SIZE(g_log_item_table); i++) {
+		if (!rt_os_strcmp(g_log_item_table[i].label, header)) {
+			cur_level = g_log_item_table[i].level;
+			break;
+		}
+	}
+	
+	if (cur_level == LOG_UNKNOW) {
+		cur_level = last_log_level;	
+	} else {
+		last_log_level = cur_level;
+	}
+	
+	return (cur_level <= min_level) ? RT_TRUE: RT_FALSE;
+}
+
+int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e min_level)
+{
+    char *data = NULL;
+    rt_fshandle_t fp_in = NULL;
+	rt_fshandle_t fp_out = NULL;
+	int32_t i = 0;
+	int32_t ret;
+	char header[LOG_LEVEL_LEN+1] = {0};
+
+    data = (char *)rt_os_malloc(LOG_MAX_LINE_SIZE);
+    if(!data) {
+        MSG_PRINTF(LOG_WARN, "memory alloc fail\n");
+        ret = -1;
+		goto exit_entry;
+    }
+	
+	fp_in = rt_fopen(file_in, "r");
+    if(!fp_in) {
+        MSG_PRINTF(LOG_WARN, "can't open file %s\n", file_in);
+        ret = -1;
+		goto exit_entry;
+    }
+	
+	fp_out = rt_fopen(file_out, "a+");
+    if(!fp_out) {
+        MSG_PRINTF(LOG_WARN, "can't open file %s\n", file_out);
+        ret = -1;
+		goto exit_entry;
+    }
+	
+    while(!rt_feof(fp_in)) {
+		if (rt_fgets(data, LOG_MAX_LINE_SIZE, fp_in) != NULL) {
+    		memcpy(header, data, LOG_LEVEL_LEN);
+    		if (log_check_level(header, min_level)) {
+    			//printf("line %d=== %s", ++i, data);
+    			rt_fwrite(data, 1, rt_os_strlen(data), fp_out);
+    		}
+		}
+    }
+	ret = 0;
+	
+exit_entry:
+	if (fp_in) {
+		rt_fclose(fp_in);
+	}
+	
+	if (fp_out) {
+		rt_fclose(fp_out);
+	}
+
+    if (data) {
+        rt_os_free(data);
+        data = NULL;
+    }
+	
+    return ret;
 }
 
