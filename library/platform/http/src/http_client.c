@@ -350,7 +350,7 @@ static int http_client_send_body(http_client_struct_t *obj)
                   obj->process_length += obj->process_set;
               }
 
-              MSG_PRINTF(LOG_WARN, "file upload [%s] : (%7d/%-7d)\r\n", obj->file_path, obj->process_length, obj->file_length);
+              //MSG_PRINTF(LOG_WARN, "file upload [%s] : (%7d/%-7d)\r\n", obj->file_path, obj->process_length, obj->file_length);
           }
    } else {
        rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
