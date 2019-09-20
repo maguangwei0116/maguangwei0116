@@ -33,6 +33,7 @@ typedef const char *                rt_fsmode_t;
 rt_fshandle_t rt_fopen(const char *filename, rt_fsmode_t mode);
 int rt_fclose(rt_fshandle_t fp);
 int rt_fseek(rt_fshandle_t fp, long int offset, int whence);
+int rt_feof(rt_fshandle_t fp);
 char *rt_fgets(char *s, int size, rt_fshandle_t fp);
 long int rt_ftell(rt_fshandle_t fp);
 long int rt_fflush(rt_fshandle_t fp);
