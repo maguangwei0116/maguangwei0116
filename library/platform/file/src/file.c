@@ -39,6 +39,11 @@ int rt_fseek(rt_fshandle_t fp, long int offset, int whence)
     return fseek(fp, offset, whence);
 }
 
+char *rt_fgets(char *s, int size, rt_fshandle_t fp)
+{
+    return fgets(s, size, fp);  
+}
+
 long int rt_ftell(rt_fshandle_t fp)
 {
     return ftell(fp);
