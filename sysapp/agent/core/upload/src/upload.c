@@ -11,8 +11,9 @@
 
 #include "cJSON.h"
 
-#define MAX_UPLOAD_TIMES            3
-#define MAX_OTI_URL_LEN             100
+#define MAX_UPLOAD_TIMES                3
+#define MAX_OTI_URL_LEN                 100
+#define MAX_BOOT_INFO_INTERVAL          5       // unit: second
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do{                 \
@@ -409,17 +410,25 @@ int32_t init_upload(void *arg)
 int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     static rt_bool g_report_boot_event = RT_FALSE;
+    static time_t g_boot_timestamp;
+    time_t tmp_timestamp = time(NULL);
 
     if (MSG_NETWORK_CONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "upload module recv network connected\r\n");
         if (g_report_boot_event == RT_FALSE) {
             upload_event_report("BOOT", NULL, 0, NULL);
             g_report_boot_event = RT_TRUE;
+            g_boot_timestamp = time(NULL);
         } else {
-            rt_bool report_all_info = RT_FALSE;
-            upload_event_report("INFO", NULL, 0, &report_all_info);
+            //MSG_PRINTF(LOG_INFO, "tmp_timestamp:%d, g_boot_timestamp:%d\r\n", tmp_timestamp, g_boot_timestamp);
+            if ((tmp_timestamp - g_boot_timestamp) >= MAX_BOOT_INFO_INTERVAL) {
+                rt_bool report_all_info = RT_FALSE;
+                upload_event_report("INFO", NULL, 0, &report_all_info);
+            }
         }
         g_upload_network = RT_TRUE;
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;
     }
 }
