@@ -609,14 +609,12 @@ static void mqtt_process_task(void)
                     g_mqtt_param.mqtt_get_addr = RT_FALSE;
                 }
             }
-        } else if ((get_network_state() == NETWORK_DIS_CONNECTED) ||
-                (get_network_state() == NETWORK_GET_IP)) {
+        } else if (get_network_state() == NETWORK_DIS_CONNECTED){
             if (g_mqtt_param.mqtt_flag == RT_TRUE) {
                 MQTTClient_disconnect(g_mqtt_param.client, 0);
                 MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
                 g_mqtt_param.mqtt_flag      = RT_FALSE;
                 g_mqtt_param.subscribe_flag = 0;  // reset subscribe flag
-                set_network_state(NETWORK_CONNECTING);
             }
         } else if (get_network_state() == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.rt_channel);
