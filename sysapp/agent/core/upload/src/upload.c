@@ -49,7 +49,7 @@ static int32_t upload_http_post_single(const char *host_addr, int32_t port, sock
         }
 
         //MSG_HEXDUMP("http-send", buffer, len);
-        MSG_PRINTF(LOG_INFO, "http post send (%d bytes): %s\r\n", len, buffer);
+        MSG_PRINTF(LOG_INFO, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
         if (http_tcpclient_send(socket_fd, buffer, len) < 0) {      // send data
             ret = HTTP_SOCKET_SEND_ERROR;
             MSG_PRINTF(LOG_WARN, "http_tcpclient_send failed..\n");
@@ -102,7 +102,7 @@ static int32_t upload_wait_network_connected(void)
 
 int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
-    int32_t ret;
+    int32_t ret = RT_FALSE;
     int32_t i = 0;
 
     for (i = 0; i < MAX_UPLOAD_TIMES; i++) {
@@ -117,7 +117,6 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
         }
         break;
     }
-
     return ret;
 }
 
