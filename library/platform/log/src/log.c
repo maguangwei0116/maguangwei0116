@@ -70,7 +70,7 @@ static log_param_t g_log_param =
 
 static int32_t init_data_redtea_path(void *arg)
 {
-    if (rt_os_access(DATA_REDTEA_PATH, 0)) {
+    if (rt_os_access(DATA_REDTEA_PATH, F_OK)) {
         rt_os_mkdir(DATA_REDTEA_PATH);
     }
 
