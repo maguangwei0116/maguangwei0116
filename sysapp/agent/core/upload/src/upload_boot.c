@@ -258,8 +258,6 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
     cJSON *software = NULL;
     const char *event = str_event;
 
-    MSG_PRINTF(LOG_WARN, "\n----------------->%s\n", event);
-
     content = cJSON_CreateObject();
     if (!content) {
         MSG_PRINTF(LOG_WARN, "The content is error\n");
