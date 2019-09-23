@@ -15,6 +15,7 @@
 
 #include <signal.h>
 #include <sys/stat.h>
+#include <sys/ipc.h>
 #include "rt_type.h"
 
 #define  RT_FILE_HANDLE                     FILE *
@@ -40,6 +41,7 @@
 #define  RT_S_IRWXU                         (RT_S_IRUSR | RT_S_IWUSR | RT_S_IXUSR)
 #define  RT_S_IRWXG                         (RT_S_IRGRP | RT_S_IWGRP | RT_S_IXGRP)
 #define  RT_S_IRWXO                         (RT_S_IROTH | RT_S_IWOTH | RT_S_IXOTH)
+#define  RT_IPC_NOWAIT                      IPC_NOWAIT
 
 typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);
