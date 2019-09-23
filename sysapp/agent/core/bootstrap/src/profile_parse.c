@@ -257,6 +257,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     MSG_INFO_ARRAY("selected iccid:", bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
 
     if (rt_os_memcmp(bootstrap_request->tbhRequest.imsi.buf, jt, 4) == 0){
+        rt_qmi_get_mcc_mnc(&mcc, NULL);
         for (i = 0; i < ARRAY_SIZE(rt_plmn); ++i) {
             if (mcc == rt_plmn[i].mcc) {
                 hexstring2bytes(rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
