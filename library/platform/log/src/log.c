@@ -65,7 +65,7 @@ static log_param_t g_log_param =
     LOG_FILE_SIZE,
     0,
     NULL,
-    {0},
+    {LOG_NAME},
 };
 
 static int32_t init_data_redtea_path(void *arg)
@@ -77,53 +77,53 @@ static int32_t init_data_redtea_path(void *arg)
     return 0;
 }
 
-int32_t log_set_param(log_mode_e mode, log_level_e level, const char *log_file, unsigned int max_size)
+int32_t log_set_param(log_mode_e mode, log_level_e level, unsigned int max_size)
 {
     g_log_param.mode = mode;
     g_log_param.level = level;
     if (max_size > 0) {
         g_log_param.max_size = max_size;
     }
-    snprintf(g_log_param.file, sizeof(g_log_param.file), "%s", log_file);
     
     return 0;
 }
 
-static int32_t log_file_size(void)
+static int32_t log_file_size(const char *file)
 {
     struct stat statbuf;
     int32_t size;
 
-    if (rt_os_access(LOG_NAME, F_OK)) { /* log file isn't exist */
+    if (rt_os_access(file, F_OK)) { /* log file isn't exist */
         return 0;
     }
 
-    stat(LOG_NAME, &statbuf);
+    stat(file, &statbuf);
     size = statbuf.st_size;
     return size;
 }
 
 static void log_file_open(void)
 {
-    g_log_param.fp = rt_fopen(LOG_NAME, "a+");
+    g_log_param.fp = linux_fopen(g_log_param.file, "a+");
     if(!g_log_param.fp) {
-        printf("log file open error\n");
+        printf("log file (%s) open error, err(%d)=%s\n", g_log_param.file, errno, strerror(errno));
         return;
     }
-    g_log_param.cur_size = log_file_size();
+    g_log_param.cur_size = log_file_size(g_log_param.file);
 }
 
 static void log_file_close(void)
 {
-    rt_fclose(g_log_param.fp);
+    linux_fclose(g_log_param.fp);
     g_log_param.fp = NULL;
 }
 
 int32_t init_log_file(void *arg)
 {
-    uint32_t *param = (uint32_t *)arg;
-    if (param) {
-        g_log_param.max_size = *param;   
+    const char *log_file = (const char *)arg;
+
+    if (log_file && rt_os_strlen(log_file)) {
+        snprintf(g_log_param.file, sizeof(g_log_param.file), "%s", log_file);
     }
 
     init_data_redtea_path(NULL);
@@ -135,13 +135,13 @@ int32_t init_log_file(void *arg)
 
 static int32_t log_file_clear(void)
 {
-    g_log_param.fp = rt_fopen(LOG_NAME, "w+");
+    g_log_param.fp = linux_fopen(g_log_param.file, "w+");
     if(!g_log_param.fp) {
         printf("log file open error\n");
         return -1;
     }
     
-    rt_fclose(g_log_param.fp);
+    linux_fclose(g_log_param.fp);
     g_log_param.fp = NULL;
     
     return 0;
@@ -150,8 +150,8 @@ static int32_t log_file_clear(void)
 static int32_t log_file_write(const char *data, int32_t len)
 {
     if (g_log_param.fp) {
-        rt_fwrite(data, 1, len, g_log_param.fp);
-        rt_fflush(g_log_param.fp); 
+        linux_fwrite(data, 1, len, g_log_param.fp);
+        linux_fflush(g_log_param.fp); 
     }
     return 0;
 }
@@ -296,26 +296,26 @@ int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e
 		goto exit_entry;
     }
 	
-	fp_in = rt_fopen(file_in, "r");
+	fp_in = linux_fopen(file_in, "r");
     if(!fp_in) {
         MSG_PRINTF(LOG_WARN, "can't open file %s\n", file_in);
         ret = -1;
 		goto exit_entry;
     }
 	
-	fp_out = rt_fopen(file_out, "a+");
+	fp_out = linux_fopen(file_out, "a+");
     if(!fp_out) {
         MSG_PRINTF(LOG_WARN, "can't open file %s\n", file_out);
         ret = -1;
 		goto exit_entry;
     }
 	
-    while(!rt_feof(fp_in)) {
-		if (rt_fgets(data, LOG_MAX_LINE_SIZE, fp_in) != NULL) {
+    while(!linux_feof(fp_in)) {
+		if (linux_fgets(data, LOG_MAX_LINE_SIZE, fp_in) != NULL) {
     		memcpy(header, data, LOG_LEVEL_LEN);
     		if (log_check_level(header, min_level)) {
     			//printf("line %d=== %s", ++i, data);
-    			rt_fwrite(data, 1, rt_os_strlen(data), fp_out);
+    			linux_fwrite(data, 1, rt_os_strlen(data), fp_out);
     		}
 		}
     }
@@ -323,11 +323,11 @@ int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e
 	
 exit_entry:
 	if (fp_in) {
-		rt_fclose(fp_in);
+		linux_fclose(fp_in);
 	}
 	
 	if (fp_out) {
-		rt_fclose(fp_out);
+		linux_fclose(fp_out);
 	}
 
     if (data) {

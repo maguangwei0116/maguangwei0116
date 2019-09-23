@@ -18,6 +18,9 @@
 #include "card.h"
 #include "esim_api.h"
 
+#define RT_MONITOR_LOG				"/data/redtea/rt_monitor_log"
+#define RT_MONITOR_LOG_MAX_SIZE		(1 * 1024 * 1024)
+
 static uint8_t g_rsp[2048];
 static uint16_t g_rsp_len;
 extern int init_file_ops(void);
@@ -102,7 +105,8 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
 
 int32_t main(void)
 {
-	log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO, NULL, 0);
+	init_log_file(RT_MONITOR_LOG);
+	log_set_param(LOG_PRINTF_FILE, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     init_file_ops();
     softsim_logic_start(log_print);
