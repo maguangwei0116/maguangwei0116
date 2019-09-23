@@ -76,6 +76,19 @@ static void msg_parse(int8_t *message, int32_t len)
     downstream_msg_handle(message, len);
 }
 
+static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
+{
+    int32_t i = 0;
+    const uint8_t *p = (const uint8_t *)buf;
+
+    for (i = 0; i < len; i++) {
+        if (p[i] != value) {
+            return RT_FALSE;
+        }
+    }
+    return RT_TRUE;
+}
+
 /* save cache ticket server which got from adapter into cache file */
 static rt_bool save_ticket_server(mqtt_info *opts)
 {
@@ -218,16 +231,19 @@ static rt_bool rt_mqtt_connect_adapter(mqtt_param_t *param)
     MQTTClient *c = &param->client;
     mqtt_info *opts = &param->opts;
     const char *alias = param->alias;
+    const char *eid = NULL;
+
+    eid = eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0') ? "" : g_mqtt_eid;
 
     set_reg_url(OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
     MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
 
     /* connect redtea adpater server with max 3 times to get ticket server addr and port */
     do {
-        if (rt_mqtt_setup_with_appkey(ADAPTER_APPKEY, opts) == 0) {
+        if (rt_mqtt_setup_with_appkey(ADAPTER_APPKEY, opts, eid) == 0) {
             break;
         }
-        MSG_PRINTF(LOG_DBG, "rt_mqtt_setup_with_appkey num:%d\n", num++);
+        MSG_PRINTF(LOG_DBG, "rt_mqtt_setup_with appkey num:%d\n", num++);
         rt_os_sleep(1);
     } while((num != MAX_CONNECT_SERVER_TIMER) && (get_network_state() != NETWORK_DIS_CONNECTED));
 
@@ -468,19 +484,6 @@ static void connection_lost(void *context, char *cause)
     } else {
         MSG_PRINTF(LOG_WARN, "connect again ok after connection lost !!!\r\n");
     }
-}
-
-static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
-{
-    int32_t i = 0;
-    const uint8_t *p = (const uint8_t *)buf;
-
-    for (i = 0; i < len; i++) {
-        if (p[i] != value) {
-            return RT_FALSE;
-        }
-    }
-    return RT_TRUE;
 }
 
 static rt_bool eid_check_upload(void)

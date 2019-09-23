@@ -424,7 +424,7 @@ int MQTTClient_setup_with_appkey(char* appkey, mqtt_info *info)
 
 
 //红茶adapter服务器获取
-int rt_mqtt_setup_with_appkey(char *appkey, mqtt_info *info)
+int rt_mqtt_setup_with_appkey(const char *appkey, mqtt_info *info, const char *eid)
 {
     char json_data[1024];
     int ret;
@@ -437,7 +437,8 @@ int rt_mqtt_setup_with_appkey(char *appkey, mqtt_info *info)
     if (info->device_id == NULL) {
         snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\"}", appkey);
     } else {
-        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", appkey, info->device_id, NULL, info->last_connect_status);
+        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", \
+            appkey, info->device_id, eid, info->last_connect_status);
     }
 
     MSG_PRINTF(LOG_DBG, "reg_url:%s, reg_port:%d\r\n", reg_url, reg_port);

@@ -114,7 +114,7 @@ typedef struct MQTT_INFO
     int8_t      rt_channel[10];//the data channel of OTI upload
     int8_t      ticket_server[200];
     int8_t      try_connect_timer;
-    int32_t    last_connect_status;  // The last connected push system state
+    int32_t     last_connect_status;  // The last connected push system state
 }mqtt_info;
 
 DLLExport int MQTTClient_setup_with_appkey_v2(char* appkey, REG_info *info);
@@ -125,7 +125,7 @@ DLLExport int MQTTClient_setup_with_appkey_and_deviceid_v2(char* appkey, char *d
 
 DLLExport int MQTTClient_get_host(char *nodeName, char *url, const char *appkey);
 DLLExport int MQTTClient_get_host_v2(char *appkey, char* url);
-DLLExport int rt_mqtt_setup_with_appkey(char *appkey,mqtt_info *opts);
+DLLExport int rt_mqtt_setup_with_appkey(const char *appkey, mqtt_info *info, const char *eid);
 DLLExport int MQTTClient_setup_with_appkey(char* appkey, mqtt_info *info);
 
 
