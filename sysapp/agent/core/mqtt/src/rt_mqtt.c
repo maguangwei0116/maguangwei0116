@@ -767,15 +767,15 @@ int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
     (void)buf;
     (void)len;
 
-    MSG_PRINTF(LOG_INFO, "mqtt connect event, mode: %d\r\n", mode);
+    //MSG_PRINTF(LOG_INFO, "mqtt connect event, mode: %d\r\n", mode);
     if (MSG_NETWORK_CONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "mqtt network connected\r\n");
+        MSG_PRINTF(LOG_INFO, "mqtt module recv network connected\r\n");
         set_network_state(NETWORK_CONNECTING);
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "mqtt network disconnected\r\n");
+        MSG_PRINTF(LOG_INFO, "mqtt module recv network disconnected\r\n");
         set_network_state(NETWORK_DIS_CONNECTED);
     } else if (MSG_MQTT_SUBSCRIBE_EID == mode) {
-        MSG_PRINTF(LOG_INFO, "mqtt subcsribe eid\r\n");
+        MSG_PRINTF(LOG_INFO, "mqtt module recv subcsribe eid request\r\n");
         /* set mqtt global alias */
         rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_FALSE);
         CLR_EID_FLAG(g_mqtt_param.subscribe_flag);
