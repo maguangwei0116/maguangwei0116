@@ -53,7 +53,7 @@ static void network_detection_task(void)
 
 int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
-    uint8_t imsi[IMSI_LENGTH + 1];
+    uint8_t imsi[IMSI_LENGTH + 1] = {0};
     if (mode == MSG_ALL_SWITCH_CARD) {
         network_start_timer();
         rt_os_sleep(10);
@@ -64,7 +64,12 @@ int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 
 void network_state(int32_t state)
 {
+    if (state == g_network_state) {
+        return;
+    }
+    
     g_network_state = state;
+
     if (g_network_state == DSI_STATE_CALL_CONNECTED) {  // network connected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
     } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
