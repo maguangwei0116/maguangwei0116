@@ -16,7 +16,10 @@
 #include "msg_process.h"
 #include "agent_main.h"
 
-static card_info_t g_p_info;
+#define RT_LAST_EID     "/data/redtea/rt_last_eid"
+
+static card_info_t      g_p_info;
+static uint8_t          g_last_eid[MAX_EID_LEN + 1] = {0}; 
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -31,7 +34,34 @@ static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
     return RT_TRUE;
 }
 
-static int32_t card_update_eid(void)
+static int32_t card_check_init_upload(const uint8_t *eid)
+{
+    if (rt_os_strcmp((const char *)g_last_eid, (const char *)eid) && !eid_check_memory(eid, MAX_EID_LEN, '0')) {
+        MSG_PRINTF(LOG_INFO, "g_last_eid: %s, cur_eid: %s\r\n", g_last_eid, eid);
+        MSG_PRINTF(LOG_WARN, "EID changed, upload INIT event\n");
+
+        snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
+        rt_write_data(RT_LAST_EID, 0, g_last_eid, sizeof(g_last_eid));
+        upload_event_report("INIT", NULL, 0, NULL);
+        msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
+    }
+    
+    return RT_SUCCESS;
+}
+
+static int32_t card_last_eid_init(void)
+{
+    if (rt_os_access(RT_LAST_EID, 0)) {
+        rt_create_file(RT_LAST_EID);
+    } else {
+        rt_read_data(RT_LAST_EID, 0, g_last_eid, sizeof(g_last_eid));
+        MSG_PRINTF(LOG_INFO, "g_last_eid=%s\r\n", g_last_eid);
+    }
+
+    return RT_SUCCESS;
+}
+
+static int32_t card_update_eid(rt_bool init)
 {
     int32_t ret = RT_ERROR;
 
@@ -40,8 +70,8 @@ static int32_t card_update_eid(void)
     bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
     MSG_PRINTF(LOG_INFO, "ret=%d, g_p_info.eid=%s\r\n", ret, g_p_info.eid);
 
-    if (eid_check_memory(g_p_info.eid, 2 * MAX_EID_HEX_LEN, '0')) {
-        ret = RT_ERROR;
+    if (!init) {
+        card_check_init_upload(g_p_info.eid);
     }
 
     return ret;
@@ -117,20 +147,12 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     return ret;
 }
 
-
-
 static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 {
     int32_t ret = RT_ERROR;
 
     ret = lpa_load_cert(buf, len);
-    ret = card_update_eid();
-    if (!ret) {
-        MSG_PRINTF(LOG_WARN, "EID changed, upload INIT event\n");
-        upload_event_report("INIT", NULL, 0, NULL);
-        msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
-    }
-
+    ret = card_update_eid(RT_FALSE);
     return ret;
 }
 
@@ -141,9 +163,10 @@ int32_t init_card_manager(void *arg)
     ((public_value_list_t *)arg)->card_info = &g_p_info;
     init_msg_process(&g_p_info);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
-    card_update_eid();
+    card_update_eid(RT_TRUE);
     rt_os_sleep(1);
     ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+    ret = card_last_eid_init();    
 
     return ret;
 }
@@ -169,6 +192,10 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
         case MSG_CARD_ENABLE_EXIST_CARD:
             MSG_PRINTF(LOG_INFO, "iccid:%s, len:%d\n", buf, rt_os_strlen(buf));
             card_enable_profile(buf);
+            break;
+        case MSG_NETWORK_CONNECTED:
+            card_check_init_upload(g_p_info.eid);
+            break;
         default:
             MSG_PRINTF(LOG_ERR, "unknow command\n");
             break;
