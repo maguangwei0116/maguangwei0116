@@ -162,19 +162,18 @@ static void log_local_print(const char *data, int32_t len)
     if (g_log_param.mode == LOG_PRINTF_TERMINAL) {
         printf("%s", data);
     } else {
+        //printf("g_log_param.cur_size: %d/%d \r\n", g_log_param.cur_size, g_log_param.max_size);
         if (g_log_param.cur_size > g_log_param.max_size) {
             log_file_close();
             log_file_clear();
             log_file_open();
         }
         log_file_write(data, len);
+        g_log_param.cur_size += len;
         
 #if 0  // only for test
         {
-            char tmp[128];
-            g_log_param.cur_size += len;
-            snprintf(tmp, sizeof(tmp), "g_log_param.cur_size: %d, max: %d\r\n", g_log_param.cur_size, g_log_param.max_size);
-            printf(tmp);
+            printf("g_log_param.cur_size: %d, max: %d\r\n", g_log_param.cur_size, g_log_param.max_size);
         } 
 #endif
 

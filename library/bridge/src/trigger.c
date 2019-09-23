@@ -5,12 +5,12 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+#include "trigger.h"
 #include "qmi_idl_lib.h"
 #include "qmi_client.h"
 #include "qmi_cci_target_ext.h"
-#include "trigger.h"
 
-static qmi_client_type rm_uim_client;
+static qmi_client_type rm_uim_client = NULL;
 
 typedef uint16_t (*trigger_callback_cmd)(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
 typedef uint16_t (*trigger_callback_reset)(uint8_t *rsp, uint16_t *rsp_len);
@@ -241,14 +241,14 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot)
 
     if(slot != UIM_REMOTE_SLOT_1_V01) {
         MSG_PRINTF(LOG_ERR, "SLOT%d NOT SUPPORT CURRENTLY!\n", slot);
-        ////return RT_ERR_QMI_UNSUPPORTED_SLOT;
+        return ERR_QMI_UNSUPPORTED_SLOT;
     }
 
     remote_uim_service_object = uim_remote_get_service_object_v01();
     MSG_PRINTF(LOG_INFO,"uim_remote_get_service_object_v01\n");
     if(remote_uim_service_object == NULL) {
         MSG_PRINTF(LOG_ERR, "no remote uim service object\n");
-        ////return RT_ERR_QMI_RUIM_SERVICE_OBJ;
+        return ERR_QMI_RUIM_SERVICE_OBJ;
     }
 
     while (1) {     // TODO: try to remove dead loop
@@ -266,7 +266,7 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot)
     MSG_PRINTF(LOG_INFO,"qmi_client_get_service_list rc: %d, num_entries: %d, num_services: %d\n", rc, num_entries, num_services);
     if(rc != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "get service list failed\n");
-        ////return RT_ERR_QMI_GET_SERVICE_LIST;
+        return ERR_QMI_GET_SERVICE_LIST;
     }
 
     rc = qmi_client_init(&info[0], remote_uim_service_object, remote_uim_ind_cb, NULL, NULL, &rm_uim_client);
@@ -301,6 +301,10 @@ int t9x07_remove_card(uim_remote_slot_type_enum_v01 slot)
     uim_remote_event_resp_msg_v01 resp = {0};
     qmi_txn_handle txn;
 
+    if (rm_uim_client == NULL) {
+        MSG_PRINTF(LOG_INFO,"UIM_REMOTE_CARD_REMOVED_V01 success slot:%d\n", slot);
+        return RT_SUCCESS;
+    }
     req.event_info.event = UIM_REMOTE_CARD_REMOVED_V01;
     req.event_info.slot = UIM_REMOTE_SLOT_1_V01;
 
@@ -309,6 +313,7 @@ int t9x07_remove_card(uim_remote_slot_type_enum_v01 slot)
     MSG_PRINTF(LOG_INFO,"UIM_REMOTE_CARD_REMOVED_V01 slot:%d, rc:%d\n", slot, rc);
 
     rc = qmi_client_release(rm_uim_client);
+    rm_uim_client = NULL;
     MSG_PRINTF(LOG_INFO,"qmi_client_release client rc: %d\n", rc);
 
     return rc;

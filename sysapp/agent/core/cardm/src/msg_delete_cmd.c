@@ -63,12 +63,13 @@ static int32_t delete_parser(const void *in, char *tranid, void **out)
             break;
         }
         len = rt_os_strlen(payload->valuestring);
-        buf = (uint8_t *)rt_os_malloc(len);
+        buf = (uint8_t *)rt_os_malloc(len + 1);
         if (!buf) {
             MSG_PRINTF(LOG_ERR, "Malloc buf failed!!\n");
             break;
         }
         rt_os_memcpy(buf, payload->valuestring, len);
+        buf[len] = '\0';
         MSG_PRINTF(LOG_INFO, "payload:%s,len:%d\n", buf, len);
         ret = RT_SUCCESS;
     } while(0);
