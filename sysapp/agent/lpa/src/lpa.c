@@ -120,6 +120,8 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
         ret = RT_ERR_NULL_POINTER;
         goto end;
     }
+    buf[0] = '\0';
+    size = 0;
     get_profiles_info(SEARCH_NONE, NULL, 0, (uint8_t *)buf, (uint16_t *)&size, channel);
     MSG_INFO_ARRAY("profile info:\n", buf, size);
 
