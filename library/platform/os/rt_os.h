@@ -25,6 +25,8 @@
 #define  RT_SIGINT                          SIGINT
 #define  RT_SIGTERM                         SIGTERM
 #define  RT_SIGALRM                         SIGALRM
+#define  RT_SIGUSR1                         SIGUSR1
+#define  RT_SIGUSR2                         SIGUSR2
 #define  RT_MODE                            mode_t
 #define  RT_S_ISUID                         S_ISUID  // (04000)  set-user-ID (set process effective user ID on execve(2))
 #define  RT_S_ISGID                         S_ISGID  // (02000)
