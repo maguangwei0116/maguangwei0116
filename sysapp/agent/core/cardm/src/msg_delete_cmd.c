@@ -150,6 +150,8 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         }
         cJSON_AddItemToObject(content, "results", delete_result);
     } while(0);
+
+    rt_os_sleep(1);
     card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     *out = content;
 end:

@@ -109,6 +109,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
         if ((g_p_info.type == PROFILE_TYPE_TEST) ||
             (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
             if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+                rt_os_sleep(1);  // dealy some time after get profile info
                 msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
             }
         }
