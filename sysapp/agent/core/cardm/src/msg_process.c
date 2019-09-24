@@ -45,9 +45,9 @@ int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])
 
 int32_t msg_enable_profile(const char *iccid)
 {
-    uint8_t apn_name[100];
+    uint8_t apn_name[100] = {0};
     msg_get_op_apn_name((uint8_t *)iccid, NULL, apn_name);
-    MSG_PRINTF(LOG_INFO, "apn_name:%s\n", apn_name);
+    MSG_PRINTF(LOG_INFO, "iccid:%s, apn_name:%s\n", iccid, apn_name);
     rt_qmi_modify_profile(1, 0, apn_name, 0);
     return lpa_enable_profile(iccid);
 }
@@ -63,11 +63,11 @@ int32_t msg_delete_profile(const char *iccid)
 
 int32_t msg_debug_apn_list(void)
 {
+#if 0
     int32_t ret;
     int32_t i = 0;
     char apn_list_data[MSG_ONE_BLOCK_SIZE * 20] = {0};
 
-#if 0
     // ret = rt_read_all_file_data(APN_LIST, apn_list_data, sizeof(apn_list_data));
     while (i < ret) {
         apn_list_data[i + MSG_ONE_BLOCK_SIZE - 1] = ' ';
@@ -230,9 +230,10 @@ void msg_get_op_apn_name(uint8_t * iccid, uint8_t *imsi, uint8_t *apn_name)
     uint8_t iccid_t[THE_ICCID_LENGTH + 1] = {0};
     int32_t apn_num = 0;
     int32_t ii = 0;
-    uint8_t buffer[MSG_ONE_BLOCK_SIZE + 1];
+    uint8_t buffer[MSG_ONE_BLOCK_SIZE + 1] = {0};
 
     msg_select(iccid, buffer);
+    //MSG_PRINTF(LOG_INFO, "buffer=%s\r\n", buffer);
     agent_msg = cJSON_Parse(buffer);
     if (!agent_msg) {
         MSG_PRINTF(LOG_WARN, "agent_msg error, parse apn name fail !\n");
@@ -241,27 +242,29 @@ void msg_get_op_apn_name(uint8_t * iccid, uint8_t *imsi, uint8_t *apn_name)
     apn_list = cJSON_GetObjectItem(agent_msg, "apnInfos");
     if (apn_list != NULL) {
         apn_num = cJSON_GetArraySize(apn_list);
+        MSG_PRINTF(LOG_INFO, "apn_num: %d\r\n", apn_num);
         for (ii = 0; ii < apn_num; ii++) {
+            MSG_PRINTF(LOG_WARN, "apn index: %d\r\n", ii);
             apn_item = cJSON_GetArrayItem(apn_list, ii);
             mcc_mnc = cJSON_GetObjectItem(apn_item, "mccmnc");
             if (!mcc_mnc) {
                 MSG_PRINTF(LOG_WARN, "mcc mnc is error\n");
                 continue;
             }
-                apn = cJSON_GetObjectItem(apn_item, "apn");
-                if (apn != NULL) {
-                    rt_os_memcpy(apn_name, apn->valuestring, rt_os_strlen(apn->valuestring));
-                    apn_name[rt_os_strlen(apn->valuestring)] = '\0';
-                    break;
-                } else {
-                    apn_name[0] = '\0';
-                    MSG_PRINTF(LOG_WARN, "apn is error\n");
-                }
+            apn = cJSON_GetObjectItem(apn_item, "apn");
+            if (apn != NULL) {
+                rt_os_memcpy(apn_name, apn->valuestring, rt_os_strlen(apn->valuestring));
+                apn_name[rt_os_strlen(apn->valuestring)] = '\0';
+                break;
+            } else {
+                apn_name[0] = '\0';
+                MSG_PRINTF(LOG_WARN, "apn is error\n");
+            }
         }
     } else {
         MSG_PRINTF(LOG_WARN, "apn list is error\n");
     }
-    MSG_PRINTF(LOG_INFO, "APN_NAME:%s!\n", apn_name);
+    MSG_PRINTF(LOG_INFO, "APN_NAME:%s\n", apn_name);
     if (agent_msg != NULL) {
         cJSON_Delete(agent_msg);
     }
