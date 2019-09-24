@@ -131,6 +131,8 @@ static int32_t card_enable_profile(const uint8_t *iccid)
                 }
                 if (ret != RT_SUCCESS) {
                     MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n", ret);
+                } else {
+                    rt_os_sleep(1);  // must have
                 }
                 card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             } else {
