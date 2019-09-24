@@ -108,7 +108,6 @@ static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     sha256_ctx hash_code;
     struct stat statbuf;
 
-
     stat(SHARE_PROFILE, &statbuf);
 
     rt_fseek(fp, 0, RT_FS_SEEK_SET);
@@ -225,6 +224,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     BootstrapRequest_t *bootstrap_request = NULL;
     asn_dec_rval_t dc;
     asn_enc_rval_t ec;
+    uint8_t jt[4] = {0x08, 0x29, 0x43, 0x05};
     uint8_t profile_hash[32];
     uint16_t mcc;
     int32_t i;
@@ -255,15 +255,18 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
 
     MSG_INFO_ARRAY("selected imsi:", bootstrap_request->tbhRequest.imsi.buf, bootstrap_request->tbhRequest.imsi.size);
     MSG_INFO_ARRAY("selected iccid:", bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
-    rt_qmi_get_mcc_mnc(&mcc, NULL);
-    for (i = 0; i < ARRAY_SIZE(rt_plmn); ++i) {
-        if (mcc == rt_plmn[i].mcc) {
-            hexstring2bytes(rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
-            bootstrap_request->tbhRequest.rplmn = OCTET_STRING_new_fromBuf(
+
+    if (rt_os_memcmp(bootstrap_request->tbhRequest.imsi.buf, jt, 4) == 0){
+        rt_qmi_get_mcc_mnc(&mcc, NULL);
+        for (i = 0; i < ARRAY_SIZE(rt_plmn); ++i) {
+            if (mcc == rt_plmn[i].mcc) {
+                hexstring2bytes(rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
+                bootstrap_request->tbhRequest.rplmn = OCTET_STRING_new_fromBuf(
                     &asn_DEF_TBHRequest, bytes, length);
-            // bootstrap_request->tbhRequest.hplmn = OCTET_STRING_new_fromBuf(
-            //        &asn_DEF_TBHRequest, rt_plmn[i].hplmn, rt_os_strlen(rt_plmn[i].hplmn));
-            break;
+                // bootstrap_request->tbhRequest.hplmn = OCTET_STRING_new_fromBuf(
+                //        &asn_DEF_TBHRequest, rt_plmn[i].hplmn, rt_os_strlen(rt_plmn[i].hplmn));
+                break;
+            }
         }
     }
 
@@ -331,7 +334,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t rand
     rt_qmi_modify_profile(1, 0, request->apn.list.array[0]->apnName.buf, 0);
 
     selected_profile_index = random % request->totalNum;
-    MSG_PRINTF(LOG_INFO, "The selected index is %d\n", selected_profile_index);
+    MSG_PRINTF(LOG_INFO, "The selected index = %d; random = %d.\n", selected_profile_index, random);
 
     if (request->sequential == 0xFF) {
         profile_len = get_length(buf, 0);
