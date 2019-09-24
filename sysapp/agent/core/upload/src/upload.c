@@ -240,6 +240,11 @@ static rt_bool upload_check_memory(const void *buf, int32_t len, int32_t value)
     return RT_TRUE;
 }
 
+rt_bool upload_check_eid_empty(void)
+{
+    return upload_check_memory(g_upload_eid, MAX_EID_LEN, '0') ? RT_TRUE : RT_FALSE;   
+}
+
 static const char *upload_get_topic_name(void)
 {
     if (g_upload_eid) {

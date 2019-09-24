@@ -71,6 +71,7 @@ static void idle_event(const uint8_t *buf, int32_t len, int32_t mode)
 static void issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t status = 0;
+    int32_t ret = RT_ERROR;
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
     (void)mode;
@@ -80,6 +81,9 @@ static void issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
     if (downstream_msg->msg) {
         rt_os_free(downstream_msg->msg);
         downstream_msg->msg = NULL;
+    }
+    if (ret == RT_ERROR) {
+        return;
     }
     status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
 }

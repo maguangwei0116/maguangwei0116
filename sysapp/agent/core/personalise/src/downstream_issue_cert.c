@@ -41,9 +41,11 @@ typedef struct _issue_cert_struct_t {
         }\
     } while(0)
 
+extern rt_bool upload_check_eid_empty(void);
+
 static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void **out)
 {
-    int32_t ret;
+    int32_t ret = RT_ERROR;
     cJSON *msg = NULL;
     cJSON *tranId = NULL;
     cJSON *payload = NULL;
@@ -53,6 +55,11 @@ static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void 
     cJSON *target = NULL;
     cJSON *tmp = NULL;
     issue_cert_struct_t *param = NULL;
+
+    if (!upload_check_eid_empty()) {
+        MSG_PRINTF(LOG_WARN, "eid exist, ignore issue cert download !\r\n");
+        goto exit_entry;
+    }
 
     msg =  cJSON_Parse((const char *)in);
 
@@ -74,7 +81,7 @@ static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void 
     cJSON_GET_STR_DATA(content, ticket, param->ticket, sizeof(param->ticket), tmp);
 
     *out = param;
-    ret = 0;
+    ret = RT_SUCCESS;
 
 exit_entry:
 
@@ -185,7 +192,6 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
 
 static int32_t upgrade_download_package(const void *in, const char *upload_event)
 {
-
     int32_t ret;
     rt_task id;
     uint8_t update_mode = 1;
@@ -252,3 +258,4 @@ static cJSON *upload_issue_cert_packer(void *arg)
 
 DOWNSTREAM_METHOD_OBJ_INIT(ISSUE_CERT, MSG_ID_PERSONLLISE, ON_ISSUE_CERT, downstream_issue_cert_parser, downstream_issue_cert_handler);
 UPLOAD_EVENT_OBJ_INIT(ON_ISSUE_CERT, upload_issue_cert_packer);
+
