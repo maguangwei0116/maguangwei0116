@@ -103,13 +103,14 @@ int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
     MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
 
     ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
-    if (ret == RT_ERROR) {
-        return ret;
-    }
     if (downstream_msg->msg) {
         rt_os_free(downstream_msg->msg);
         downstream_msg->msg = NULL;
     }
+    if (ret == RT_ERROR) {
+        return ret;
+    }
+    
     // MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
     status = downstream_msg->handler(downstream_msg->private_arg,  downstream_msg->event, &downstream_msg->out_arg);
     upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
