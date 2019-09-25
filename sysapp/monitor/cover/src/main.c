@@ -65,15 +65,15 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
         // send apdu
         softsim_logic_command(1, (uint8_t *)data, len, rsp, rsp_len);  // msg from lpa
         if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
-            cmd = (data[0] << 8) + data[1];
+            cmd = (rsp[0] << 8) + rsp[1];
             if ((cmd & 0xFF00) == 0x6100) {
                 reset_flag = RT_TRUE;
                 return RT_SUCCESS;
             } else {
                 reset_flag = RT_TRUE;
             }
-
         }
+
         if (reset_flag == RT_TRUE) {
             reset_flag = RT_FALSE;
             trigger_swap_card(1);
