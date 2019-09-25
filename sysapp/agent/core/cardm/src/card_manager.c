@@ -56,6 +56,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
             }
         }
     }
+
     return ret;
 }
 
@@ -82,6 +83,7 @@ static int32_t card_enable_profile(const uint8_t *iccid)
         }
     }
     msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_ALL_SWITCH_CARD, NULL, 0);
+
     return ret;
 }
 

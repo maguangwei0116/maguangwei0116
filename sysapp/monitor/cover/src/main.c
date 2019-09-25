@@ -55,7 +55,7 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
         // send apdu
         softsim_logic_command(1, data, len, rsp, rsp_len);  // msg from lpa
         if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
-            cmd = (data[0] << 8) + data[1];
+            cmd = (rsp[0] << 8) + rsp[1];
             if ((cmd & 0xFF00) == 0x6100) {
                 reset_flag = RT_TRUE;
                 return RT_SUCCESS;

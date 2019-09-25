@@ -272,7 +272,7 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot)
     rc = qmi_client_init(&info[0], remote_uim_service_object, remote_uim_ind_cb, NULL, NULL, &rm_uim_client);
     MSG_PRINTF(LOG_INFO,"qmi_client_init rc: %d\n", rc);
     if(rc != RT_SUCCESS) {
-        return -1;
+        return RT_ERROR;
     }
 
     req.event_info.event = UIM_REMOTE_CONNECTION_AVAILABLE_V01;
