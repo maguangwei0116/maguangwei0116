@@ -125,8 +125,7 @@ static int32_t agent_init_call(void)
 int32_t main(int32_t argc, int8_t **argv)
 {
     agent_init_call();
-
-    MSG_PRINTF(LOG_INFO, "Device id:%s\n", g_value_list.device_info->device_id);
+    
     while (!toStop) {
         rt_os_sleep(3);
     }
