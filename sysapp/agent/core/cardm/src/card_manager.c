@@ -16,7 +16,11 @@
 #include "msg_process.h"
 #include "agent_main.h"
 
-static card_info_t g_p_info;
+#define RT_LAST_EID                 "/data/redtea/rt_last_eid"
+#define RT_PROFILE_STATE_ENABLED    2
+
+static card_info_t                  g_p_info;
+static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0}; 
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -31,7 +35,43 @@ static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
     return RT_TRUE;
 }
 
-static int32_t card_update_eid(void)
+static int32_t card_check_init_upload(const uint8_t *eid)
+{
+    rt_bool update_last_eid = RT_FALSE;
+
+    if (eid_check_memory(eid, MAX_EID_LEN, '0')) {
+        update_last_eid = RT_TRUE;
+    } 
+    
+    if (rt_os_strcmp((const char *)g_last_eid, (const char *)eid) && !update_last_eid) {
+        MSG_PRINTF(LOG_INFO, "g_last_eid: %s, cur_eid: %s\r\n", g_last_eid, eid);
+        MSG_PRINTF(LOG_WARN, "EID changed, upload INIT event\n");
+        update_last_eid = RT_TRUE;
+        upload_event_report("INIT", NULL, 0, NULL);
+        msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
+    }
+
+    if (update_last_eid) {
+        snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
+        rt_write_data(RT_LAST_EID, 0, g_last_eid, sizeof(g_last_eid));
+    }
+    
+    return RT_SUCCESS;
+}
+
+static int32_t card_last_eid_init(void)
+{
+    if (rt_os_access(RT_LAST_EID, 0)) {
+        rt_create_file(RT_LAST_EID);
+    } else {
+        rt_read_data(RT_LAST_EID, 0, g_last_eid, sizeof(g_last_eid));
+        MSG_PRINTF(LOG_INFO, "g_last_eid=%s\r\n", g_last_eid);
+    }
+
+    return RT_SUCCESS;
+}
+
+static int32_t card_update_eid(rt_bool init)
 {
     int32_t ret = RT_ERROR;
 
@@ -40,8 +80,8 @@ static int32_t card_update_eid(void)
     bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
     MSG_PRINTF(LOG_INFO, "ret=%d, g_p_info.eid=%s\r\n", ret, g_p_info.eid);
 
-    if (eid_check_memory(g_p_info.eid, 2 * MAX_EID_HEX_LEN, '0')) {
-        ret = RT_ERROR;
+    if (!init) {
+        card_check_init_upload(g_p_info.eid);
     }
 
     return ret;
@@ -53,7 +93,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     int32_t i;
 
     ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
-    MSG_PRINTF(LOG_INFO, "num:%d\n", g_p_info.num);
+    MSG_PRINTF(LOG_INFO, "profile num: %d\n", g_p_info.num);
     if (ret == RT_SUCCESS) {
         /* get current profile type */
         for (i = 0; i < g_p_info.num; i++) {
@@ -70,6 +110,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
         if ((g_p_info.type == PROFILE_TYPE_TEST) ||
             (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
             if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+                rt_os_sleep(1);  // dealy some time after get profile info
                 msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
             }
         }
@@ -82,6 +123,7 @@ static int32_t card_enable_profile(const uint8_t *iccid)
     int32_t ret = RT_ERROR;
     int32_t ii = 0;
 
+    MSG_PRINTF(LOG_INFO, "iccid:%s, len:%d\n", iccid, rt_os_strlen(iccid));
     for (ii = 0; ii < g_p_info.num; ii++) {
         if (rt_os_strncmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
             if (g_p_info.info[ii].state == 0) {
@@ -92,10 +134,12 @@ static int32_t card_enable_profile(const uint8_t *iccid)
                 }
                 if (ret != RT_SUCCESS) {
                     MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n", ret);
+                } else {
+                    rt_os_sleep(1);  // must have
                 }
                 card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             } else {
-                ret = 2;
+                ret = RT_PROFILE_STATE_ENABLED;
             }
         }
     }
@@ -108,29 +152,48 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     int32_t ret = RT_SUCCESS;
 
     ret = card_enable_profile(g_p_info.info[0].iccid);
-    rt_os_sleep(1); // must have
-    if ((ret == RT_SUCCESS) || (ret == 2)) {
-        ret = lpa_load_profile(buf, len);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
     }
+    
     rt_os_sleep(1); // must have
-    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+    
+    if ((ret == RT_SUCCESS) || (ret == RT_PROFILE_STATE_ENABLED)) {
+        ret = lpa_load_profile(buf, len);
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "lpa load porfile fail, ret=%d\r\n", ret);
+        }
+    }
+    
+    rt_os_sleep(1); // must have
+    
+    ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
+    }
+    
     return ret;
 }
-
-
 
 static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 {
     int32_t ret = RT_ERROR;
 
-    ret = lpa_load_cert(buf, len);
-    ret = card_update_eid();
-    if (!ret) {
-        MSG_PRINTF(LOG_WARN, "EID changed, upload INIT event\n");
-        upload_event_report("INIT", NULL, 0, NULL);
-        msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
-    }
+    do {
+        MSG_PRINTF(LOG_INFO, "lpa load cert ...\r\n");
+        ret = lpa_load_cert(buf, len);
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "lpa load cert fail, ret=%d\r\n", ret);
+            break;
+        }
 
+        ret = card_update_eid(RT_FALSE);
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
+            break;
+        }
+    } while(0);
+    
     return ret;
 }
 
@@ -141,9 +204,23 @@ int32_t init_card_manager(void *arg)
     ((public_value_list_t *)arg)->card_info = &g_p_info;
     init_msg_process(&g_p_info);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
-    card_update_eid();
+    
+    ret = card_update_eid(RT_TRUE);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
+    }
+    
     rt_os_sleep(1);
+    
     ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
+    }
+    
+    ret = card_last_eid_init();
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card update last eid fail, ret=%d\r\n", ret);
+    }
 
     return ret;
 }
@@ -166,11 +243,16 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
         case MSG_NETWORK_DISCONNECTED:
             ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
             break;
-        case MSG_CARD_ENABLE_EXIST_CARD:
-            MSG_PRINTF(LOG_INFO, "iccid:%s, len:%d\n", buf, rt_os_strlen(buf));
-            card_enable_profile(buf);
+        case MSG_CARD_ENABLE_EXIST_CARD:            
+            ret = card_enable_profile(buf);
+            break;
+        case MSG_NETWORK_CONNECTED:
+            ret = card_check_init_upload(g_p_info.eid);
+            break;
         default:
-            MSG_PRINTF(LOG_ERR, "unknow command\n");
+            MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;
     }
+
+    return ret;
 }

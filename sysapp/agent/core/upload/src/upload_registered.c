@@ -13,9 +13,7 @@ static cJSON *upload_registered_packer(void *arg)
     cJSON *content = NULL;
     const char *event = "REGISTERED";
     const char *pushChannel = g_push_channel ? (const char *)g_push_channel : "EMQ";
-
-    MSG_PRINTF(LOG_WARN, "\n----------------->%s g_push_channel=%p\n", event, g_push_channel);
-    
+   
     content = cJSON_CreateObject();
     if (!content) {
         MSG_PRINTF(LOG_WARN, "The content is error\n");

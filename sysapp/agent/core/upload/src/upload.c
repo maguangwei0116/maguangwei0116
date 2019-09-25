@@ -11,8 +11,9 @@
 
 #include "cJSON.h"
 
-#define MAX_UPLOAD_TIMES            3
-#define MAX_OTI_URL_LEN             100
+#define MAX_UPLOAD_TIMES                3
+#define MAX_OTI_URL_LEN                 100
+#define MAX_BOOT_INFO_INTERVAL          5       // unit: second
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do{                 \
@@ -49,7 +50,7 @@ static int32_t upload_http_post_single(const char *host_addr, int32_t port, sock
         }
 
         //MSG_HEXDUMP("http-send", buffer, len);
-        MSG_PRINTF(LOG_INFO, "http post send (%d bytes): %s\r\n", len, buffer);
+        MSG_PRINTF(LOG_INFO, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
         if (http_tcpclient_send(socket_fd, buffer, len) < 0) {      // send data
             ret = HTTP_SOCKET_SEND_ERROR;
             MSG_PRINTF(LOG_WARN, "http_tcpclient_send failed..\n");
@@ -102,7 +103,7 @@ static int32_t upload_wait_network_connected(void)
 
 int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
-    int32_t ret;
+    int32_t ret = RT_FALSE;
     int32_t i = 0;
 
     for (i = 0; i < MAX_UPLOAD_TIMES; i++) {
@@ -117,7 +118,6 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
         }
         break;
     }
-
     return ret;
 }
 
@@ -238,6 +238,11 @@ static rt_bool upload_check_memory(const void *buf, int32_t len, int32_t value)
         }
     }
     return RT_TRUE;
+}
+
+rt_bool upload_check_eid_empty(void)
+{
+    return upload_check_memory(g_upload_eid, MAX_EID_LEN, '0') ? RT_TRUE : RT_FALSE;   
 }
 
 static const char *upload_get_topic_name(void)
@@ -364,6 +369,8 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             cJSON *upload = NULL;
             cJSON *content = NULL;
             int32_t ret;
+
+            MSG_PRINTF(LOG_WARN, "\n----------------->%s\n", event);
             
             content = obj->packer(private_arg);
             MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
@@ -408,17 +415,25 @@ int32_t init_upload(void *arg)
 int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     static rt_bool g_report_boot_event = RT_FALSE;
+    static time_t g_boot_timestamp;
+    time_t tmp_timestamp = time(NULL);
 
     if (MSG_NETWORK_CONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "upload module recv network connected\r\n");
         if (g_report_boot_event == RT_FALSE) {
             upload_event_report("BOOT", NULL, 0, NULL);
             g_report_boot_event = RT_TRUE;
+            g_boot_timestamp = time(NULL);
         } else {
-            rt_bool report_all_info = RT_FALSE;
-            upload_event_report("INFO", NULL, 0, &report_all_info);
+            //MSG_PRINTF(LOG_INFO, "tmp_timestamp:%d, g_boot_timestamp:%d\r\n", tmp_timestamp, g_boot_timestamp);
+            if ((tmp_timestamp - g_boot_timestamp) >= MAX_BOOT_INFO_INTERVAL) {
+                rt_bool report_all_info = RT_FALSE;
+                upload_event_report("INFO", NULL, 0, &report_all_info);
+            }
         }
         g_upload_network = RT_TRUE;
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;
     }
 }

@@ -128,7 +128,7 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
                 break;
             }
         } else {
-            iccid[20] = '\0';
+            iccid[THE_ICCID_LENGTH] = '\0';
             break;
         }
     }
@@ -150,10 +150,12 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
             cJSON_AddItemToObject(new_command_content, "iccid", cJSON_CreateString((const char *)iccid));
             /* add apn list information */
             apn_list_c = cJSON_PrintUnformatted(apn_list);
-            cJSON_AddItemToObject(new_command_content, "apnInfos", cJSON_CreateString((const char *)apn_list_c));
+            /* create a new apn list json object */
+            cJSON_AddItemToObject(new_command_content, "apnInfos", cJSON_Parse((const char *)apn_list_c));
             //debug_json_data(new_command_content, new_command_content);
             msg_analyse_apn(new_command_content, iccid);
             cJSON_Delete(new_command_content);
+            cJSON_free(apn_list_c);
         }
     }
     return state;

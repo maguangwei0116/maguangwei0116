@@ -28,17 +28,10 @@
 #include "md5.h"
 #include "rt_os.h"
 #include "log.h"
+#include "rt_mqtt_common.h"
 
 #if defined(OPENSSL)
 #include <openssl/ssl.h>
-#endif
-
-#include "rt_mqtt_common.h"
-
-#if (1)
-    #define RT_MQTT_COMMAN_DEBUG(fmt, arg...)   MSG_PRINTF(LOG_DBG, fmt, ##arg)
-#else
-    #define RT_MQTT_COMMAN_DEBUG(fmt, arg...)   do {} while(0)     
 #endif
 
 static REG_info reg_info;
@@ -57,14 +50,15 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
     struct sockaddr_in servaddr;
     char buf[4096];
     char md5_out[32+1];
+    struct timeval timeout;
 
     do{
         if(!json_data || !hostname || !path) {
-            RT_MQTT_COMMAN_DEBUG("path json data error\n");
+            MSG_PRINTF(LOG_DBG, "path json data error\n");
             break;
         }
         memset(buf, 0, sizeof(buf));
-        RT_MQTT_COMMAN_DEBUG("json_data:%s\n",json_data);
+        MSG_PRINTF(LOG_INFO, "json_data:%s\n",json_data);
         get_md5_string(json_data, md5_out);
         md5_out[32] = '\0';
 
@@ -81,14 +75,14 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
 
     #endif
 
-        RT_MQTT_COMMAN_DEBUG("md5_out:%s\n",md5_out);
-        RT_MQTT_COMMAN_DEBUG("hostname:%s,port:%d\n",hostname,port);
+        //MSG_PRINTF(LOG_INFO, "md5_out:%s\n",md5_out);
+        //MSG_PRINTF(LOG_INFO, "hostname:%s,port:%d\n",hostname,port);
         memset(&servaddr, 0, sizeof(servaddr));
         servaddr.sin_family = AF_INET;
         servaddr.sin_port = htons(port);
 
         if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) <= 0) {
-            RT_MQTT_COMMAN_DEBUG("create socket error\n");
+            MSG_PRINTF(LOG_DBG, "create socket error\n");
             break;
         }
 
@@ -102,33 +96,31 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
 
         char* p = inet_ntoa(*((struct in_addr *)host_entry->h_addr));
         if(!p) {
-            RT_MQTT_COMMAN_DEBUG("11p error\n");
+            MSG_PRINTF(LOG_DBG, "11p error\n");
             break;
         }
 
         if (inet_pton(AF_INET, p, &servaddr.sin_addr) <= 0) {
-            RT_MQTT_COMMAN_DEBUG("22p error\n");
+            MSG_PRINTF(LOG_DBG, "22p error\n");
             break;
         }
         
-        RT_MQTT_COMMAN_DEBUG("servaddr.sin_addr:%x\n",servaddr.sin_addr);
-        struct timeval timeout;
+        MSG_PRINTF(LOG_INFO, "servaddr.sin_addr:%x\n",servaddr.sin_addr);        
         timeout.tv_sec = 30;
         timeout.tv_usec = 0;
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
-            RT_MQTT_COMMAN_DEBUG("setsockopt0 error\n");
+            MSG_PRINTF(LOG_DBG, "setsockopt0 error\n");
             break;
         }
 
         if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
-            RT_MQTT_COMMAN_DEBUG("setsockopt error\n");
+            MSG_PRINTF(LOG_DBG, "setsockopt error\n");
             break;
         }
-        
-        //TODO: 超时处理.
-        RT_MQTT_COMMAN_DEBUG("sockfd:%d\n",sockfd);
+
+        MSG_PRINTF(LOG_INFO, "sockfd:%d\n",sockfd);
         if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
-            RT_MQTT_COMMAN_DEBUG("connect error %s errno: %d\n", strerror(errno), errno);
+            MSG_PRINTF(LOG_DBG, "connect error %s errno: %d\n", strerror(errno), errno);
             break;
         }
 
@@ -150,9 +142,8 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         strcat(buf, "\r\n\r\n");
         strcat(buf, json_data);
 
-        RT_MQTT_COMMAN_DEBUG("json data len:%d\n", strlen(json_data));
-        //TODO:　可能没写完？
-        RT_MQTT_COMMAN_DEBUG("send buf:%s\n", buf);
+        //MSG_PRINTF(LOG_INFO, "json data len:%d\n", strlen(json_data));
+        MSG_PRINTF(LOG_INFO, "send buf:%s\n", buf);
         
     #if defined(WIN32) || defined(WIN64)
         ret = send(sockfd, buf, strlen(buf), 0);
@@ -160,7 +151,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         ret = write(sockfd, buf, strlen(buf));
     #endif
         if (ret < 0) {
-            RT_MQTT_COMMAN_DEBUG("write data error\n");
+            MSG_PRINTF(LOG_DBG, "write data error\n");
             break;
         }
 
@@ -198,7 +189,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         rt_os_memcpy(buf, tmp_data, strlen(tmp_data));
     #endif
             //取body
-            RT_MQTT_COMMAN_DEBUG("rcv buff:%s\n",buf);
+            MSG_PRINTF(LOG_INFO, "rcv buff:%s\n",buf);
             char *temp = strstr(buf, "\r\n\r\n");
             if (temp) {
                 temp += 4;
@@ -207,15 +198,15 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
                     temp = strstr(temp,"\r\n");
                 }
                 ret = cb(temp);
-                RT_MQTT_COMMAN_DEBUG("cb ret:%d\n",ret);
+                MSG_PRINTF(LOG_DBG, "cb ret:%d\n",ret);
                 break;
             } else {
-                RT_MQTT_COMMAN_DEBUG("ret:%d\n",ret);
+                MSG_PRINTF(LOG_DBG, "ret:%d\n",ret);
                 ret = -1;
                 break;
             }
         } else {
-            RT_MQTT_COMMAN_DEBUG("ret:%d\n",ret);
+            MSG_PRINTF(LOG_DBG, "ret:%d\n",ret);
             ret = -1;
             break;
         }
@@ -243,7 +234,7 @@ static int rt_reg_cb(const char *json_data)
     cJSON *root;
     
     snprintf(buf, sizeof(buf), "%s", json_data);
-    RT_MQTT_COMMAN_DEBUG("buf:%s\n",buf);
+    MSG_PRINTF(LOG_INFO, "buf:%s\n",buf);
     
     root = cJSON_Parse(buf);
     if(root == NULL){
@@ -252,7 +243,7 @@ static int rt_reg_cb(const char *json_data)
     
     str = cJSON_Print(root);
     if (str) {
-        RT_MQTT_COMMAN_DEBUG("%s\n",str);
+        MSG_PRINTF(LOG_INFO, "%s\n",str);
         cJSON_free(str);
     }
     
@@ -424,7 +415,7 @@ int MQTTClient_setup_with_appkey(char* appkey, mqtt_info *info)
 
 
 //红茶adapter服务器获取
-int rt_mqtt_setup_with_appkey(char *appkey, mqtt_info *info)
+int rt_mqtt_setup_with_appkey(const char *appkey, mqtt_info *info, const char *eid)
 {
     char json_data[1024];
     int ret;
@@ -437,7 +428,8 @@ int rt_mqtt_setup_with_appkey(char *appkey, mqtt_info *info)
     if (info->device_id == NULL) {
         snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\"}", appkey);
     } else {
-        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", appkey, info->device_id, NULL, info->last_connect_status);
+        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", \
+            appkey, info->device_id, eid, info->last_connect_status);
     }
 
     MSG_PRINTF(LOG_DBG, "reg_url:%s, reg_port:%d\r\n", reg_url, reg_port);
@@ -470,24 +462,29 @@ static size_t rt_get_broker_cb(const char *json_data)
     int ret = -1;
     char buf[500];
     cJSON *root;
-    char *str = NULL;
-
+   
     snprintf(buf, sizeof(buf), "%s", json_data);
-    RT_MQTT_COMMAN_DEBUG("buf:%s\n",buf);
+    MSG_PRINTF(LOG_INFO, "buf:%s\n", buf);
 
-    root = cJSON_Parse(buf);    
-    str = cJSON_Print(root);
-    RT_MQTT_COMMAN_DEBUG("%s\n",str);
-    cJSON_free(str);
+    root = cJSON_Parse(buf);  
     
+#if 0  // only for test
+    {
+        char *str = NULL;
+        str = cJSON_Print(root);
+        MSG_PRINTF(LOG_INFO, "%s\n",str);
+        cJSON_free(str);
+    }
+#endif
+
     if (root) {
         cJSON *obj = cJSON_GetObjectItem(root, "obj");
-        if(obj){
-            cJSON *pURL = cJSON_GetObjectItem(obj,"ip");
-            cJSON *PORT = cJSON_GetObjectItem(obj,"port");
-            if ((pURL != NULL) && (PORT != NULL)) {
-                strcpy(url_host, pURL->valuestring);
-                strcpy(url_port, PORT->valuestring);
+        if(obj) {
+            cJSON *url = cJSON_GetObjectItem(obj, "ip");
+            cJSON *port = cJSON_GetObjectItem(obj, "port");
+            if ((url != NULL) && (port != NULL)) {
+                snprintf(url_host, sizeof(url_host), "%s", url->valuestring);
+                snprintf(url_port, sizeof(url_port), "%s", port->valuestring);
                 ret = 0;
             }
         }

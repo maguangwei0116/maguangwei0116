@@ -15,6 +15,7 @@
 
 #include <signal.h>
 #include <sys/stat.h>
+#include <sys/ipc.h>
 #include "rt_type.h"
 
 #define  RT_FILE_HANDLE                     FILE *
@@ -24,6 +25,8 @@
 #define  RT_SIGINT                          SIGINT
 #define  RT_SIGTERM                         SIGTERM
 #define  RT_SIGALRM                         SIGALRM
+#define  RT_SIGUSR1                         SIGUSR1
+#define  RT_SIGUSR2                         SIGUSR2
 #define  RT_MODE                            mode_t
 #define  RT_S_ISUID                         S_ISUID  // (04000)  set-user-ID (set process effective user ID on execve(2))
 #define  RT_S_ISGID                         S_ISGID  // (02000)
@@ -40,6 +43,7 @@
 #define  RT_S_IRWXU                         (RT_S_IRUSR | RT_S_IWUSR | RT_S_IXUSR)
 #define  RT_S_IRWXG                         (RT_S_IRGRP | RT_S_IWGRP | RT_S_IXGRP)
 #define  RT_S_IRWXO                         (RT_S_IROTH | RT_S_IWOTH | RT_S_IXOTH)
+#define  RT_IPC_NOWAIT                      IPC_NOWAIT
 
 typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);

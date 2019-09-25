@@ -107,6 +107,7 @@ int rt_delete_file(const char *file)
 rt_fshandle_t linux_fopen(const char *filename, rt_fsmode_t mode)
 {
     rt_fshandle_t fp = NULL;
+
     fp = fopen(filename, mode);
     if(fp != NULL) {
         setbuf(fp, NULL);
@@ -125,9 +126,24 @@ int linux_fseek(rt_fshandle_t fp, long int offset, int whence)
     return fseek(fp, offset, whence);
 }
 
+int linux_feof(rt_fshandle_t fp)
+{
+    return feof(fp);
+}
+
+char *linux_fgets(char *s, int size, rt_fshandle_t fp)
+{
+    return fgets(s, size, fp);  
+}
+
 long int linux_ftell(rt_fshandle_t fp)
 {
     return ftell(fp);
+}
+
+long int linux_fflush(rt_fshandle_t fp)
+{
+    return fflush(fp);
 }
 
 size_t linux_fread(void *ptr, size_t size, size_t count, rt_fshandle_t fp)

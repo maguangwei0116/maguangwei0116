@@ -77,7 +77,7 @@ static int32_t init_versions(void *arg)
     char libcomm_ver[128] = {0};
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
-    log_set_param(LOG_PRINTF_FILE, LOG_INFO, NULL, public_value_list ? public_value_list->log_max_size: 0);
+    log_set_param(LOG_PRINTF_FILE, LOG_INFO, public_value_list ? public_value_list->log_max_size: 0);
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);

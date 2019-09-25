@@ -53,7 +53,7 @@ static void network_detection_task(void)
 
 int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
-    uint8_t imsi[IMSI_LENGTH + 1];
+    uint8_t imsi[IMSI_LENGTH + 1] = {0};
     if (mode == MSG_ALL_SWITCH_CARD) {
         network_start_timer();
         rt_os_sleep(10);
@@ -64,7 +64,12 @@ int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 
 void network_state(int32_t state)
 {
+    if (state == g_network_state) {
+        return;
+    }
+    
     g_network_state = state;
+
     if (g_network_state == DSI_STATE_CALL_CONNECTED) {  // network connected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
     } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
@@ -98,13 +103,14 @@ int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
     MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
 
     ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
-    if (ret == RT_ERROR) {
-        return ret;
-    }
     if (downstream_msg->msg) {
         rt_os_free(downstream_msg->msg);
         downstream_msg->msg = NULL;
     }
+    if (ret == RT_ERROR) {
+        return ret;
+    }
+    
     // MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
     status = downstream_msg->handler(downstream_msg->private_arg,  downstream_msg->event, &downstream_msg->out_arg);
     upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);

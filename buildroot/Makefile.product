@@ -1,10 +1,12 @@
 
-
 PRODUCT_CONFIG_LIST = $(shell cd configs && ls *_defconfig)
 PRODUCT_LIST = $(patsubst %_defconfig,%,$(PRODUCT_CONFIG_LIST))
 
 product-all: $(PRODUCT_LIST)
 
+$(PRODUCT_CONFIG_LIST):
+
+#$(warning -------------PRODUCT_LIST=$(PRODUCT_LIST))
 $(PRODUCT_LIST):
 	@$(call MESSAGE,"Building Product $(@)")
 	make O=$(WORKSPACE)/output/$(@) $(@)_defconfig
@@ -14,9 +16,8 @@ $(PRODUCT_LIST):
 # PRODUCT_CONFIG_TYPE = menuconfig
 # PRODUCT_CONFIG=$(foreach c,$(PRODUCT_CONFIG_TYPE),$(patsubst %,%-$(c),$(PRODUCT_LIST)))
 
-
 PRODUCT_MENUCONFIG=$(patsubst %,%-menuconfig,$(PRODUCT_LIST))
-
+#$(warning -------------PRODUCT_MENUCONFIG=$(PRODUCT_MENUCONFIG))
 $(PRODUCT_MENUCONFIG):
 	make O=$(WORKSPACE)/output/$(patsubst %-menuconfig,%,$(@)) $(patsubst %-menuconfig,%_defconfig,$(@))
 	make O=$(WORKSPACE)/output/$(patsubst %-menuconfig,%,$(@)) menuconfig

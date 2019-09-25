@@ -29,7 +29,6 @@ typedef struct _issue_cert_struct_t {
 } issue_cert_struct_t;
 
 #define RT_CERTIFICATE      "/data/redtea/rt_cert"
-#define RT_TEP_CERTIFICATE  "/data/redtea/rt_cert.tmp"
 
 #define cJSON_GET_STR_DATA(json, item, item_str_out, len, tmp)\
     do {\
@@ -53,6 +52,8 @@ typedef struct _issue_cert_struct_t {
         }\
     } while(0)
 
+extern rt_bool upload_check_eid_empty(void);
+
 static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void **out)
 {
     int32_t ret = RT_ERROR;
@@ -65,6 +66,11 @@ static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void 
     cJSON *target = NULL;
     cJSON *tmp = NULL;
     issue_cert_struct_t *param = NULL;
+
+    if (!upload_check_eid_empty()) {
+        MSG_PRINTF(LOG_WARN, "eid exist, ignore issue cert download !\r\n");
+        goto exit_entry;
+    }
 
     msg =  cJSON_Parse((const char *)in);
 
@@ -90,7 +96,7 @@ static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void 
     cJSON_GET_STR_DATA(content, ticket, param->ticket, sizeof(param->ticket), tmp);
 
     *out = param;
-    ret = 0;
+    ret = RT_SUCCESS;
 
 exit_entry:
 
@@ -112,6 +118,7 @@ exit_entry:
     return ret;
 }
 
+#if 0
 static rt_bool on_issue_cert_install(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
@@ -140,6 +147,14 @@ exit_entry:
     return ret;
 }
 
+static rt_bool on_issue_cert_file_check(const void *arg)
+{
+    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
+
+    return RT_TRUE;
+}
+#endif
+
 static rt_bool on_issue_cert_cleanup(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
@@ -149,43 +164,47 @@ static rt_bool on_issue_cert_cleanup(const void *arg)
     return RT_TRUE;
 }
 
-static rt_bool on_issue_cert_file_check(const void *arg)
-{
-    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
-
-    return RT_TRUE;
-}
-
 static rt_bool on_issue_cert_upload_event(const void *arg)
 {
     uint8_t *buf = NULL;
     rt_fshandle_t fp;
     int32_t length;
-
+    int32_t ret = RT_ERROR;
+    int32_t on_issue_cert_status = 0;
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
-    upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade); 
-    if (upgrade->downloadResult == 0)
-    {
+    if (upgrade->downloadResult == RT_SUCCESS) {
         fp = rt_fopen(RT_CERTIFICATE, RT_FS_READ);
-        if (fp == NULL) {
-            return RT_ERROR;
+        if (!fp) {
+            MSG_PRINTF(LOG_ERR, "open cert file failed!\n");
+            goto exit_entry;
         }
         length = get_file_size(RT_CERTIFICATE);
         buf = (uint8_t *) rt_os_malloc(length);
         if (!buf) {
             MSG_PRINTF(LOG_ERR, "malloc failed!\n");
-            return RT_ERROR;
+            goto exit_entry;
         }
         rt_fread(buf, 1, length, fp);
-        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_CERTIFICATE, buf, length);
+
+        ret = card_manager_event((const uint8_t *)buf, length, MSG_CARD_SETTING_CERTIFICATE);
+        if (ret) {
+            on_issue_cert_status = ret;
+        }
+
         rt_os_free(buf);
-        if (fp != NULL) {
+        if (fp) {
             rt_fclose(fp);
         }
         rt_os_unlink(RT_CERTIFICATE);
+    }else {
+        on_issue_cert_status = upgrade->downloadResult;
     }
 
+exit_entry:
+
+    upload_event_report(upgrade->event, (const char *)upgrade->tranId, on_issue_cert_status, (void *)upgrade); 
+    
     /* release upgrade struct memory */
     if (upgrade) {
         rt_os_free((void *)upgrade);
@@ -197,7 +216,6 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
 
 static int32_t upgrade_download_package(const void *in, const char *upload_event)
 {
-
     int32_t ret;
     rt_task id;
     uint8_t update_mode = 1;
@@ -216,19 +234,19 @@ static int32_t upgrade_download_package(const void *in, const char *upload_event
     snprintf(upgrade_info->tranId, sizeof(upgrade_info->tranId), "%s", param->tranId);
     snprintf(upgrade_info->fileHash, sizeof(upgrade_info->fileHash), "%s", param->fileHash);
     snprintf(upgrade_info->ticket, sizeof(upgrade_info->ticket), "%s", param->ticket);
-    snprintf(upgrade_info->tmpFileName, sizeof(upgrade_info->tmpFileName), "%s", RT_TEP_CERTIFICATE);
+    snprintf(upgrade_info->tmpFileName, sizeof(upgrade_info->tmpFileName), "%s", RT_CERTIFICATE);
     snprintf(upgrade_info->targetFileName, sizeof(upgrade_info->targetFileName), "%s", RT_CERTIFICATE);
     snprintf(upgrade_info->event, sizeof(upgrade_info->event), "%s", upload_event);
     upgrade_info->retryAttempts = 2;
     upgrade_info->retryInterval = 10;
 
      /* set callback functions */
-    upgrade_info->check      = on_issue_cert_file_check;
-    upgrade_info->install    = on_issue_cert_install;
-    upgrade_info->cleanup    = on_issue_cert_cleanup;
+    upgrade_info->check      = NULL;
+    upgrade_info->install    = NULL;
+    upgrade_info->cleanup    = NULL;
     upgrade_info->on_event   = on_issue_cert_upload_event;
 
-    on_issue_cert_cleanup(NULL);
+    on_issue_cert_cleanup(upgrade_info);
     ret = upgrade_process_start(upgrade_info);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "Create upgrade start error\n");
@@ -263,4 +281,5 @@ static cJSON *upload_on_issue_cert_packer(void *arg)
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(ISSUE_CERT, MSG_ID_PERSONLLISE, ON_ISSUE_CERT, downstream_issue_cert_parser, downstream_issue_cert_handler);
+
 UPLOAD_EVENT_OBJ_INIT(ON_ISSUE_CERT, upload_on_issue_cert_packer);
