@@ -350,7 +350,7 @@ static rt_bool rt_mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
     return RT_TRUE;
 }
 
-#if 1  // only for test
+#if 1
 #define TEST_FORCE_TO_ADAPTER       1
 #define TEST_FORCE_TO_EMQ           0
 #define TEST_FORCE_TO_YUNBA         0
@@ -390,14 +390,14 @@ FORCE_TO_ADAPTER:
                 /* If connect yunba ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.rt_channel, "YUNBA", 5) &&
                       (rt_mqtt_connect_yunba(param, param->opts.ticket_server) == RT_TRUE)) {
-                    MSG_PRINTF(LOG_DBG, "connect YUNBA mqtt server successfull\n");
+                    MSG_PRINTF(LOG_DBG, "get YUNBA mqtt server connect param successfull\n");
                     break;
                 }
 
                 /* If connect EMQ ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.rt_channel, "EMQ", 3) &&
                       (rt_mqtt_connect_emq(param, param->opts.ticket_server) == RT_TRUE)) {
-                    MSG_PRINTF(LOG_DBG, "connect EMQ mqtt server successfull\n");
+                    MSG_PRINTF(LOG_DBG, "get EMQ mqtt server connect param successfull\n");
                     break;
                 }
             }
@@ -407,13 +407,13 @@ FORCE_TO_ADAPTER:
         if (!rt_os_strncmp(param->opts.rt_channel, "YUNBA", 5)) {
 FORCE_TO_EMQ:
             if (rt_mqtt_connect_emq(param, NULL) == RT_TRUE) {
-                MSG_PRINTF(LOG_DBG, "connect EMQ mqtt server successfull\n");
+                MSG_PRINTF(LOG_DBG, "get EMQ mqtt server connect param successfull\n");
                 break;
             }
         } else if (!rt_os_strncmp(param->opts.rt_channel, "EMQ", 3)) {
 FORCE_TO_YUNBA:
             if (rt_mqtt_connect_yunba(param, NULL) == RT_TRUE) {
-                MSG_PRINTF(LOG_DBG, "connect yunba mqtt server successfull\n");
+                MSG_PRINTF(LOG_DBG, "get yunba mqtt server connect param successfull\n");
                 break;
             }
         }
@@ -504,6 +504,11 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     mqtt_info *opts = &param->opts;
     MQTTClient_connectOptions *pconn_opts = &param->conn_opts;
 
+    /* force to connect EMQ mqtt server with [client_id = g_mqtt_device_id] */
+    if (!rt_os_strncmp(opts->rt_channel, "EMQ", 3)) {
+        snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_device_id);
+    }
+
     MSG_PRINTF(LOG_DBG, "MQTT broker: addr [%s] id [%s] user [%s] passwd [%s]\n",
                     (const char *)opts->rt_url,
                     (const char *)opts->client_id,
@@ -519,16 +524,15 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     ret = MQTTClient_setCallbacks(*c, NULL,(MQTTClient_connectionLost *)connection_lost,
                                  (MQTTClient_messageArrived *)message_arrived, NULL,
                                  (MQTTClient_extendedCmdArrive *)ext_message_arrive);
-
-    MSG_PRINTF(LOG_DBG, "MQTTClient_setCallbacks %d\n", ret);
+    MSG_PRINTF(LOG_INFO, "MQTTClient_setCallbacks %d\n", ret);
 
     pconn_opts->username = (const char *)opts->username;
     pconn_opts->password = (const char *)opts->password;
     if (!rt_os_strncmp(opts->rt_channel, "YUNBA", 5)) {
-        MSG_PRINTF(LOG_DBG, "connecting yunba mqtt server ...\n");
+        MSG_PRINTF(LOG_WARN, "connecting yunba mqtt server ...\n");
         pconn_opts->MQTTVersion = 0x13;
     } else if (!rt_os_strncmp(opts->rt_channel, "EMQ", 3)) {
-        MSG_PRINTF(LOG_DBG, "connecting emq mqtt server ...\n");
+        MSG_PRINTF(LOG_WARN, "connecting emq mqtt server ...\n");
         pconn_opts->MQTTVersion = MQTTVERSION_3_1;
     }
     pconn_opts->keepAliveInterval   = MQTT_KEEP_ALIVE_INTERVAL;
@@ -537,6 +541,7 @@ static rt_bool rt_mqtt_connect_server(mqtt_param_t *param)
     
     //MSG_PRINTF(LOG_DBG, "pconn_opts->struct_version=%d\n", pconn_opts->struct_version);
     if (my_connect(c, pconn_opts) == RT_FALSE) {
+        MSG_PRINTF(LOG_WARN, "connecting %s mqtt server fail\r\n", opts->rt_channel);
         if (++opts->try_connect_timer > MAX_TRY_CONNECT_TIME) {
             if (!rt_os_strncmp(opts->rt_channel, "EMQ", 3)) {
                 opts->last_connect_status = MQTT_CONNECT_EMQ_ERROR;
