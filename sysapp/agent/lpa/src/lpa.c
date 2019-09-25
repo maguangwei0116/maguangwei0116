@@ -10,10 +10,11 @@
 #include "ProfileInstallationResult.h"
 #include "MoreEIDOperateResponse.h"
 
-
 #define BUFFER_SIZE                10*1024
 extern uint8_t *g_proxy_server_url;
+
 extern void init_apdu_channel(lpa_channel_type_e channel_mode);
+
 int init_lpa(void *arg)
 {
     init_apdu_channel(*(lpa_channel_type_e *)arg);
@@ -27,15 +28,16 @@ int lpa_get_eid(uint8_t *eid)
     int8_t channel;
     uint8_t buf[21];
     uint16_t size = sizeof(buf);
+    int ret = RT_SUCCESS;
 
     if (open_channel(&channel) != RT_SUCCESS) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
     hexstring2bytes((uint8_t *)eid, buf, &size);
-    get_eid(buf, &size, channel);
+    ret = get_eid(buf, &size, channel);
     memcpy(eid, &buf[5], 16);
     close_channel(channel);
-    return RT_SUCCESS;
+    return ret;
 }
 
 int lpa_switch_eid(const uint8_t *eid)
@@ -441,26 +443,28 @@ end:
 int lpa_load_cert(const uint8_t *data, uint16_t data_len)
 {
     uint8_t channel;
+    int ret = RT_SUCCESS;
 
     if (open_channel(&channel) != RT_SUCCESS) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
-    load_cert(data, data_len, channel);
+    ret = load_cert(data, data_len, channel);
     close_channel(channel);
 
-    return RT_SUCCESS;
+    return ret;
 }
 
 int lpa_load_profile(const uint8_t *data, uint16_t data_len)
 {
     uint8_t channel;
+    int ret = RT_SUCCESS;
 
     if (open_channel(&channel) != RT_SUCCESS) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
     MSG_INFO("data[0]:%02X, data_len:%d\n", data[0], data_len);
-    load_profile(data, data_len, channel);
+    ret = load_profile(data, data_len, channel);
     close_channel(channel);
 
-    return RT_SUCCESS;
+    return ret;
 }
