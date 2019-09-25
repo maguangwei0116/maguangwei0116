@@ -139,7 +139,7 @@ static int32_t agent_task_check_start(void)
     pid_t ret_pid;
 
     /* kill all agent processes */
-    snprintf(cmd, sizeof(cmd), "killall -9 %s", RT_AGENT_PTROCESS);
+    snprintf(cmd, sizeof(cmd), "killall -9 %s > /dev/null 2>&1", RT_AGENT_PTROCESS);
     system(cmd);
 
     /* start up agent process by fork fucntion */
@@ -172,20 +172,30 @@ static int32_t agent_task_check_start(void)
 
 int32_t main(int32_t argc, const char *argv[])
 {
-    pid_t child_pid;
-
+    log_mode_e def_mode = LOG_PRINTF_FILE;
+    
+    /* check input param to debug in terminal */
+    if (argc > 1) {
+        def_mode = LOG_PRINTF_TERMINAL;  
+    }
+    
+    /* init log param */
     init_log_file(RT_MONITOR_LOG);
-    log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
+    log_set_param(def_mode, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
 
+    /* install file ops callbacks */
     init_file_ops();
     softsim_logic_start(log_print);
 
+    /* install system signal handle */
     init_system_signal(NULL);
 
+    /* install ipc callbacks and start up ipc server */
     ipc_regist_callback(monitor_cmd);
     ipc_socket_server_start();
 
+    /* start up agent */
     while (1) {
         agent_task_check_start();
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
