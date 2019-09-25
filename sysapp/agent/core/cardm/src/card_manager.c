@@ -94,7 +94,7 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     if ((ret == RT_SUCCESS) || (ret == 2)) {
         ret = lpa_load_profile(buf, len);
     }
-    rt_os_sleep(1); // must have
+    rt_os_sleep(3); // must have
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
     return ret;
 }

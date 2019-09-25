@@ -188,7 +188,7 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
                 break;
             }
         } while (1);
-        if (sw != SW_NORMAL) {
+        if ((sw & 0xF000) != SW_NORMAL) {
                 rsp[0] = (sw & 0xFF00) >> 8;
                 rsp[1] = sw & 0xFF;
                 *rsp_len = 2;
