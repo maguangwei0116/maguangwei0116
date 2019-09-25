@@ -93,7 +93,9 @@ static void agent_queue_task(void)
 {
     agent_que_t que_t;
     int32_t len = sizeof(agent_que_t) - sizeof(long);
+    
     while (1) {
+        rt_os_memset(&que_t, 0, sizeof(agent_que_t));
         if (rt_receive_queue_msg(g_queue_id, (void *) &que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
             MSG_PRINTF(LOG_INFO, "que_t.msg_id:%d\n", que_t.msg_id);
             switch (que_t.msg_id) {
@@ -107,7 +109,6 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_LOG_MANAGER:
-
                     break;
 
                 case MSG_ID_OTA_UPGRADE:
@@ -143,6 +144,7 @@ static void agent_queue_task(void)
                 case MSG_ID_IDLE:
                     idle_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
+                    
                 case MSG_ID_DETECT_NETWORK:
                     network_detect_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
@@ -153,7 +155,7 @@ static void agent_queue_task(void)
             }
 
             //MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, que_t.data_buf:%p\n", que_t.data_len, que_t.data_buf);
-            if (que_t.data_len != 0) {
+            if (que_t.data_buf && que_t.data_len != 0) {
                 rt_os_free(que_t.data_buf);
             }
         }
@@ -173,7 +175,7 @@ static void upload_queue_task(void)
             MSG_PRINTF(LOG_INFO, "upload queue dealing ... que_t.data_buf: %p\r\n", que_t.data_buf);
             ret = upload_http_post(que_t.host_addr, que_t.port, que_t.cb, que_t.data_buf, que_t.data_len);
             MSG_PRINTF(LOG_INFO, "upload http post:%d\n", ret);
-            if (que_t.data_buf) {
+            if (que_t.data_buf && que_t.data_len != 0) {
                 rt_os_free(que_t.data_buf);
             }
         }
