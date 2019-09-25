@@ -19,6 +19,7 @@
 #include "esim_api.h"
 
 extern int init_file_ops(void);
+extern int vsim_get_ver(char *version);
 
 static void cfinish(int32_t sig)
 {
@@ -69,9 +70,17 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
     return RT_SUCCESS;
 }
 
+void init_app_version(void *arg)
+{
+    uint8_t version[100];
+    MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
+    vsim_get_ver(version);
+    MSG_PRINTF(LOG_WARN, "vUICC version:%s\n", version);
+}
+
 int32_t main(void)
 {
-    MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
+    init_app_version(NULL);
     init_file_ops();
     softsim_logic_start(write_log_fun);
     init_system_signal(NULL);
