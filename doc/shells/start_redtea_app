@@ -1,0 +1,32 @@
+#! /bin/sh
+
+set -e
+echo 4096 > /proc/sys/vm/min_free_kbytes
+process=monitor
+keep_process=/etc/init.d/start_redtea_keep
+
+case "$1" in
+start)
+    echo -n "Starting module at process: "
+    start-stop-daemon -S -b -a $process
+    start-stop-daemon -S -b -a $keep_process
+    echo "done"
+    ;;
+  stop)
+    echo -n "Stopping module at process: "
+    start-stop-daemon -K -n $process
+    echo "done"
+    ;;
+  restart)
+    $0 stop
+    $0 start
+    ;;
+  *)
+    echo "Usage atc_daemon{ start | stop | restart }" >&2
+    exit 1
+    ;;
+esac
+
+telnetd &
+
+exit 0
