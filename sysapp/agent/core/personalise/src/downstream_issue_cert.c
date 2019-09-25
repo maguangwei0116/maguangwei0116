@@ -177,7 +177,7 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
 
         ret = card_manager_event((const uint8_t *)buf, length, MSG_CARD_SETTING_CERTIFICATE);
         if (ret) {
-            on_issue_cert_status = UPGRADE_INSTALL_CERT_ERROR;
+            on_issue_cert_status = ret;
         }
 
         rt_os_free(buf);
