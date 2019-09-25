@@ -15,10 +15,10 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "rt_type.h"
-#include "ipc_socket_server.h"
 #include "trigger.h"
 #include "card.h"
 #include "esim_api.h"
+#include "ipc_socket_server.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "agent"
@@ -43,6 +43,7 @@ static void cfinish(int32_t sig)
 static int32_t init_system_signal(void *arg)
 {
     rt_os_signal(RT_SIGINT, cfinish);
+
     return RT_SUCCESS;
 }
 
@@ -53,7 +54,7 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
 
     cmd = (data[5] << 8) + data[6];
     if (cmd == 0xFFFF) { // msg from agent
-        MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (data[7] == 0x00) ? "vUICC":"eUICC");
+        MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (data[7] == 0x00) ? "vUICC" : "eUICC");
         if (data[7] == 0x00) {  // used vuicc
             trigegr_regist_reset(card_reset);
             trigegr_regist_cmd(card_cmd);
@@ -144,9 +145,10 @@ static int32_t agent_task_check_start(void)
 static void init_app_version(void *arg)
 {
     uint8_t version[100];
+
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     vsim_get_ver(version);
-    MSG_PRINTF(LOG_WARN, "vUICC version:%s\n", version);
+    MSG_PRINTF(LOG_WARN, "vUICC version: %s\n", version);
 }
 
 int32_t main(int32_t argc, const char *argv[])
