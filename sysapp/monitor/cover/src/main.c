@@ -31,6 +31,7 @@ static void cfinish(int32_t sig)
 static int32_t init_system_signal(void *arg)
 {
     rt_os_signal(RT_SIGINT, cfinish);
+
     return RT_SUCCESS;
 }
 
@@ -67,15 +68,19 @@ uint16_t monitor_cmd(uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_le
             trigger_swap_card(1);
         }
     }
+
     return RT_SUCCESS;
 }
 
-void init_app_version(void *arg)
+int32_t init_app_version(void *arg)
 {
     uint8_t version[100];
+
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     vsim_get_ver(version);
     MSG_PRINTF(LOG_WARN, "vUICC version:%s\n", version);
+
+    return RT_SUCCESS;
 }
 
 int32_t main(void)
@@ -86,4 +91,6 @@ int32_t main(void)
     init_system_signal(NULL);
     ipc_regist_callback(monitor_cmd);
     ipc_socket_server();
+
+    return RT_SUCCESS;
 }
