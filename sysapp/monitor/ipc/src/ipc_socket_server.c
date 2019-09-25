@@ -63,4 +63,6 @@ int32_t ipc_socket_server(void)
     }
 end:
     socket_close(socket_id);
+
+    return ret;
 }
