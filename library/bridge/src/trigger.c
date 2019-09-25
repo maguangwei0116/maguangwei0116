@@ -336,7 +336,7 @@ int t9x07_reset_card(uim_remote_slot_type_enum_v01 slot)
 
     rc = qmi_client_send_msg_async(rm_uim_client, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, &txn);
-    MSG_PRINTF(LOG_INFO,"UIM_REMOTE_CARD_RESET_V01 slot:%d, rc:%d\n", slot, rc);
+    MSG_PRINTF(LOG_INFO, "UIM_REMOTE_CARD_RESET_V01 slot:%d, rc:%d\n", slot, rc);
 
     return rc;
 }

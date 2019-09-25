@@ -1094,20 +1094,24 @@ end:
 int load_cert(const uint8_t *data, uint16_t data_len, uint8_t channel)
 {
     int ret = RT_SUCCESS;
+
     ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000
     if (ret == RT_SUCCESS) {
-        //return g_buf[];
+        return g_buf[5];
     }
+
     return ret;
 }
 
 int load_profile(const uint8_t *data, uint16_t data_len, uint8_t channel)
 {
     int ret = RT_SUCCESS;
+
     ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000
     if (ret == RT_SUCCESS) {
         return g_buf[5];
     }
+
     return ret;
 }
 
