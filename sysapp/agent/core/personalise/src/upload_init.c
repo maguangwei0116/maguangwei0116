@@ -1,4 +1,16 @@
 
+/*******************************************************************************
+ * Copyright (c) redtea mobile.
+ * File name   : upload_init.c
+ * Date        : 2019.09.25
+ * Note        :
+ * Description :
+ * Contributors: RT - create the file
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Sublime text
+ *******************************************************************************/
+
 #include "upload.h"
 #include "rt_type.h"
 #include "rt_os.h"

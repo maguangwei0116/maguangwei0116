@@ -1,4 +1,16 @@
 
+/*******************************************************************************
+ * Copyright (c) redtea mobile.
+ * File name   : downstream_issue_cert.c
+ * Date        : 2019.09.25
+ * Note        :
+ * Description :
+ * Contributors: RT - create the file
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Sublime text
+ *******************************************************************************/
+
 #include "downstream.h"
 #include "rt_type.h"
 #include "rt_os.h"
@@ -43,7 +55,7 @@ typedef struct _issue_cert_struct_t {
 
 static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void **out)
 {
-    int32_t ret;
+    int32_t ret = RT_ERROR;
     cJSON *msg = NULL;
     cJSON *tranId = NULL;
     cJSON *payload = NULL;
@@ -60,7 +72,11 @@ static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void 
     
     rt_os_strcpy(tran_id, tranId->valuestring);
 
-    param = (issue_cert_struct_t *)rt_os_malloc(sizeof(issue_cert_struct_t));
+    param = (issue_cert_struct_t *)rt_os_malloc(sizeof(issue_cert_struct_t)); //todo 非空判断
+    if (!param){
+        MSG_PRINTF(LOG_WARN, "The param is null!\n");
+        goto exit_entry;
+    }
     rt_os_memset(param, 0, sizeof(issue_cert_struct_t));
     strncpy(param->tranId, tranId->valuestring, rt_os_strlen(tranId->valuestring));
 
@@ -101,23 +117,19 @@ static rt_bool on_issue_cert_install(const void *arg)
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
     rt_bool ret = RT_FALSE;
     
-    /* ½øÐÐappÌæ»» */
     MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
     if (rt_os_rename(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
         MSG_PRINTF(LOG_WARN, "re-name error\n");
         goto exit_entry;
     }
 
-    /* È¨ÏÞÉèÖÃ */
     if (rt_os_chmod(upgrade->targetFileName, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) != 0) {
         MSG_PRINTF(LOG_WARN, "change mode error\n");
         goto exit_entry;
     }
 
-    /* ÉèÖÃÉý¼¶³É¹¦±êÖ¾Î» */
     //SET_UPGRADE_STATUS(upgrade, 1);
 
-    /* Á¬ÐøÁ½´Îsync±£Ö¤ÐÂÈí¼þÍ¬²½µ½±¾µØflash */
     rt_os_sync();
     rt_os_sync();
 
@@ -227,7 +239,7 @@ static int32_t upgrade_download_package(const void *in, const char *upload_event
     ret = 0;
         
 exit_entry:
-
+    // todo  handler中释放
     if (param) {
         rt_os_free((void *)param);
         param = NULL;
@@ -245,10 +257,10 @@ static int32_t downstream_issue_cert_handler(const void *in, const char *event, 
     return ret;
 }
 
-static cJSON *upload_issue_cert_packer(void *arg)
+static cJSON *upload_on_issue_cert_packer(void *arg)
 {
     return NULL;   
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(ISSUE_CERT, MSG_ID_PERSONLLISE, ON_ISSUE_CERT, downstream_issue_cert_parser, downstream_issue_cert_handler);
-UPLOAD_EVENT_OBJ_INIT(ON_ISSUE_CERT, upload_issue_cert_packer);
+UPLOAD_EVENT_OBJ_INIT(ON_ISSUE_CERT, upload_on_issue_cert_packer);
