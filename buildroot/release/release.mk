@@ -54,7 +54,7 @@ define CREATE_ADB_PUSH_SHELL
 	echo "adb push ./targets/*libcomm.so* /usr/lib/libcomm.so" >>$(1);\
 	echo "adb shell chmod + /usr/lib/libcomm.so" >>$(1);\
 	echo "adb push ./shells/start_redtea_app /etc/init.d/start_redtea_app" >>$(1);\
-	echo "adb shell chmod + /usr/lib/libcomm.so" >>$(1);\
+	echo "adb shell chmod + /etc/init.d/start_redtea_app" >>$(1);\
 	echo "adb push ./shells/start_redtea_keep /etc/init.d/start_redtea_keep" >>$(1);\
 	echo "adb shell chmod + /etc/init.d/start_redtea_keep" >>$(1);\
 	echo "" >>$(1);\
