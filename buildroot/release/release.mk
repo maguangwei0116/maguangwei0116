@@ -10,9 +10,11 @@ RELEASE_VERSION=$(call qstrip,$(BR2_RELEASE_VERSION))
 RELEASE_TARGET=$(call qstrip,$(BR2_RELEASE_TARGET))
 RELEASE_ENV_TYPE=$(call qstrip,$(BR2_CFG_ENV_TYPE))
 
-RELEASE_README=README.txt
-CHANGE_LOG=../doc/change-log.txt
-ADB_PUSH_SHELL=adb-push.sh
+REDTEA_RELEASE_README=README.txt
+REDTEA_CHANGE_LOG=../doc/change-log.txt
+REDTEA_SHELL_APP=../doc/shells/start_redtea_app
+REDTEA_SHELL_KEEP=../doc/shells/start_redtea_keep
+REDTEA_ADB_PUSH_SHELL=adb-push.sh
 RELEASE_AUTHOR=$(shell whoami)
 RELEASE_DATE=$(shell date +"%Y%m%d")
 RELEASE_TIME=$(shell date +"%Y-%m-%d %T")
@@ -32,12 +34,12 @@ define CREATE_RELEASE_README
 	echo "Tips : " >>$(1);\
 	echo "1.Copy $(RELEASE_TAR_FILE) into your debug computer;" >>$(1);\
 	echo "2.Unzip $(RELEASE_TAR_FILE) with cmd [ unzip $(RELEASE_TAR_FILE) ];" >>$(1);\
-	echo "3.Read doc in ./$(shell basename $(RELEASE_INSTALL_PATH))/$(RELEASE_README) which you are reading;" >>$(1);\
+	echo "3.Read doc in ./$(shell basename $(RELEASE_INSTALL_PATH))/$(REDTEA_RELEASE_README) which you are reading;" >>$(1);\
 	echo "4.Connect your target device with USB adb;" >>$(1);\
 	echo "5.Enter ./$(shell basename $(RELEASE_INSTALL_PATH)) with cmd [ cd ./$(shell basename $(RELEASE_INSTALL_PATH)) ];" >>$(1);\
-	echo "6.Run [ ./$(ADB_PUSH_SHELL) ] which located in ./$(shell basename $(RELEASE_INSTALL_PATH)) to push all targes into target device with adb;" >>$(1);\
+	echo "6.Run [ ./$(REDTEA_ADB_PUSH_SHELL) ] which located in ./$(shell basename $(RELEASE_INSTALL_PATH)) to push all targes into target device with adb;" >>$(1);\
 	echo "7.Reboot target device to autorun new target applications." >>$(1);\
-    echo "" >>$(1)
+	echo "" >>$(1)
 endef
 
 define CREATE_ADB_PUSH_SHELL
@@ -51,7 +53,11 @@ define CREATE_ADB_PUSH_SHELL
 	echo "adb shell chmod + /usr/bin/monitor" >>$(1);\
 	echo "adb push ./targets/*libcomm.so* /usr/lib/libcomm.so" >>$(1);\
 	echo "adb shell chmod + /usr/lib/libcomm.so" >>$(1);\
-    echo "" >>$(1);\
+	echo "adb push ./shells/start_redtea_app /etc/init.d/start_redtea_app" >>$(1);\
+	echo "adb shell chmod + /usr/lib/libcomm.so" >>$(1);\
+	echo "adb push ./shells/start_redtea_keep /etc/init.d/start_redtea_keep" >>$(1);\
+	echo "adb shell chmod + /etc/init.d/start_redtea_keep" >>$(1);\
+	echo "" >>$(1);\
 	chmod +x $(1)
 endef
 
@@ -59,7 +65,9 @@ define COPY_RELEASE_TARGETS
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(RELEASE_INSTALL_PATH)/targets
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(RELEASE_INSTALL_PATH)/targets
 	-$(Q)cp -rf $(SDK_PATH)/lib/*libcomm.so $(RELEASE_INSTALL_PATH)/targets
-	-$(Q)cp -rf $(CHANGE_LOG) $(RELEASE_INSTALL_PATH)
+	-$(Q)cp -rf $(REDTEA_SHELL_APP) $(RELEASE_INSTALL_PATH)/shells
+	-$(Q)cp -rf $(REDTEA_SHELL_KEEP) $(RELEASE_INSTALL_PATH)/shells
+	-$(Q)cp -rf $(REDTEA_CHANGE_LOG) $(RELEASE_INSTALL_PATH)
 endef
 
 # Tar release targets
@@ -69,9 +77,10 @@ endef
 
 release:
 	@test -e $(RELEASE_INSTALL_PATH)/targets || mkdir -p $(RELEASE_INSTALL_PATH)/targets
+	@test -e $(RELEASE_INSTALL_PATH)/shells || mkdir -p $(RELEASE_INSTALL_PATH)/shells
 	$(Q)$(call COPY_RELEASE_TARGETS)
-	$(Q)test -e $(RELEASE_INSTALL_PATH)/$(RELEASE_README) || $(call CREATE_RELEASE_README,$(RELEASE_INSTALL_PATH)/$(RELEASE_README))
-	$(Q)test -e $(RELEASE_INSTALL_PATH)/$(ADB_PUSH_SHELL) || $(call CREATE_ADB_PUSH_SHELL,$(RELEASE_INSTALL_PATH)/$(ADB_PUSH_SHELL))
+	$(Q)test -e $(RELEASE_INSTALL_PATH)/$(REDTEA_RELEASE_README) || $(call CREATE_RELEASE_README,$(RELEASE_INSTALL_PATH)/$(REDTEA_RELEASE_README))
+	$(Q)test -e $(RELEASE_INSTALL_PATH)/$(REDTEA_ADB_PUSH_SHELL) || $(call CREATE_ADB_PUSH_SHELL,$(RELEASE_INSTALL_PATH)/$(REDTEA_ADB_PUSH_SHELL))
 	$(Q)$(call TAR_RELEASE_TARGETS,$(RELEASE_INSTALL_PATH),$(RELEASE_TAR_FILE))
 	
 	
