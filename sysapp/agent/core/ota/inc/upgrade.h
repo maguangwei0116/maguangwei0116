@@ -40,6 +40,7 @@ typedef enum {
     UPGRADE_NULL_POINTER_ERROR          = -2010,
     UPGRADE_START_UPGRADE_ERROR         = -2011,
     UPGRADE_EXECUTION_TYPE_ERROR        = -2012,
+    UPGRADE_INSTALL_CERT_ERROR          = -2020,
     UPGRADE_OTHER                       = -2099,
 } upgrade_result_e;
 

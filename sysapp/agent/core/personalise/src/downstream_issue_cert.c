@@ -17,7 +17,6 @@ typedef struct _issue_cert_struct_t {
 } issue_cert_struct_t;
 
 #define RT_CERTIFICATE      "/data/redtea/rt_cert"
-#define RT_TEP_CERTIFICATE  "/data/redtea/rt_cert.tmp"
 
 #define cJSON_GET_STR_DATA(json, item, item_str_out, len, tmp)\
     do {\
@@ -103,28 +102,29 @@ exit_entry:
     return ret;
 }
 
+#if 0
 static rt_bool on_issue_cert_install(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
     rt_bool ret = RT_FALSE;
     
-    /* ½øÐÐappÌæ»» */
+    /* app replace */
     MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
     if (rt_os_rename(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
         MSG_PRINTF(LOG_WARN, "re-name error\n");
         goto exit_entry;
     }
 
-    /* È¨ÏÞÉèÖÃ */
+    /* add app executable mode */
     if (rt_os_chmod(upgrade->targetFileName, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) != 0) {
         MSG_PRINTF(LOG_WARN, "change mode error\n");
         goto exit_entry;
     }
 
-    /* ÉèÖÃÉý¼¶³É¹¦±êÖ¾Î» */
+    /* set upgrade ok flag */
     //SET_UPGRADE_STATUS(upgrade, 1);
 
-    /* Á¬ÐøÁ½´Îsync±£Ö¤ÐÂÈí¼þÍ¬²½µ½±¾µØflash */
+    /* sync data to flash */
     rt_os_sync();
     rt_os_sync();
 
@@ -135,6 +135,14 @@ exit_entry:
     return ret;
 }
 
+static rt_bool on_issue_cert_file_check(const void *arg)
+{
+    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
+
+    return RT_TRUE;
+}
+#endif
+
 static rt_bool on_issue_cert_cleanup(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
@@ -144,43 +152,47 @@ static rt_bool on_issue_cert_cleanup(const void *arg)
     return RT_TRUE;
 }
 
-static rt_bool on_issue_cert_file_check(const void *arg)
-{
-    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
-
-    return RT_TRUE;
-}
-
 static rt_bool on_issue_cert_upload_event(const void *arg)
 {
     uint8_t *buf = NULL;
     rt_fshandle_t fp;
     int32_t length;
-
+    int32_t ret = RT_ERROR;
+    int32_t on_issue_cert_status = 0;
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
-    upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade); 
-    if (upgrade->downloadResult == 0)
-    {
+    if (upgrade->downloadResult == RT_SUCCESS) {
         fp = rt_fopen(RT_CERTIFICATE, RT_FS_READ);
-        if (fp == NULL) {
-            return RT_ERROR;
+        if (!fp) {
+            MSG_PRINTF(LOG_ERR, "open cert file failed!\n");
+            goto exit_entry;
         }
         length = get_file_size(RT_CERTIFICATE);
         buf = (uint8_t *) rt_os_malloc(length);
         if (!buf) {
             MSG_PRINTF(LOG_ERR, "malloc failed!\n");
-            return RT_ERROR;
+            goto exit_entry;
         }
         rt_fread(buf, 1, length, fp);
-        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_CERTIFICATE, buf, length);
+
+        ret = card_manager_event((const uint8_t *)buf, length, MSG_CARD_SETTING_CERTIFICATE);
+        if (ret) {
+            on_issue_cert_status = UPGRADE_INSTALL_CERT_ERROR;
+        }
+
         rt_os_free(buf);
-        if (fp != NULL) {
+        if (fp) {
             rt_fclose(fp);
         }
         rt_os_unlink(RT_CERTIFICATE);
+    }else {
+        on_issue_cert_status = upgrade->downloadResult;
     }
 
+exit_entry:
+
+    upload_event_report(upgrade->event, (const char *)upgrade->tranId, on_issue_cert_status, (void *)upgrade); 
+    
     /* release upgrade struct memory */
     if (upgrade) {
         rt_os_free((void *)upgrade);
@@ -210,19 +222,19 @@ static int32_t upgrade_download_package(const void *in, const char *upload_event
     snprintf(upgrade_info->tranId, sizeof(upgrade_info->tranId), "%s", param->tranId);
     snprintf(upgrade_info->fileHash, sizeof(upgrade_info->fileHash), "%s", param->fileHash);
     snprintf(upgrade_info->ticket, sizeof(upgrade_info->ticket), "%s", param->ticket);
-    snprintf(upgrade_info->tmpFileName, sizeof(upgrade_info->tmpFileName), "%s", RT_TEP_CERTIFICATE);
+    snprintf(upgrade_info->tmpFileName, sizeof(upgrade_info->tmpFileName), "%s", RT_CERTIFICATE);
     snprintf(upgrade_info->targetFileName, sizeof(upgrade_info->targetFileName), "%s", RT_CERTIFICATE);
     snprintf(upgrade_info->event, sizeof(upgrade_info->event), "%s", upload_event);
     upgrade_info->retryAttempts = 2;
     upgrade_info->retryInterval = 10;
 
      /* set callback functions */
-    upgrade_info->check      = on_issue_cert_file_check;
-    upgrade_info->install    = on_issue_cert_install;
-    upgrade_info->cleanup    = on_issue_cert_cleanup;
+    upgrade_info->check      = NULL;
+    upgrade_info->install    = NULL;
+    upgrade_info->cleanup    = NULL;
     upgrade_info->on_event   = on_issue_cert_upload_event;
 
-    on_issue_cert_cleanup(NULL);
+    on_issue_cert_cleanup(upgrade_info);
     ret = upgrade_process_start(upgrade_info);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "Create upgrade start error\n");
