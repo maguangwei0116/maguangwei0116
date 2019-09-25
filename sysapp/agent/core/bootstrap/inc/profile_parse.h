@@ -31,6 +31,7 @@
 #define OPT_PROFILES                            0xA3
 #define PROFILE_VERSION                         0x81
 #define PROFILE                                 0x81
+#define HASH_CODE_LENGTH                        0x20
 
 #define ARRAY_SIZE(a)                           (sizeof((a)) / sizeof((a)[0]))
 #define SHARE_PROFILE                           "/data/redtea/profile_list.der"
