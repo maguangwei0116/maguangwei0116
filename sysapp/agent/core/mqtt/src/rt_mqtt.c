@@ -31,15 +31,6 @@ typedef enum NETWORK_STATE {
     NETWORK_USING
 } network_state_info_e;
 
-typedef enum BOOT_STATE {
-    BOOT_STATE_INIT = 0,
-    BOOT_STATE_NO_CONFIG,
-    BOOT_STATE_NO_NET,
-    BOOT_STATE_NO_CARD,
-    BOOT_STATE_SUCCESS,
-    BOOT_STRAP_PROCESS
-} boot_state_info_e;
-
 typedef struct _mqtt_param_t {
     MQTTClient_connectOptions   conn_opts;
     mqtt_info                   opts;
@@ -56,17 +47,17 @@ static mqtt_param_t g_mqtt_param    = {MQTTClient_connectOptions_initializer, 0}
 static const char *g_mqtt_eid       = NULL;
 static const char *g_mqtt_device_id = NULL;
 static const char *g_mqtt_imei      = NULL;
-static network_state_info_e g_network_state = NETWORK_STATE_INIT;
+static network_state_info_e g_mqtt_network_state = NETWORK_STATE_INIT;
 
-network_state_info_e get_network_state(void)
+static network_state_info_e get_network_state(void)
 {
-    return g_network_state;
+    return g_mqtt_network_state;
 }
 
-void set_network_state(network_state_info_e state)
+static void set_network_state(network_state_info_e state)
 {
     //MSG_PRINTF(LOG_INFO("set network state: %d\r\n", state);
-    g_network_state = state;
+    g_mqtt_network_state = state;
 }
 
 static void msg_parse(int8_t *message, int32_t len)

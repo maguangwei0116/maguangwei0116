@@ -120,7 +120,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
 
         MSG_PRINTF(LOG_INFO, "sockfd:%d\n",sockfd);
         if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
-            MSG_PRINTF(LOG_DBG, "connect error %s errno: %d\n", strerror(errno), errno);
+            MSG_PRINTF(LOG_DBG, "connect err(%d): %s\n", errno, strerror(errno));
             break;
         }
 
@@ -212,7 +212,7 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         }
         ret = 0;
         break;
-    }while(1);
+    }while(0);
 
     if(sockfd > 0){
         #if defined(WIN32) || defined(WIN64)
