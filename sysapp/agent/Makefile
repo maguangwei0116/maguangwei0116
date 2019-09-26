@@ -88,6 +88,7 @@ SRC-y 			                        += ./core/upload/src/upload.c
 SRC-y 			                        += ./core/upload/src/upload_registered.c
 SRC-y 			                        += ./core/upload/src/upload_boot.c
 SRC-y 			                        += ./core/upload/src/upload_info.c
+SRC-y 			                        += ./core/upload/src/upload_init.c
 
 # Add your downstream-xxx cmd here
 SRC-y 			                        += ./core/downstream/src/downstream.c
@@ -103,7 +104,6 @@ SRC-y 			                        += ./core/networkd/src/upload_network.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/downstream_issue_cert.c
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_init.c
 
 # OTA module
 SRC-$(CFG_AGENT_OTA_ON) 				+= src/upgrade.c
