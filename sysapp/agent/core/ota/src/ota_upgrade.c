@@ -711,7 +711,7 @@ int32_t init_ota(void *arg)
 
 DOWNSTREAM_METHOD_OBJ_INIT(UPGRADE, MSG_ID_OTA_UPGRADE, ON_UPGRADE, ota_upgrade_parser, ota_upgrade_handler);
 
-UPLOAD_EVENT_OBJ_INIT(ON_UPGRADE, ota_upgrade_packer);
+UPLOAD_EVENT_OBJ_INIT(ON_UPGRADE, TOPIC_DEVICEID_OR_EID, ota_upgrade_packer);
 
 #endif
 

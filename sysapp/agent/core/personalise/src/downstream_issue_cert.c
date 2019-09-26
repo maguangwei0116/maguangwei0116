@@ -282,4 +282,5 @@ static cJSON *upload_on_issue_cert_packer(void *arg)
 
 DOWNSTREAM_METHOD_OBJ_INIT(ISSUE_CERT, MSG_ID_PERSONLLISE, ON_ISSUE_CERT, downstream_issue_cert_parser, downstream_issue_cert_handler);
 
-UPLOAD_EVENT_OBJ_INIT(ON_ISSUE_CERT, upload_on_issue_cert_packer);
+UPLOAD_EVENT_OBJ_INIT(ON_ISSUE_CERT, TOPIC_DEVICEID, upload_on_issue_cert_packer);
+

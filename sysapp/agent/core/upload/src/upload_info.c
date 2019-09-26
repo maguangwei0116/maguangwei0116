@@ -18,5 +18,5 @@ static cJSON *upload_info_packer(void *arg)
     }
 }
 
-UPLOAD_EVENT_OBJ_INIT(INFO, upload_info_packer);
+UPLOAD_EVENT_OBJ_INIT(INFO, TOPIC_DEVICEID_OR_EID, upload_info_packer);
 

@@ -126,5 +126,6 @@ end:
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(ENABLE, MSG_ID_CARD_MANAGER, ON_ENABLE, enable_parser, enable_handler);
-UPLOAD_EVENT_OBJ_INIT(ON_ENABLE, upload_on_enable_packer);
+UPLOAD_EVENT_OBJ_INIT(ON_ENABLE, TOPIC_DEVICEID_OR_EID, upload_on_enable_packer);
+
 

@@ -48,4 +48,5 @@ exit_entry:
     return !ret ? deviceInfo : NULL;
 }
 
-UPLOAD_EVENT_OBJ_INIT(INIT, upload_init_packer);
+UPLOAD_EVENT_OBJ_INIT(INIT, TOPIC_DEVICEID_OR_EID, upload_init_packer);
+

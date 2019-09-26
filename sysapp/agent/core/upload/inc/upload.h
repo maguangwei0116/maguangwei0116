@@ -13,17 +13,23 @@ extern "C" {
 #define NORMAL_TRAN_ID_LEN          32
 #define MAX_TRAN_ID_LEN             64
 
+typedef enum UPLOAD_TOPIC {
+    TOPIC_DEVICEID                  = 0,
+    TOPIC_DEVICEID_OR_EID           = 1,    
+} upload_topic_e;
+
 typedef cJSON *(*packer_func)(void *arg);
 
-typedef struct _upload_event_t {
+typedef struct UPLOAD_EVENT {
     const char *    event;
+    upload_topic_e  topic;
     packer_func     packer;
 } upload_event_t;
 
-#define UPLOAD_EVENT_OBJ_INIT(event, packer)\
+#define UPLOAD_EVENT_OBJ_INIT(event, topic, packer)\
     static const upload_event_t upload_event_##event##_obj \
     __attribute__((section(".upload.event.init.obj"))) = \
-    {#event, packer}
+    {#event, topic, packer}
 
 #define UPLOAD_EVENT_OBJ_EXTERN(event) \
     const upload_event_t * g_upload_event_##event = (const upload_event_t * )&upload_event_##event##_obj

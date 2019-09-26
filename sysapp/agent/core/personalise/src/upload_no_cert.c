@@ -28,13 +28,13 @@ static cJSON *upload_no_cert_packer(void *arg)
     int32_t ret = RT_ERROR;
     rt_fshandle_t fp;
     uint8_t buf[100];
-    int32_t length = 0;
-    cJSON *content = NULL;
-    const char *event = "NO_CERT";
-    const char *imei = g_upload_device_info->imei;
-    const char *deviceId = g_upload_device_info->device_id;
-    const char *model = g_upload_device_info->model;
-    uint8_t fileVersion[128] = {0};
+    int32_t length              = 0;
+    cJSON *content              = NULL;
+    const char *event           = "NO_CERT";
+    const char *imei            = g_upload_device_info->imei;
+    const char *deviceId        = g_upload_device_info->device_id;
+    const char *model           = g_upload_device_info->model;
+    uint8_t fileVersion[128]    = {0};
 
     content = cJSON_CreateObject();
     if (!content) {
@@ -59,5 +59,5 @@ exit_entry:
     return !ret ? content : NULL;
 }
 
-UPLOAD_EVENT_OBJ_INIT(NO_CERT, upload_no_cert_packer);
+UPLOAD_EVENT_OBJ_INIT(NO_CERT, TOPIC_DEVICEID, upload_no_cert_packer);
 

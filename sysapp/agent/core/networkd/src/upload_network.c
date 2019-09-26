@@ -95,4 +95,5 @@ end:
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(NETWORK, MSG_ID_DETECT_NETWORK, ON_NETWORK, network_parser, network_handler);
-UPLOAD_EVENT_OBJ_INIT(ON_NETWORK, upload_on_network_packer);
+UPLOAD_EVENT_OBJ_INIT(ON_NETWORK, TOPIC_DEVICEID_OR_EID, upload_on_network_packer);
+

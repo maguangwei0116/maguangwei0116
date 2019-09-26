@@ -322,5 +322,5 @@ static cJSON *upload_boot_packer(void *arg)
     return upload_event_boot_info("BOOT", RT_FALSE);
 }
 
-UPLOAD_EVENT_OBJ_INIT(BOOT, upload_boot_packer);
+UPLOAD_EVENT_OBJ_INIT(BOOT, TOPIC_DEVICEID_OR_EID, upload_boot_packer);
 

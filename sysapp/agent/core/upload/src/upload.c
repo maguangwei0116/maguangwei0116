@@ -8,12 +8,11 @@
 #include "config.h"
 #include "random.h"
 #include "upload.h"
-
 #include "cJSON.h"
 
-#define MAX_UPLOAD_TIMES                3
-#define MAX_OTI_URL_LEN                 100
-#define MAX_BOOT_INFO_INTERVAL          5       // unit: second
+#define MAX_UPLOAD_TIMES                    3
+#define MAX_OTI_URL_LEN                     100
+#define MAX_BOOT_INFO_INTERVAL              5       // unit: second
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do{                 \
@@ -28,6 +27,7 @@ do{                 \
 #define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
 
 static const char *g_upload_eid             = NULL;
+static const char *g_upload_deviceid        = NULL;
 const char *g_push_channel                  = NULL;
 const devicde_info_t *g_upload_device_info  = NULL;
 const card_info_t *g_upload_card_info       = NULL;
@@ -42,7 +42,7 @@ static int32_t upload_http_post_single(const char *host_addr, int32_t port, sock
 
     do {
         socket_fd = http_tcpclient_create(host_addr, port);       // connect network
-        MSG_PRINTF(LOG_INFO, "http_tcpclient_create (%s:%d) fd=%d\n", host_addr, port, socket_fd);
+        //MSG_PRINTF(LOG_INFO, "http_tcpclient_create (%s:%d) fd=%d\n", host_addr, port, socket_fd);
         if (socket_fd < 0) {
             ret = HTTP_SOCKET_CONNECT_ERROR;
             MSG_PRINTF(LOG_WARN, "http_tcpclient_create failed\n");
@@ -73,7 +73,7 @@ static int32_t upload_http_post_single(const char *host_addr, int32_t port, sock
         } else {
             //MSG_PRINTF(LOG_INFO, "recv_buf: %s\n", recv_buf);
             offset = http_parse_result(recv_buf);
-            MSG_PRINTF(LOG_WARN, "%s\n", recv_buf + offset);
+            MSG_PRINTF(LOG_WARN, "http post recv: %s\n", recv_buf + offset);
             if (cb(recv_buf + offset) != 0) {
                 ret = HTTP_RESPOND_ERROR;
             }
@@ -166,7 +166,7 @@ static int32_t upload_send_request(const char *out)
         return ret;
     }
 
-    MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", rt_os_strlen((const char *)out), (const char *)out);
+    //MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", rt_os_strlen((const char *)out), (const char *)out);
 
     get_md5_string((int8_t *) out, md5_out);
     md5_out[MD5_STRING_LENGTH] = '\0';
@@ -184,7 +184,7 @@ static int32_t upload_send_request(const char *out)
 
     send_len = rt_os_strlen(lpbuf);
     ret = msg_send_upload_queue(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
-    MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
+    //MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
 
 exit_entry:
 
@@ -245,24 +245,28 @@ rt_bool upload_check_eid_empty(void)
     return upload_check_memory(g_upload_eid, MAX_EID_LEN, '0') ? RT_TRUE : RT_FALSE;   
 }
 
-static const char *upload_get_topic_name(void)
+static const char *upload_get_topic_name(upload_topic_e upload_topic)
 {
-    if (g_upload_eid) {
-        if (upload_check_memory(g_upload_eid, MAX_EID_LEN, '0') || !rt_os_strlen(g_upload_eid)) {
-            return g_upload_device_info->device_id;
-        } else {
-            return g_upload_eid;
-        }
+    if (TOPIC_DEVICEID == upload_topic) {
+        return g_upload_deviceid;
     } else {
-        return g_upload_device_info->device_id;
+        if (g_upload_eid) {
+            if (upload_check_memory(g_upload_eid, MAX_EID_LEN, '0') || !rt_os_strlen(g_upload_eid)) {
+                return g_upload_deviceid;
+            } else {
+                return g_upload_eid;
+            }
+        } else {
+            return g_upload_deviceid;
+        }
     }
 }
 
-static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id)
+static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id, upload_topic_e upload_topic)
 {
     char random_tran_id[NORMAL_TRAN_ID_LEN + 1] = {0};
     const char *tranId = tran_id;
-    const char *topic = upload_get_topic_name();
+    const char *topic = upload_get_topic_name(upload_topic);
     int32_t version = 0;
     time_t timestamp = time(NULL);
 
@@ -320,7 +324,8 @@ static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t s
     return ret;
 }
 
-static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t status, const cJSON *content)
+static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t status, 
+                                        upload_topic_e topic, const cJSON *content)
 {
     int32_t ret;
     cJSON *upload = NULL;
@@ -332,7 +337,7 @@ static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t 
         goto exit_entry;
     }
 
-    upload_packet_header_info(upload, tran_id);
+    upload_packet_header_info(upload, tran_id, topic);
     upload_packet_payload(upload, event, status, content);
 
     ret = 0;
@@ -373,11 +378,11 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             MSG_PRINTF(LOG_WARN, "\n----------------->%s\n", event);
             
             content = obj->packer(private_arg);
-            MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
-            upload = upload_packet_all(tran_id, event, status, content);
-            MSG_PRINTF(LOG_WARN, "upload [%p] !!!\r\n", upload);
+            //MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
+            upload = upload_packet_all(tran_id, event, status, obj->topic, content);
+            //MSG_PRINTF(LOG_WARN, "upload [%p] !!!\r\n", upload);
             upload_json_pag = (char *)cJSON_PrintUnformatted(upload);
-            MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
+            //MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
             ret = upload_send_request((const char *)upload_json_pag);
 
             if (upload) {
@@ -405,6 +410,7 @@ int32_t init_upload(void *arg)
     g_push_channel          = (const char *)public_value_list->push_channel;
     g_upload_eid            = (const char *)public_value_list->card_info->eid;
     g_upload_card_info      = (const card_info_t *)public_value_list->card_info->info;
+    g_upload_deviceid       = (const char *)g_upload_device_info->device_id;
 
     MSG_PRINTF(LOG_WARN, "imei: %p, %s\n", g_upload_device_info->imei, g_upload_device_info->imei);
     MSG_PRINTF(LOG_WARN, "eid : %p, %s\n", g_upload_eid, g_upload_eid);

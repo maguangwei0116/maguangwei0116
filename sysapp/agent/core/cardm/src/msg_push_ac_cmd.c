@@ -261,4 +261,5 @@ end:
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(PUSH_AC, MSG_ID_CARD_MANAGER, ON_PUSH_AC, push_ac_parser, push_ac_handler);
-UPLOAD_EVENT_OBJ_INIT(ON_PUSH_AC, upload_push_ac_packer);
+UPLOAD_EVENT_OBJ_INIT(ON_PUSH_AC, TOPIC_DEVICEID_OR_EID, upload_push_ac_packer);
+

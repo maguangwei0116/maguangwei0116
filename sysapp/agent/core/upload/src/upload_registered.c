@@ -30,5 +30,5 @@ exit_entry:
     return !ret ? content : NULL;
 }
 
-UPLOAD_EVENT_OBJ_INIT(REGISTERED, upload_registered_packer);
+UPLOAD_EVENT_OBJ_INIT(REGISTERED, TOPIC_DEVICEID_OR_EID, upload_registered_packer);
 

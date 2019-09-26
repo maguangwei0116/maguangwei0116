@@ -12,7 +12,7 @@ exit_entry:
     return NULL;
 }
 
-UPLOAD_EVENT_OBJ_INIT(START, upload_null_start_packer);
+UPLOAD_EVENT_OBJ_INIT(START, TOPIC_DEVICEID_OR_EID, upload_null_start_packer);
 
 UPLOAD_EVENT_OBJ_EXTERN(START);
 

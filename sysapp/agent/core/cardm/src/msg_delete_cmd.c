@@ -160,4 +160,5 @@ end:
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(DELETE, MSG_ID_CARD_MANAGER, ON_DELETE, delete_parser, delete_handler);
-UPLOAD_EVENT_OBJ_INIT(ON_DELETE, upload_on_delete_packer);
+UPLOAD_EVENT_OBJ_INIT(ON_DELETE, TOPIC_DEVICEID_OR_EID, upload_on_delete_packer);
+
