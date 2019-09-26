@@ -10,7 +10,7 @@
 #define API_HANDLE_NOTIFICATION                 "/gsma/rsp2/es9plus/handleNotification"
 #define API_CANCEL_SESSION                      "/gsma/rsp2/es9plus/cancelSession"
 
-typedef enum notification_event {
+typedef enum NOTIFICATION_EVENT {
     NE_INSTALL,
     NE_ENABLE,
     NE_DISABLE,

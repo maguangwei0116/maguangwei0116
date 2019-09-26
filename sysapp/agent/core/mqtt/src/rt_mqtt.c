@@ -31,7 +31,7 @@ typedef enum NETWORK_STATE {
     NETWORK_USING
 } network_state_info_e;
 
-typedef struct _mqtt_param_t {
+typedef struct MQTT_PARAM {
     MQTTClient_connectOptions   conn_opts;
     mqtt_info                   opts;
     MQTTClient                  client;

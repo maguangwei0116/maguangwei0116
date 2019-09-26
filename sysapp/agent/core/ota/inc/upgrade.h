@@ -13,20 +13,20 @@
 
 #define MAX_DOWNLOAD_TIMEOUTS           120     // unit: second
 
-typedef enum _upgrade_mode_e {
+typedef enum UPGRADE_MODE {
     UPGRADE_MODE_FORCED                 = 0,
     UPGRADE_MODE_CHK_FILE_NAME          = 1,
     UPGRADE_MODE_CHK_VERSION            = 2,
     UPGRADE_MODE_NO_FORCED              = 3,
 } upgrade_mode_e;
 
-typedef enum _upgrade_profile_type_e {
+typedef enum UPGRADE_PROFILE_TYPE {
     UPGRADE_PRO_TYPE_ANY                = 0,
     UPGRADE_PRO_TYPE_OPERATIONAL        = 1,
 } upgrade_profile_type_e;
 
 /* OTA upgrade error code list */
-typedef enum {
+typedef enum UPGRADE_RESULT {
     UPGRADE_NO_FAILURE                  = 0,
     UPGRADE_CHECK_VERSION_ERROR         = -2001,
     UPGRADE_DOWNLOAD_PACKET_ERROR       = -2002,
@@ -49,7 +49,7 @@ typedef rt_bool (*file_install)(const void *arg);
 typedef rt_bool (*file_cleanup)(const void *arg);
 typedef rt_bool (*upload_on_event)(const void *arg);
 
-typedef struct upgrade_struct {
+typedef struct UPGRADE_STRUCT {
 #define MAX_TRANID_LEN                  128
 #define MAX_CHIP_MODEL_LEN              32
 #define MAX_VERSION_NAME_LEN            16

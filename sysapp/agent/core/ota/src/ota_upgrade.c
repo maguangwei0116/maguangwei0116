@@ -32,7 +32,7 @@
 }
 #endif
 
-typedef struct _ota_upgrade_target_t {
+typedef struct OTA_UPGRADE_TARGET {
     char                    name[64];
     char                    version[16];
     char                    chipModel[16];
@@ -40,7 +40,7 @@ typedef struct _ota_upgrade_target_t {
     char                    fileHash[72];
 } ota_upgrade_target_t;
 
-typedef struct _ota_upgrade_policy_t {
+typedef struct OTA_UPGRADE_POLICY {
     uint8_t                 forced;
     char                    executionType[16];
     uint8_t                 profileType;
@@ -50,7 +50,7 @@ typedef struct _ota_upgrade_policy_t {
     char                    issueType[16];
 } ota_upgrade_policy_t;
 
-typedef struct _ota_upgrade_param_t {
+typedef struct OTA_UPGRADE_PARAM {
     char                    tranId[64];
     ota_upgrade_target_t    target;
     ota_upgrade_policy_t    policy;
@@ -107,7 +107,7 @@ typedef struct _ota_upgrade_param_t {
 
 static const card_info_t *g_ota_card_info = NULL;
 
-typedef struct _ota_task_info_t {
+typedef struct OTA_TASK_INFO {
     uint32_t            param_len;
     char                tmp_file[MAX_FILE_NAME_LEN + 1];     // the full path in local file system 
     char                event[64 + 1];

@@ -22,7 +22,7 @@
 #include "upgrade.h"
 #include "file.h"
 
-typedef struct _issue_cert_struct_t {
+typedef struct ISSUE_CERT_STRUCT {
     char                    tranId[64];
     char                    ticket[64];
     char                    fileHash[72];

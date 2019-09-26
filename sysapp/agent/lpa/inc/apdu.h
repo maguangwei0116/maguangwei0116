@@ -53,7 +53,7 @@
 
 #define LPA_AT_BLOCK_BUF                        538
 
-typedef struct apdu_command {
+typedef struct APDU_COMMAND {
     uint8_t cla;
     uint8_t ins;
     uint8_t p1;
@@ -63,15 +63,15 @@ typedef struct apdu_command {
     uint8_t le;
 } apdu_t;
 
-typedef struct status_word {
+typedef struct STATUS_WORD {
     uint8_t sw1;
     uint8_t sw2;
 } sw_t;
 
-typedef enum channel_operation {
+typedef enum CHANNEL_OPERATION {
     OPEN_CHANNEL = 0,
     CLOSE_CHANNEL
-} channel_opt_t;
+} channel_opt_e;
 
 int open_channel(uint8_t *channel);
 int close_channel(uint8_t channel);

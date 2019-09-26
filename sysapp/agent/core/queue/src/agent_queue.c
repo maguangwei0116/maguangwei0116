@@ -22,7 +22,7 @@
 queue msg type must large than 0, it's a nonpositive mtype value !
 or it will return errno(22,EINVAL), see "man msgsnd" !!
 */
-typedef enum {
+typedef enum QUEUE_MSG_TYPE {
     UPLOAD_QUEUE_MSG_TYPE   = 1,
     AGENT_QUEUE_MSG_TYPE    = 2,
 } queue_msg_type_e;

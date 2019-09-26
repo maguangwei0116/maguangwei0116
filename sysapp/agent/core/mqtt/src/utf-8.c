@@ -163,8 +163,7 @@ int UTF8_validateString(const char* string)
 #if defined(UNIT_TESTS)
 #include <stdio.h>
 
-typedef struct
-{
+typedef struct TESTS {
     int len;
     char data[20];
 } tests;

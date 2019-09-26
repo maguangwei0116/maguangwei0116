@@ -7,7 +7,7 @@
 #include "config.h"
 #include "cJSON.h"
 
-typedef struct _log_param_t {
+typedef struct LOG_PARAM {
     char            tranId[64];
     char            level[8];
     log_level_e     log_level;

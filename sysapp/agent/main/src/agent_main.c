@@ -35,7 +35,7 @@
 
 typedef int32_t (*init_func)(void *arg);
 
-typedef struct _init_obj_t {
+typedef struct INIT_OBJ {
     const char *    name;
     init_func       init;
     void *          arg;

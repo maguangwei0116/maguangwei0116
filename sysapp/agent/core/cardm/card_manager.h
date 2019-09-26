@@ -22,13 +22,13 @@
 #define MAX_EID_LEN                 32
 #define MAX_EID_HEX_LEN             16
 
-typedef enum _profile_type_e {
+typedef enum PROFILE_TYPE {
     PROFILE_TYPE_TEST               = 0,
     PROFILE_TYPE_PROVISONING        = 1,
     PROFILE_TYPE_OPERATIONAL        = 2,
 } profile_type_e;
 
-typedef struct PROFILE_INFO {
+typedef struct CARD_INFO {
     profile_info_t                  info[THE_MAX_CARD_NUM];
     uint8_t                         num;
     uint8_t                         eid[MAX_EID_LEN + 1];

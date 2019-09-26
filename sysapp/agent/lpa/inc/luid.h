@@ -4,19 +4,19 @@
 #include <stdbool.h>
 #include "rt_type.h"
 
-typedef enum profile_identifier {
+typedef enum PROFILE_IDENTIFIER {
     PID_ISDP_AID,
     PID_ICCID,
 } profile_id_t;
 
-typedef enum search_criteria {
+typedef enum SEARCH_CRITERIA {
     SEARCH_NONE,
     SEARCH_ISDP_AID,
     SEARCH_ICCID,
     SEARCH_PROFILE_CLASS
 } search_criteria_t;
 
-typedef enum memory_reset_request {
+typedef enum MEMORY_RESET_REQUEST {
     RESET_OPERATIONAL_PROFILE   = 0x01,
     RESET_TEST_PROFILE          = 0x02,
     RESET_DEFAULT_SDMP_ADDRESS  = 0x04

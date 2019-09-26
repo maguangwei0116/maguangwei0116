@@ -15,7 +15,7 @@
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
 #endif
 
-typedef enum config_type {
+typedef enum CONFIG_TYPE {
     _OTI_ENVIRONMENT_ADDR,
     _EMQ_SERVER_ADDR,
     _PROXY_SERVER_ADDR,
@@ -26,7 +26,7 @@ typedef enum config_type {
     _UICC_MODE
 } config_type_e;
 
-typedef enum _uicc_mode_e {
+typedef enum UICC_MODE {
     UICC_MODE_vUICC         = 0,
     UICC_MODE_eUICC         = 1,
 } uicc_mode_e;

@@ -9,7 +9,7 @@ typedef enum LPA_CHANNEL_TYPE {
 } lpa_channel_type_e;
 
 // See SGP.22_v2.2 for more information
-typedef struct profile_info {
+typedef struct PROFILE_INFO {
     char iccid[21]; // 20-digit ICCID, padded with F
     uint8_t class;  // 0 test, 1 provisioning, 2 operational
     uint8_t state;  // 0 disabled, 1 enabled

@@ -15,7 +15,7 @@ extern "C" {
 typedef int32_t (*parser_func)(const void *in, char *tranId, void **out);
 typedef int32_t (*handler_func)(const void *in, const char *event, void **out);
 
-typedef struct _downstream_method_t {
+typedef struct DOWNSTREAM_METHOD {
     const char *    method;
     const char *    event;
     msg_id_e        msg_id;
@@ -23,7 +23,7 @@ typedef struct _downstream_method_t {
     handler_func    handler;
 } downstream_method_t;
 
-typedef struct _downstream_msg_t {
+typedef struct DOWNSTREAM_MSG {
     char *          msg;
     uint32_t        msg_len;
     const char *    method;

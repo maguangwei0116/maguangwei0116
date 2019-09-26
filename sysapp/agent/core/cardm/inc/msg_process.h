@@ -43,7 +43,7 @@
 #define ERROR_FILE_NAME                              2005
 #define ERROR_CONFIG                                 1030
 
-typedef enum {
+typedef enum JUDGE_TERM {
     UPDATE_NOT_JUDGE_BOOTSTRAP = 0,
     UPDATE_JUDGE_BOOTSTRAP
 } judge_term_e;
