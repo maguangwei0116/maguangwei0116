@@ -17,43 +17,42 @@
 #include <sys/time.h>
 #include "rt_timer.h"
 
-typedef struct my_timer_s my_timer_t;
-pthread_mutex_t g_mutex;
-struct my_timer_s {
-    my_timer_t *prev, *next;
+typedef struct RT_TIMER {
+    struct RT_TIMER *prev, *next;
     int32_t diff_sec;
     int32_t diff_usec;
     void (*func)();
-};
+} rt_timer_t;
 
-my_timer_t  *timer_list = NULL;
+static pthread_mutex_t g_mutex;
+static rt_timer_t *g_timer_list = NULL;
 
 static void callback_timeout(void)
 {
-    my_timer_t *p, *q;
+    rt_timer_t *p, *q;
     struct itimerval itimer;
 
     rt_mutex_lock(&g_mutex);
-    p = timer_list;
-    for (q = timer_list->next; q; q = q->next) {
+    p = g_timer_list;
+    for (q = g_timer_list->next; q; q = q->next) {
         q->diff_sec -= p->diff_sec;
         q->diff_usec -= p->diff_usec;
     }
 
-    if (timer_list->next != NULL) {
-        timer_list = timer_list->next;
+    if (g_timer_list->next != NULL) {
+        g_timer_list = g_timer_list->next;
         itimer.it_interval.tv_sec = 0;
         itimer.it_interval.tv_usec = 0;
-        itimer.it_value.tv_sec = timer_list->diff_sec;
-        itimer.it_value.tv_usec = timer_list->diff_usec;
+        itimer.it_value.tv_sec = g_timer_list->diff_sec;
+        itimer.it_value.tv_usec = g_timer_list->diff_usec;
         if ((itimer.it_value.tv_sec == 0) && (itimer.it_value.tv_usec == 0)) {
             itimer.it_value.tv_usec = 10;
         }
         MSG_PRINTF(LOG_INFO, "time:%d\n", itimer.it_value.tv_sec);
         setitimer(ITIMER_REAL, &itimer, NULL);
-        timer_list->prev = NULL;
+        g_timer_list->prev = NULL;
     } else {
-        timer_list = NULL;
+        g_timer_list = NULL;
     }
     p->func();
     rt_os_free(p);
@@ -74,7 +73,7 @@ static void timer_handler (int signo)
 // A timer list from small to large
 int32_t register_timer(int sec, int usec, void (*action)())
 {
-    my_timer_t  *t, *p, *pre;
+    rt_timer_t *t, *p, *pre;
     struct itimerval itimer;
 
     if ((action == NULL) || ((sec == 0) && (usec == 0))) {
@@ -82,16 +81,16 @@ int32_t register_timer(int sec, int usec, void (*action)())
     }
 
     rt_mutex_lock(&g_mutex);
-    t = (my_timer_t *) rt_os_malloc(sizeof(my_timer_t));
+    t = (rt_timer_t *) rt_os_malloc(sizeof(rt_timer_t));
     t->next = t->prev = NULL;
     t->diff_sec = sec;
     t->diff_usec = usec;
     t->func = action;
 
-    if (timer_list == NULL) {
-        timer_list = t;
+    if (g_timer_list == NULL) {
+        g_timer_list = t;
     } else {
-        for (pre = NULL, p = timer_list; p; pre = p, p = p->next) {
+        for (pre = NULL, p = g_timer_list; p; pre = p, p = p->next) {
             MSG_PRINTF(LOG_INFO, "p->diff_sec:%d,t->diff_sec:%d\n", p->diff_sec, t->diff_sec);
             if (t->diff_sec < p->diff_sec) {
                 t->next = p;
@@ -100,7 +99,7 @@ int32_t register_timer(int sec, int usec, void (*action)())
                     t->prev = p->prev;
                 } else {
                     t->prev = NULL;
-                    timer_list = t;
+                    g_timer_list = t;
                 }
                 p->prev = t;
                 break;
@@ -112,7 +111,7 @@ int32_t register_timer(int sec, int usec, void (*action)())
             pre->next = t;
         }
     }
-    t = timer_list;
+    t = g_timer_list;
     itimer.it_interval.tv_sec = 0;
     itimer.it_interval.tv_usec = 0;
     itimer.it_value.tv_sec = t->diff_sec;
