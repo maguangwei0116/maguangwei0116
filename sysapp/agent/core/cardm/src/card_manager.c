@@ -74,8 +74,8 @@ static int32_t card_last_eid_init(void)
 static int32_t card_update_eid(rt_bool init)
 {
     int32_t ret = RT_ERROR;
-
     uint8_t eid[MAX_EID_HEX_LEN] = {0};
+    
     ret = lpa_get_eid(eid);
     bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
     MSG_PRINTF(LOG_INFO, "ret=%d, g_p_info.eid=%s\r\n", ret, g_p_info.eid);
@@ -101,6 +101,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
                 g_p_info.type = g_p_info.info[i].class;
                 rt_os_memcpy(g_p_info.iccid, g_p_info.info[i].iccid, THE_MAX_CARD_NUM);
                 g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';
+                MSG_PRINTF(LOG_WARN, "cur using iccid: %s\n", g_p_info.iccid);
                 break;
             }
         }
@@ -134,7 +135,7 @@ static int32_t card_enable_profile(const uint8_t *iccid)
                     ret = msg_enable_profile(iccid);
                 }
                 if (ret != RT_SUCCESS) {
-                    MSG_PRINTF(LOG_ERR, "Card enable failed ret:%d\n", ret);
+                    MSG_PRINTF(LOG_ERR, "Card enable %s failed ret:%d\n", iccid, ret);
                 } else {
                     rt_os_sleep(1);  // must have
                 }
@@ -253,7 +254,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             ret = card_check_init_upload(g_p_info.eid);
             break;
         default:
-            MSG_PRINTF(LOG_WARN, "unknow command\n");
+            //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;
     }
 
