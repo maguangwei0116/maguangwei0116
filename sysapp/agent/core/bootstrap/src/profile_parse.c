@@ -17,7 +17,6 @@
 #include <pthread.h>
 #include <sys/stat.h>
 #include "profile_parse.h"
-#include "rt_rplmn.h"
 #include "file.h"
 #include "ProfileInfo1.h"
 #include "FileInfo.h"
@@ -29,7 +28,88 @@
 #include "hash.h"
 #include "rt_qmi.h"
 
-profile_data_t g_data;
+typedef struct PLMN_INFO {
+    unsigned int mcc;
+    unsigned char rplmn[7];
+    unsigned char hplmn[7];
+} plmn_info_t;
+
+static const plmn_info_t g_rt_plmn[] = {
+    {202,   "02F250",    "23450"},
+    {204,   "02F440",    "23450"},
+    {208,   "02F810",    "23450"},
+    {214,   "12F410",    "23450"},
+    {216,   "12F607",    "23450"},
+    {219,   "12F901",    "23450"},
+    {220,   "22F010",    "23450"},
+    {222,   "22F201",    "23450"},
+    {226,   "22F610",    "23450"},
+    {228,   "22F820",    "23450"},
+    {230,   "32F030",    "23450"},
+    {231,   "32F120",    "23450"},
+    {232,   "32F250",    "23450"},
+    {234,   "32F451",    "23450"},
+    {238,   "32F802",    "23450"},
+    {240,   "42F010",    "23450"},
+    {242,   "42F210",    "23450"},
+    {244,   "42F419",    "23450"},
+    {246,   "42F610",    "23450"},
+    {247,   "42F710",    "23450"},
+    {248,   "42F810",    "23450"},
+    {250,   "52F099",    "23450"},
+    {255,   "52F530",    "23450"},
+    {257,   "",          "23450"},
+    {259,   "52F920",    "23450"},
+    {260,   "62F060",    "23450"},
+    {260,   "62F060",    "23450"},
+    {262,   "62F220",    "23450"},
+    {268,   "62F810",    "23450"},
+    {270,   "72F010",    "23450"},
+    {272,   "72F210",    "23450"},
+    {274,   "72F410",    "23450"},
+    {278,   "72F810",    "23450"},
+    {280,   "82F010",    "23450"},
+    {284,   "82F450",    "23450"},
+    {286,   "82F620",    "23450"},
+    {293,   "92F314",    "23450"},
+    {295,   "92F550",    "23450"},
+    {297,   "92F730",    "23450"},
+    {302,   "302220",    "23450"},
+    {310,   "310260",    "23450"},
+    {400,   "04F020",    "23450"},
+    {401,   "04F110",    "23450"},
+    {404,   "",          "23450"},
+    {405,   "",          "23450"},
+    {414,   "14F460",    "23450"},
+    {424,   "24F430",    "23450"},
+    {425,   "24F530",    "23450"},
+    {429,   "",          "23450"},
+    {440,   "44F002",    "23450"},
+    {450,   "54F080",    "23450"},
+    {454,   "54F400",    "23450"},
+    {455,   "54F510",    "23450"},
+    {456,   "",          "23450"},
+    {457,   "54F780",    "23450"},
+    {460,   "64F000",    "23450"},
+    {466,   "64F629",    "23450"},
+    {502,   "05F261",    "23450"},
+    {505,   "05F520",    "23450"},
+    {510,   "15F010",    "23450"},
+    {515,   "15F530",    "23450"},
+    {520,   "25F030",    "23450"},
+    {525,   "25F510",    "23450"},
+    {530,   "35F010",    "23450"},
+    {716,   "17F660",    "23450"},
+    {722,   "27F270",    "23450"},
+    {724,   "",          "23450"},
+    {730,   "37F020",    "23450"},
+    {732,   "732123",    "23450"},
+    {734,   "37F440",    "23450"},
+    {740,   "47F000",    "23450"},
+    {748,   "47F870",    "23450"},
+};
+
+static profile_data_t g_data;
 static uint8_t *g_buf = NULL;
 static uint16_t g_buf_size = 0;
 
@@ -255,13 +335,13 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
 
     if (rt_os_memcmp(bootstrap_request->tbhRequest.imsi.buf, jt, 4) == 0){
         rt_qmi_get_mcc_mnc(&mcc, NULL);
-        for (i = 0; i < ARRAY_SIZE(rt_plmn); ++i) {
-            if (mcc == rt_plmn[i].mcc) {
-                hexstring2bytes(rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
+        for (i = 0; i < ARRAY_SIZE(g_rt_plmn); ++i) {
+            if (mcc == g_rt_plmn[i].mcc) {
+                hexstring2bytes(g_rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
                 bootstrap_request->tbhRequest.rplmn = OCTET_STRING_new_fromBuf(
                     &asn_DEF_TBHRequest, bytes, length);
                 // bootstrap_request->tbhRequest.hplmn = OCTET_STRING_new_fromBuf(
-                //        &asn_DEF_TBHRequest, rt_plmn[i].hplmn, rt_os_strlen(rt_plmn[i].hplmn));
+                //        &asn_DEF_TBHRequest, g_rt_plmn[i].hplmn, rt_os_strlen(g_rt_plmn[i].hplmn));
                 break;
             }
         }
