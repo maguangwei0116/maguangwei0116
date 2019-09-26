@@ -16,16 +16,20 @@
 
 #include "rt_type.h"
 
-#define     DEVICE_ID_LEN                32
-#define     DEVICE_IMEI_LEN              15
-#define     DEVICE_SN_LEN                12
-#define     DEVICE_MODEL_LEN             8
+#if 0
+IMEI less than 15 bytes, model less than 8 bytes, serialNo less than 12 bytes; fill up with 0x00
+#endif
+
+#define MAX_DEVICE_ID_LEN               32
+#define MAX_DEVICE_IMEI_LEN             15
+#define MAX_DEVICE_MODEL_LEN            8
+#define MAX_DEVICE_SN_LEN               12
 
 typedef struct DEVICE_INFO {
-    uint8_t device_id[DEVICE_ID_LEN + 1];
-    uint8_t imei[DEVICE_IMEI_LEN + 1];
-    uint8_t sn[DEVICE_SN_LEN + 1];
-    uint8_t model[DEVICE_MODEL_LEN*4 + 1];
+    uint8_t device_id[MAX_DEVICE_ID_LEN + 1];
+    uint8_t imei[MAX_DEVICE_IMEI_LEN + 1];
+    uint8_t sn[MAX_DEVICE_SN_LEN + 1];
+    uint8_t model[MAX_DEVICE_MODEL_LEN*4 + 1];
 } devicde_info_t;
 
 int32_t init_device_info(void  *arg);

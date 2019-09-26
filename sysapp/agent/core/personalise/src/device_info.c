@@ -16,19 +16,11 @@
 #include "rt_qmi.h"
 #include "agent_queue.h"
 
-#if 0
-IMEI less than 15 bytes£¬model less than 8 bytes£¬serialNo less than 12 bytes; fill up with 0x00
-#endif
-
-#define MAX_IMEI_LEN    15
-#define MAX_MODEL_LEN   8
-#define MAX_SN_LEN      12
-
 int32_t init_device_info(void *arg)
 {
     static devicde_info_t info;
     MD5_CTX ctx;
-    uint8_t device_id[DEVICE_ID_LEN/2 + 1];
+    uint8_t device_id[MAX_DEVICE_ID_LEN/2 + 1];
     int32_t ret = RT_ERROR;
 
     rt_os_memset(&info, 0, sizeof(info));
@@ -41,19 +33,20 @@ int32_t init_device_info(void *arg)
         MSG_PRINTF(LOG_ERR, "Get model failed\n");
     }
     info.model[7] = '\0';
-    info.imei[DEVICE_IMEI_LEN] = '\0';
+    info.imei[MAX_DEVICE_IMEI_LEN] = '\0';    
     
-    MSG_PRINTF(LOG_INFO, "info.model:%s\n", info.model);
-    MSG_PRINTF(LOG_INFO, "info.imei:%s\n", info.imei);
-    MSG_PRINTF(LOG_INFO, "info.sn:%s, len:%d\n", info.sn, rt_os_strlen(info.sn));
     MD5Init(&ctx);
-    MD5Update(&ctx, (uint8_t *)info.model, MAX_MODEL_LEN);
-    MD5Update(&ctx, (uint8_t *)info.imei, MAX_IMEI_LEN);
-    MD5Update(&ctx, (uint8_t *)info.sn, MAX_SN_LEN);
+    MD5Update(&ctx, (uint8_t *)info.model, MAX_DEVICE_MODEL_LEN);
+    MD5Update(&ctx, (uint8_t *)info.imei, MAX_DEVICE_IMEI_LEN);
+    MD5Update(&ctx, (uint8_t *)info.sn, MAX_DEVICE_SN_LEN);
     MD5Final(&ctx, device_id);
-
-    get_ascii_string((uint8_t *)device_id, DEVICE_ID_LEN/2, (uint8_t *)info.device_id);
-    MSG_PRINTF(LOG_INFO, "info.device_id:%s\n", info.device_id);
+    get_ascii_string((uint8_t *)device_id, MAX_DEVICE_ID_LEN/2, (uint8_t *)info.device_id);
+    
+    MSG_PRINTF(LOG_INFO, "info.model    : %s\n", info.model);
+    MSG_PRINTF(LOG_INFO, "info.imei     : %s\n", info.imei);
+    MSG_PRINTF(LOG_INFO, "info.sn       : %s\n", info.sn);
+    MSG_PRINTF(LOG_INFO, "info.device_id: %s\n", info.device_id);
+    
     ((public_value_list_t *)arg)->device_info = &info;
 
     return RT_SUCCESS;
