@@ -198,6 +198,10 @@ static int http_client_send(http_client_struct_t *obj)
         tmpres = send(obj->socket, obj->buf + sent, obj->process_set - sent, MSG_NOSIGNAL);
         if (tmpres == -1) {
             MSG_PRINTF(LOG_WARN, "tmpres is error:%s\n", strerror(errno));
+            if (errno == SIGPIPE) {
+                MSG_PRINTF(LOG_WARN, "socket disconnected by peer !\r\n");
+                return -2;
+            }
             return -1;
         }
         sent += tmpres;
@@ -240,7 +244,6 @@ static int http_client_recv(http_client_struct_t *obj)
     return recvnum;
 }
 
-
 static int http_client_send_header(http_client_struct_t *obj)
 {
     int ret = -1;
@@ -277,9 +280,9 @@ static int http_client_send_header(http_client_struct_t *obj)
 
     MSG_PRINTF(LOG_INFO, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
     obj->process_set = rt_os_strlen(obj->buf);
+    
     return http_client_send(obj);
 
-    ret = 0;
 end:
     return ret;
 }
@@ -320,49 +323,57 @@ static int http_client_send_body(http_client_struct_t *obj)
     obj->try_count = 0;
     obj->process_length = 0;
 
-   if (obj->manager_type == 0) {
-       // If the upload process, cycle to send data
-          while (obj->remain_length > 0) {
-              rt_os_memset(obj->buf, 0, MAX_BLOCK_LEN);
-              if (obj->remain_length >= MAX_BLOCK_LEN) {
-                  obj->process_set = MAX_BLOCK_LEN;
-              } else {
-                  obj->process_set = obj->remain_length;
-              }
+    if (obj->manager_type == 0) { /* do http upload */
+       /* If the upload process, cycle to send data */
+        while (obj->remain_length > 0) {
+            rt_os_memset(obj->buf, 0, MAX_BLOCK_LEN);
+            if (obj->remain_length >= MAX_BLOCK_LEN) {
+              obj->process_set = MAX_BLOCK_LEN;
+            } else {
+              obj->process_set = obj->remain_length;
+            }
 
-              if (rt_fread(obj->buf, obj->process_set , 1, obj->fp) != 1) {
-                  MSG_PRINTF(LOG_WARN, "Read Block Data Error,result:%s\n", strerror(errno));
-                  rt_os_sleep(1);
-                  continue;
-              }
+            ret = rt_fread(obj->buf, obj->process_set , 1, obj->fp);
+            if (ret == 0) {
+                MSG_PRINTF(LOG_WARN, "Read Block Data Error,result:%s\n", strerror(errno));
+                break;
+            } else if (ret != 1) {
+                MSG_PRINTF(LOG_WARN, "Read Block Data Error,result:%s\n", strerror(errno));
+                rt_os_sleep(1);
+                continue;
+            }
 
-              if (http_client_send(obj) <= 0) {
-                  // 数据发送超过最大尝试次数
-                  if (obj->try_count++ > MAX_TRY_COUNT) {
-                      return -1;
-                      MSG_PRINTF(LOG_WARN, "http_client_send More than most trying times\n");
-                  }
-                  MSG_PRINTF(LOG_WARN, "http_client_send error,continue\n");
-                  rt_os_sleep(1);
-                  rt_fseek(obj->fp, SEEK_SET, obj->process_length);
-              } else {
-                  obj->remain_length -= obj->process_set;
-                  obj->process_length += obj->process_set;
-              }
+            ret = http_client_send(obj);
+            if (ret <= 0) {
+                /* return error because of send error (broken pipe) */
+                if (ret == -2) {
+                    return -1;  
+                }
+                /* send data error more than MAX_TRY_COUNT times */
+                if (obj->try_count++ > MAX_TRY_COUNT) {
+                    return -1;
+                    MSG_PRINTF(LOG_WARN, "http_client send More than most trying times\n");
+                }
+                MSG_PRINTF(LOG_WARN, "http_client send error,continue\n");
+                rt_os_sleep(1);
+                rt_fseek(obj->fp, SEEK_SET, obj->process_length);
+            } else {
+                obj->remain_length -= obj->process_set;
+                obj->process_length += obj->process_set;
+            }
+            //MSG_PRINTF(LOG_WARN, "file upload [%s] : (%7d/%-7d)\r\n", obj->file_path, obj->process_length, obj->file_length);
+        }
+    } else { /* do http download */
+        rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
+        rt_os_memcpy(obj->buf, obj->http_header.buf, rt_os_strlen(obj->http_header.buf));
+        obj->process_set = rt_os_strlen(obj->http_header.buf);
+        if (http_client_send(obj) <= 0) {
+            MSG_PRINTF(LOG_WARN, "http_client send error\n");
+            return -1;
+        }
+    }
 
-              //MSG_PRINTF(LOG_WARN, "file upload [%s] : (%7d/%-7d)\r\n", obj->file_path, obj->process_length, obj->file_length);
-          }
-   } else {
-       rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
-       rt_os_memcpy(obj->buf, obj->http_header.buf, rt_os_strlen(obj->http_header.buf));
-       obj->process_set = rt_os_strlen(obj->http_header.buf);
-       if (http_client_send(obj) <= 0) {
-           MSG_PRINTF(LOG_WARN, "http_client_send error\n");
-           return -1;
-       }
-   }
-
-   ret = 0;
+    ret = 0;
 end:
     return ret;
 }

@@ -72,7 +72,7 @@ typedef struct http_client_struct {
 #define MAX_TRY_COUNT                         3
 
     int if_continue;  //  if needed continue download
-    char manager_type;  // management type，0:upload，1:download
+    char manager_type;  // management type, 0:upload  1:download
     http_header_t http_header;
     const char *file_path;
     unsigned int file_length;  // the total length of send \ recv
