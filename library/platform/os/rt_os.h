@@ -102,4 +102,9 @@ int32_t rt_mutex_init(pthread_mutex_t *mutex);
 int32_t rt_mutex_lock(pthread_mutex_t *mutex);
 int32_t rt_mutex_unlock(pthread_mutex_t *mutex);
 
+rt_pthread_mutex_t *linux_mutex_init(void);
+int32_t linux_mutex_lock(pthread_mutex_t *mutex);
+int32_t linux_mutex_unlock(pthread_mutex_t *mutex);
+int32_t linux_mutex_release(pthread_mutex_t *mutex);
+
 #endif // __RT_OS_H__

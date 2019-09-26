@@ -39,6 +39,8 @@ int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
 int32_t rt_mutex_init(pthread_mutex_t *mutex)
 {
     int32_t ret = 0;
+    static pthread_mutex_t mutex_t;
+    mutex = &mutex_t;
 
     ret = pthread_mutex_init(mutex, NULL);
     if(ret != 0){
@@ -87,6 +89,44 @@ int32_t rt_mutex_destroy(pthread_mutex_t *mutex)
     return RT_SUCCESS;
 }
 
+pthread_mutex_t *linux_mutex_init(void)
+{
+    pthread_mutex_t *mutex = NULL;
+
+    mutex = rt_os_malloc(sizeof(pthread_mutex_t));
+    if (!mutex) {
+        return RT_ERROR;
+    }
+    rt_mutex_init(mutex);
+
+    return mutex;
+}
+
+int32_t linux_mutex_lock(pthread_mutex_t *mutex)
+{
+    if (!mutex) {
+        return RT_ERROR;
+    }
+    return rt_mutex_unlock(mutex);
+}
+
+int32_t linux_mutex_unlock(pthread_mutex_t *mutex)
+{
+    if (!mutex) {
+        return RT_ERROR;
+    }
+    return rt_mutex_unlock(mutex);
+}
+
+int32_t linux_mutex_release(pthread_mutex_t *mutex)
+{
+    if (!mutex) {
+        return RT_ERROR;
+    }
+    rt_mutex_destroy(mutex);
+    rt_os_free(mutex);
+}
+
 //message queue
 int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id)
 {
@@ -116,7 +156,7 @@ int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t m
 int32_t rt_send_queue_msg(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg)
 {
     if (msgsnd(msgid, buffer, len, msgflg) == -1) {
-		MSG_PRINTF(LOG_ERR, "send queue error, err(%d)=%s!!\n", errno, strerror(errno));
+        MSG_PRINTF(LOG_ERR, "send queue error, err(%d)=%s!!\n", errno, strerror(errno));
         return RT_ERROR;
     }
 
@@ -146,8 +186,8 @@ void rt_os_free(void *mem)
 static int g_mem_cnt = 0;
 void *_rt_os_malloc(const char *file, uint32_t line, uint32_t size)
 {
-	void *ret = malloc(size);
-	printf("[%-50s, %5d] ++++++++ (%5d) malloc : %p\r\n", file, line, ++g_mem_cnt, ret);
+    void *ret = malloc(size);
+    printf("[%-50s, %5d] ++++++++ (%5d) malloc : %p\r\n", file, line, ++g_mem_cnt, ret);
     return ret;
 }
 
@@ -156,14 +196,14 @@ void _rt_os_free(const char *file, uint32_t line, void *mem)
     if (NULL == mem) {
         return;
     }
-	printf("[%-50s, %5d] -------- (%5d) free   : %p\r\n", file, line, --g_mem_cnt, mem);
+    printf("[%-50s, %5d] -------- (%5d) free   : %p\r\n", file, line, --g_mem_cnt, mem);
     free(mem);
     mem = NULL;
 }
 
 void *_rt_os_realloc(const char *file, uint32_t line, void *mem, uint32_t size)
 {
-    if (mem) {        
+    if (mem) {
         if (!size) {
             _rt_os_free(file, line, mem);
             return NULL;

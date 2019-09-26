@@ -14,8 +14,11 @@
 #include "vuicc_callback.h"
 
 FILE_OPS_DEFINITION(linux)
+OS_OPS_DEFINITION(linux)
 
-int init_file_ops(void)
+int init_callback_ops(void)
 {
-    return _file_ops_init(linux);
+    _file_ops_init(linux);
+    _os_ops_init(linux);
+    return RT_SUCCESS;
 }
