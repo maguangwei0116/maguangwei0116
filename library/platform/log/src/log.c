@@ -260,81 +260,81 @@ int32_t log_hexdump(const char *file, int32_t line, const char *title, const voi
 
 static rt_bool log_check_level(const char *header, log_level_e min_level)
 {
-	static log_level_e last_log_level = LOG_UNKNOW;
-	log_level_e cur_level = LOG_UNKNOW;
-	int32_t i;
-	
-	for (i = 0; i < ARRAY_SIZE(g_log_item_table); i++) {
-		if (!rt_os_strcmp(g_log_item_table[i].label, header)) {
-			cur_level = g_log_item_table[i].level;
-			break;
-		}
-	}
-	
-	if (cur_level == LOG_UNKNOW) {
-		cur_level = last_log_level;	
-	} else {
-		last_log_level = cur_level;
-	}
-	
-	return (cur_level <= min_level) ? RT_TRUE: RT_FALSE;
+    static log_level_e last_log_level = LOG_UNKNOW;
+    log_level_e cur_level = LOG_UNKNOW;
+    int32_t i;
+
+    for (i = 0; i < ARRAY_SIZE(g_log_item_table); i++) {
+        if (!rt_os_strcmp(g_log_item_table[i].label, header)) {
+            cur_level = g_log_item_table[i].level;
+            break;
+        }
+    }
+
+    if (cur_level == LOG_UNKNOW) {
+        cur_level = last_log_level;	
+    } else {
+        last_log_level = cur_level;
+    }
+
+    return (cur_level <= min_level) ? RT_TRUE: RT_FALSE;
 }
 
 int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e min_level)
 {
     char *data = NULL;
     rt_fshandle_t fp_in = NULL;
-	rt_fshandle_t fp_out = NULL;
-	int32_t i = 0;
-	int32_t ret;
-	char header[LOG_LEVEL_LEN+1] = {0};
+    rt_fshandle_t fp_out = NULL;
+    int32_t i = 0;
+    int32_t ret;
+    char header[LOG_LEVEL_LEN+1] = {0};
 
     data = (char *)rt_os_malloc(LOG_MAX_LINE_SIZE);
     if(!data) {
         MSG_PRINTF(LOG_WARN, "memory alloc fail\n");
         ret = -1;
-		goto exit_entry;
+        goto exit_entry;
     }
-	
-	fp_in = linux_fopen(file_in, "r");
+
+    fp_in = linux_fopen(file_in, "r");
     if(!fp_in) {
         MSG_PRINTF(LOG_WARN, "can't open file %s\n", file_in);
         ret = -1;
-		goto exit_entry;
+        goto exit_entry;
     }
-	
-	fp_out = linux_fopen(file_out, "a+");
+
+    fp_out = linux_fopen(file_out, "a+");
     if(!fp_out) {
         MSG_PRINTF(LOG_WARN, "can't open file %s\n", file_out);
         ret = -1;
-		goto exit_entry;
+        goto exit_entry;
     }
-	
+
     while(!linux_feof(fp_in)) {
-		if (linux_fgets(data, LOG_MAX_LINE_SIZE, fp_in) != NULL) {
-    		memcpy(header, data, LOG_LEVEL_LEN);
-    		if (log_check_level(header, min_level)) {
-    			//printf("line %d=== %s", ++i, data);
-    			linux_fwrite(data, 1, rt_os_strlen(data), fp_out);
-    		}
-		}
+        if (linux_fgets(data, LOG_MAX_LINE_SIZE, fp_in) != NULL) {
+            memcpy(header, data, LOG_LEVEL_LEN);
+            if (log_check_level(header, min_level)) {
+                //printf("line %d=== %s", ++i, data);
+                linux_fwrite(data, 1, rt_os_strlen(data), fp_out);
+            }
+        }
     }
-	ret = 0;
-	
+    ret = 0;
+
 exit_entry:
-	if (fp_in) {
-		linux_fclose(fp_in);
-	}
-	
-	if (fp_out) {
-		linux_fclose(fp_out);
-	}
+    if (fp_in) {
+        linux_fclose(fp_in);
+    }
+
+    if (fp_out) {
+        linux_fclose(fp_out);
+    }
 
     if (data) {
         rt_os_free(data);
         data = NULL;
     }
-	
+
     return ret;
 }
 
