@@ -16,7 +16,7 @@
 
 #include "rt_type.h"
 
-typedef struct {
+typedef struct MD5_CTX {
     uint32_t count[2];
     uint32_t state[4];
     uint8_t  buffer[64];

@@ -11,7 +11,7 @@
 #include <qmi-framework/qmi_client.h>
 #include <qmi/device_management_service_v01.h>
 
-typedef struct qmi_device_info {
+typedef struct QMI_DEVICE_INFO {
     /*  Device Manufacturer */
     char device_manufacturer[QMI_DMS_DEVICE_MANUFACTURER_MAX_V01 + 1];
 

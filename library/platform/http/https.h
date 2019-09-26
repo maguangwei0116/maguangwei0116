@@ -27,7 +27,7 @@ typedef enum ERR_HTTPS_CODE {
     RT_ERR_HTTPS_SMDP_ERROR = -311
 } err_https_code_e;
 
-typedef struct https_context {
+typedef struct HTTPS_CXT {
     int socket;
     SSL *ssl;
     SSL_CTX *ssl_cxt;

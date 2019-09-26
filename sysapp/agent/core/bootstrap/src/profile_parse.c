@@ -185,7 +185,7 @@ static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     uint32_t hash_off = 0;
     uint32_t profile_off = 0;
     uint32_t index = 0;
-    sha256_ctx hash_code;
+    sha256_ctx_t hash_code;
     struct stat statbuf;
 
     stat(SHARE_PROFILE, &statbuf);
@@ -287,7 +287,7 @@ static int32_t encode_cb_fun(const void *buffer, size_t size, void *app_key)
 static int32_t update_hash(uint8_t *buf, int32_t profile_len, uint8_t *profile_hash)
 {
     uint8_t *p = NULL;
-    sha256_ctx profile_ctx;
+    sha256_ctx_t profile_ctx;
     int32_t size = 0;
 
     p = get_value_buffer(buf);

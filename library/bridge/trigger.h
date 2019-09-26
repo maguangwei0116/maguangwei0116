@@ -6,7 +6,7 @@
 // 9x07
 #include "user_identity_module_remote_v01.h"
 
-typedef enum {
+typedef enum TRIGGER_ERROR_CODE {
     ERR_QMI_RUIM_SERVICE_OBJ = 1,
     ERR_QMI_UNSUPPORTED_SLOT,
     ERR_QMI_GET_SERVICE_LIST

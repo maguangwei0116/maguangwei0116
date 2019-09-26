@@ -31,7 +31,7 @@
     if((process) < result){ MSG_PRINTF(LOG_WARN, "[%s] error\n",  #process);  goto end;}
 #endif
 
-typedef struct http_request_header_record {
+typedef struct HTTP_REQUEST_HEADER_RECORD {
 #define MAX_KEY_LEN                           30
 #define MAX_VALUE_LEN                         100
     char key[MAX_KEY_LEN + 1];
@@ -39,7 +39,7 @@ typedef struct http_request_header_record {
 } http_request_header_record_t;
 
 
-typedef struct http_header {
+typedef struct HTTP_HEADER {
 #define MAX_HEADER_REQ_BODY_LEN               256
 #define MAX_URL_LEN                           200
 #define MAX_IP_ADDR_LEN                       20
@@ -66,7 +66,7 @@ typedef struct http_header {
     char buf[MAX_HEADER_REQ_BODY_LEN];
 } http_header_t;
 
-typedef struct http_client_struct {
+typedef struct HTTP_CLIENT_STRUCT {
 #define MAX_BLOCK_LEN                         4096  // date block size
 #define MAX_FILE_PATH_LEN                     100
 #define MAX_TRY_COUNT                         3

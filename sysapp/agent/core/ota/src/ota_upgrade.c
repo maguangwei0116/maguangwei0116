@@ -416,7 +416,7 @@ static rt_bool ota_file_check(const void *arg)
 {
     const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
     rt_bool ret = RT_FALSE;
-    sha256_ctx sha_ctx;
+    sha256_ctx_t sha_ctx;
     rt_fshandle_t fp = NULL;
     int8_t hash_result[MAX_FILE_HASH_LEN + 1];
     int8_t hash_out[MAX_FILE_HASH_BYTE_LEN + 1];

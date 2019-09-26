@@ -25,7 +25,7 @@
 
 typedef int (*socket_call_back)(char *p);
 
-typedef enum {
+typedef enum HTTP_RESULT {
     HTTP_SUCCESS = 0,           // 0
     HTTP_SYSTEM_CALL_ERROR,     // 1
     HTTP_PARAMETER_ERROR,       // 2

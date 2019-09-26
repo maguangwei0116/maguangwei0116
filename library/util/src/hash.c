@@ -46,7 +46,7 @@ static const uint32_t k[64] = {
     0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208, 0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
 };
 
-void sha256_transform(sha256_ctx *ctx, const uint8_t data[])
+void sha256_transform(sha256_ctx_t *ctx, const uint8_t data[])
 {
     uint32_t a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
@@ -88,7 +88,7 @@ void sha256_transform(sha256_ctx *ctx, const uint8_t data[])
     ctx->state[7] += h;
 }
 
-void sha256_init(sha256_ctx *ctx)
+void sha256_init(sha256_ctx_t *ctx)
 {
     ctx->datalen = 0;
     ctx->bitlen = 0;
@@ -102,7 +102,7 @@ void sha256_init(sha256_ctx *ctx)
     ctx->state[7] = 0x5BE0CD19;
 }
 
-void sha256_update(sha256_ctx *ctx, const uint8_t data[], int32_t len)
+void sha256_update(sha256_ctx_t *ctx, const uint8_t data[], int32_t len)
 {
     uint32_t i;
 
@@ -117,7 +117,7 @@ void sha256_update(sha256_ctx *ctx, const uint8_t data[], int32_t len)
     }
 }
 
-void sha256_final(sha256_ctx *ctx, uint8_t hash[])
+void sha256_final(sha256_ctx_t *ctx, uint8_t hash[])
 {
     uint32_t i;
 
