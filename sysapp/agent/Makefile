@@ -101,6 +101,7 @@ SRC-y 			                        += ./core/cardm/src/msg_enable_cmd.c
 SRC-y 			                        += ./core/networkd/src/upload_network.c
 
 # Personalise module
+SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
 SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/downstream_issue_cert.c

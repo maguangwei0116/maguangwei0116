@@ -24,6 +24,7 @@
 #include "lpa.h"
 #include "ota.h"
 #include "logm.h"
+#include "personalise.h"
 #include "libcomm.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
@@ -101,6 +102,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_queue,                (void *)&g_value_list),
     INIT_OBJ(init_bootstrap,            NULL),
+    INIT_OBJ(init_personalise,          (void *)&g_value_list),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    (void *)&g_value_list),
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),

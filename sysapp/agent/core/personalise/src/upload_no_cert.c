@@ -21,15 +21,15 @@
 
 #include "cJSON.h"
 
-extern const devicde_info_t *g_upload_device_info;
+extern const devicde_info_t *g_personalise_device_info;
 
 static cJSON *upload_no_cert_packer(void *arg)
 {
     int32_t ret                 = RT_ERROR;
     cJSON *content              = NULL;
-    const char *imei            = g_upload_device_info->imei;
-    const char *deviceId        = g_upload_device_info->device_id;
-    const char *model           = g_upload_device_info->model;
+    const char *imei            = g_personalise_device_info->imei;
+    const char *deviceId        = g_personalise_device_info->device_id;
+    const char *model           = g_personalise_device_info->model;
     uint8_t fileVersion[128]    = {0};
 
     content = cJSON_CreateObject();
