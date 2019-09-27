@@ -34,41 +34,48 @@
 #include <openssl/ssl.h>
 #endif
 
-static REG_info reg_info;
+#define HTTP_RECV_TIMEOUT   30
+
+typedef int32_t (*YUNBA_CALLBACK)(char *p);
+
+static mqtt_reg_info_t reg_info;
 static char reg_url[40];
-static int reg_port = 8383;
+static int32_t reg_port = 8383;
+static char url_host[200];
+static char url_port[8];
 
-typedef int (*YUNBA_CALLBACK)(char *p);
-
-int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, PCALLBACK cb)
+int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, char *path, PCALLBACK cb)
 {
-    int ret = -1;
-    int sockfd = -1;
-    int h;
+    int32_t ret = RT_ERROR;
+    int32_t sockfd = RT_ERROR;
+    int32_t h;
     socklen_t len;
     fd_set   t_set1;
     struct sockaddr_in servaddr;
     char buf[4096];
     char md5_out[32+1];
     struct timeval timeout;
+    struct hostent *host_entry;
+    char *p = NULL;
+    char temp[128];
 
     do{
         if(!json_data || !hostname || !path) {
             MSG_PRINTF(LOG_DBG, "path json data error\n");
             break;
         }
-        memset(buf, 0, sizeof(buf));
+        
         MSG_PRINTF(LOG_INFO, "json_data:%s\n",json_data);
-        get_md5_string(json_data, md5_out);
+        get_md5_string((char *)json_data, md5_out);
         md5_out[32] = '\0';
 
     #if defined(WIN32) || defined(WIN64)
         WORD wVersionRequested;
         WSADATA wsaData;
         wVersionRequested = MAKEWORD(2, 2);
-        if (WSAStartup(wVersionRequested, &wsaData) != 0)
-        {
+        if (WSAStartup(wVersionRequested, &wsaData) != 0) {
             printf("Init Windows Socket Failed::%d\n", GetLastError());
+            ret = RT_ERROR;
             break;
         }
     #else
@@ -82,49 +89,55 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         servaddr.sin_port = htons(port);
 
         if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) <= 0) {
-            MSG_PRINTF(LOG_DBG, "create socket error\n");
+            MSG_PRINTF(LOG_WARN, "create socket error\n");
+            ret = RT_ERROR;
             break;
         }
 
         //RT_MQTT_COMMAN_DEBUG("get host by name 1\r\n");
-        struct hostent *host_entry = gethostbyname(hostname);
+        host_entry = gethostbyname(hostname);
         //RT_MQTT_COMMAN_DEBUG("get host by name 2\r\n");
-
-        if(NULL == host_entry) {
+        if(!host_entry) {
+            MSG_PRINTF(LOG_WARN, "get hosy by name fail\n");
+            ret = RT_ERROR;
             break;
         }
 
-        char* p = inet_ntoa(*((struct in_addr *)host_entry->h_addr));
+        p = inet_ntoa(*((struct in_addr *)host_entry->h_addr));
         if(!p) {
-            MSG_PRINTF(LOG_DBG, "11p error\n");
+            MSG_PRINTF(LOG_WARN, "11p error\n");
+            ret = RT_ERROR;
             break;
         }
 
         if (inet_pton(AF_INET, p, &servaddr.sin_addr) <= 0) {
-            MSG_PRINTF(LOG_DBG, "22p error\n");
+            MSG_PRINTF(LOG_WARN, "22p error\n");
+            ret = RT_ERROR;
             break;
         }
         
-        MSG_PRINTF(LOG_INFO, "servaddr.sin_addr:%x\n",servaddr.sin_addr);        
-        timeout.tv_sec = 30;
+        //MSG_PRINTF(LOG_INFO, "servaddr.sin_addr:%x\n",servaddr.sin_addr);        
+        timeout.tv_sec = HTTP_RECV_TIMEOUT;
         timeout.tv_usec = 0;
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
-            MSG_PRINTF(LOG_DBG, "setsockopt0 error\n");
+            MSG_PRINTF(LOG_WARN, "setsockopt0 error\n");
             break;
         }
 
         if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
-            MSG_PRINTF(LOG_DBG, "setsockopt error\n");
+            MSG_PRINTF(LOG_WARN, "setsockopt error\n");
+            ret = RT_ERROR;
             break;
         }
 
         MSG_PRINTF(LOG_INFO, "sockfd:%d\n",sockfd);
         if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
-            MSG_PRINTF(LOG_DBG, "connect err(%d): %s\n", errno, strerror(errno));
+            MSG_PRINTF(LOG_WARN, "connect err(%d): %s\n", errno, strerror(errno));
+            ret = RT_ERROR;
             break;
         }
 
-        char temp[128];
+        memset(buf, 0, sizeof(buf));
         snprintf(temp, sizeof(temp), "POST %s HTTP/1.1", path);
         strcat(buf, temp);
         strcat(buf, "\r\n");
@@ -151,23 +164,26 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         ret = write(sockfd, buf, strlen(buf));
     #endif
         if (ret < 0) {
-            MSG_PRINTF(LOG_DBG, "write data error\n");
+            MSG_PRINTF(LOG_WARN, "write data error\n");
+            ret = RT_ERROR;
             break;
         }
 
-        struct timeval  tv;
         FD_ZERO(&t_set1);
         FD_SET(sockfd, &t_set1);
-        tv.tv_sec= 6;
-        tv.tv_usec= 0;
-        h = select(sockfd + 1, &t_set1, NULL, NULL, &tv);
+        h = select(sockfd + 1, &t_set1, NULL, NULL, &timeout);
         if (h > 0) {
             memset(buf, 0, sizeof(buf));
     #if defined(WIN32) || defined(WIN64)
-            ssize_t  i = recv(sockfd, buf, sizeof(buf), 0);
+            ret = recv(sockfd, buf, sizeof(buf), 0);
     #else
-            ssize_t  i= read(sockfd, buf, sizeof(buf));
+            ret = read(sockfd, buf, sizeof(buf));
     #endif
+            if (ret < 0) {
+                MSG_PRINTF(LOG_WARN, "read data error\n");
+                ret = RT_ERROR;
+                break;
+            }
 
     #if 0  // only for test
         const char *tmp_data =  "HTTP/1.1 502 Bad Gateway\r\n"
@@ -188,75 +204,73 @@ int http_post_json(char *json_data, char *hostname, uint16_t port, char *path, P
         memset(buf, 0, sizeof(buf));
         rt_os_memcpy(buf, tmp_data, strlen(tmp_data));
     #endif
-            //取body
-            MSG_PRINTF(LOG_INFO, "rcv buff:%s\n",buf);
-            char *temp = strstr(buf, "\r\n\r\n");
-            if (temp) {
-                temp += 4;
-                char *tran = rt_os_strstr(buf,"Transfer-Encoding");
+            /* get http body */
+            MSG_PRINTF(LOG_INFO, "rcv buff: %s\n", buf);
+            p = strstr(buf, "\r\n\r\n");
+            if (p) {
+                p += 4;
+                char *tran = rt_os_strstr(buf, "Transfer-Encoding");
                 if(tran) {
-                    temp = strstr(temp,"\r\n");
+                    p = strstr(p, "\r\n");
                 }
-                ret = cb(temp);
+                ret = cb(p);
                 MSG_PRINTF(LOG_DBG, "cb ret:%d\n",ret);
                 break;
             } else {
                 MSG_PRINTF(LOG_DBG, "ret:%d\n",ret);
-                ret = -1;
+                ret = RT_ERROR;
                 break;
             }
         } else {
-            MSG_PRINTF(LOG_DBG, "ret:%d\n",ret);
-            ret = -1;
+            MSG_PRINTF(LOG_DBG, "h:%d\n",h);
+            ret = RT_ERROR;
             break;
         }
-        ret = 0;
+        ret = RT_SUCCESS;
         break;
     }while(0);
 
     if(sockfd > 0){
-        #if defined(WIN32) || defined(WIN64)
-            closesocket(sockfd);
-            WSACleanup();
-        #else
-            close(sockfd);
-        #endif
+    #if defined(WIN32) || defined(WIN64)
+        closesocket(sockfd);
+        WSACleanup();
+    #else
+        close(sockfd);
+    #endif
     }
+    
     return ret;
 }
 
-//EMQ的ticiet server回调处理
-static int rt_reg_cb(const char *json_data) 
+/* callback for EMQ ticket server */
+static int32_t mqtt_emq_ticket_server_cb(const char *json_data) 
 {
-    int ret = -1;
-    char buf[500];
+    int32_t ret = RT_ERROR;
     char *str = NULL;
     cJSON *root;
-    
-    snprintf(buf, sizeof(buf), "%s", json_data);
-    MSG_PRINTF(LOG_INFO, "buf:%s\n",buf);
-    
-    root = cJSON_Parse(buf);
-    if(root == NULL){
-        return -1;
+
+    MSG_PRINTF(LOG_INFO, "buf:%s\n", json_data);    
+    root = cJSON_Parse(json_data);
+    if(!root){
+        return RT_ERROR;
     }
     
     str = cJSON_Print(root);
     if (str) {
-        MSG_PRINTF(LOG_INFO, "%s\n",str);
+        MSG_PRINTF(LOG_INFO, "%s\n", str);
         cJSON_free(str);
     }
     
     if (root) {
         cJSON *obj = cJSON_GetObjectItem(root, "obj");
         if(obj){
-            cJSON * pUsername = cJSON_GetObjectItem(obj,"username");
-            cJSON * pPassword = cJSON_GetObjectItem(obj,"password");
+            cJSON * username = cJSON_GetObjectItem(obj, "username");
+            cJSON * password = cJSON_GetObjectItem(obj, "password");
             
-            if(pUsername && pPassword){
-                snprintf(reg_info.username, sizeof(reg_info.username), "%s", pUsername->valuestring);
-                snprintf(reg_info.password, sizeof(reg_info.password), "%s", pPassword->valuestring);
-                ret = 0;
+            if(username && password){
+                snprintf(reg_info.username, sizeof(reg_info.username), "%s", username->valuestring);
+                snprintf(reg_info.password, sizeof(reg_info.password), "%s", password->valuestring);
+                ret = RT_SUCCESS;
             }
         }
         cJSON_Delete(root);
@@ -265,28 +279,26 @@ static int rt_reg_cb(const char *json_data)
 }
 
 //云吧的ticket server回调处理
-static int reg_cb(const char *json_data) 
+/* callback for YUNBA ticket server */
+static int32_t mqtt_yunba_ticket_server_cb(const char *json_data) 
 {
-    int ret = -1;
-    char buf[500];
+    int32_t ret = RT_ERROR;
     cJSON *root;
-    
-    snprintf(buf, sizeof(buf), "%s", json_data);
 
-    root = cJSON_Parse(buf);
+    root = cJSON_Parse(json_data);
     if (root) {
-        int ret_size = cJSON_GetArraySize(root);
+        int32_t ret_size = cJSON_GetArraySize(root);
         if (ret_size >= 4) {
-            cJSON * pClientId   = cJSON_GetObjectItem(root, "c");
-            cJSON * pUsername   = cJSON_GetObjectItem(root, "u");
-            cJSON * pPassword   = cJSON_GetObjectItem(root, "p");
-            cJSON * pDevId      = cJSON_GetObjectItem(root, "d");
+            cJSON * client_id   = cJSON_GetObjectItem(root, "c");
+            cJSON * username    = cJSON_GetObjectItem(root, "u");
+            cJSON * password    = cJSON_GetObjectItem(root, "p");
+            cJSON * device_id   = cJSON_GetObjectItem(root, "d");
             
-            if (pClientId && pUsername && pPassword && pDevId) {
-                snprintf(reg_info.client_id, sizeof(reg_info.client_id), "%s", pClientId->valuestring);
-                snprintf(reg_info.username, sizeof(reg_info.username), "%s", pUsername->valuestring);
-                snprintf(reg_info.password, sizeof(reg_info.password), "%s", pPassword->valuestring);
-                snprintf(reg_info.device_id, sizeof(reg_info.device_id), "%s", pDevId->valuestring);
+            if (client_id && username && password && device_id) {
+                snprintf(reg_info.client_id, sizeof(reg_info.client_id), "%s", client_id->valuestring);
+                snprintf(reg_info.username, sizeof(reg_info.username), "%s", username->valuestring);
+                snprintf(reg_info.password, sizeof(reg_info.password), "%s", password->valuestring);
+                snprintf(reg_info.device_id, sizeof(reg_info.device_id), "%s", device_id->valuestring);
                 ret = 0;
             }
         }
@@ -295,17 +307,14 @@ static int reg_cb(const char *json_data)
     return ret;
 }
 
-//用于红茶adapter server回调处理
-static int reg_cb1(const char *json_data) 
+/* callback for REDTEA ticket server */
+static int32_t mqtt_redtea_ticket_server_cb(const char *json_data) 
 {
-    int ret = -1;
-    char buf[500];
+    int32_t ret = RT_ERROR;
     cJSON *data;
     cJSON *root;
-    
-    snprintf(buf, sizeof(buf), "%s", json_data);
 
-    data = cJSON_Parse(buf);
+    data = cJSON_Parse(json_data);
     if (!data) {
         MSG_PRINTF(LOG_ERR, "json data parse fail !\r\n"); 
         return ret;
@@ -313,27 +322,27 @@ static int reg_cb1(const char *json_data)
     
     root = cJSON_GetObjectItem(data, "data");
     if (root) {
-        int ret_size = cJSON_GetArraySize(root);
+        int32_t ret_size = cJSON_GetArraySize(root);
         if (ret_size >= 4) {
-            cJSON * charnel     = cJSON_GetObjectItem(root, "s");
-            cJSON * pUsername   = cJSON_GetObjectItem(root, "u");
-            cJSON * pPassword   = cJSON_GetObjectItem(root, "p");
-            cJSON * pClientId   = cJSON_GetObjectItem(root, "c");
+            cJSON * channel     = cJSON_GetObjectItem(root, "s");
+            cJSON * username    = cJSON_GetObjectItem(root, "u");
+            cJSON * password    = cJSON_GetObjectItem(root, "p");
+            cJSON * client_id   = cJSON_GetObjectItem(root, "c");
             cJSON * host        = cJSON_GetObjectItem(root, "h");
             cJSON * port        = cJSON_GetObjectItem(root, "o");
             cJSON * ticket_url  = cJSON_GetObjectItem(root, "r");
             
-            if (pUsername && pPassword && charnel && ticket_url && host && port ) {
-                snprintf(reg_info.username, sizeof(reg_info.username), "%s", pUsername->valuestring);
-                snprintf(reg_info.password, sizeof(reg_info.password), pPassword->valuestring);
-                snprintf(reg_info.rt_channel, sizeof(reg_info.rt_channel), charnel->valuestring);
+            if (username && password && channel && ticket_url && host && port ) {
+                snprintf(reg_info.username, sizeof(reg_info.username), "%s", username->valuestring);
+                snprintf(reg_info.password, sizeof(reg_info.password), password->valuestring);
+                snprintf(reg_info.channel, sizeof(reg_info.channel), channel->valuestring);
                 snprintf(reg_info.ticket_server, sizeof(reg_info.ticket_server), ticket_url->valuestring);
-                snprintf(reg_info.rt_url, sizeof(reg_info.rt_url), "%s:%d", host->valuestring, port->valueint);
+                snprintf(reg_info.url, sizeof(reg_info.url), "%s:%d", host->valuestring, port->valueint);
                 ret = 0;
             }
 
-            if(!rt_os_strncmp(reg_info.rt_channel, "YUNBA", 5) && pClientId){
-                snprintf(reg_info.client_id, sizeof(reg_info.client_id), pClientId->valuestring);
+            if(!rt_os_strncmp(reg_info.channel, "YUNBA", 5) && client_id){
+                snprintf(reg_info.client_id, sizeof(reg_info.client_id), client_id->valuestring);
             }
         }
 
@@ -343,43 +352,43 @@ static int reg_cb1(const char *json_data)
     return ret;
 }
 
-//  云吧获取mqtt连接参数接口
-int MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_info *info)
+/* get YUNBA MQTT connect param API */
+int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_info_t *info)
 {
-    int ret;
-    int json_data_len = 1024;
+    int32_t ret;
+    int32_t json_data_len = 1024;
     char *json_data = NULL;
 
     if (!appkey) {
-        ret = -1;
+        ret = RT_ERROR;
         goto exit_entry;
     }
 
     json_data = (char *)rt_os_malloc(json_data_len);
     if (!json_data) {
-        ret = -2;
+        ret = RT_ERROR;
         goto exit_entry;
     }
     
-    if (deviceid == NULL) {
+    if (!deviceid) {
         snprintf(json_data, json_data_len, "{\"a\": \"%s\", \"p\":4}", appkey);
     } else {
         snprintf(json_data, json_data_len, "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
     }
     
-    ret = http_post_json(json_data, reg_url, reg_port, "/device/reg/", (PCALLBACK)reg_cb);
+    ret = http_post_json((const char *)json_data, reg_url, reg_port, "/device/reg/", (PCALLBACK)mqtt_yunba_ticket_server_cb);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "http post json yunba error, %s:%d, ret=%d\r\n", reg_url, reg_port, ret);
-        ret = -3;
+        ret = RT_ERROR;
         goto exit_entry;
     }
 
-    strcpy(info->client_id, reg_info.client_id);
-    strcpy(info->username, reg_info.username);
-    strcpy(info->password, reg_info.password);
-    strcpy(info->device_id, reg_info.device_id);
+    snprintf(info->client_id, sizeof(info->client_id), "%s", reg_info.client_id);
+    snprintf(info->username, sizeof(info->username), "%s", reg_info.username);
+    snprintf(info->password, sizeof(info->password), "%s", reg_info.password);
+    snprintf(info->device_id, sizeof(info->device_id), "%s", reg_info.device_id);
 
-    ret = 0;
+    ret = RT_SUCCESS;
     
 exit_entry:
     if (json_data) {
@@ -389,84 +398,80 @@ exit_entry:
     return ret;
 }
 
-//EMQ获取MQTT连接参数接口
-int MQTTClient_setup_with_appkey(char* appkey, mqtt_info *info)
+/* get EMQ MQTT connect param API */
+int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_info_t *info)
 {
-    int ret;
+    int32_t ret;
     char json_data[1024];
 
     if (!appkey) {
-        return -1;
+        return RT_ERROR;
     }
 
     snprintf(json_data, sizeof(json_data), "{\"appKey\":\"%s\"}", appkey);
 
-    ret = http_post_json(json_data, reg_url, reg_port, "/clientService/getEmqUser", (PCALLBACK)rt_reg_cb);
+    ret = http_post_json((const char *)json_data, reg_url, reg_port, "/clientService/getEmqUser", (PCALLBACK)mqtt_emq_ticket_server_cb);
     if (ret < 0) {
-        return -1;
+        return RT_ERROR;
     }
 
-    strcpy(info->client_id, reg_info.client_id);
-    strcpy(info->username, reg_info.username);
-    strcpy(info->password, reg_info.password);
+    snprintf(info->client_id, sizeof(info->client_id), "%s", reg_info.client_id);
+    snprintf(info->username, sizeof(info->username), "%s", reg_info.username);
+    snprintf(info->password, sizeof(info->password), "%s", reg_info.password);
     
-    return 0;
+    return RT_SUCCESS;
 }
 
-
-//红茶adapter服务器获取
-int rt_mqtt_setup_with_appkey(const char *appkey, mqtt_info *info, const char *eid)
+/* get connect param with REDTEA adapter API */
+int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_info_t *info, const char *eid)
 {
     char json_data[1024];
-    int ret;
+    int32_t ret;
 
-    if (appkey == NULL){
+    if (!appkey){
         MSG_PRINTF(LOG_ERR, "appkey is NULL\n");
-        return -1;
+        return RT_ERROR;
     }
 
-    if (info->device_id == NULL) {
+    if (!info->device_id) {
         snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\"}", appkey);
     } else {
         snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", \
             appkey, info->device_id, eid, info->last_connect_status);
     }
 
-    MSG_PRINTF(LOG_DBG, "reg_url:%s, reg_port:%d\r\n", reg_url, reg_port);
-    ret = http_post_json(json_data, reg_url, reg_port, "/api/v1/ticket", (PCALLBACK)reg_cb1);
+    MSG_PRINTF(LOG_INFO, "reg_url:%s, reg_port:%d\r\n", reg_url, reg_port);
+    ret = http_post_json((const char *)json_data, reg_url, reg_port, "/api/v1/ticket", (PCALLBACK)mqtt_redtea_ticket_server_cb);
     if (ret < 0){
         MSG_PRINTF(LOG_ERR, "http_post_json error, ret=%d\r\n", ret);
-        return -1;
+        return RT_ERROR;
     }
-    strcpy(info->client_id, reg_info.client_id);
-    strcpy(info->username, reg_info.username);
-    strcpy(info->password, reg_info.password);
-    strcpy(info->rt_channel, reg_info.rt_channel);
-    strcpy(info->ticket_server, reg_info.ticket_server);
-    strcpy(info->rt_url, reg_info.rt_url);
+    snprintf(info->client_id, sizeof(info->client_id), "%s", reg_info.client_id);
+    snprintf(info->username, sizeof(info->username), "%s", reg_info.username);
+    snprintf(info->password, sizeof(info->password), "%s", reg_info.password);
+    snprintf(info->channel, sizeof(info->channel), "%s", reg_info.channel);
+    snprintf(info->ticket_server, sizeof(info->ticket_server), "%s", reg_info.ticket_server);
+    snprintf(info->url, sizeof(info->url), "%s", reg_info.url);
+
+#if 0
     MSG_PRINTF(LOG_DBG, "client_id     : %s\r\n", info->client_id);
     MSG_PRINTF(LOG_DBG, "username      : %s\r\n", info->username);
     MSG_PRINTF(LOG_DBG, "password      : %s\r\n", info->password);
-    MSG_PRINTF(LOG_DBG, "rt_channel    : %s\r\n", info->rt_channel);
+    MSG_PRINTF(LOG_DBG, "channel       : %s\r\n", info->channel);
     MSG_PRINTF(LOG_DBG, "ticket_server : %s\r\n", info->ticket_server);
-    MSG_PRINTF(LOG_DBG, "rt_url        : %s\r\n", info->rt_url);
+    MSG_PRINTF(LOG_DBG, "url           : %s\r\n", info->url);
+#endif
     
-    return 0;
+    return RT_SUCCESS;
 }
 
-static char url_host[200];
-static char url_port[8];
-
-static size_t rt_get_broker_cb(const char *json_data)
+static size_t mqtt_get_broker_cb(const char *json_data)
 {
-    int ret = -1;
-    char buf[500];
+    int32_t ret = RT_ERROR;
     cJSON *root;
    
-    snprintf(buf, sizeof(buf), "%s", json_data);
-    MSG_PRINTF(LOG_INFO, "buf:%s\n", buf);
-
-    root = cJSON_Parse(buf);  
+    MSG_PRINTF(LOG_INFO, "-------------------------- json_data: %s\n", json_data);
+    root = cJSON_Parse(json_data);  
     
 #if 0  // only for test
     {
@@ -493,52 +498,31 @@ static size_t rt_get_broker_cb(const char *json_data)
     return ret;
 }
 
-// static size_t get_broker_cb(const char *json_data)
-// {
-//  int ret = -1;
-//  char buf[500];
-//  memset(buf, 0, sizeof(buf));
-//  memcpy(buf, json_data, strlen(json_data));
-//  cJSON *root = cJSON_Parse(buf);
-//  if (root) {
-//      int ret_size = cJSON_GetArraySize(root);
-//      if (ret_size >= 1) {
-//          cJSON * pURL = cJSON_GetObjectItem(root,"c");
-//          if (pURL != NULL) {
-//              strcpy(url_host, pURL->valuestring);
-//              ret = 0;
-//          }
-//      }
-//      cJSON_Delete(root);
-//  }
-//  return ret;
-// }
-
-void set_reg_url(const char url[20], int port)
+void mqtt_set_reg_url(const char url[20], int32_t port)
 {
-    rt_os_memset(reg_url,0,sizeof(reg_url));
+    rt_os_memset(reg_url, 0, sizeof(reg_url));
     strcpy(reg_url, url);
     reg_port = port;
 }
 
-int MQTTClient_get_host(char *nodeName, char *url, const char *appkey)
+int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey)
 {
-    int ret = -1;
+    int32_t ret = RT_ERROR;
     char json_data[1024];
     
-    if(!nodeName){
+    if(!node_name){
         snprintf(json_data, sizeof(json_data), "{\"appKey\":\"%s\"}", appkey);
     } else {
-        snprintf(json_data, sizeof(json_data), "{\"nodeName\":\"%s\",\"appKey\":\"%s\"}", nodeName, appkey);
+        snprintf(json_data, sizeof(json_data), "{\"nodeName\":\"%s\",\"appKey\":\"%s\"}", node_name, appkey);
     }
 
-    ret = http_post_json(json_data, reg_url, reg_port, "/clientService/getNodes", (PCALLBACK)rt_get_broker_cb);
+    MSG_PRINTF(LOG_INFO, "-------------------------- json_data: %s\n", json_data);
+    ret = http_post_json((const char *)json_data, reg_url, reg_port, "/clientService/getNodes", (PCALLBACK)mqtt_get_broker_cb);
     if (ret < 0) {
-        return -1;
+        return RT_ERROR;
     }
     
     sprintf(url, "%s:%s", url_host, url_port);
-    return 0;
+    return RT_SUCCESS;
 }
-
 

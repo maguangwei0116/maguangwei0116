@@ -1865,16 +1865,15 @@ static int retstatus;
 static size_t get_ret_status(const char *json_data)
 {
     int ret = 0;
-    char buf[500];
-    memset(buf, 0, sizeof(buf));
-    memcpy(buf, json_data, strlen(json_data));
-    cJSON *root = cJSON_Parse(buf);
+    cJSON *root = cJSON_Parse(json_data);
+    
     if (root) {
         int ret_size = cJSON_GetArraySize(root);
-        if (ret_size >= 1)
-            retstatus =  cJSON_GetObjectItem(root,"status")->valueint;
-        else
-                ret = -1;
+        if (ret_size >= 1) {
+            retstatus =  cJSON_GetObjectItem(root, "status")->valueint;
+        } else {
+            ret = -1;
+        }
         cJSON_Delete(root);
     }
     return ret;
@@ -1885,10 +1884,10 @@ int MQTTClient_set_authkey(char *cid, char *appkey, char* authkey, int *ret_stat
     int ret = -1;
     char json_data[1024];
 
-    sprintf(json_data, "{\"cmd\":\"authkey_set\",\"cid\":\"%s\",\"appkey\":\"%s\",\"authkey\":\"%s\"}",
+    snprintf(json_data, sizeof(json_data), "{\"cmd\":\"authkey_set\",\"cid\":\"%s\",\"appkey\":\"%s\",\"authkey\":\"%s\"}",
             cid, appkey, authkey);
 
-    ret = http_post_json(json_data, "abj-redismsg-4.yunba.io", 8060, "/", (PCALLBACK)get_ret_status);
+    ret = http_post_json((const char *)json_data, "abj-redismsg-4.yunba.io", 8060, "/", (PCALLBACK)get_ret_status);
     if (ret < 0)
         return -1;
     *ret_status = retstatus;
@@ -1926,7 +1925,7 @@ int MQTTClient_get_authkey(char *cid, char *appkey, char* authkey, int *ret_stat
     sprintf(json_data, "{\"cmd\":\"authkey_get\",\"cid\":\"%s\",\"appkey\":\"%s\"}",
             cid, appkey);
 
-    ret = http_post_json(json_data, "abj-redismsg-4.yunba.io", 8060, "/", (PCALLBACK)get_authkey_status);
+    ret = http_post_json((const char *)json_data, "abj-redismsg-4.yunba.io", 8060, "/", (PCALLBACK)get_authkey_status);
     if (ret < 0)
         return -1;
     *ret_status = retstatus;
