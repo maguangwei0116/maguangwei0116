@@ -24,8 +24,6 @@ do{                 \
     "md5sum:%s\r\n"\
     "Content-Length: %d\r\n\r\n%s"
 
-#define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
-
 static const char *g_upload_eid             = NULL;
 static const char *g_upload_deviceid        = NULL;
 const char *g_push_channel                  = NULL;
@@ -34,6 +32,7 @@ const card_info_t *g_upload_card_info       = NULL;
 static rt_bool g_upload_network             = RT_FALSE;
 
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
+#if 0
 {
     int32_t socket_fd = -1;
     int8_t *recv_buf = NULL;
@@ -88,6 +87,11 @@ static int32_t upload_http_post_single(const char *host_addr, int32_t port, sock
 
     return ret;
 }
+#else
+{
+    return http_post_raw(host_addr, port, buffer, len, cb);
+}
+#endif
 
 static int32_t upload_wait_network_connected(void)
 {
