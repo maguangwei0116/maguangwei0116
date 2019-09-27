@@ -150,11 +150,34 @@ static int32_t card_enable_profile(const uint8_t *iccid)
     return ret;
 }
 
+static int32_t card_get_provisioning_profile_iccid(char *iccid)
+{
+    int32_t ret = RT_ERROR;
+    int32_t ii = 0;
+    
+    for (ii = 0; ii < g_p_info.num; ii++) {
+        if (g_p_info.info[ii].class == PROFILE_TYPE_PROVISONING) {
+            rt_os_memcpy(iccid, g_p_info.info[ii].iccid, THE_ICCID_LENGTH);
+            iccid[THE_ICCID_LENGTH] = '\0';
+            ret = RT_SUCCESS;
+            break;
+        }
+    } 
+
+    return ret;
+}
+
 static int32_t card_load_profile(const uint8_t *buf, int32_t len)
 {
     int32_t ret = RT_SUCCESS;
+    char iccid[THE_ICCID_LENGTH + 1] = {0};
 
-    ret = card_enable_profile(g_p_info.info[0].iccid);
+    ret = card_get_provisioning_profile_iccid(iccid);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card get provisioning profile iccid fail\r\n");
+    }
+
+    ret = card_enable_profile(iccid);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
     }
