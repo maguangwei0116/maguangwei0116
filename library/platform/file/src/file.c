@@ -46,7 +46,7 @@ int rt_feof(rt_fshandle_t fp)
 
 char *rt_fgets(char *s, int size, rt_fshandle_t fp)
 {
-    return fgets(s, size, fp);  
+    return fgets(s, size, fp);
 }
 
 long int rt_ftell(rt_fshandle_t fp)
@@ -133,7 +133,7 @@ int linux_feof(rt_fshandle_t fp)
 
 char *linux_fgets(char *s, int size, rt_fshandle_t fp)
 {
-    return fgets(s, size, fp);  
+    return fgets(s, size, fp);
 }
 
 long int linux_ftell(rt_fshandle_t fp)
@@ -189,6 +189,14 @@ int linux_delete_dir(const char *dir)
 int linux_delete_file(const char *file)
 {
     return remove(file);
+}
+
+int32_t linux_truncate(const char *filename, off_t offset)
+{
+    if (filename == NULL) {
+        return RT_ERROR;
+    }
+    return truncate(filename, offset);
 }
 
 size_t shell_cmd(const int8_t *cmd, uint8_t *buf, size_t size)

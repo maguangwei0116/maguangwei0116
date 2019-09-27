@@ -39,19 +39,19 @@ int32_t ipc_socket_server(void)
     if (socket_id <= 0) {
         return ret;
     }
-	
+
     ret = socket_bind(socket_id);
     if (ret == -1) {
         MSG_PRINTF(LOG_ERR, "socket bind failed\n");
         goto end;
     }
-	
+
     ret = socket_listen(socket_id, THE_MAX_CLIENT_NUM);
     if (ret == -1) {
         MSG_PRINTF(LOG_ERR, "socket listen failed\n");
         goto end;
     }
-	
+
     while (1) {
         new_fd = socket_accept(socket_id);
         if (new_fd == -1) {
@@ -64,7 +64,7 @@ int32_t ipc_socket_server(void)
         close(new_fd);
         rt_os_memset(buffer, 0x00, THT_BUFFER_LEN);
     }
-	
+
 end:
     socket_close(socket_id);
 

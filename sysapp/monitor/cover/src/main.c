@@ -17,7 +17,6 @@
 #include "rt_type.h"
 #include "trigger.h"
 #include "card.h"
-#include "esim_api.h"
 #include "ipc_socket_server.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
@@ -46,6 +45,7 @@ static int32_t init_system_signal(void *arg)
 uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
     uint16_t cmd = 0;
+    uint16_t sw = 0;
     static rt_bool reset_flag = RT_FALSE;
 
     cmd = (data[5] << 8) + data[6];
@@ -58,9 +58,11 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
             *rsp_len = 0;
         }
     } else {
-        MSG_PRINTF(LOG_INFO, "Receive msg from lpa\r\n");
-        // send apdu
-        softsim_logic_command(1, (uint8_t *)data, len, rsp, rsp_len);  // msg from lpa
+        MSG_INFO_ARRAY("E-APDU REQ:", data, len);
+        sw = card_cmd((uint8_t *)data, len, rsp, rsp_len);
+        rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
+        rsp[(*rsp_len)++] = sw & 0xFF;
+        MSG_INFO_ARRAY("E-APDU RSP:", rsp, *rsp_len);
         if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
             cmd = (rsp[0] << 8) + rsp[1];
             if ((cmd & 0xFF00) == 0x6100) {

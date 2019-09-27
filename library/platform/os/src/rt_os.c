@@ -174,6 +174,11 @@ void *rt_os_realloc(void *mem, uint32_t size)
     return realloc(mem, size);
 }
 
+void *rt_os_calloc(size_t count, size_t size)
+{
+    return calloc(count, size);
+}
+
 void rt_os_free(void *mem)
 {
     if (NULL == mem) {
@@ -218,7 +223,7 @@ void *_rt_os_realloc(const char *file, uint32_t line, void *mem, uint32_t size)
 
 #endif
 
-void *rt_os_memset(void *mem, int32_t value, int32_t len)
+void *rt_os_memset(void *mem, int32_t value, uint32_t len)
 {
     if (NULL == mem) {
         return NULL;
@@ -227,7 +232,12 @@ void *rt_os_memset(void *mem, int32_t value, int32_t len)
     return memset(mem, value, len);
 }
 
-int32_t rt_os_memcmp(const void *mem_des, const void *mem_src,int32_t len)
+void *rt_os_memmove(void *dst, const void *src, size_t len)
+{
+    return memmove(dst, src, len);
+}
+
+int32_t rt_os_memcmp(const void *mem_des, const void *mem_src, uint32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
         MSG_PRINTF(LOG_WARN, "memory is empty!\n");
