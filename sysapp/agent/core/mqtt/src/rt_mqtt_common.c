@@ -38,11 +38,11 @@
 
 typedef int32_t (*YUNBA_CALLBACK)(char *p);
 
-static mqtt_reg_info_t reg_info;
-static char reg_url[40];
-static int32_t reg_port = 8383;
-static char url_host[200];
-static char url_port[8];
+static mqtt_reg_info_t g_mqtt_reg_info;
+static char g_mqtt_reg_url[40];
+static int32_t g_mqtt_reg_port = 8383;
+static char g_mqtt_url_host[200];
+static char g_mqtt_url_port[8];
 
 int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, char *path, PCALLBACK cb)
 {
@@ -268,8 +268,8 @@ static int32_t mqtt_emq_ticket_server_cb(const char *json_data)
             cJSON * password = cJSON_GetObjectItem(obj, "password");
             
             if(username && password){
-                snprintf(reg_info.username, sizeof(reg_info.username), "%s", username->valuestring);
-                snprintf(reg_info.password, sizeof(reg_info.password), "%s", password->valuestring);
+                snprintf(g_mqtt_reg_info.username, sizeof(g_mqtt_reg_info.username), "%s", username->valuestring);
+                snprintf(g_mqtt_reg_info.password, sizeof(g_mqtt_reg_info.password), "%s", password->valuestring);
                 ret = RT_SUCCESS;
             }
         }
@@ -295,10 +295,10 @@ static int32_t mqtt_yunba_ticket_server_cb(const char *json_data)
             cJSON * device_id   = cJSON_GetObjectItem(root, "d");
             
             if (client_id && username && password && device_id) {
-                snprintf(reg_info.client_id, sizeof(reg_info.client_id), "%s", client_id->valuestring);
-                snprintf(reg_info.username, sizeof(reg_info.username), "%s", username->valuestring);
-                snprintf(reg_info.password, sizeof(reg_info.password), "%s", password->valuestring);
-                snprintf(reg_info.device_id, sizeof(reg_info.device_id), "%s", device_id->valuestring);
+                snprintf(g_mqtt_reg_info.client_id, sizeof(g_mqtt_reg_info.client_id), "%s", client_id->valuestring);
+                snprintf(g_mqtt_reg_info.username, sizeof(g_mqtt_reg_info.username), "%s", username->valuestring);
+                snprintf(g_mqtt_reg_info.password, sizeof(g_mqtt_reg_info.password), "%s", password->valuestring);
+                snprintf(g_mqtt_reg_info.device_id, sizeof(g_mqtt_reg_info.device_id), "%s", device_id->valuestring);
                 ret = 0;
             }
         }
@@ -333,16 +333,16 @@ static int32_t mqtt_redtea_ticket_server_cb(const char *json_data)
             cJSON * ticket_url  = cJSON_GetObjectItem(root, "r");
             
             if (username && password && channel && ticket_url && host && port ) {
-                snprintf(reg_info.username, sizeof(reg_info.username), "%s", username->valuestring);
-                snprintf(reg_info.password, sizeof(reg_info.password), password->valuestring);
-                snprintf(reg_info.channel, sizeof(reg_info.channel), channel->valuestring);
-                snprintf(reg_info.ticket_server, sizeof(reg_info.ticket_server), ticket_url->valuestring);
-                snprintf(reg_info.url, sizeof(reg_info.url), "%s:%d", host->valuestring, port->valueint);
+                snprintf(g_mqtt_reg_info.username, sizeof(g_mqtt_reg_info.username), "%s", username->valuestring);
+                snprintf(g_mqtt_reg_info.password, sizeof(g_mqtt_reg_info.password), password->valuestring);
+                snprintf(g_mqtt_reg_info.channel, sizeof(g_mqtt_reg_info.channel), channel->valuestring);
+                snprintf(g_mqtt_reg_info.ticket_server, sizeof(g_mqtt_reg_info.ticket_server), ticket_url->valuestring);
+                snprintf(g_mqtt_reg_info.url, sizeof(g_mqtt_reg_info.url), "%s:%d", host->valuestring, port->valueint);
                 ret = 0;
             }
 
-            if(!rt_os_strncmp(reg_info.channel, "YUNBA", 5) && client_id){
-                snprintf(reg_info.client_id, sizeof(reg_info.client_id), client_id->valuestring);
+            if(!rt_os_strncmp(g_mqtt_reg_info.channel, "YUNBA", 5) && client_id){
+                snprintf(g_mqtt_reg_info.client_id, sizeof(g_mqtt_reg_info.client_id), client_id->valuestring);
             }
         }
 
@@ -376,17 +376,17 @@ int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char
         snprintf(json_data, json_data_len, "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
     }
     
-    ret = http_post_json((const char *)json_data, reg_url, reg_port, "/device/reg/", (PCALLBACK)mqtt_yunba_ticket_server_cb);
+    ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, "/device/reg/", (PCALLBACK)mqtt_yunba_ticket_server_cb);
     if (ret < 0) {
-        MSG_PRINTF(LOG_ERR, "http post json yunba error, %s:%d, ret=%d\r\n", reg_url, reg_port, ret);
+        MSG_PRINTF(LOG_ERR, "http post json yunba error, %s:%d, ret=%d\r\n", g_mqtt_reg_url, g_mqtt_reg_port, ret);
         ret = RT_ERROR;
         goto exit_entry;
     }
 
-    snprintf(info->client_id, sizeof(info->client_id), "%s", reg_info.client_id);
-    snprintf(info->username, sizeof(info->username), "%s", reg_info.username);
-    snprintf(info->password, sizeof(info->password), "%s", reg_info.password);
-    snprintf(info->device_id, sizeof(info->device_id), "%s", reg_info.device_id);
+    snprintf(info->client_id, sizeof(info->client_id), "%s", g_mqtt_reg_info.client_id);
+    snprintf(info->username, sizeof(info->username), "%s", g_mqtt_reg_info.username);
+    snprintf(info->password, sizeof(info->password), "%s", g_mqtt_reg_info.password);
+    snprintf(info->device_id, sizeof(info->device_id), "%s", g_mqtt_reg_info.device_id);
 
     ret = RT_SUCCESS;
     
@@ -410,14 +410,15 @@ int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_info_t *info)
 
     snprintf(json_data, sizeof(json_data), "{\"appKey\":\"%s\"}", appkey);
 
-    ret = http_post_json((const char *)json_data, reg_url, reg_port, "/clientService/getEmqUser", (PCALLBACK)mqtt_emq_ticket_server_cb);
+    ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
+                            "/clientService/getEmqUser", (PCALLBACK)mqtt_emq_ticket_server_cb);
     if (ret < 0) {
         return RT_ERROR;
     }
 
-    snprintf(info->client_id, sizeof(info->client_id), "%s", reg_info.client_id);
-    snprintf(info->username, sizeof(info->username), "%s", reg_info.username);
-    snprintf(info->password, sizeof(info->password), "%s", reg_info.password);
+    snprintf(info->client_id, sizeof(info->client_id), "%s", g_mqtt_reg_info.client_id);
+    snprintf(info->username, sizeof(info->username), "%s", g_mqtt_reg_info.username);
+    snprintf(info->password, sizeof(info->password), "%s", g_mqtt_reg_info.password);
     
     return RT_SUCCESS;
 }
@@ -440,18 +441,19 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_info_t *info, co
             appkey, info->device_id, eid, info->last_connect_status);
     }
 
-    MSG_PRINTF(LOG_INFO, "reg_url:%s, reg_port:%d\r\n", reg_url, reg_port);
-    ret = http_post_json((const char *)json_data, reg_url, reg_port, "/api/v1/ticket", (PCALLBACK)mqtt_redtea_ticket_server_cb);
+    MSG_PRINTF(LOG_INFO, "reg_url:%s, reg_port:%d\r\n", g_mqtt_reg_url, g_mqtt_reg_port);
+    ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
+                            "/api/v1/ticket", (PCALLBACK)mqtt_redtea_ticket_server_cb);
     if (ret < 0){
         MSG_PRINTF(LOG_ERR, "http_post_json error, ret=%d\r\n", ret);
         return RT_ERROR;
     }
-    snprintf(info->client_id, sizeof(info->client_id), "%s", reg_info.client_id);
-    snprintf(info->username, sizeof(info->username), "%s", reg_info.username);
-    snprintf(info->password, sizeof(info->password), "%s", reg_info.password);
-    snprintf(info->channel, sizeof(info->channel), "%s", reg_info.channel);
-    snprintf(info->ticket_server, sizeof(info->ticket_server), "%s", reg_info.ticket_server);
-    snprintf(info->url, sizeof(info->url), "%s", reg_info.url);
+    snprintf(info->client_id, sizeof(info->client_id), "%s", g_mqtt_reg_info.client_id);
+    snprintf(info->username, sizeof(info->username), "%s", g_mqtt_reg_info.username);
+    snprintf(info->password, sizeof(info->password), "%s", g_mqtt_reg_info.password);
+    snprintf(info->channel, sizeof(info->channel), "%s", g_mqtt_reg_info.channel);
+    snprintf(info->ticket_server, sizeof(info->ticket_server), "%s", g_mqtt_reg_info.ticket_server);
+    snprintf(info->url, sizeof(info->url), "%s", g_mqtt_reg_info.url);
 
 #if 0
     MSG_PRINTF(LOG_DBG, "client_id     : %s\r\n", info->client_id);
@@ -488,8 +490,8 @@ static size_t mqtt_get_broker_cb(const char *json_data)
             cJSON *url = cJSON_GetObjectItem(obj, "ip");
             cJSON *port = cJSON_GetObjectItem(obj, "port");
             if ((url != NULL) && (port != NULL)) {
-                snprintf(url_host, sizeof(url_host), "%s", url->valuestring);
-                snprintf(url_port, sizeof(url_port), "%s", port->valuestring);
+                snprintf(g_mqtt_url_host, sizeof(g_mqtt_url_host), "%s", url->valuestring);
+                snprintf(g_mqtt_url_port, sizeof(g_mqtt_url_port), "%s", port->valuestring);
                 ret = 0;
             }
         }
@@ -500,9 +502,8 @@ static size_t mqtt_get_broker_cb(const char *json_data)
 
 void mqtt_set_reg_url(const char url[20], int32_t port)
 {
-    rt_os_memset(reg_url, 0, sizeof(reg_url));
-    strcpy(reg_url, url);
-    reg_port = port;
+    snprintf(g_mqtt_reg_url, sizeof(g_mqtt_reg_url), "%s", url);
+    g_mqtt_reg_port = port;
 }
 
 int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey)
@@ -517,12 +518,13 @@ int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey
     }
 
     MSG_PRINTF(LOG_INFO, "-------------------------- json_data: %s\n", json_data);
-    ret = http_post_json((const char *)json_data, reg_url, reg_port, "/clientService/getNodes", (PCALLBACK)mqtt_get_broker_cb);
+    ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
+                            "/clientService/getNodes", (PCALLBACK)mqtt_get_broker_cb);
     if (ret < 0) {
         return RT_ERROR;
     }
     
-    sprintf(url, "%s:%s", url_host, url_port);
+    sprintf(url, "%s:%s", g_mqtt_url_host, g_mqtt_url_port);
     return RT_SUCCESS;
 }
 
