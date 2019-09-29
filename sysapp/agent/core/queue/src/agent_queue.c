@@ -56,8 +56,7 @@ static void idle_event(const uint8_t *buf, int32_t len, int32_t mode)
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
     (void)mode;
-    MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
-
+    
     downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
     if (downstream_msg->msg) {
         rt_os_free(downstream_msg->msg);
@@ -75,8 +74,7 @@ static void issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
     (void)mode;
-    MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
-
+    
     ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
     if (downstream_msg->msg) {
         rt_os_free(downstream_msg->msg);
@@ -104,7 +102,7 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_CARD_MANAGER:
-                    MSG_PRINTF(LOG_INFO, "que_t.msg_id:%d\n", que_t.data_len);
+                    //MSG_PRINTF(LOG_INFO, "que_t.data_len:%d\n", que_t.data_len);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
@@ -172,18 +170,17 @@ static void upload_queue_task(void)
     while (1) {
         rt_os_memset(&que_t, 0, sizeof(upload_que_t));
         if (rt_receive_queue_msg(g_upload_queue_id, &que_t, len, UPLOAD_QUEUE_MSG_TYPE, 0) == 0) {
-            MSG_PRINTF(LOG_INFO, "upload queue dealing ... que_t.data_buf: %p\r\n", que_t.data_buf);
+            //MSG_PRINTF(LOG_INFO, "upload queue dealing ... que_t.data_buf: %p\r\n", que_t.data_buf);
             ret = upload_http_post(que_t.host_addr, que_t.port, que_t.cb, que_t.data_buf, que_t.data_len);
-            MSG_PRINTF(LOG_INFO, "upload http post:%d\n", ret);
+            if (ret) {
+                MSG_PRINTF(LOG_WARN, "upload http post fail, ret=%d\r\n", ret);
+            }
             if (que_t.data_buf && que_t.data_len != 0) {
                 rt_os_free(que_t.data_buf);
             }
         }
-        MSG_PRINTF(LOG_INFO, "upload queue task ...\n");
     }
 }
-
-#include <errno.h>
 
 static int32_t agent_queue_clear_msg(int32_t time_cnt)
 {
@@ -213,7 +210,7 @@ static int32_t upload_queue_clear_msg(int32_t time_cnt)
     int32_t i;
     int32_t ret;    
     upload_que_t upload_queue;
-    int32_t upload_agent_len = sizeof(upload_queue) - sizeof(long);
+    int32_t upload_queue_len = sizeof(upload_queue) - sizeof(long);
 
     if (g_upload_queue_id == -1) {
         return RT_ERROR;
@@ -221,7 +218,7 @@ static int32_t upload_queue_clear_msg(int32_t time_cnt)
     
     for (i = 0; i < time_cnt; i++) {
         rt_os_memset(&upload_queue, 0, sizeof(upload_queue));
-        ret = rt_receive_queue_msg(g_upload_queue_id, &upload_queue, upload_agent_len, UPLOAD_QUEUE_MSG_TYPE, RT_IPC_NOWAIT); 
+        ret = rt_receive_queue_msg(g_upload_queue_id, &upload_queue, upload_queue_len, UPLOAD_QUEUE_MSG_TYPE, RT_IPC_NOWAIT); 
         if (ret == RT_ERROR && !upload_queue.data_buf) {
             break;
         }
@@ -303,7 +300,6 @@ int32_t msg_send_upload_queue(const char *host_addr, int32_t port, void *cb, voi
     rt_os_memcpy(que_t.data_buf, buffer, len);
     *(((uint8_t *)que_t.data_buf) + len) = '\0';
     len = sizeof(upload_que_t) - sizeof(long);
-    MSG_PRINTF(LOG_INFO, "send len:%d, %p\n", len, que_t.data_buf);
     ret = rt_send_queue_msg(g_upload_queue_id, (void *)&que_t, len, 0);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "send upload msg queue fail, ret=%d, err(%d)=%s\n", ret, errno, strerror(errno));

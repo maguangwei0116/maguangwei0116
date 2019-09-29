@@ -425,7 +425,7 @@ static int32_t mqtt_msg_arrived(void* context, char* topicName, int32_t topicLen
     int32_t len = md->payloadlen;
     
     msg[len] = '\0';
-    MSG_PRINTF(LOG_INFO, "msg arrived, topic:%s, len: %d bytes, %s\r\n", topicName, len, msg);
+    //MSG_PRINTF(LOG_INFO, "msg arrived, topic:%s, len: %d bytes, %s\r\n", topicName, len, msg);
     downstream_msg_handle((const char *)msg, len);
     
     MQTTClient_freeMessage(&md);

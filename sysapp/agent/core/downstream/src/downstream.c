@@ -119,7 +119,8 @@ int32_t downstream_msg_handle(const void *data, uint32_t len)
             downstream_msg.handler      = obj->handler;
             downstream_msg.private_arg  = NULL;
             downstream_msg.out_arg      = NULL;
-            MSG_PRINTF(LOG_WARN, "tranId: %p, msg: %p\r\n", downstream_msg.tranId, downstream_msg.msg);
+            //MSG_PRINTF(LOG_WARN, "tranId: %p, msg: %p\r\n", downstream_msg.tranId, downstream_msg.msg);
+            MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\r\n", downstream_msg.msg, downstream_msg.method, downstream_msg.event);
 
             ret = msg_send_agent_queue(obj->msg_id, MSG_FROM_MQTT, &downstream_msg, sizeof(downstream_msg_t));
 
