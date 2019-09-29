@@ -59,6 +59,6 @@ bool linux_file_exist(const char *file);
 int linux_create_dir(const char *dir);
 int linux_delete_dir(const char *dir);
 int linux_delete_file(const char *file);
-
+int32_t linux_truncate(const char *filename, off_t offset);
 size_t shell_cmd(const int8_t *cmd, uint8_t *buf, size_t size);
 #endif // __FILE_H__

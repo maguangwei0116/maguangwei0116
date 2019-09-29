@@ -31,7 +31,7 @@
 #define LOG_FILE_NAME_LEN       64
 #define LOG_HEXDUMP_LEVEL       LOG_INFO
 #ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a)	        sizeof(a)/sizeof(a[0])
+#define ARRAY_SIZE(a)           sizeof(a)/sizeof(a[0])
 #endif
 
 typedef struct LOG_LEVEL_ITEM {
@@ -48,7 +48,7 @@ typedef struct LOG_PARAM {
     char            file[LOG_FILE_NAME_LEN];    // log file name
 } log_param_t;
 
-static log_item_t g_log_item_table[] = 
+static log_item_t g_log_item_table[] =
 {
     {LOG_NONE,      "[NONE]",},
     {LOG_ERR,       "[ERR ]",},
@@ -58,10 +58,10 @@ static log_item_t g_log_item_table[] =
     {LOG_ALL,       "[ALL ]",},
 };
 
-static log_param_t g_log_param = 
+static log_param_t g_log_param =
 {
     LOG_INFO,
-    LOG_PRINTF_FILE,
+    LOG_PRINTF_TERMINAL,
     LOG_FILE_SIZE,
     0,
     NULL,
@@ -84,7 +84,7 @@ int32_t log_set_param(log_mode_e mode, log_level_e level, unsigned int max_size)
     if (max_size > 0) {
         g_log_param.max_size = max_size;
     }
-    
+
     return 0;
 }
 
@@ -129,7 +129,7 @@ int32_t init_log_file(void *arg)
     init_data_redtea_path(NULL);
 
     log_file_open();
-    
+
     return 0;
 }
 
@@ -140,10 +140,10 @@ static int32_t log_file_clear(void)
         printf("log file open error\n");
         return -1;
     }
-    
+
     linux_fclose(g_log_param.fp);
     g_log_param.fp = NULL;
-    
+
     return 0;
 }
 
@@ -151,7 +151,7 @@ static int32_t log_file_write(const char *data, int32_t len)
 {
     if (g_log_param.fp) {
         linux_fwrite(data, 1, len, g_log_param.fp);
-        linux_fflush(g_log_param.fp); 
+        linux_fflush(g_log_param.fp);
     }
     return 0;
 }
@@ -170,11 +170,11 @@ static void log_local_print(const char *data, int32_t len)
         }
         log_file_write(data, len);
         g_log_param.cur_size += len;
-        
+
 #if 0  // only for test
         {
             printf("g_log_param.cur_size: %d, max: %d\r\n", g_log_param.cur_size, g_log_param.max_size);
-        } 
+        }
 #endif
 
     }
@@ -193,7 +193,7 @@ int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *ms
     }
 
     if (level_flag == LOG_HAVE_LEVEL_PRINTF) {
-        rt_os_memcpy(content, g_log_item_table[level].label, LOG_LEVEL_LEN);     
+        rt_os_memcpy(content, g_log_item_table[level].label, LOG_LEVEL_LEN);
         len = LOG_LEVEL_LEN;
         time_write = time(NULL);
         localtime_r(&time_write, &tm_Log);
@@ -204,7 +204,7 @@ int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *ms
     va_start(vl_list, msg);
     vsnprintf((char *)&content[len], sizeof(content) - len, (const char *)msg, vl_list);
     va_end(vl_list);
-    
+
     log_local_print(content, rt_os_strlen(content));
 
     return 0;
@@ -272,7 +272,7 @@ static rt_bool log_check_level(const char *header, log_level_e min_level)
     }
 
     if (cur_level == LOG_UNKNOW) {
-        cur_level = last_log_level;	
+        cur_level = last_log_level;
     } else {
         last_log_level = cur_level;
     }

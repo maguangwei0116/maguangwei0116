@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "file.h"
+#include "rt_os.h"
 
 typedef struct _file_ops_t {
 
@@ -42,7 +43,40 @@ typedef struct _file_ops_t {
 
     int (*delete_file)(const char *file);
 
+    int (*truncate)(const char *path, off_t length);
+
 } file_ops_t;
+
+typedef struct OS_OPS {
+
+    rt_pthread_mutex_t *(*mutex_init)(void);
+
+    int32_t (*mutex_lock)(rt_pthread_mutex_t *mutex);
+
+    int32_t (*mutex_unlock)(rt_pthread_mutex_t *mutex);
+
+    int32_t (*mutex_release)(rt_pthread_mutex_t *mutex);
+
+} os_ops_t;
+
+typedef struct MEM_OPS {
+
+    void *(*malloc)(size_t size);
+
+    void *(*calloc)(size_t count, size_t size);
+
+    void *(*realloc)(void *ptr, size_t size);
+
+    void (*free)(void *ptr);
+
+    void *(*memset)(void *b, int c, size_t len);
+
+    void *(*memmove)(void *dst, const void *src, size_t len);
+
+    int32_t (*memcmp)(const void *s1, const void *s2, size_t n);
+
+    size_t (*strlen)(const char *s);
+} mem_ops_t;
 
 #define STRUCT_MEMBER(name, var)   .name = var
 
@@ -60,11 +94,39 @@ static const file_ops_t g_file_ops_for_##platform = \
     STRUCT_MEMBER(create_dir,   platform##_create_dir), \
     STRUCT_MEMBER(delete_dir,   platform##_delete_dir), \
     STRUCT_MEMBER(delete_file,  platform##_delete_file), \
+    STRUCT_MEMBER(truncate,     platform##_truncate), \
+};
+
+#define OS_OPS_DEFINITION(platform) \
+static const os_ops_t g_os_ops_for_##platform = \
+{ \
+    STRUCT_MEMBER(mutex_init,        platform##_mutex_init), \
+    STRUCT_MEMBER(mutex_lock,        platform##_mutex_lock), \
+    STRUCT_MEMBER(mutex_unlock,      platform##_mutex_unlock), \
+    STRUCT_MEMBER(mutex_release,     platform##_mutex_release), \
+};
+
+#define MEM_OPS_DEFINITION(platform) \
+static const mem_ops_t g_mem_ops_for_##platform = \
+{ \
+    STRUCT_MEMBER(malloc,            platform##_malloc), \
+    STRUCT_MEMBER(calloc,            platform##_calloc), \
+    STRUCT_MEMBER(realloc,           platform##_realloc), \
+    STRUCT_MEMBER(free,              platform##_free), \
+    STRUCT_MEMBER(memset,            platform##_memset), \
+    STRUCT_MEMBER(memmove,           platform##_memmove), \
+    STRUCT_MEMBER(memcmp,            platform##_memcmp), \
+    STRUCT_MEMBER(strlen,            platform##_strlen), \
 };
 
 extern int vsim_file_ops_init(const file_ops_t *ops);
-extern int init_file_ops(void);
+extern int vsim_os_ops_init(const os_ops_t *ops);
+extern int vsim_mem_ops_init(const mem_ops_t *ops);
+
+extern int init_callback_ops(void);
 
 #define _file_ops_init(platform) vsim_file_ops_init(&g_file_ops_for_##platform)
+#define _os_ops_init(platform) vsim_os_ops_init(&g_os_ops_for_##platform)
+#define _mem_ops_init(platform) vsim_mem_ops_init(&g_mem_ops_for_##platform)
 
 #endif  // __VUICC_CALLBACK_H__
