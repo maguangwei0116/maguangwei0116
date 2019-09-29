@@ -61,7 +61,7 @@ static log_item_t g_log_item_table[] =
 static log_param_t g_log_param =
 {
     LOG_INFO,
-    LOG_PRINTF_TERMINAL,
+    LOG_PRINTF_FILE,
     LOG_FILE_SIZE,
     0,
     NULL,
