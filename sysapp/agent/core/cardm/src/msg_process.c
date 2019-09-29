@@ -16,9 +16,9 @@
 #include "cJSON.h"
 #include "rt_qmi.h"
 
-#define  MSG_ONE_BLOCK_SIZE                           128
-#define  APN_LIST                                     "/data/redtea/rt_apn_list"
-#define  PROXY_SERVER_ADDR                            "smdp-test.redtea.io" // stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)
+#define  MSG_ONE_BLOCK_SIZE                             128
+#define  APN_LIST                                       "/data/redtea/rt_apn_list"
+#define  RT_PROXY_SERVER_ADDR                           "smdp-test.redtea.io" // stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)
 
 card_info_t *g_card_info;
 
@@ -40,7 +40,7 @@ rt_bool msg_check_iccid_state(const char *iccid)
 
 int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])
 {
-    return lpa_download_profile(ac, cc, iccid, PROXY_SERVER_ADDR);
+    return lpa_download_profile(ac, cc, iccid, RT_PROXY_SERVER_ADDR);
 }
 
 int32_t msg_enable_profile(const char *iccid)
