@@ -95,7 +95,7 @@ pthread_mutex_t *linux_mutex_init(void)
 
     mutex = rt_os_malloc(sizeof(pthread_mutex_t));
     if (!mutex) {
-        return RT_ERROR;
+        return NULL;
     }
     rt_mutex_init(mutex);
 
