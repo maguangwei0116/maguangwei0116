@@ -39,7 +39,7 @@ static int32_t card_check_init_upload(const uint8_t *eid)
 {
     rt_bool update_last_eid = RT_FALSE;
 
-    if (eid_check_memory(eid, MAX_EID_LEN, '0')) {
+    if (eid_check_memory(eid, MAX_EID_LEN, 'F') || eid_check_memory(eid, MAX_EID_LEN, '0')) {
         update_last_eid = RT_TRUE;
     } 
     
@@ -77,10 +77,12 @@ static int32_t card_update_eid(rt_bool init)
     uint8_t eid[MAX_EID_HEX_LEN] = {0};
     
     ret = lpa_get_eid(eid);
-    bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
-    MSG_PRINTF(LOG_INFO, "ret=%d, g_p_info.eid=%s\r\n", ret, g_p_info.eid);
+    if (!ret) {
+        bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
+        MSG_PRINTF(LOG_INFO, "ret=%d, g_p_info.eid=%s\r\n", ret, g_p_info.eid);
+    }
 
-    if (!init) {
+    if (!ret && !init) {
         card_check_init_upload(g_p_info.eid);
     }
 
@@ -230,6 +232,8 @@ int32_t init_card_manager(void *arg)
     ((public_value_list_t *)arg)->card_info = &g_p_info;
     init_msg_process(&g_p_info);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
+    rt_os_memset(&g_p_info.eid, 'F', MAX_EID_LEN);
+    rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
     
     ret = card_update_eid(RT_TRUE);
     if (ret) {
@@ -258,24 +262,31 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
     switch (mode) {
         case MSG_CARD_SETTING_KEY:
             break;
+            
         case MSG_CARD_SETTING_PROFILE:
             ret = card_load_profile(buf, len);
             break;
+            
         case MSG_CARD_SETTING_CERTIFICATE:
             ret = card_load_cert(buf, len);
             break;
+            
         case MSG_FROM_MQTT:
             ret = mqtt_msg_event(buf, len);
             break;
+            
         case MSG_NETWORK_DISCONNECTED:
             ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
             break;
+            
         case MSG_CARD_ENABLE_EXIST_CARD:            
             ret = card_enable_profile(buf);
             break;
+            
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
             break;
+            
         default:
             //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;

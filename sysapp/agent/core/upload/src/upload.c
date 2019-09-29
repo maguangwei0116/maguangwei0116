@@ -89,6 +89,7 @@ static int32_t upload_http_post_single(const char *host_addr, int32_t port, sock
 }
 #else
 {
+    MSG_PRINTF(LOG_DBG, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
     return http_post_raw(host_addr, port, buffer, len, cb);
 }
 #endif
@@ -246,7 +247,8 @@ static rt_bool upload_check_memory(const void *buf, int32_t len, int32_t value)
 
 rt_bool upload_check_eid_empty(void)
 {
-    return upload_check_memory(g_upload_eid, MAX_EID_LEN, '0') ? RT_TRUE : RT_FALSE;   
+    return (upload_check_memory(g_upload_eid, MAX_EID_LEN, 'F') || \
+                upload_check_memory(g_upload_eid, MAX_EID_LEN, '0')) ? RT_TRUE : RT_FALSE;   
 }
 
 static const char *upload_get_topic_name(upload_topic_e upload_topic)
@@ -255,7 +257,7 @@ static const char *upload_get_topic_name(upload_topic_e upload_topic)
         return g_upload_deviceid;
     } else {
         if (g_upload_eid) {
-            if (upload_check_memory(g_upload_eid, MAX_EID_LEN, '0') || !rt_os_strlen(g_upload_eid)) {
+            if (upload_check_eid_empty()) {
                 return g_upload_deviceid;
             } else {
                 return g_upload_eid;

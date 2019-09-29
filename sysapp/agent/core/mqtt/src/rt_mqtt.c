@@ -223,9 +223,11 @@ static rt_bool mqtt_connect_adapter(mqtt_param_t *param)
     MQTTClient *c = &param->client;
     mqtt_info_t *opts = &param->opts;
     const char *alias = param->alias;
-    const char *eid = NULL;
+    const char *eid = "";
 
-    eid = mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0') ? "" : g_mqtt_eid;
+    if (!mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, 'F') && !mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
+        eid = g_mqtt_eid;
+    }
 
     mqtt_set_reg_url(OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
     MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
@@ -475,7 +477,7 @@ static void mqtt_connection_lost(void *context, char *cause)
 
 static rt_bool mqtt_eid_check_upload(void)
 {
-    if (!g_mqtt_eid || !rt_os_strlen(g_mqtt_eid) || mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
+    if (mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
         upload_event_report("NO_CERT", NULL, 0, NULL);
         return RT_TRUE;
     }  
@@ -555,7 +557,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
 static void rt_mqtt_set_alias(const char *eid, const char *device_id, rt_bool init_flag)
 {
     rt_os_memset(g_mqtt_param.alias, 0, sizeof(g_mqtt_param.alias));
-    if (mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
+    if (mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, 'F') || mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
         rt_os_memcpy(g_mqtt_param.alias, device_id, rt_os_strlen(device_id));
     } else {
         rt_os_memcpy(g_mqtt_param.alias, eid, rt_os_strlen(eid));
