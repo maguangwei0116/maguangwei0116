@@ -104,5 +104,6 @@ typedef struct UPGRADE_STRUCT {
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info);
 int32_t upgrade_process_start(upgrade_struct_t *d_info);
+int32_t init_upgrade(void * arg);
 
 #endif /* __INCLUDE_UPGRADE_H__ */

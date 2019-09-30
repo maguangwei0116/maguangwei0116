@@ -26,6 +26,7 @@ do{                 \
 
 static const char *g_upload_eid             = NULL;
 static const char *g_upload_deviceid        = NULL;
+static const char *g_upload_oti_addr        = NULL;
 const char *g_push_channel                  = NULL;
 const devicde_info_t *g_upload_device_info  = NULL;
 const card_info_t *g_upload_card_info       = NULL;
@@ -177,8 +178,7 @@ static int32_t upload_send_request(const char *out)
     md5_out[MD5_STRING_LENGTH] = '\0';
 
     //send report by http
-    STRUCTURE_OTI_URL(upload_url, MAX_OTI_URL_LEN + 1, OTI_ENVIRONMENT_ADDR, 7082, "/api/v2/report");
-    //MSG_PRINTF(LOG_INFO, "OTI_ENVIRONMENT_ADDR=%s, upload_url=%s\r\n", OTI_ENVIRONMENT_ADDR, upload_url);
+    STRUCTURE_OTI_URL(upload_url, MAX_OTI_URL_LEN + 1, g_upload_oti_addr, 7082, "/api/v2/report");
     if (http_parse_url(upload_url, host_addr, file, &port)) {
         MSG_PRINTF(LOG_WARN, "http_parse_url failed!\n");
         ret = HTTP_PARAMETER_ERROR;
@@ -417,6 +417,7 @@ int32_t init_upload(void *arg)
     g_upload_eid            = (const char *)public_value_list->card_info->eid;
     g_upload_card_info      = (const card_info_t *)public_value_list->card_info->info;
     g_upload_deviceid       = (const char *)g_upload_device_info->device_id;
+    g_upload_oti_addr       = (const char *)public_value_list->config_info->oti_addr;
 
     MSG_PRINTF(LOG_WARN, "imei: %p, %s\n", g_upload_device_info->imei, g_upload_device_info->imei);
     MSG_PRINTF(LOG_WARN, "eid : %p, %s\n", g_upload_eid, g_upload_eid);

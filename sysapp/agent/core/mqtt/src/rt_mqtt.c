@@ -73,6 +73,8 @@ static mqtt_param_t g_mqtt_param    = {MQTTClient_connectOptions_initializer, 0}
 static const char *g_mqtt_eid       = NULL;
 static const char *g_mqtt_device_id = NULL;
 static const char *g_mqtt_imei      = NULL;
+static const char *g_mqtt_emq_addr  = NULL;
+static const char *g_mqtt_oti_addr  = NULL;
 
 static rt_bool mqtt_eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -229,8 +231,8 @@ static rt_bool mqtt_connect_adapter(mqtt_param_t *param)
         eid = g_mqtt_eid;
     }
 
-    mqtt_set_reg_url(OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
-    MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", OTI_ENVIRONMENT_ADDR, ADAPTER_PORT);
+    mqtt_set_reg_url(g_mqtt_oti_addr, ADAPTER_PORT);
+    MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", g_mqtt_oti_addr, ADAPTER_PORT);
 
     /* connect redtea adpater server with max 3 times to get ticket server addr and port */
     do {
@@ -309,7 +311,7 @@ static rt_bool mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
     const char *alias = param->alias;
 
     if (ticket_server == NULL) {
-        mqtt_set_reg_url(EMQ_SERVER_ADDR, EMQ_SERVER_PORT);
+        mqtt_set_reg_url(g_mqtt_emq_addr, EMQ_SERVER_PORT);
     } else {
         int8_t addr[20];
         int32_t port;
@@ -758,6 +760,8 @@ int32_t init_mqtt(void *arg)
     g_mqtt_eid = (const char *)public_value_list->card_info->eid;
     g_mqtt_device_id = (const char *)public_value_list->device_info->device_id;
     g_mqtt_imei = (const char *)public_value_list->device_info->imei;
+    g_mqtt_emq_addr = (const char *)public_value_list->config_info->emq_addr;
+    g_mqtt_oti_addr = (const char *)public_value_list->config_info->oti_addr;
 
     mqtt_init_param();
 

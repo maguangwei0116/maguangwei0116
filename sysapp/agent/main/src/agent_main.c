@@ -25,6 +25,7 @@
 #include "ota.h"
 #include "logm.h"
 #include "personalise.h"
+#include "upgrade.h"
 #include "libcomm.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
@@ -59,12 +60,15 @@ static int32_t init_system_signal(void *arg)
 
 static int32_t init_monitor(void *arg)
 {
-    info_vuicc_data_t info;
+    info_vuicc_data_t info = {0};
     uint16_t len = sizeof(info);
 
     rt_os_memset(info.start, 0xFF, sizeof(info.start));
-    info.vuicc_switch = ((public_value_list_t *)arg)->lpa_channel_type;
+    info.vuicc_switch = ((public_value_list_t *)arg)->config_info->lpa_channel_type;
     info.share_profile_state = 0;
+    info.log_level = ((public_value_list_t *)arg)->config_info->monitor_log_level;
+    info.log_size = ((public_value_list_t *)arg)->config_info->log_max_size;
+    MSG_PRINTF(LOG_INFO, "len:%d, log_max_size:%d, %08x\n", len, info.log_size, info.log_size);
     return ipc_send_data((const uint8_t *)&info, len, (uint8_t *)&info, &len);
 }
 
@@ -78,12 +82,21 @@ static int32_t init_versions(void *arg)
     char libcomm_ver[128] = {0};
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
-    log_set_param(LOG_PRINTF_FILE, LOG_INFO, public_value_list ? public_value_list->log_max_size: 0);
+    if (public_value_list) {
+        log_set_param(LOG_PRINTF_FILE, public_value_list->config_info->agent_log_level, public_value_list->config_info->log_max_size);
+    }
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
 
     return RT_SUCCESS;
+}
+
+static int32_t init_lpa_channel(void *arg)
+{
+    int8_t *lpa_channel_type = &((public_value_list_t *)arg)->config_info->lpa_channel_type;
+
+    return init_lpa(lpa_channel_type);
 }
 
 /*
@@ -96,7 +109,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_versions,             (void *)&g_value_list),   
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
-    INIT_OBJ(init_lpa,                  (void *)&(g_value_list.lpa_channel_type)),
+    INIT_OBJ(init_lpa_channel,          (void *)&g_value_list),
     INIT_OBJ(init_system_signal,        NULL),
     INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(init_qmi,                  NULL),
@@ -107,6 +120,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_network_detection,    (void *)&g_value_list),
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
+    INIT_OBJ(init_upgrade,              (void *)&g_value_list),
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
     INIT_OBJ(init_logm,                 (void *)&g_value_list),
 };

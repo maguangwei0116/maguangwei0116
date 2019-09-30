@@ -16,11 +16,11 @@
 #include "rt_os.h"
 #include "http_client.h"
 #include "cJSON.h"
-#include "agent_config.h"
 #include "upload.h"
 #include "dial_up.h"
 #include "convert.h"
 #include "config.h"
+#include "agent_queue.h"
 
 #define MAX_FILE_PATH_LEN               100
 
@@ -30,12 +30,12 @@
 
 #define DEFAULT_OTI_ENVIRONMENT_PORT    7082
 
-int8_t g_download_flag = 0;
-
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do {                 \
     snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
 } while(0)
+
+static const char *g_upgrade_oti_addr   = NULL;
 
 static rt_bool upgrade_check_sys_memory()
 {
@@ -57,7 +57,6 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     uint8_t down_try = 0;
     int32_t cnt = -1;  // used to count the number of download
 
-    g_download_flag = 1;  // set download flag
     dw_struct.if_continue = 1;
     dw_struct.buf = NULL;
 
@@ -65,7 +64,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.file_path = (const char *)d_info->tmpFileName;
     dw_struct.manager_type = 1;
     dw_struct.http_header.method = 0;  // POST
-    STRUCTURE_OTI_URL(buf, sizeof(buf), OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT, "/api/v1/download");  // Build the OTI address
+    STRUCTURE_OTI_URL(buf, sizeof(buf), g_upgrade_oti_addr, DEFAULT_OTI_ENVIRONMENT_PORT, "/api/v1/download");  // Build the OTI address
     rt_os_memcpy(dw_struct.http_header.url, buf, rt_os_strlen(buf));
     dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
     dw_struct.http_header.version = 0;
@@ -79,7 +78,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
     cJSON_free(out);
 
-    snprintf((char *)buf, sizeof(buf), "%s:%d", OTI_ENVIRONMENT_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
+    snprintf((char *)buf, sizeof(buf), "%s:%d", g_upgrade_oti_addr, DEFAULT_OTI_ENVIRONMENT_PORT);
     http_set_header_record(&dw_struct, "HOST", buf);
 
     http_set_header_record(&dw_struct, "Content-Type", "application/json");
@@ -104,7 +103,6 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, get_file_size(dw_struct.file_path));
 
         if (http_client_file_download(&dw_struct) == 0) {
-            g_download_flag = 0;  // download success reset flag
             ret = RT_TRUE;
             MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, get_file_size(dw_struct.file_path));
             break;
@@ -280,6 +278,14 @@ int32_t upgrade_process_start(upgrade_struct_t *d_info)
         MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
         return -1;
     }
+
+    return 0;
+}
+
+int32_t init_upgrade(void *arg)
+{
+    public_value_list_t *public_value_list = (public_value_list_t *)arg;
+    g_upgrade_oti_addr = (const char *)public_value_list->config_info->oti_addr;
 
     return 0;
 }

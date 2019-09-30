@@ -30,6 +30,10 @@ static log_item_t g_log_item_table[] =
     {LOG_ALL,       "ALL",},
 };
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
+#endif
+
 #define cJSON_GET_STR_DATA(json, item, item_str_out, len, tmp)\
     do {\
         tmp = cJSON_GetObjectItem(json, #item);\
@@ -151,7 +155,8 @@ do {                 \
     snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
 } while(0)
 
-static const char *g_upload_log_eid = NULL;
+static const char *g_upload_log_eid         = NULL;
+static const char *g_upload_log_oti_addr    = NULL;
 
 static int32_t log_file_cut(const char *file_name, log_level_e log_level)
 {
@@ -224,8 +229,8 @@ static void log_file_upload(void *arg)
     obj->manager_type = 0;  // uoload
     obj->http_header.method = 0;  // POST
 
-    STRUCTURE_OTI_URL(log_url, MAX_OTI_URL_LEN + 1, OTI_ENVIRONMENT_ADDR, OTI_ENVIRONMENT_PORT, LOG_API);
-    snprintf((char *)log_host, MAX_OTI_URL_LEN + 1, "%s:%d", OTI_ENVIRONMENT_ADDR, OTI_ENVIRONMENT_PORT);
+    STRUCTURE_OTI_URL(log_url, MAX_OTI_URL_LEN + 1, g_upload_log_oti_addr, OTI_ENVIRONMENT_PORT, LOG_API);
+    snprintf((char *)log_host, MAX_OTI_URL_LEN + 1, "%s:%d", g_upload_log_oti_addr, OTI_ENVIRONMENT_PORT);
 
     rt_os_memcpy(obj->http_header.url, log_url, rt_os_strlen(log_url));
     obj->http_header.url[rt_os_strlen(log_url)] = '\0';
@@ -293,6 +298,7 @@ int32_t init_logm(void *arg)
 {
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
     g_upload_log_eid = (const char *)public_value_list->card_info->eid;
+    g_upload_log_oti_addr = (const char *)public_value_list->config_info->oti_addr;
 
     return 0;
 }

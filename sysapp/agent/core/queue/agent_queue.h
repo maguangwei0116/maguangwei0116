@@ -17,6 +17,7 @@
 #include "rt_type.h"
 #include "device_info.h"
 #include "card_manager.h"
+#include "config.h"
 
 typedef enum AGENT_MSG_ID {
     MSG_ID_CARD_MANAGER = 0,
@@ -47,8 +48,7 @@ typedef enum MSG_MODE {
 } msg_mode_e;
 
 typedef struct PUBLIC_VALUE_LIST {
-    int8_t              lpa_channel_type;
-    uint32_t            log_max_size;
+    config_info_t *     config_info;
     devicde_info_t *    device_info;
     card_info_t *       card_info;
     const char *        push_channel;
