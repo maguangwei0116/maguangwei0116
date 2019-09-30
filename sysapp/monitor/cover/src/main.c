@@ -28,6 +28,8 @@
 extern int init_file_ops(void);
 extern int vsim_get_ver(char *version);
 
+static log_mode_e g_def_mode = LOG_PRINTF_FILE;
+
 static void cfinish(int32_t sig)
 {
     MSG_PRINTF(LOG_DBG, "recv signal %d, process exit !\r\n", sig);
@@ -56,6 +58,13 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
             trigegr_regist_cmd(card_cmd);
             trigger_swap_card(1);
             *rsp_len = 0;
+        }
+        if (data[9] != 0x00) { //set monitor log level and max log size
+            int8_t log_level = data[9];
+            uint32_t log_max_size;
+            rt_os_memcpy(&log_max_size, &data[12], sizeof(log_max_size));
+            MSG_PRINTF(LOG_WARN, "set log_level=%d, log_max_size=%d\n", log_level, log_max_size);
+            log_set_param(g_def_mode, log_level, log_max_size);
         }
     } else {
         MSG_INFO_ARRAY("E-APDU REQ:", data, len);
@@ -151,16 +160,14 @@ static void init_app_version(void *arg)
 
 int32_t main(int32_t argc, const char *argv[])
 {
-    log_mode_e def_mode = LOG_PRINTF_TERMINAL;
-
     /* check input param to debug in terminal */
     if (argc > 1) {
-        def_mode = LOG_PRINTF_TERMINAL;
+        g_def_mode = LOG_PRINTF_TERMINAL;
     }
 
     /* init log param */
     init_log_file(RT_MONITOR_LOG);
-    log_set_param(def_mode, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
+    log_set_param(g_def_mode, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
 
     /* debug versions information */
     init_app_version(NULL);
