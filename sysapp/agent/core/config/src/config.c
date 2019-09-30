@@ -285,7 +285,7 @@ int32_t init_config(void *arg)
     config_parse_file();
 
     g_config_info.oti_addr = config_get_data("OTI_ENVIRONMENT_ADDR");
-    g_config_info.emq_addr = config_get_data("OTI_ENVIRONMENT_ADDR");
+    g_config_info.emq_addr = config_get_data("EMQ_SERVER_ADDR");
     g_config_info.proxy_addr = config_get_data("PROXY_SERVER_ADDR");
     g_config_info.lpa_channel_type = !rt_os_strcmp(config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
                                                     LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
