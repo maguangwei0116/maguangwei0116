@@ -230,7 +230,7 @@ int32_t init_card_manager(void *arg)
     int32_t ret = RT_ERROR;
 
     ((public_value_list_t *)arg)->card_info = &g_p_info;
-    init_msg_process(&g_p_info);
+    init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
     rt_os_memset(&g_p_info.eid, 'F', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);

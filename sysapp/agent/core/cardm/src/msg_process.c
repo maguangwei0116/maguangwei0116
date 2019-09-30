@@ -20,11 +20,13 @@
 #define  APN_LIST                                       "/data/redtea/rt_apn_list"
 #define  RT_PROXY_SERVER_ADDR                           "smdp-test.redtea.io" // stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)
 
-card_info_t *g_card_info;
+static const card_info_t *g_card_info;
+static const char *g_smdp_proxy_addr = NULL;
 
-int32_t init_msg_process(void *arg)
+int32_t init_msg_process(void *arg, void *proxy_addr)
 {
     g_card_info = (card_info_t *)arg;
+    g_smdp_proxy_addr = (const char *)proxy_addr;
     rt_create_file(APN_LIST);
     return RT_SUCCESS;
 }
