@@ -11,13 +11,15 @@
 
 #include "stdint.h"
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
-#endif
-
-extern char *OTI_ENVIRONMENT_ADDR;
-extern char *EMQ_SERVER_ADDR;
-extern char *PROXY_SERVER_ADDR;
+typedef struct CONFIG_INFO {
+    char *              oti_addr;
+    char *              emq_addr;
+    char *              proxy_addr;
+    int8_t              lpa_channel_type;
+    uint32_t            log_max_size;
+    int8_t              monitor_log_level;
+    int8_t              agent_log_level;
+} config_info_t;
 
 int32_t init_config(void *arg);
 
