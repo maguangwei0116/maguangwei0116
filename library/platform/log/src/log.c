@@ -36,6 +36,7 @@
 
 typedef struct LOG_LEVEL_ITEM {
     log_level_e     level;
+    const char *    string;
     const char *    label;
 } log_item_t;
 
@@ -50,12 +51,12 @@ typedef struct LOG_PARAM {
 
 static log_item_t g_log_item_table[] =
 {
-    {LOG_NONE,      "[NONE]",},
-    {LOG_ERR,       "[ERR ]",},
-    {LOG_WARN,      "[WARN]",},
-    {LOG_DBG,       "[DBG ]",},
-    {LOG_INFO,      "[INFO]",},
-    {LOG_ALL,       "[ALL ]",},
+    {LOG_NONE,  "LOG_NONE",     "[NONE]",},
+    {LOG_ERR,   "LOG_ERR",      "[ERR ]",},
+    {LOG_WARN,  "LOG_WARN",     "[WARN]",},
+    {LOG_DBG,   "LOG_DBG",      "[DBG ]",},
+    {LOG_INFO,  "LOG_INFO",     "[INFO]",},
+    {LOG_ALL,   "LOG_ALL",      "[ALL ]",},
 };
 
 static log_param_t g_log_param =
@@ -336,5 +337,20 @@ exit_entry:
     }
 
     return ret;
+}
+
+log_level_e log_get_level(const char *level_string)
+{
+    log_level_e level = LOG_UNKNOW;
+    int32_t i;
+
+    for (i = 0; i < ARRAY_SIZE(g_log_item_table); i++) {
+        if (!rt_os_strcmp(g_log_item_table[i].string, level_string)) {
+            level = g_log_item_table[i].level;
+            break;
+        }
+    }
+
+    return level;
 }
 

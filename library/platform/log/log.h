@@ -39,6 +39,7 @@ extern int32_t log_set_param(log_mode_e mode, log_level_e level, unsigned int ma
 extern int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *msg, ...);
 extern int32_t log_hexdump(const char *file, int32_t line, const char *title, const void *data, unsigned int len);
 extern int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e min_level);
+extern log_level_e log_get_level(const char *level_string);
 
 #define __FILENAME__            (strrchr("/"__FILE__, '/') + 1)
 #define ARRAY_PRINTF(tag, array, len)                                            \
