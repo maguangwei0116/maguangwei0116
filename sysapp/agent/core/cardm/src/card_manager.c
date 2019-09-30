@@ -20,7 +20,7 @@
 #define RT_PROFILE_STATE_ENABLED    2
 
 static card_info_t                  g_p_info;
-static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0}; 
+static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -41,8 +41,8 @@ static int32_t card_check_init_upload(const uint8_t *eid)
 
     if (eid_check_memory(eid, MAX_EID_LEN, '0')) {
         update_last_eid = RT_TRUE;
-    } 
-    
+    }
+
     if (rt_os_strcmp((const char *)g_last_eid, (const char *)eid) && !update_last_eid) {
         MSG_PRINTF(LOG_INFO, "g_last_eid: %s, cur_eid: %s\r\n", g_last_eid, eid);
         MSG_PRINTF(LOG_WARN, "EID changed, upload INIT event\n");
@@ -55,7 +55,7 @@ static int32_t card_check_init_upload(const uint8_t *eid)
         snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
         rt_write_data(RT_LAST_EID, 0, g_last_eid, sizeof(g_last_eid));
     }
-    
+
     return RT_SUCCESS;
 }
 
@@ -157,18 +157,18 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
     }
-    
+
     rt_os_sleep(1); // must have
-    
+
     if ((ret == RT_SUCCESS) || (ret == RT_PROFILE_STATE_ENABLED)) {
         ret = lpa_load_profile(buf, len);
         if (ret) {
             MSG_PRINTF(LOG_WARN, "lpa load porfile fail, ret=%d\r\n", ret);
         }
     }
-    
+
     rt_os_sleep(1); // must have
-    
+
     ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
@@ -195,7 +195,7 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
             break;
         }
     } while(0);
-    
+
     return ret;
 }
 
@@ -206,19 +206,19 @@ int32_t init_card_manager(void *arg)
     ((public_value_list_t *)arg)->card_info = &g_p_info;
     init_msg_process(&g_p_info);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
-    
+
     ret = card_update_eid(RT_TRUE);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
     }
-    
+
     rt_os_sleep(1);
-    
+
     ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
     }
-    
+
     ret = card_last_eid_init();
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update last eid fail, ret=%d\r\n", ret);
@@ -246,7 +246,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
         case MSG_NETWORK_DISCONNECTED:
             ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
             break;
-        case MSG_CARD_ENABLE_EXIST_CARD:            
+        case MSG_CARD_ENABLE_EXIST_CARD:
             ret = card_enable_profile(buf);
             break;
         case MSG_NETWORK_CONNECTED:
