@@ -315,7 +315,7 @@ int32_t mqtt_msg_event(const uint8_t *buf, int32_t len)
     int32_t ret = RT_ERROR;
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
-    MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
+    //MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
 
     ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
     if (downstream_msg->msg) {
