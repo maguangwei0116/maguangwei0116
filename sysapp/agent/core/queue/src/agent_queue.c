@@ -126,13 +126,13 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_BROAD_CAST_NETWORK:
-                    card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    upload_event(que_t.data_buf, que_t.data_len, que_t.mode);                    
+                    mqtt_connect_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    ota_upgrade_task_check_event(que_t.data_buf, que_t.data_len, que_t.mode);                    
                     if ((*g_card_info)->type == PROFILE_TYPE_PROVISONING) {
                         bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
-                    }
-                    upload_event(que_t.data_buf, que_t.data_len, que_t.mode);
-                    ota_upgrade_task_check_event(que_t.data_buf, que_t.data_len, que_t.mode);
-                    mqtt_connect_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    }  
+                    card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode); // It will waste a few time
                     break;
 
                 case MSG_ID_MQTT:
