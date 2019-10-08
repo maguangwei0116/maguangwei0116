@@ -19,7 +19,7 @@
 #define has_more_argv() ((opt < argc) && (argv[opt][0] != '-'))
 
 typedef void (*dial_callback)(int32_t state);
-dial_callback dial_state;
+static dial_callback dial_state;
 
 static int signal_event_fd[2];
 static int dsi_event_fd[2];
