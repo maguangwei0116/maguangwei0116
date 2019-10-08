@@ -56,13 +56,13 @@ int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
     uint8_t imsi[IMSI_LENGTH + 1] = {0};
     if (mode == MSG_ALL_SWITCH_CARD) {
         network_start_timer();
-        rt_os_sleep(10);
-        rt_qmi_get_current_imsi(imsi);
-        MSG_PRINTF(LOG_INFO, "state:%d, imsi:%s\n", g_network_state, imsi);
+        //rt_os_sleep(10);
+        //rt_qmi_get_current_imsi(imsi);
+        //MSG_PRINTF(LOG_INFO, "state:%d, imsi:%s\n", g_network_state, imsi);
     }
 }
 
-void network_state(int32_t state)
+static void network_state(int32_t state)
 {
     if (state == g_network_state) {
         return;
