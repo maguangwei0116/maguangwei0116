@@ -16,6 +16,7 @@
 #include "rt_type.h"
 #include "cJSON.h"
 #include "md5.h"
+#include "lpa_error_codes.h"
 
 static cJSON *upload_on_delete_packer(void *arg)
 {
@@ -137,6 +138,18 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 continue;
             }
             code = msg_delete_profile(iccid->valuestring);
+            if (RT_ERR_APDU_SEND_FAIL == code) {
+                /* 
+                Delete again when lpa-delete-profile return -204, but profile was deleteed actually.
+                Check the second delete operation, when it return code 1, it means profile isn't exist !
+                */
+                MSG_PRINTF(LOG_WARN, "delete profile with unkown result, delete again ...\n");
+                rt_os_sleep(1);
+                code = msg_delete_profile(iccid->valuestring);
+                if (code == 1) {
+                    code = RT_SUCCESS;
+                }
+            }
             cJSON_AddItemToObject(code_info, "code", cJSON_CreateNumber((double)code));
             cJSON_AddItemToObject(code_info, "iccid", cJSON_CreateString(iccid->valuestring));
             cJSON_AddItemToArray(delete_result, code_info);
