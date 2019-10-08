@@ -145,6 +145,9 @@ int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mo
     static int32_t g_task_check = 0;    
     int32_t ret = -1;
 
+    (void)buf;
+    (void)len;
+
     if (MSG_NETWORK_CONNECTED == mode && !g_task_check && rt_file_exist(OTA_UPGRADE_TMP_TASK)) {
         rt_fshandle_t fp = NULL;
         ota_task_info_t task = {0};

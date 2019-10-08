@@ -119,7 +119,7 @@ int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back c
                         HTTP_SOCKET_SEND_ERROR == ret || \
                         HTTP_SOCKET_RECV_ERROR == ret) {
             MSG_PRINTF(LOG_WARN, "upload http post fail, ret=%d, retry i=%d\r\n", ret, i);
-            rt_os_sleep(2);
+            rt_os_sleep(3);
             continue;
         }
         break;
@@ -276,7 +276,7 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id, upl
     int32_t version = 0;
     time_t timestamp = time(NULL);
 
-    // MSG_PRINTF(LOG_INFO, "The upload g_upload_eid: %s\n", g_upload_eid);
+    //MSG_PRINTF(LOG_INFO, "The upload g_upload_eid: %s\n", g_upload_eid);
     //MSG_PRINTF(LOG_INFO, "The upload device_id: %s\n", g_upload_device_info->device_id);
     //MSG_PRINTF(LOG_INFO, "The upload topic: %s\n", topic);
     if (!tranId || !rt_os_strlen(tranId)) {
@@ -431,8 +431,12 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
     static time_t g_boot_timestamp;
     time_t tmp_timestamp = time(NULL);
 
+    (void)buf;
+    (void)len;
+
     if (MSG_NETWORK_CONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv network connected\r\n");
+        g_upload_network = RT_TRUE;
         if (g_report_boot_event == RT_FALSE) {
             upload_event_report("BOOT", NULL, 0, NULL);
             g_report_boot_event = RT_TRUE;
@@ -443,10 +447,10 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
                 rt_bool report_all_info = RT_FALSE;
                 upload_event_report("INFO", NULL, 0, &report_all_info);
             }
-        }
-        g_upload_network = RT_TRUE;
+        }        
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;
     }
 }
+
