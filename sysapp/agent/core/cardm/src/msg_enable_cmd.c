@@ -82,7 +82,7 @@ static int32_t enable_parser(const void *in, char *tranid, void **out)
 
 static int32_t enable_handler(const void *in, const char *event, void **out)
 {
-    int32_t state = RT_SUCCESS;
+    int32_t state = RT_ERROR;
     cJSON *payload = NULL;
     cJSON *content = NULL;
     cJSON *content_d = NULL;
@@ -94,7 +94,7 @@ static int32_t enable_handler(const void *in, const char *event, void **out)
         goto end;
     }
     do {
-        MSG_PRINTF(LOG_INFO, "payload:%s\n", (uint8_t *)in);
+        //MSG_PRINTF(LOG_INFO, "payload:%s\n", (uint8_t *)in);
         payload = cJSON_Parse((uint8_t *)in);
         if (!payload) {
             MSG_PRINTF(LOG_ERR, "Parse payload failed!!\n");
@@ -118,7 +118,9 @@ static int32_t enable_handler(const void *in, const char *event, void **out)
     } while(0);
 
     rt_os_sleep(1);
-    card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+    if (state == RT_SUCCESS) {
+        card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+    }
     *out = content;
 end:
     rt_os_free((void *)in);
