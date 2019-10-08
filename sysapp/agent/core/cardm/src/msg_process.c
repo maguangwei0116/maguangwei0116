@@ -27,7 +27,9 @@ int32_t init_msg_process(void *arg, void *proxy_addr)
 {
     g_card_info = (card_info_t *)arg;
     g_smdp_proxy_addr = (const char *)proxy_addr;
-    rt_create_file(APN_LIST);
+    if (rt_os_access(APN_LIST, 0)) {
+        rt_create_file(APN_LIST);
+    }
     return RT_SUCCESS;
 }
 
@@ -45,13 +47,55 @@ int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])
     return lpa_download_profile(ac, cc, iccid, RT_PROXY_SERVER_ADDR);
 }
 
-int32_t msg_enable_profile(const char *iccid)
+int32_t msg_set_apn(const char *iccid)
 {
-    uint8_t apn_name[100] = {0};
-    msg_get_op_apn_name((uint8_t *)iccid, NULL, apn_name);
+    char apn_name[100] = {0};
+    msg_get_op_apn_name(iccid, apn_name);
     MSG_PRINTF(LOG_INFO, "iccid:%s, apn_name:%s\n", iccid, apn_name);
     rt_qmi_modify_profile(1, 0, apn_name, 0);
-    return lpa_enable_profile(iccid);
+
+    return RT_SUCCESS;
+}
+
+#if 0
+EnableProfileResponse ::= [49] SEQUENCE { -- Tag 'BF31'
+enableResult INTEGER {ok(0), iccidOrAidNotFound (1), 
+profileNotInDisabledState(2), disallowedByPolicy(3), wrongProfileReenabling(4), 
+catBusy(5), undefinedError(127)}
+}
+#endif
+static int32_t msg_enable_profile_check(const char *iccid)
+{
+    int32_t i = 0;
+    int32_t ret = RT_FALSE;
+    
+    if (msg_check_iccid_state(iccid) == RT_TRUE) {
+        /* iccid is enable now ! */
+        MSG_PRINTF(LOG_WARN, "iccid:%s not in disable state !\n", iccid);
+        return 2;
+    }   
+
+    for (i = 0; i < g_card_info->num; i++) {
+        if (!rt_os_strncmp(g_card_info->info[i].iccid, iccid, THE_ICCID_LENGTH)){
+            /* found exist iccid */
+            ret = lpa_enable_profile(iccid);
+            if (ret == RT_SUCCESS) {
+                /* set apn info when enable profile ok */
+                msg_set_apn(iccid);
+            }
+
+            return ret;
+        }   
+    }
+
+    /* iccid isn't exist ! */
+    MSG_PRINTF(LOG_WARN, "iccid:%s not exist!\n", iccid);
+    return 1;
+}
+
+int32_t msg_enable_profile(const char *iccid)
+{
+    return msg_enable_profile_check(iccid);
 }
 
 int32_t msg_delete_profile(const char *iccid)
@@ -113,7 +157,7 @@ static int32_t msg_get_free_block(uint8_t *buffer)
  * RETURNS
  *  int32_t
  *****************************************************************************/
-static int32_t msg_select(uint8_t *iccid, uint8_t *buffer)
+static int32_t msg_select(const char *iccid, uint8_t *buffer)
 {
     cJSON *s_iccid = NULL;
     cJSON *agent_msg = NULL;
@@ -222,7 +266,7 @@ static int32_t msg_delete(uint8_t *iccid)
  * RETURNS
  *  void
  *****************************************************************************/
-void msg_get_op_apn_name(uint8_t * iccid, uint8_t *imsi, uint8_t *apn_name)
+int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
 {
     cJSON *agent_msg = NULL;
     cJSON *apn_list = NULL;
@@ -239,7 +283,7 @@ void msg_get_op_apn_name(uint8_t * iccid, uint8_t *imsi, uint8_t *apn_name)
     agent_msg = cJSON_Parse(buffer);
     if (!agent_msg) {
         MSG_PRINTF(LOG_WARN, "agent_msg error, parse apn name fail !\n");
-        return;
+        return RT_FALSE;
     }
     apn_list = cJSON_GetObjectItem(agent_msg, "apnInfos");
     if (apn_list != NULL) {
@@ -270,6 +314,8 @@ void msg_get_op_apn_name(uint8_t * iccid, uint8_t *imsi, uint8_t *apn_name)
     if (agent_msg != NULL) {
         cJSON_Delete(agent_msg);
     }
+
+    return RT_SUCCESS;
 }
 
 /*****************************************************************************

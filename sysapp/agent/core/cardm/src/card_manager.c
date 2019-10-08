@@ -225,6 +225,19 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
     return ret;
 }
 
+static int32_t card_set_apn(void)
+{
+    int32_t ii = 0;
+
+    for (ii = 0; ii < g_p_info.num; ii++) {
+        if (g_p_info.info[ii].state == 1 && g_p_info.info[ii].class == PROFILE_TYPE_OPERATIONAL) {
+            msg_set_apn(g_p_info.info[ii].iccid);
+            break;
+        }
+    } 
+    return RT_SUCCESS;
+}
+
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
@@ -251,6 +264,8 @@ int32_t init_card_manager(void *arg)
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update last eid fail, ret=%d\r\n", ret);
     }
+
+    card_set_apn();
 
     return ret;
 }
