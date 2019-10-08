@@ -89,6 +89,8 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
     int32_t ii = 0;
     int32_t code = RT_ERROR;
     int32_t fail_times = 0;
+    rt_bool iccid_using = RT_FALSE;
+    judge_term_e bootstrap_flag = UPDATE_NOT_JUDGE_BOOTSTRAP;
     cJSON *payload = NULL;
     cJSON *content = NULL;
     cJSON *content_d = NULL;
@@ -137,7 +139,10 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 MSG_PRINTF(LOG_ERR, "Code info create error\n");
                 continue;
             }
-            code = msg_delete_profile(iccid->valuestring);
+            code = msg_delete_profile(iccid->valuestring, &iccid_using);
+            if (iccid_using) {
+                bootstrap_flag = UPDATE_JUDGE_BOOTSTRAP;
+            }
             if (RT_ERR_APDU_SEND_FAIL == code) {
                 /* 
                 Delete again when lpa-delete-profile return -204, but profile was deleteed actually.
@@ -145,7 +150,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 */
                 MSG_PRINTF(LOG_WARN, "delete profile with unkown result, delete again ...\n");
                 rt_os_sleep(1);
-                code = msg_delete_profile(iccid->valuestring);
+                code = msg_delete_profile(iccid->valuestring, &iccid_using);
                 if (code == 1) {
                     code = RT_SUCCESS;
                 }
@@ -165,7 +170,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
     } while(0);
 
     rt_os_sleep(1);
-    card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+    card_update_profile_info(bootstrap_flag);
     *out = content;
 end:
     rt_os_free((void *)in);

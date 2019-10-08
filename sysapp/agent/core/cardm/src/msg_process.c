@@ -98,9 +98,12 @@ int32_t msg_enable_profile(const char *iccid)
     return msg_enable_profile_check(iccid);
 }
 
-int32_t msg_delete_profile(const char *iccid)
+int32_t msg_delete_profile(const char *iccid, rt_bool *iccid_using)
 {
     if (msg_check_iccid_state(iccid) == RT_TRUE) {
+        if (iccid_using) {
+            *iccid_using = RT_TRUE;
+        }
         lpa_disable_profile(iccid);
         rt_os_sleep(1);
     }
