@@ -36,6 +36,12 @@
 
 #define MQTT_KEEP_ALIVE_INTERVAL        300
 
+#define MQTT_RECONNECT_MAX_CNT          30
+
+#define MQTT_ALIAS_MAX_LEN              40
+
+#define MQTT_NETWORK_STATE_TIMEOUT      60  // seconds
+
 #define GET_EID_FLAG(flag)              (((flag) >> 0) & 0x01)
 #define GET_AGENT_FLAG(flag)            (((flag) >> 1) & 0x01)
 #define GET_DEVICE_ID_FLAG(flag)        (((flag) >> 2) & 0x01)
@@ -51,7 +57,6 @@
 
 typedef enum NETWORK_STATE {
     NETWORK_STATE_INIT = 0,
-    NETWORK_GET_IP,
     NETWORK_CONNECTING,
     NETWORK_DIS_CONNECTED,
     NETWORK_USING
@@ -62,9 +67,10 @@ typedef struct MQTT_PARAM {
     mqtt_info_t                 opts;
     MQTTClient                  client;
     network_state_info_e        state;
-    char                        alias[40];
+    char                        alias[MQTT_ALIAS_MAX_LEN];
     rt_bool                     mqtt_get_addr;
-    rt_bool                     mqtt_flag;          // mqtt connect ok falg
+    rt_bool                     mqtt_flag;          // mqtt connect ok flag
+    rt_bool                     lost_flag;          // mqtt connect lost flag
     rt_bool                     alias_rc;           // need set alias flag
     uint8_t                     subscribe_flag;     // subscribe ok flag
 } mqtt_param_t;
@@ -450,6 +456,7 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
     //MSG_PRINTF(LOG_WARN, "Connect mqtt broker [%s] !\n", opts->serverURIs);
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
         g_mqtt_param.mqtt_flag = RT_TRUE;
+        g_mqtt_param.lost_flag = RT_FALSE;
         MSG_PRINTF(LOG_WARN, "Connect mqtt ok ! [%p]\n", pthread_self());
         return RT_TRUE;
     } else {
@@ -472,6 +479,7 @@ static void mqtt_connection_lost(void *context, char *cause)
         if (g_mqtt_param.state == NETWORK_USING) {
             g_mqtt_param.state = NETWORK_DIS_CONNECTED;
         }
+        g_mqtt_param.lost_flag = RT_TRUE;
     } else {
         MSG_PRINTF(LOG_WARN, "connect again ok after connection lost !!!\r\n");
     }
@@ -578,10 +586,16 @@ static void rt_mqtt_set_alias(const char *eid, const char *device_id, rt_bool in
 static void mqtt_process_task(void)
 {
     int32_t rc;
+    int32_t wait_cnt = 0;
     
     while(1) {        
         if (g_mqtt_param.state == NETWORK_STATE_INIT) {
-            ;
+            /* check network state every 60 seconds after mqtt connect lost */
+            if (g_mqtt_param.lost_flag == RT_TRUE && ++wait_cnt >= MQTT_NETWORK_STATE_TIMEOUT) {
+                wait_cnt = 0;
+                network_state_update(1);  // update newest network state after 1 seconds
+                rt_os_sleep(1);
+            }
         } else if (g_mqtt_param.state == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
                 /* If cache mqtt server addr ok, and then needn't to conenct ticket server to get mqtt server */
@@ -605,12 +619,14 @@ static void mqtt_process_task(void)
                     g_mqtt_param.mqtt_get_addr = RT_FALSE;
                 }
             }
-        } else if (g_mqtt_param.state == NETWORK_DIS_CONNECTED){
+        } else if (g_mqtt_param.state == NETWORK_DIS_CONNECTED) {
             if (g_mqtt_param.mqtt_flag == RT_TRUE) {
-                MQTTClient_disconnect(g_mqtt_param.client, 0);
                 MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
+                MQTTClient_disconnect(g_mqtt_param.client, 0);                
                 g_mqtt_param.mqtt_flag      = RT_FALSE;
                 g_mqtt_param.subscribe_flag = 0;  // reset subscribe flag
+                g_mqtt_param.state          = NETWORK_STATE_INIT;  // reset network state
+                wait_cnt                    = 0;  // reset wait counter
             }
         } else if (g_mqtt_param.state == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.channel);
