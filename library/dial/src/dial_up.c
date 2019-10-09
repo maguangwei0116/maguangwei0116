@@ -122,7 +122,7 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
     snprintf(command, sizeof(command), "route add default dev rmnet_data0");
     ds_system_call(command, rt_os_strlen(command));
 
-#if (ROUTE_SET)
+#if 1
     snprintf(command, sizeof(command), "echo 1 > /proc/sys/net/ipv4/ip_forward");
     MSG_PRINTF(LOG_DBG, "%s\n", command);
     ds_system_call(command, rt_os_strlen(command));
@@ -292,7 +292,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     pollfds[0].revents = 0;
     nevents = sizeof(pollfds)/sizeof(pollfds[0]);
     MSG_PRINTF(LOG_INFO, "Start dial up\n");
-    
+
     while (1) {
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
             if (get_regist_state() != RT_TRUE) {
@@ -311,7 +311,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
             ret = poll(pollfds,nevents,5);
             rt_os_sleep(2);
         } while (ret < 0);
-        
+
         for (ne = 0; ne < nevents; ne++) {
             fd = pollfds[0].fd;
             revents = pollfds[0].revents;
@@ -322,7 +322,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                     break;
                 }
             }
-            
+
             if ((revents & POLLIN) == 0) {
                 if (dsi_net_hndl->call_state == DSI_STATE_CALL_CONNECTING) {
                     ++count;
@@ -334,7 +334,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                 }
                 continue;
             }
-            
+
             if (fd == dsi_event_fd[1]) {
                 if (read(fd, &signo, sizeof(signo)) == sizeof(signo)) {
                     switch (signo) {
@@ -347,7 +347,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                                 MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
                             }
                         break;
-                        case DSI_EVT_NET_IS_CONN:                            
+                        case DSI_EVT_NET_IS_CONN:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
                                 if (RT_SUCCESS == get_ipv4_net_conf(dsi_net_hndl)) {
                                     MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_IS_CONN\n");

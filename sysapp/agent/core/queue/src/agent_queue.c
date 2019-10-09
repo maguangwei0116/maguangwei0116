@@ -91,7 +91,7 @@ static void agent_queue_task(void)
 {
     agent_que_t que_t;
     int32_t len = sizeof(agent_que_t) - sizeof(long);
-    
+
     while (1) {
         rt_os_memset(&que_t, 0, sizeof(agent_que_t));
         if (rt_receive_queue_msg(g_queue_id, (void *) &que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
@@ -142,7 +142,7 @@ static void agent_queue_task(void)
                 case MSG_ID_IDLE:
                     idle_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
-                    
+
                 case MSG_ID_DETECT_NETWORK:
                     network_detect_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
@@ -152,7 +152,7 @@ static void agent_queue_task(void)
                 }
             }
 
-            //MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, que_t.data_buf:%p\n", que_t.data_len, que_t.data_buf);
+            // MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, que_t.data_buf:%p\n", que_t.data_len, que_t.data_buf);
             if (que_t.data_buf && que_t.data_len != 0) {
                 rt_os_free(que_t.data_buf);
             }
@@ -195,7 +195,7 @@ static int32_t agent_queue_clear_msg(int32_t time_cnt)
 
     for (i = 0; i < time_cnt; i++) {
         rt_os_memset(&agent_queue, 0, sizeof(agent_queue));
-        ret = rt_receive_queue_msg(g_queue_id, &agent_queue, agent_queue_len, AGENT_QUEUE_MSG_TYPE, RT_IPC_NOWAIT); 
+        ret = rt_receive_queue_msg(g_queue_id, &agent_queue, agent_queue_len, AGENT_QUEUE_MSG_TYPE, RT_IPC_NOWAIT);
         if (ret == RT_ERROR && !agent_queue.data_buf) {
             break;
         }
@@ -208,14 +208,14 @@ static int32_t agent_queue_clear_msg(int32_t time_cnt)
 static int32_t upload_queue_clear_msg(int32_t time_cnt)
 {
     int32_t i;
-    int32_t ret;    
+    int32_t ret;
     upload_que_t upload_queue;
     int32_t upload_queue_len = sizeof(upload_queue) - sizeof(long);
 
     if (g_upload_queue_id == -1) {
         return RT_ERROR;
     }
-    
+
     for (i = 0; i < time_cnt; i++) {
         rt_os_memset(&upload_queue, 0, sizeof(upload_queue));
         ret = rt_receive_queue_msg(g_upload_queue_id, &upload_queue, upload_queue_len, UPLOAD_QUEUE_MSG_TYPE, RT_IPC_NOWAIT); 
@@ -262,8 +262,8 @@ int32_t init_queue(void *arg)
         MSG_PRINTF(LOG_ERR, "create task fail\n");
         return RT_ERROR;
     }
-    
-    
+
+
     return RT_SUCCESS;
 }
 
