@@ -151,7 +151,7 @@ static void init_app_version(void *arg)
 
 int32_t main(int32_t argc, const char *argv[])
 {
-    log_mode_e def_mode = LOG_PRINTF_TERMINAL;
+    log_mode_e def_mode = LOG_PRINTF_FILE;
 
     /* check input param to debug in terminal */
     if (argc > 1) {
