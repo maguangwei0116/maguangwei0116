@@ -95,6 +95,16 @@ void network_state_update(int32_t timeout)
     register_timer(timeout, 0 , &network_state_notify);  
 }
 
+/* force to update network state when other module found network is inactive */
+void network_state_force_update(int32_t new_state)
+{
+    if (MSG_NETWORK_DISCONNECTED == new_state) {
+        network_state(DSI_STATE_CALL_IDLE);
+    } else if (MSG_NETWORK_CONNECTED == new_state) {
+        network_state(DSI_STATE_CALL_CONNECTED);
+    }
+}
+
 int32_t init_network_detection(void *arg)
 {
     rt_task task_id = 0;
