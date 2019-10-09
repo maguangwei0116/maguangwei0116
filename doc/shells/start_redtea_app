@@ -2,7 +2,7 @@
 
 set -e
 echo 4096 > /proc/sys/vm/min_free_kbytes
-process=monitor
+process=rt_monitor
 keep_process=/etc/init.d/start_redtea_keep
 
 case "$1" in

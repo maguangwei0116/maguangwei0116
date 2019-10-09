@@ -20,8 +20,8 @@
 #include "ipc_socket_server.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
-#define RT_AGENT_PTROCESS           "agent"
-#define RT_AGENT_FILE               "/usr/bin/agent"
+#define RT_AGENT_PTROCESS           "rt_agent"
+#define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_LOG              "/data/redtea/rt_monitor_log"
 #define RT_MONITOR_LOG_MAX_SIZE     (1 * 1024 * 1024)
 

@@ -279,8 +279,8 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
 {
     const char *g_target_files[] = 
     {
-        "/usr/bin/agent",
-        "/usr/bin/monitor",
+        "/usr/bin/rt_agent",
+        "/usr/bin/rt_monitor",
         "/usr/lib/libcomm.so",        
     };
     int32_t i = 0;

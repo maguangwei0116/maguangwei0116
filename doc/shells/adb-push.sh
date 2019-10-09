@@ -2,11 +2,11 @@
 
 #!/bin/bash -e
 
-adb push ./targets/*agent* /usr/bin/agent
-adb shell chmod +x /usr/bin/agent
+adb push ./targets/*agent* /usr/bin/rt_agent
+adb shell chmod +x /usr/bin/rt_agent
 
-adb push ./targets/*monitor* /usr/bin/monitor
-adb shell chmod +x /usr/bin/monitor
+adb push ./targets/*monitor* /usr/bin/rt_monitor
+adb shell chmod +x /usr/bin/rt_monitor
 
 adb push ./targets/*libcomm.so* /usr/lib/libcomm.so
 adb shell chmod +x /usr/lib/libcomm.so

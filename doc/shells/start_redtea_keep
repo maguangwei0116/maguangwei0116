@@ -2,7 +2,7 @@
 
 set -e
 flag=1
-process=monitor
+process=rt_monitor
 
 echo "start while..."
 while [ $flag -eq 1 ]
