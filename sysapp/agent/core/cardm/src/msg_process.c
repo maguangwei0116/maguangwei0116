@@ -32,10 +32,13 @@ int32_t init_msg_process(void *arg, void *proxy_addr)
     return RT_SUCCESS;
 }
 
-static rt_bool msg_check_iccid_state(const char *iccid)
+static rt_bool msg_check_iccid_state(const char *iccid, profile_type_e *type)
 {
     MSG_PRINTF(LOG_INFO, "g_iccid:%s,iccid:%s\n", g_card_info->iccid, iccid);
     if (rt_os_strncmp(g_card_info->iccid, iccid, THE_ICCID_LENGTH) == 0){
+        if (type) {
+            *type = g_card_info->type;
+        }
         return RT_TRUE;
     }
     return RT_FALSE;
@@ -151,15 +154,21 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
     uint8_t iccid_t[THE_ICCID_LENGTH + 1] = {0};
     int32_t apn_num = 0;
     int32_t ii = 0;
+    int32_t num;
     uint8_t buffer[MSG_ONE_BLOCK_SIZE + 1] = {0};
 
-    msg_select(iccid, buffer);
+    num = msg_select(iccid, buffer);
+    if (num == RT_ERROR) {
+        return RT_ERROR;
+    }
+    
     //MSG_PRINTF(LOG_INFO, "buffer=%s\r\n", buffer);
     agent_msg = cJSON_Parse(buffer);
     if (!agent_msg) {
         MSG_PRINTF(LOG_WARN, "agent_msg error, parse apn name fail !\n");
         return RT_ERROR;
     }
+    
     apn_list = cJSON_GetObjectItem(agent_msg, "apnInfos");
     if (apn_list != NULL) {
         apn_num = cJSON_GetArraySize(apn_list);
@@ -185,7 +194,9 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
     } else {
         MSG_PRINTF(LOG_WARN, "apn list is error\n");
     }
+    
     MSG_PRINTF(LOG_INFO, "APN_NAME: %s\n", apn_name);
+    
     if (agent_msg != NULL) {
         cJSON_Delete(agent_msg);
     }
@@ -201,10 +212,11 @@ static int32_t msg_delete(const char *iccid)
 
     num = msg_get_free_block(buffer);
     block = msg_select(iccid, buffer);
-    if (block >= num) {
+    if (block == RT_ERROR || block >= num) {
         MSG_PRINTF(LOG_WARN, "can not find iccid\n");
         return RT_ERROR;
     }
+    
     MSG_PRINTF(LOG_DBG, "num:%d,block:%d\n", num, block);
     if (block != num - 1) {
         if (rt_read_data(APN_LIST, (num - 1) * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE) < 0) {
@@ -217,6 +229,7 @@ static int32_t msg_delete(const char *iccid)
             }
         }
     }
+    
     rt_truncate_data(APN_LIST, (num - 1) * MSG_ONE_BLOCK_SIZE);
     MSG_PRINTF(LOG_INFO, "delete iccid: %s\r\n", iccid);
 
@@ -235,7 +248,7 @@ static int32_t msg_enable_profile_check(const char *iccid)
     int32_t i = 0;
     int32_t ret = RT_FALSE;
     
-    if (msg_check_iccid_state(iccid) == RT_TRUE) {
+    if (msg_check_iccid_state(iccid, NULL) == RT_TRUE) {
         /* iccid is enable now ! */
         MSG_PRINTF(LOG_WARN, "iccid:%s not in disable state !\n", iccid);
         return 2;
@@ -264,13 +277,15 @@ int32_t msg_enable_profile(const char *iccid)
     return msg_enable_profile_check(iccid);
 }
 
-int32_t msg_delete_profile(const char *iccid, rt_bool *iccid_using)
+int32_t msg_delete_profile(const char *iccid, rt_bool *opr_iccid_using)
 {
     int32_t ret;
+    profile_type_e type;
     
-    if (msg_check_iccid_state(iccid) == RT_TRUE) {
-        if (iccid_using) {
-            *iccid_using = RT_TRUE;
+    if (msg_check_iccid_state(iccid, &type) == RT_TRUE) {
+        if (opr_iccid_using && PROFILE_TYPE_OPERATIONAL == type) {
+            /* delete using operational profile */
+            *opr_iccid_using = RT_TRUE;
         }
         lpa_disable_profile(iccid);
         rt_os_sleep(1);
