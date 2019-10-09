@@ -36,7 +36,7 @@
 
 #define MQTT_KEEP_ALIVE_INTERVAL        300
 
-#define MQTT_RECONNECT_MAX_CNT          30
+#define MQTT_RECONNECT_MAX_CNT          10
 
 #define MQTT_ALIAS_MAX_LEN              40
 
@@ -587,17 +587,26 @@ static void mqtt_process_task(void)
 {
     int32_t rc;
     int32_t wait_cnt = 0;
+    int32_t connect_cnt = 0;
     
     while(1) {        
         if (g_mqtt_param.state == NETWORK_STATE_INIT) {
             /* check network state every 60 seconds after mqtt connect lost */
-            if (g_mqtt_param.lost_flag == RT_TRUE && ++wait_cnt >= MQTT_NETWORK_STATE_TIMEOUT) {
+            if (g_mqtt_param.lost_flag == RT_TRUE && ++wait_cnt > MQTT_NETWORK_STATE_TIMEOUT) {
                 wait_cnt = 0;
                 network_state_update(1);  // update newest network state after 1 seconds
                 rt_os_sleep(1);
             }
         } else if (g_mqtt_param.state == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
+                if (++connect_cnt > MQTT_RECONNECT_MAX_CNT) {
+                    MSG_PRINTF(LOG_DBG, "force to set network disconnected !\n");
+                    network_state_force_update(MSG_NETWORK_DISCONNECTED);
+                    g_mqtt_param.state = NETWORK_STATE_INIT;  // reset network state
+                    connect_cnt = 0;
+                    continue;
+                }
+                
                 /* If cache mqtt server addr ok, and then needn't to conenct ticket server to get mqtt server */
                 if (g_mqtt_param.mqtt_get_addr == RT_FALSE) {
                     /* re-subcribe when re-connect mqtt server */
@@ -613,6 +622,7 @@ static void mqtt_process_task(void)
                 if (mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
                     /* set network using */
                     g_mqtt_param.state = NETWORK_USING;
+                    connect_cnt = 0;
                     continue;
                 } else {
                     /* If cache mqtt server and hardcode mqtt server all fail, and then connect ticket server to get mqtt server */
