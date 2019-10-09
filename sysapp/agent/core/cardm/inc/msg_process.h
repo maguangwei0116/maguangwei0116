@@ -15,6 +15,7 @@
 #define __MSG_PROCESS_H__
 
 #include "rt_type.h"
+#include "cJSON.h"
 
 #define SUCCESS_STATUS                               0000
 #define ERROR_PARSE_STATUS                           1001
@@ -54,7 +55,7 @@ int32_t msg_enable_profile(const char *iccid);
 int32_t msg_delete_profile(const char *iccid, rt_bool *iccid_using);
 int32_t card_update_profile_info(judge_term_e bootstrap_flag);
 int32_t init_msg_process(void *arg, void *proxy_addr);
-int32_t msg_get_op_apn_name(const char *iccid, char *apn_name);
 int32_t msg_set_apn(const char *iccid);
+int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid);
 
 #endif // __MSG_PROCESS_H__
