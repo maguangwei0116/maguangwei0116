@@ -252,11 +252,13 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
 static rt_bool get_regist_state(void)
 {
     int32_t regist_state = 0;
-    rt_qmi_get_register_state(&regist_state);
+    int32_t ret;
+    ret = rt_qmi_get_register_state(&regist_state);
     if (regist_state == 1) {
         MSG_PRINTF(LOG_INFO, "regist state:%d\n", regist_state);
         return RT_TRUE;
     }
+    MSG_PRINTF(LOG_INFO, "regist state:%d, ret=%d\n", regist_state, ret);
     return RT_FALSE;
 }
 
