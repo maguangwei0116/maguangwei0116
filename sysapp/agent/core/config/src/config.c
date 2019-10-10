@@ -276,6 +276,7 @@ static void config_debug_cur_param(void)
 
 int32_t init_config(void *arg)
 {
+    int8_t log_level;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
     if (rt_os_access(CONFIG_FILE_PATH, F_OK) == RT_ERROR) {
@@ -290,8 +291,12 @@ int32_t init_config(void *arg)
     g_config_info.lpa_channel_type = !rt_os_strcmp(config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
                                                     LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
     g_config_info.log_max_size = msg_string_to_int(config_get_data("LOG_FILE_SIZE")) * M_BYTES;
-    g_config_info.monitor_log_level = log_get_level(config_get_data("MONITOR_LOG_LEVEL"));
-    g_config_info.agent_log_level = log_get_level(config_get_data("AGENT_LOG_LEVEL"));
+
+    log_level = log_get_level(config_get_data("MONITOR_LOG_LEVEL"));
+    g_config_info.monitor_log_level = (LOG_UNKNOW == log_level) ? LOG_INFO : log_level;
+
+    log_level = log_get_level(config_get_data("AGENT_LOG_LEVEL"));
+    g_config_info.agent_log_level = (LOG_UNKNOW == log_level) ? LOG_INFO : log_level;
     
     ((public_value_list_t *)arg)->config_info = &g_config_info;
 
