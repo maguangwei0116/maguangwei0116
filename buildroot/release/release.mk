@@ -21,6 +21,19 @@ RELEASE_DATE=$(shell date +"%Y%m%d")
 RELEASE_TIME=$(shell date +"%Y-%m-%d %T")
 RELEASE_TAR_FILE=$(RELEASE_TARGET)-$(RELEASE_ENV_TYPE)-targets-$(RELEASE_VERSION)-$(RELEASE_DATE).zip
 
+# Get github branch and git hash
+RELEASE_GIT_PATH=../.git/
+GIT_PATH=$(RELEASE_GIT_PATH)
+GIT_HEAD_FILE=$(GIT_PATH)/HEAD
+ifeq ($(GIT_HEAD_FILE), $(wildcard $(GIT_HEAD_FILE)))
+RELEASE_GIT_BRANCH_INFO=$(shell echo $(shell cat $(GIT_HEAD_FILE) | awk '{ print $$2}'))
+RELEASE_GIT_BRANCH=$(shell echo $(RELEASE_GIT_BRANCH_INFO) | cut -f 3 -d "/")
+RELEASE_GIT_HASH=$(shell echo $(GIT_PATH)/$(RELEASE_GIT_BRANCH_INFO) | xargs cat)
+else
+RELEASE_GIT_BRANCH=xxxxxxxx
+RELEASE_GIT_HASH=xxxxxxxx
+endif
+
 # Auto generate README.txt
 define CREATE_RELEASE_README
 	echo "" >$(1);\
@@ -31,6 +44,8 @@ define CREATE_RELEASE_README
 	echo "Version     : ${RELEASE_VERSION}" >>$(1);\
 	echo "Target      : ${RELEASE_TARGET}" >>$(1);\
 	echo "Environment : ${RELEASE_ENV_TYPE}" >>$(1);\
+	echo "Branch      : ${RELEASE_GIT_BRANCH}" >>$(1);\
+	echo "Git Hash    : ${RELEASE_GIT_HASH}" >>$(1);\
 	echo "" >>$(1);\
 	echo "Tips : " >>$(1);\
 	echo "1.Copy $(RELEASE_TAR_FILE) into your debug computer;" >>$(1);\
