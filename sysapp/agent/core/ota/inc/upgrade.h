@@ -40,6 +40,7 @@ typedef enum UPGRADE_RESULT {
     UPGRADE_PROFILE_TYPE_ERROR          = -2010,
     UPGRADE_NULL_POINTER_ERROR          = -2011,    
     UPGRADE_EXECUTION_TYPE_ERROR        = -2012,
+    UPGRADE_CHIP_MODEL_ERROR            = -2013,
     UPGRADE_OTHER                       = -2099,
 } upgrade_result_e;
 

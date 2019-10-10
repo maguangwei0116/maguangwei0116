@@ -286,12 +286,20 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
     int32_t i = 0;
     int32_t cnt = ARRAY_SIZE(g_target_files);
     char *p;
+    char *p0;
     const char *fileName = param->target.name;
 
     for (i = 0; i < cnt; i++) {
         p = rt_os_strrchr(g_target_files[i], '/');
         if (p) {
             p++;
+
+            /* delete "redtea" prefix */
+            p0 = rt_os_strstr(p, "rt_");    
+            if (p0) {
+                p = p0+3;
+            }
+            
             if (rt_os_strstr(fileName, p)) {
                 snprintf(targetFileName, len, g_target_files[i]);
                 MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
@@ -373,8 +381,8 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
     }
 
     if (rt_os_strcmp(param->target.chipModel, LOCAL_TARGET_PLATFORM_TYPE)) {
-        MSG_PRINTF(LOG_WARN, "unmathed platform type [%s] => [%s]\r\n", LOCAL_TARGET_PLATFORM_TYPE, param->target.chipModel);
-        ret = UPGRADE_FILE_NAME_ERROR;
+        MSG_PRINTF(LOG_WARN, "unmathed chip model [%s] => [%s]\r\n", LOCAL_TARGET_PLATFORM_TYPE, param->target.chipModel);
+        ret = UPGRADE_CHIP_MODEL_ERROR;
         goto exit_entry;         
     }
 
@@ -462,7 +470,7 @@ static rt_bool ota_file_check(const void *arg)
     MSG_PRINTF(LOG_WARN, "calc hash_result: %s\r\n", hash_result);
     MSG_PRINTF(LOG_WARN, "tail hash_result: %s\r\n", last_hash_buffer);
     RT_CHECK_NEQ(strncpy_case_insensitive(hash_result, last_hash_buffer, MAX_FILE_HASH_LEN), RT_TRUE);
-    MSG_PRINTF(LOG_WARN, "private file hash check ok !\r\n");
+    MSG_PRINTF(LOG_INFO, "private file hash check ok !\r\n");
     ret = RT_TRUE;
 
 end:
@@ -707,7 +715,7 @@ int32_t init_ota(void *arg)
 
     g_ota_card_info = (const card_info_t *)public_value_list->card_info->info;
 
-    MSG_PRINTF(LOG_WARN, "profile type : %p, %d\n", &g_ota_card_info->type, g_ota_card_info->type);
+    MSG_PRINTF(LOG_INFO, "profile type : %p, %d\n", &g_ota_card_info->type, g_ota_card_info->type);
 
     return 0;
 }
