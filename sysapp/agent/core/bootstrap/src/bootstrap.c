@@ -19,30 +19,20 @@
 #include "rt_manage_data.h"
 #include "agent_queue.h"
 #include "rt_type.h"
+#include "random.h"
 
-#define RANDOM_FILE                     "/dev/urandom"
-
-static uint32_t g_single_interval_time = 10; // 激活失败单次间隔时间
-static uint32_t g_max_retry_times = 7; // 最大重试次数
-static uint32_t g_sleep_time = 24 * 60 * 60; // 休眠时长
-static uint32_t g_is_profile_damaged = RT_ERROR;
-static uint32_t g_retry_times = 0;
-
-static uint32_t get_random(void)
-{
-    uint32_t random = 0;
-    if (rt_read_data(RANDOM_FILE, 0, (uint8_t * ) & random, sizeof(random)) == RT_ERROR) {
-        MSG_PRINTF(LOG_ERR, "read urandom error\n");
-    }
-    return random;
-}
+static uint32_t g_single_interval_time  = 10;           // single interval time for activating fail
+static uint32_t g_max_retry_times       = 7;            // max retry counter
+static uint32_t g_sleep_time            = 24 * 60 * 60; // sleep time
+static uint32_t g_is_profile_damaged    = RT_ERROR;
+static uint32_t g_retry_times           = 0;
 
 static void bootstrap_select_profile(void)
 {
     if (g_retry_times > g_max_retry_times) {
         g_retry_times = 0;
     } else {
-        selected_profile(get_random());
+        selected_profile((uint32_t)rt_get_random_num());
         g_retry_times++;
         g_single_interval_time *= g_retry_times;
     }
@@ -71,3 +61,4 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     }
 }
+
