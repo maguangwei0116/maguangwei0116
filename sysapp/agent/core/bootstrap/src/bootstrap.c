@@ -11,14 +11,12 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#include <stdio.h>
 #include "bootstrap.h"
 #include "profile_parse.h"
 #include "tlv.h"
 #include "file.h"
 #include "rt_manage_data.h"
 #include "agent_queue.h"
-#include "rt_type.h"
 
 #define RANDOM_FILE                     "/dev/urandom"
 
