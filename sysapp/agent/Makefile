@@ -32,14 +32,20 @@ LOCAL_TARGET_RELEASE                = $(SYSAPP_TARGET_NAME)_v$(LOCAL_TARGET_VERS
 LOCAL_TARGET_RELEASE_VERSION_NAME   = $(LOCAL_TARGET_RELEASE)_$(SYSAPP_GIT_HASH)_$(shell date +%Y-%m-%d_%H:%M:%S)
 
 # Config your own MACROs in CFLAGS
-USER_CFLAGS		                    += -DLOCAL_TARGET_RELEASE_VERSION_NAME=\"$(LOCAL_TARGET_RELEASE_VERSION_NAME)\"
-USER_CFLAGS		                    += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME)\"
-USER_CFLAGS		                    += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
-USER_CFLAGS		                    += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
+USER_CFLAGS                         += -DLOCAL_TARGET_RELEASE_VERSION_NAME=\"$(LOCAL_TARGET_RELEASE_VERSION_NAME)\"
+USER_CFLAGS                         += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME)\"
+USER_CFLAGS                         += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
+USER_CFLAGS                         += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
+
+# Config backtrace module switch [y/n]
+ifeq ($(CFG_ENABLE_LIBUNWIND),y)
+USER_CFLAGS                         += -g -rdynamic -mapcs-frame -funwind-tables -fasynchronous-unwind-tables
+USER_LDFLAGS                        += -lunwind -ldl
+endif
 
 # Config your own libraries
-QMI-LIB 		                    = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
-COMM-LIB 		                    = comm crypto ssl pthread
+QMI-LIB                             = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
+COMM-LIB                            = comm crypto ssl pthread
 
 ############################################################################
 ### path
