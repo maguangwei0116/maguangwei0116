@@ -15,3 +15,4 @@ CFLAGS			+= -g
 # Config link flags
 LDFLAGS			+= $(LIB-y)
 LDFLAGS			+= -L$(SDK_INSTALL_PATH)/lib
+LDFLAGS			+= $(USER_LDFLAGS)
