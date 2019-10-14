@@ -24,7 +24,11 @@
 #include <errno.h>
 #include "rt_os.h"
 
+#ifdef CFG_ENABLE_LIBUNWIND
+int32_t _rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
+#else
 int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
+#endif
 {
     int32_t ret = RT_ERROR;
 

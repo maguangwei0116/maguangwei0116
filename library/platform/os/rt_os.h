@@ -49,7 +49,20 @@ typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);
 typedef pthread_mutex_t    rt_pthread_mutex_t;
 
+#ifdef CFG_ENABLE_LIBUNWIND
+extern int32_t thread_info_record(unsigned long pid, const char *name);
+int32_t _rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
+#define rt_create_task(task_id, task_fun, args)\
+    ({\
+        int32_t _ret = _rt_create_task(task_id, task_fun, args);\
+        if (!_ret) {\
+            thread_info_record((unsigned long)*task_id, #task_fun);\
+        };\
+        _ret;\
+    })
+#else
 int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
+#endif
 int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id);
 int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg);
 int32_t rt_send_queue_msg(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg);
