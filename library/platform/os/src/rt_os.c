@@ -178,7 +178,7 @@ void *rt_os_realloc(void *mem, uint32_t size)
     return realloc(mem, size);
 }
 
-void *rt_os_calloc(size_t count, size_t size)
+void *rt_os_calloc(uint32_t count, uint32_t size)
 {
     return calloc(count, size);
 }
@@ -236,7 +236,7 @@ void *rt_os_memset(void *mem, int32_t value, uint32_t len)
     return memset(mem, value, len);
 }
 
-void *rt_os_memmove(void *dst, const void *src, size_t len)
+void *rt_os_memmove(void *dst, const void *src, uint32_t len)
 {
     return memmove(dst, src, len);
 }
@@ -268,10 +268,20 @@ void *rt_os_strcpy(char* dest, const char *src)
         return NULL;
     }
 
-    return strcpy(dest,src);
+    return strcpy(dest, src);
 }
 
-int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, int32_t len)
+void *rt_os_strncpy(char* dest, const char *src, uint32_t len)
+{
+    if ((NULL == dest) || (NULL == src)) {
+        MSG_PRINTF(LOG_WARN, "strncpy is empty!\n");
+        return NULL;
+    }
+
+    return strncpy(dest, src, len);
+}
+
+int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, uint32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
         return RT_ERROR;
@@ -290,7 +300,7 @@ int32_t rt_os_strcmp(const char *mem_des, const char *mem_src)
     return strcmp(mem_des,mem_src);
 }
 
-void *rt_os_memcpy(void *mem_des, const void *mem_src, int32_t len)
+void *rt_os_memcpy(void *mem_des, const void *mem_src, uint32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
         return NULL;
