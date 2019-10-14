@@ -82,7 +82,7 @@ static const char *strtoken(const char *src, char *dst, int size)
         len = size - 1;
     }
 
-    strncpy(dst, start, len);
+    rt_os_strncpy(dst, start, len);
     dst[len]=0;
 
     return p;
@@ -324,12 +324,12 @@ int lpa_https_post(const char *addr, const char *api, const char *body,
     p = strstr(addr, ":");
     if (p == NULL) {
         // Use default port
-        strncpy(port, "443", 4);
-        strncpy(host, addr, 63);
+        rt_os_strncpy(port, "443", 4);
+        rt_os_strncpy(host, addr, 63);
     } else {
-        strncpy(port, p+1, 5);
+        rt_os_strncpy(port, p+1, 5);
         // TODO: fix potential bug: p - addr > 63
-        strncpy(host, addr, p - addr);
+        rt_os_strncpy(host, addr, p - addr);
     }
 
     if (g_https_ctx.ssl == NULL) {

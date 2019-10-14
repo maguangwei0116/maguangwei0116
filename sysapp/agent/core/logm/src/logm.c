@@ -94,7 +94,7 @@ static int32_t downstream_log_parser(const void *in, char *tran_id, void **out)
     param = (log_param_t *)rt_os_malloc(sizeof(log_param_t));
     OTA_CHK_PINTER_NULL(param, -3);
     rt_os_memset(param, 0, sizeof(log_param_t));
-    strncpy(param->tranId, tranId->valuestring, rt_os_strlen(tranId->valuestring));
+    rt_os_strncpy(param->tranId, tranId->valuestring, rt_os_strlen(tranId->valuestring));
 
     cJSON_GET_JSON_DATA(msg, payload);
     OTA_CHK_PINTER_NULL(param, -4);

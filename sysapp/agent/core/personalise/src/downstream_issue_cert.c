@@ -84,7 +84,7 @@ static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void 
         goto exit_entry;
     }
     rt_os_memset(param, 0, sizeof(issue_cert_struct_t));
-    strncpy(param->tranId, tranId->valuestring, rt_os_strlen(tranId->valuestring));
+    rt_os_strncpy(param->tranId, tranId->valuestring, rt_os_strlen(tranId->valuestring));
 
     cJSON_GET_JSON_DATA(msg, payload);
 
