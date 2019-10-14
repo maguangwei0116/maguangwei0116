@@ -35,6 +35,55 @@ typedef int (*backtrac_log_func)(const char *fmt, ...);
 
 static backtrac_log_func g_backtrac_log_func = printf;
 
+#define MAX_THREAD_CNT		20
+
+typedef struct THREAD_INFO {
+	unsigned long 	pid;
+	const char *	name;
+} thread_info_t;
+
+typedef struct ALL_THREAD_INFO {
+	int32_t 		cnt;
+	thread_info_t 	thread[MAX_THREAD_CNT];
+} all_thread_info_t;
+
+static all_thread_info_t g_all_thread_info;
+
+int32_t thread_info_record(unsigned long pid, const char *name)
+{
+	g_all_thread_info.thread[g_all_thread_info.cnt].pid = pid;
+	g_all_thread_info.thread[g_all_thread_info.cnt].name = name;
+	g_all_thread_info.cnt++;
+
+	return 0;	
+}
+
+static int32_t thread_info_dump(void)
+{
+	int32_t i;
+	
+	g_backtrac_log_func("All system threads:\r\n");
+	for (i = 0; i < g_all_thread_info.cnt; i++) {
+		g_backtrac_log_func("# %02d %p: %s\r\n", i+1, g_all_thread_info.thread[i].pid, g_all_thread_info.thread[i].name);
+	}
+
+	return 0;
+}
+
+static int32_t thread_info_check(void)
+{
+	int32_t i;
+	unsigned long cur_pid = pthread_self();
+	
+	for (i = 0; i < g_all_thread_info.cnt; i++) {
+		if (cur_pid == g_all_thread_info.thread[i].pid) {
+			g_backtrac_log_func("crush thread ===> # %02d %p: %s\r\n", i+1, g_all_thread_info.thread[i].pid, g_all_thread_info.thread[i].name);
+		}
+	}
+
+	return 0;	
+}
+
 static unsigned long _Unwind_GetIP0 (struct _Unwind_Context *context)
 {
 	unw_word_t val;
@@ -88,16 +137,21 @@ static _Unwind_Reason_Code _Unwind_Backtrace(void)
 
 		i++;
     }
-
+	
 exit_entry:
+
 	if (ret != 0 && ret != _URC_END_OF_STACK) {
 		g_backtrac_log_func("error ret=%d\r\n", ret);
+	} else {
+		g_backtrac_log_func("\r\n");
 	}
+	
 	return ret;
 }
 
 static void handle_sigsegv(int sig, siginfo_t *info, void *ucontext)
 {
+	static const char *si_codes[3] = {"", "SEGV_MAPERR", "SEGV_ACCERR"};
 	long ip = 0;
 	ucontext_t *uc = (ucontext_t *)ucontext;
 	
@@ -134,13 +188,19 @@ static void handle_sigsegv(int sig, siginfo_t *info, void *ucontext)
 #endif
 
 	g_backtrac_log_func("\r\n=======================================================\r\n");
-	g_backtrac_log_func("Signal Info:\r\nrecv signal:%d  address:0x%lx  ip:0x%08lx\r\n\r\n",
+	g_backtrac_log_func("Signal Info:\r\nrecv signal:%d  si_errno:%d, si_code:%d(%s), address:0x%lx  ip:0x%08lx\r\n\r\n",
 			sig,
+			info->si_errno, 
+			info->si_code,
+			si_codes[info->si_code],
 			/* this is void*, but using %p would print "(null)"
 			 * even for ptrs which are not exactly 0, but, say, 0x123:
 			 */
 			(long)info->si_addr,
 			ip);
+			
+	void * gcc_crush_addr = __builtin_return_address (0);
+	g_backtrac_log_func("gcc_crush_addr: %p\r\n\r\n\r\n", gcc_crush_addr);
 			
 	g_backtrac_log_func("Head CPU Registers:\r\n%s\r\n", head_cpu);
 	if (head_cpu) {
@@ -149,6 +209,11 @@ static void handle_sigsegv(int sig, siginfo_t *info, void *ucontext)
 	}
 	
 	_Unwind_Backtrace();
+	
+	thread_info_dump();
+	
+	thread_info_check();
+	
 	g_backtrac_log_func("=======================================================\r\n");
 		
 	exit(-1);
@@ -167,4 +232,5 @@ int32_t init_backtrace(void *arg)
 	
 	return 0;
 }
+
 #endif
