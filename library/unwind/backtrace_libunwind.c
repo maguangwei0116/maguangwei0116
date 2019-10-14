@@ -219,16 +219,44 @@ static void handle_sigsegv(int sig, siginfo_t *info, void *ucontext)
 	exit(-1);
 }
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) sizeof(a)/sizeof(a[0])
+#endif
+
+typedef struct SIGNAL_INFO {
+	int32_t 	no;
+	const char *name;
+} signal_info_t;
+
+#define SIGNAL_ITEM(signal)		{signal, #signal}
+
+static const signal_info_t g_signal_array[] = 
+{
+	SIGNAL_ITEM(SIGILL), 
+	SIGNAL_ITEM(SIGABRT), 
+	SIGNAL_ITEM(SIGBUS), 
+	SIGNAL_ITEM(SIGFPE), 
+	SIGNAL_ITEM(SIGSEGV), 
+	SIGNAL_ITEM(SIGSTKFLT), 
+	SIGNAL_ITEM(SIGSYS),
+};
+
 int32_t init_backtrace(void *arg)
 {
 	struct sigaction handler;
+	int32_t i;
+	int32_t cnt = ARRAY_SIZE(g_signal_array);
+  
+	g_backtrac_log_func = (backtrac_log_func)arg;
   
 	memset(&handler,0,sizeof(handler));
 	handler.sa_sigaction 	= handle_sigsegv;
 	handler.sa_flags 		= SA_SIGINFO;
-	sigaction(SIGSEGV, &handler, NULL);
 	
-	g_backtrac_log_func = (backtrac_log_func)arg;
+	for (i = 0; i < cnt; i++) {
+		g_backtrac_log_func("install signal %3d [%-10s] handler !\r\n", g_signal_array[i].no, g_signal_array[i].name);
+		sigaction(g_signal_array[i].no, &handler, NULL);
+	}
 	
 	return 0;
 }
