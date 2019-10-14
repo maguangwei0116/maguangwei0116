@@ -27,6 +27,7 @@ clean:
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
+-include $(REDTEA_SUPPORT_SCRIPTS_PATH)/gen_conf.mk
 
 libso: $(O)/$(LIB_SO_NAME)
 liba: $(O)/$(LIB_A_NAME)
@@ -51,6 +52,9 @@ EXTERN_HEADER_FILES += ./*.h
 else
 EXTERN_HEADER_FILES = ./*.h
 endif
+
+# Every object file depend on conf-file
+$(OBJS): $(conf-file)
 
 $(O)/$(LIB_SO_NAME): $(OBJS)
 	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) $(OBJS) -o"$@"
