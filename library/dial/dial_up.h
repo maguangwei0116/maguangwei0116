@@ -57,6 +57,5 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl);
 int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl);
 int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl);
 void    dial_up_set_dial_callback(void *func);
-void    dial_up_set_apn_callback(void* func);
 
 #endif  //__DIAL_UP_H__

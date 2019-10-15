@@ -21,9 +21,6 @@
 typedef void (*dial_callback)(int32_t state);
 static dial_callback g_dial_state_func;
 
-typedef void (*set_apn_callback)(void *arg);
-static set_apn_callback g_set_apn_func;
-
 static int g_signal_event_fd[2];
 static int g_dsi_event_fd[2];
 
@@ -383,10 +380,5 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
 void dial_up_set_dial_callback(void* func)
 {
     g_dial_state_func = (dial_callback)func;
-}
-
-void dial_up_set_apn_callback(void* func)
-{
-    g_set_apn_func = (set_apn_callback)func;
 }
 
