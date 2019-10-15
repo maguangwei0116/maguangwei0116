@@ -42,13 +42,13 @@ static void dsi_net_cb_fcn( dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt
 
 static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 {
-    int8_t iface[DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 2];
-    int32_t rval;
-    int32_t num_entries = 1;
-    int8_t ip_str[20];
-    int8_t command[200];
+    char iface[DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 2];  
+    char ip_str[20];
+    char command[200];
     struct in_addr public_ip, gw_addr, pri_dns_addr, sec_dns_addr;
     dsi_addr_info_t addr_info;
+    int32_t rval;
+    int32_t num_entries = 1;
 
     public_ip.s_addr = gw_addr.s_addr = pri_dns_addr.s_addr = sec_dns_addr.s_addr = 0;
     memset(iface, 0, DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 2);
@@ -57,7 +57,7 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
     rval = dsi_get_device_name(phndl->handle, iface, DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 1);
     if (rval != DSI_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "Couldn't get ipv4 rmnet name. rval %d\n", rval);
-        rt_os_strncpy((int8_t *)iface, "rmnet0", DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 1);
+        snprintf(iface, sizeof(iface), "%s", "rmnet0");
         //return RT_ERROR;
     }
 
@@ -69,26 +69,26 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 
     if (addr_info.iface_addr_s.valid_addr) {
         if (SASTORAGE_FAMILY(addr_info.iface_addr_s.addr) == AF_INET) {
-            memset(ip_str, 0, 20);
+            memset(ip_str, 0, sizeof(ip_str));
             snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.iface_addr_s.addr)[0], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[1], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[2], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[3]);
             public_ip.s_addr = inet_addr(ip_str);
         }
     }
 
     if (addr_info.gtwy_addr_s.valid_addr) {
-        memset(ip_str, 0, 20);
+        memset(ip_str, 0, sizeof(ip_str));
         snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[0], SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[1], SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[2], SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[3]);
         gw_addr.s_addr = inet_addr(ip_str);
     }
 
     if (addr_info.dnsp_addr_s.valid_addr) {
-        memset(ip_str, 0, 20);
+        memset(ip_str, 0, sizeof(ip_str));
         snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[0], SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[1], SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[2], SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[3]);
         pri_dns_addr.s_addr = inet_addr(ip_str);
     }
 
     if (addr_info.dnss_addr_s.valid_addr) {
-        memset(ip_str, 0, 20);
+        memset(ip_str, 0, sizeof(ip_str));
         snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[0], SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[1], SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[2], SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[3]);
         sec_dns_addr.s_addr = inet_addr(ip_str);
     }
@@ -377,7 +377,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     return RT_SUCCESS;
 }
 
-void regist_dial_callback(void* fun)
+void dial_up_set_dial_callback(void* fun)
 {
     dial_state = (dial_callback)fun;
 }
