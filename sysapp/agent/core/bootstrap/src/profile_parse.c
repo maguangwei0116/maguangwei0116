@@ -516,7 +516,8 @@ static int32_t get_specify_data(uint8_t *data, uint32_t offset){
     return RT_SUCCESS;
 }
 
-int32_t get_aes_key(uint8_t *data){
+int32_t get_aes_key(uint8_t *data)
+{
     return get_specify_data(data, g_data.aes_key_offset);
 }
 
@@ -524,7 +525,8 @@ int32_t get_root_sk(uint8_t *data){
     return get_specify_data(data, g_data.root_sk_offset);
 }
 
-int32_t get_file_version(uint8_t *data){
+int32_t get_file_version(uint8_t *data)
+{
     return get_specify_data(data, g_data.file_version_offset);
 }
 

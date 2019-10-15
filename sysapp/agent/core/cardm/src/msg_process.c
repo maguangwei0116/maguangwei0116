@@ -44,7 +44,7 @@ static rt_bool msg_check_iccid_state(const char *iccid, profile_type_e *type)
     return RT_FALSE;
 }
 
-/*****************************************************************************
+/**
  * FUNCTION
  *  msg_select
  * DESCRIPTION
@@ -54,7 +54,7 @@ static rt_bool msg_check_iccid_state(const char *iccid, profile_type_e *type)
  *  buffer    apn info
  * RETURNS
  *  int32_t
- *****************************************************************************/
+*/
 static int32_t msg_select(const char *iccid, uint8_t *buffer)
 {
     cJSON *s_iccid = NULL;
@@ -86,7 +86,7 @@ static int32_t msg_select(const char *iccid, uint8_t *buffer)
     return RT_ERROR;
 }
 
-/*****************************************************************************
+/**
  * FUNCTION
  *  msg_get_free_block
  * DESCRIPTION
@@ -95,7 +95,7 @@ static int32_t msg_select(const char *iccid, uint8_t *buffer)
  *  buffer
  * RETURNS
  *  int32_t
- *****************************************************************************/
+*/
 static int32_t msg_get_free_block(uint8_t *buffer)
 {
     int32_t ii = 0;
@@ -108,7 +108,7 @@ static int32_t msg_get_free_block(uint8_t *buffer)
     return ii;
 }
 
-/*****************************************************************************
+/**
  * FUNCTION
  *  msg_insert
  * DESCRIPTION
@@ -118,7 +118,7 @@ static int32_t msg_get_free_block(uint8_t *buffer)
  *  buffer      The data will be inserted.
  * RETURNS
  *  int32_t
- *****************************************************************************/
+*/
 static int32_t msg_insert(uint8_t *iccid, uint8_t *buffer)
 {
     int32_t num = 0;
@@ -133,7 +133,7 @@ static int32_t msg_insert(uint8_t *iccid, uint8_t *buffer)
     return RT_SUCCESS;
 }
 
-/*****************************************************************************
+/**
  * FUNCTION
  *  msg_get_op_apn_name
  * DESCRIPTION
@@ -143,7 +143,7 @@ static int32_t msg_insert(uint8_t *iccid, uint8_t *buffer)
  *  @iccid    according iccid to find apn name.
  * RETURNS
  *  void
- *****************************************************************************/
+*/
 static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
 {
     cJSON *agent_msg = NULL;
@@ -161,14 +161,14 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
     if (num == RT_ERROR) {
         return RT_ERROR;
     }
-    
+
     //MSG_PRINTF(LOG_INFO, "buffer=%s\r\n", buffer);
     agent_msg = cJSON_Parse(buffer);
     if (!agent_msg) {
         MSG_PRINTF(LOG_WARN, "agent_msg error, parse apn name fail !\n");
         return RT_ERROR;
     }
-    
+
     apn_list = cJSON_GetObjectItem(agent_msg, "apnInfos");
     if (apn_list != NULL) {
         apn_num = cJSON_GetArraySize(apn_list);
@@ -194,9 +194,9 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
     } else {
         MSG_PRINTF(LOG_WARN, "apn list is error\n");
     }
-    
+
     MSG_PRINTF(LOG_INFO, "APN_NAME: %s\n", apn_name);
-    
+
     if (agent_msg != NULL) {
         cJSON_Delete(agent_msg);
     }
@@ -216,7 +216,7 @@ static int32_t msg_delete(const char *iccid)
         MSG_PRINTF(LOG_WARN, "can not find iccid\n");
         return RT_ERROR;
     }
-    
+
     MSG_PRINTF(LOG_DBG, "num:%d,block:%d\n", num, block);
     if (block != num - 1) {
         if (rt_read_data(APN_LIST, (num - 1) * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE) < 0) {
@@ -229,7 +229,7 @@ static int32_t msg_delete(const char *iccid)
             }
         }
     }
-    
+
     rt_truncate_data(APN_LIST, (num - 1) * MSG_ONE_BLOCK_SIZE);
     MSG_PRINTF(LOG_INFO, "delete iccid: %s\r\n", iccid);
 
@@ -238,8 +238,8 @@ static int32_t msg_delete(const char *iccid)
 
 #if 0
 EnableProfileResponse ::= [49] SEQUENCE { -- Tag 'BF31'
-enableResult INTEGER {ok(0), iccidOrAidNotFound (1), 
-profileNotInDisabledState(2), disallowedByPolicy(3), wrongProfileReenabling(4), 
+enableResult INTEGER {ok(0), iccidOrAidNotFound (1),
+profileNotInDisabledState(2), disallowedByPolicy(3), wrongProfileReenabling(4),
 catBusy(5), undefinedError(127)}
 }
 #endif
@@ -247,12 +247,12 @@ static int32_t msg_enable_profile_check(const char *iccid)
 {
     int32_t i = 0;
     int32_t ret = RT_FALSE;
-    
+
     if (msg_check_iccid_state(iccid, NULL) == RT_TRUE) {
         /* iccid is enable now ! */
         MSG_PRINTF(LOG_WARN, "iccid:%s not in disable state !\n", iccid);
         return 2;
-    }   
+    }
 
     for (i = 0; i < g_card_info->num; i++) {
         if (!rt_os_strncmp(g_card_info->info[i].iccid, iccid, THE_ICCID_LENGTH)){
@@ -264,7 +264,7 @@ static int32_t msg_enable_profile_check(const char *iccid)
             }
 
             return ret;
-        }   
+        }
     }
 
     /* iccid isn't exist ! */
@@ -281,7 +281,7 @@ int32_t msg_delete_profile(const char *iccid, rt_bool *opr_iccid_using)
 {
     int32_t ret;
     profile_type_e type;
-    
+
     if (msg_check_iccid_state(iccid, &type) == RT_TRUE) {
         if (opr_iccid_using && PROFILE_TYPE_OPERATIONAL == type) {
             /* delete using operational profile */
@@ -308,7 +308,7 @@ int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])
 int32_t msg_set_apn(const char *iccid)
 {
     char apn_name[100] = {0};
-    
+
     if (RT_SUCCESS == msg_get_op_apn_name(iccid, apn_name)) {
         MSG_PRINTF(LOG_WARN, "iccid:%s, set apn_name:%s\n", iccid, apn_name);
         rt_qmi_modify_profile(1, 0, apn_name, 0);
@@ -317,7 +317,7 @@ int32_t msg_set_apn(const char *iccid)
     return RT_SUCCESS;
 }
 
-/*****************************************************************************
+/**
  * FUNCTION
  *  msg_deal_with_download
  * DESCRIPTION
@@ -326,7 +326,7 @@ int32_t msg_set_apn(const char *iccid)
  *  command_content
  * RETURNS
  *  int
- *****************************************************************************/
+*/
 int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid)
 {
     cJSON *apn_list = NULL;
@@ -370,7 +370,7 @@ int32_t mqtt_msg_event(const uint8_t *buf, int32_t len)
     if (ret == RT_ERROR) {
         return ret;
     }
-    
+
     // MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
     status = downstream_msg->handler(downstream_msg->private_arg,  downstream_msg->event, &downstream_msg->out_arg);
     upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
