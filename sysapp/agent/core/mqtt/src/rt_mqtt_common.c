@@ -278,7 +278,6 @@ static int32_t mqtt_emq_ticket_server_cb(const char *json_data)
     return ret;
 }
 
-//云吧的ticket server回调处理
 /* callback for YUNBA ticket server */
 static int32_t mqtt_yunba_ticket_server_cb(const char *json_data) 
 {
@@ -356,24 +355,17 @@ static int32_t mqtt_redtea_ticket_server_cb(const char *json_data)
 int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_info_t *info)
 {
     int32_t ret;
-    int32_t json_data_len = 1024;
-    char *json_data = NULL;
+    char json_data[1024];
 
     if (!appkey) {
         ret = RT_ERROR;
         goto exit_entry;
     }
 
-    json_data = (char *)rt_os_malloc(json_data_len);
-    if (!json_data) {
-        ret = RT_ERROR;
-        goto exit_entry;
-    }
-    
     if (!deviceid) {
-        snprintf(json_data, json_data_len, "{\"a\": \"%s\", \"p\":4}", appkey);
+        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\", \"p\":4}", appkey);
     } else {
-        snprintf(json_data, json_data_len, "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
+        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
     }
     
     ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, "/device/reg/", (PCALLBACK)mqtt_yunba_ticket_server_cb);
@@ -391,10 +383,7 @@ int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char
     ret = RT_SUCCESS;
     
 exit_entry:
-    if (json_data) {
-        rt_os_free(json_data);
-    }
-    
+
     return ret;
 }
 
