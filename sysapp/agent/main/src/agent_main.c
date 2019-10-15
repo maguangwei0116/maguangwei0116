@@ -120,6 +120,7 @@ extern int32_t init_backtrace(void *arg);
 
 /*
 List your init call here !
+Adjust the order very carefully !
 **/
 static const init_obj_t g_init_objs[] =
 {
@@ -155,7 +156,9 @@ static int32_t agent_init_call(void)
 
     for (i = 0; i < ARRAY_SIZE(g_init_objs); i++) {
         ret = g_init_objs[i].init(g_init_objs[i].arg);
-        MSG_PRINTF(LOG_DBG, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
+        if (rt_os_strcmp("init_log_file", g_init_objs[i].name)) {
+            MSG_PRINTF(LOG_DBG, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
+        }
     }
 
     return RT_SUCCESS;
