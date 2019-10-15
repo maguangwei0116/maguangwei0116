@@ -72,7 +72,7 @@ int lpa_get_eid_list(uint8_t (*eid_list)[33])
     }
     MoreEIDOperateResponse_t *rsp = NULL;
     get_eid_list(buf, &size, channel);
-    MSG_INFO_ARRAY("get eid list:\n", buf, size);
+    MSG_DUMP_ARRAY("get eid list:\n", buf, size);
     dc = ber_decode(NULL, &asn_DEF_MoreEIDOperateResponse, (void **)&rsp, buf, size);
     if (dc.code != RC_OK) {
         MSG_ERR("Broken ProfileInfoListResponse decoding at byte %ld\n", (long)dc.consumed);
@@ -125,7 +125,7 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
     buf[0] = '\0';
     size = 0;
     get_profiles_info(SEARCH_NONE, NULL, 0, (uint8_t *)buf, (uint16_t *)&size, channel);
-    MSG_INFO_ARRAY("profile info:\n", buf, size);
+    MSG_DUMP_ARRAY("profile info:\n", buf, size);
 
     dc = ber_decode(NULL, &asn_DEF_ProfileInfoListResponse, (void **)&rsp, buf, size);
     if (dc.code != RC_OK) {
@@ -174,10 +174,10 @@ int lpa_delete_profile(const char *iccid)
     }
     hexstring2bytes(iccid, rsp, &rsp_size);
     swap_nibble(rsp, 10);
-    MSG_INFO_ARRAY("ICCID: ", rsp, 10);
+    MSG_DUMP_ARRAY("ICCID: ", rsp, 10);
     ret = delete_profile(PID_ICCID, rsp, rsp, &rsp_size, channel);
     if (ret == RT_SUCCESS) {
-        MSG_INFO_ARRAY("lpa_delete_profile: ", rsp, rsp_size);
+        MSG_DUMP_ARRAY("lpa_delete_profile: ", rsp, rsp_size);
         // BF33038001 Result
         ret = rsp[5];
     }
@@ -197,10 +197,10 @@ int lpa_enable_profile(const char *iccid)
     }
     hexstring2bytes(iccid, rsp, &rsp_size);
     swap_nibble(rsp, 10);
-    MSG_INFO_ARRAY("ICCID: ", rsp, 10);
+    MSG_DUMP_ARRAY("ICCID: ", rsp, 10);
     ret = enable_profile(PID_ICCID, rsp, true, rsp, &rsp_size, channel);
     if (ret == RT_SUCCESS) {
-        MSG_INFO_ARRAY("lpa_enable_profile: ", rsp, rsp_size);
+        MSG_DUMP_ARRAY("lpa_enable_profile: ", rsp, rsp_size);
         // BF31038001 Result
         ret = rsp[5];
     } else if (ret == RT_ERR_AT_WRONG_RSP) {
@@ -223,10 +223,10 @@ int lpa_disable_profile(const char *iccid)
     }
     hexstring2bytes(iccid, rsp, &rsp_size);
     swap_nibble(rsp, 10);
-    MSG_INFO_ARRAY("ICCID: ", rsp, 10);
+    MSG_DUMP_ARRAY("ICCID: ", rsp, 10);
     ret = disable_profile(PID_ICCID, rsp, true, rsp, &rsp_size, channel);
     if (ret == RT_SUCCESS) {
-        MSG_INFO_ARRAY("lpa_disable_profile: ", rsp, rsp_size);
+        MSG_DUMP_ARRAY("lpa_disable_profile: ", rsp, rsp_size);
         // BF32038001 Result
         ret = rsp[5];
     } else if (ret == RT_ERR_AT_WRONG_RSP) {
@@ -314,7 +314,7 @@ static int process_bpp_rsp(const uint8_t *pir, uint16_t pir_len,
     }
 
     p_iccid = res->profileInstallationResultData.notificationMetadata.iccid;
-    MSG_INFO_ARRAY("ICCID: ", p_iccid->buf, p_iccid->size);
+    MSG_DUMP_ARRAY("ICCID: ", p_iccid->buf, p_iccid->size);
     swap_nibble(p_iccid->buf, p_iccid->size);
     ret = bytes2hexstring(p_iccid->buf, p_iccid->size, iccid);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -400,7 +400,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     buf2_len = BUFFER_SIZE;
     ret = authenticate_server(mid, (char *)buf1, buf2, &buf2_len, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO_ARRAY("authenticate_server:\n", buf2, buf2_len);
+    MSG_DUMP_ARRAY("authenticate_server:\n", buf2, buf2_len);
 
     buf1_len = BUFFER_SIZE;
     ret = authenticate_client(smdp_addr, buf2, buf2_len, buf1, &buf1_len);
@@ -410,7 +410,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     buf2_len = BUFFER_SIZE;
     ret = prepare_download(buf1, cc, buf2, &buf2_len, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO_ARRAY("prepare_download:\n", buf2, buf2_len);
+    MSG_DUMP_ARRAY("prepare_download:\n", buf2, buf2_len);
 
     buf1_len = BUFFER_SIZE;
     ret = get_bound_profile_package(smdp_addr, buf2, buf2_len, buf1, &buf1_len);
@@ -420,7 +420,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     buf2_len = BUFFER_SIZE;
     ret = load_bound_profile_package(smdp_addr, buf1, buf2, &buf2_len, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO_ARRAY("load_bound_profile_package:\n", buf2, buf2_len);
+    MSG_DUMP_ARRAY("load_bound_profile_package:\n", buf2, buf2_len);
 
     ret = process_bpp_rsp(buf2, buf2_len, iccid, &bppcid, &error);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);

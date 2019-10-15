@@ -88,7 +88,7 @@ int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size, uint8
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     //*out_size -= 2;  // Remove sw 9000
 
@@ -108,7 +108,7 @@ int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_
     //     MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
     //     return RT_ERR_ASN1_ENCODE_FAIL;
     // }
-    // MSG_INFO_ARRAY("LoadCRLRequest: ", get_cb_data(), get_cb_size());
+    // MSG_DUMP_ARRAY("LoadCRLRequest: ", get_cb_data(), get_cb_size());
     // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
     // *out_size -= 2;  // Remove sw 9000
 
@@ -162,7 +162,7 @@ int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint1
         ret = RT_ERR_ASN1_ENCODE_FAIL;
         goto end;
     }
-    MSG_INFO_ARRAY("RetrieveNotificationsListRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("RetrieveNotificationsListRequest: ", get_cb_data(), get_cb_size());
     ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*out_size -= 2;  // Remove sw 9000
@@ -189,7 +189,7 @@ int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size, ui
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
@@ -216,7 +216,7 @@ int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *si
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo1Request, req1);
-    MSG_INFO_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
 
     ret = cmd_store_data(get_cb_data(), get_cb_size(), info1, size1, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -231,7 +231,7 @@ int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *si
             return RT_ERR_ASN1_ENCODE_FAIL;
         }
         ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo1Request, req2);
-        MSG_INFO_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
+        MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
 
         ret = cmd_store_data(get_cb_data(), get_cb_size(), info2, size2, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -261,7 +261,7 @@ int get_euicc_challenge(uint8_t challenge[16], uint8_t channel)
     }
     ASN_STRUCT_FREE(asn_DEF_GetEuiccChallengeRequest, req);
 
-    MSG_INFO_ARRAY("GetEuiccChallengeRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("GetEuiccChallengeRequest: ", get_cb_data(), get_cb_size());
     // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), rsp, &rlen));
     ret = cmd_store_data(get_cb_data(), get_cb_size(), rsp, &rlen, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -288,7 +288,7 @@ int get_rat(uint8_t *rat, uint16_t *size, uint8_t channel)
     }
     ASN_STRUCT_FREE(asn_DEF_GetRatRequest, req);
 
-    MSG_INFO_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
     // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), rat, size));
     ret = cmd_store_data(get_cb_data(), get_cb_size(), rat, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -404,12 +404,12 @@ int initiate_authentication(const char *smdp_addr, char *auth_data, int *size, u
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
 
     RT_CHECK_GO((ret = get_euicc_challenge(tmp, channel)) == RT_SUCCESS, ret, end);
-    MSG_INFO_ARRAY("euiccChallenge: ", tmp, 16);
+    MSG_DUMP_ARRAY("euiccChallenge: ", tmp, 16);
     RT_CHECK_GO((ret = rt_base64_encode(tmp, 16, (char *)g_buf)) == RT_SUCCESS, ret, end);
     cJSON_AddStringToObject(content, "euiccChallenge", (char *)g_buf);
 
     RT_CHECK_GO((ret = get_euicc_info(tmp, &tmp_size, NULL, NULL, channel)) == RT_SUCCESS, ret, end);
-    MSG_INFO_ARRAY("euiccInfo1: ", tmp, tmp_size);
+    MSG_DUMP_ARRAY("euiccInfo1: ", tmp, tmp_size);
     RT_CHECK_GO((ret = rt_base64_encode(tmp, tmp_size, (char *)g_buf)) == RT_SUCCESS, ret, end);
     cJSON_AddStringToObject(content, "euiccInfo1", (char *)g_buf);
 
@@ -545,7 +545,7 @@ static int get_asn1_from_json(cJSON *json, const char *key,
 
     ret = rt_base64_decode(b64_str, asn1, &len);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO_ARRAY("asn1: ", asn1, len);
+    MSG_DUMP_ARRAY("asn1: ", asn1, len);
 
     dc = ber_decode(NULL, type_descriptor, req, asn1, len);
     if (dc.code != RC_OK) {
@@ -576,7 +576,7 @@ static int get_signature_from_json(cJSON *json, const char *key, void **req)
 
     ret = rt_base64_decode(b64_str, asn1, &len);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO_ARRAY("asn1: ", asn1, len);
+    MSG_DUMP_ARRAY("asn1: ", asn1, len);
 
     if ((asn1[0] = 0x5F) && (asn1[1] = 0x37)) {
         OCTET_STRING_fromBuf(*req, (char *)(asn1 + 3), asn1[2]);
@@ -618,15 +618,15 @@ static int get_cc_hash(const char *cc, const uint8_t *transaction_id, uint8_t id
     RT_CHECK_EQ(SHA256_Init(&ctx), 1);
     RT_CHECK_EQ(SHA256_Update(&ctx, cc, strlen(cc)), 1);
     RT_CHECK_EQ(SHA256_Final(tmp, &ctx), 1);
-    MSG_INFO_ARRAY("Hash: ", tmp, sizeof(tmp));
+    MSG_DUMP_ARRAY("Hash: ", tmp, sizeof(tmp));
 
     memcpy(&tmp[SHA256_DIGEST_LENGTH], transaction_id, id_size);
-    MSG_INFO_ARRAY("Hash: ", tmp, sizeof(tmp));
+    MSG_DUMP_ARRAY("Hash: ", tmp, sizeof(tmp));
 
     RT_CHECK_EQ(SHA256_Init(&ctx), 1);
     RT_CHECK_EQ(SHA256_Update(&ctx, tmp, SHA256_DIGEST_LENGTH + id_size), 1);
     RT_CHECK_EQ(SHA256_Final(hash, &ctx), 1);
-    MSG_INFO_ARRAY("Hash: ", hash, SHA256_DIGEST_LENGTH);
+    MSG_DUMP_ARRAY("Hash: ", hash, SHA256_DIGEST_LENGTH);
 
     return RT_SUCCESS;
 }
@@ -674,7 +674,7 @@ int authenticate_server(const char *matching_id, const char *auth_data,
 
     p = &(req->ctxParams1);
     RT_CHECK(gen_ctx_params1(matching_id));  // ctxParams1 stored in g_buf
-    MSG_INFO_ARRAY("ctxParams1:\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("ctxParams1:\n", get_cb_data(), get_cb_size());
     dc = ber_decode(NULL, &asn_DEF_CtxParams1, (void **)&p, get_cb_data(), get_cb_size());
     if (dc.code != RC_OK) {
         MSG_ERR("Broken CtxParams1 decoding at byte %ld\n", (long)dc.consumed);
@@ -687,7 +687,7 @@ int authenticate_server(const char *matching_id, const char *auth_data,
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("AuthenticateServerRequest\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("AuthenticateServerRequest\n", get_cb_data(), get_cb_size());
 
     // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), response, size));
     ret = cmd_store_data(get_cb_data(), get_cb_size(), response, size, channel);
@@ -796,7 +796,7 @@ int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("PrepareDownloadRequest\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("PrepareDownloadRequest\n", get_cb_data(), get_cb_size());
 
     ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -885,7 +885,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("boundProfilePackage\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("boundProfilePackage\n", get_cb_data(), get_cb_size());
 
     // ES8+ InitialiseSecureChannel
     clean_cb_data();
@@ -895,7 +895,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("initialiseSecureChannelRequest\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("initialiseSecureChannelRequest\n", get_cb_data(), get_cb_size());
     ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
@@ -906,7 +906,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("firstSequenceOf87\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("firstSequenceOf87\n", get_cb_data(), get_cb_size());
     ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
@@ -917,7 +917,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("sequenceOf88\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("sequenceOf88\n", get_cb_data(), get_cb_size());
 
     // Send sequenceOf88 TL
     buf = strchr(get_cb_data(),0x88);
@@ -937,7 +937,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
             MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
             return RT_ERR_ASN1_ENCODE_FAIL;
         }
-        MSG_INFO_ARRAY("sequenceOf88TLV\n", get_cb_data(), get_cb_size());
+        MSG_DUMP_ARRAY("sequenceOf88TLV\n", get_cb_data(), get_cb_size());
         ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
     }
@@ -950,7 +950,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
             MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
             return RT_ERR_ASN1_ENCODE_FAIL;
         }
-        MSG_INFO_ARRAY("secondSequenceOf87\n", get_cb_data(), get_cb_size());
+        MSG_DUMP_ARRAY("secondSequenceOf87\n", get_cb_data(), get_cb_size());
         // TODO: Test this
         ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);  // Should only contain 9000
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -963,7 +963,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("sequenceOf86\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("sequenceOf86\n", get_cb_data(), get_cb_size());
 
     // Send sequenceOf86 TL
     buf = strchr(get_cb_data(), 0x86);
@@ -984,7 +984,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
             MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
             return RT_ERR_ASN1_ENCODE_FAIL;
         }
-        MSG_INFO_ARRAY("sequenceOf86TLV\n", get_cb_data(), get_cb_size());
+        MSG_DUMP_ARRAY("sequenceOf86TLV\n", get_cb_data(), get_cb_size());
         ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
     }
