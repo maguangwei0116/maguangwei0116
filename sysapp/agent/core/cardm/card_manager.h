@@ -21,6 +21,7 @@
 #define THE_ICCID_LENGTH            20
 #define MAX_EID_LEN                 32
 #define MAX_EID_HEX_LEN             16
+#define MAX_APN_LEN                 32
 
 typedef enum PROFILE_TYPE {
     PROFILE_TYPE_TEST               = 0,
@@ -38,5 +39,6 @@ typedef struct CARD_INFO {
 
 int32_t init_card_manager(void *arg);
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode);
+int32_t card_set_last_opr_apn(const char *apn);
 
 #endif // __CARD_MANAGER_H__

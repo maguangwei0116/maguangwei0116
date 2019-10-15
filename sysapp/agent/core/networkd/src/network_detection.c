@@ -69,6 +69,11 @@ static void network_state(int32_t state)
     if (state == g_network_state) {
         return;
     }
+
+    /* network form connected to disconnected */
+    if (state == DSI_STATE_CALL_IDLE && g_network_state == DSI_STATE_CALL_CONNECTED) {
+        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SET_APN, NULL, 0);
+    }
     
     g_network_state = state;
 
@@ -111,6 +116,7 @@ int32_t init_network_detection(void *arg)
     int32_t ret = RT_ERROR;
 
     dial_up_set_dial_callback((void *)network_state);
+    
     ret = rt_create_task(&task_id, (void *) network_detection_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");

@@ -45,6 +45,7 @@ typedef enum MSG_MODE {
     MSG_BOOTSTRAP_DISCONNECTED,
     MSG_MQTT_SUBSCRIBE_EID,
     MSG_BOOTSTRAP_SELECT_CARD,
+    MSG_CARD_SET_APN,
 } msg_mode_e;
 
 typedef struct PUBLIC_VALUE_LIST {

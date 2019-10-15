@@ -21,6 +21,7 @@
 
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
+static char                         g_last_opr_apn[MAX_APN_LEN];
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -232,11 +233,35 @@ static int32_t card_set_apn(void)
     for (ii = 0; ii < g_p_info.num; ii++) {
         if (g_p_info.info[ii].state == 1 && g_p_info.info[ii].class == PROFILE_TYPE_OPERATIONAL) {
             msg_set_apn(g_p_info.info[ii].iccid);
-            break;
+            return RT_SUCCESS;
         }
     } 
+    return RT_ERROR;
+}
+
+int32_t card_set_last_opr_apn(const char *apn)
+{
+    snprintf(g_last_opr_apn, sizeof(g_last_opr_apn), "%s", apn);
     return RT_SUCCESS;
 }
+
+static int32_t card_set_apn_handler(void)
+{
+    char iccid[THE_ICCID_LENGTH + 1] = {0};
+
+    MSG_PRINTF(LOG_WARN, "recv queue msg to set apn !\r\n");
+    
+    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+
+    if (RT_ERROR == card_set_apn()) {
+        card_get_provisioning_profile_iccid(iccid);
+        rt_qmi_modify_profile(1, 0, g_last_opr_apn, 0);
+        MSG_PRINTF(LOG_INFO, "set provisioning profile apn\r\n");
+        MSG_PRINTF(LOG_WARN, "iccid:%s, set apn_name:%s\n", iccid, g_last_opr_apn);
+    }
+
+    return RT_SUCCESS;
+}   
 
 int32_t init_card_manager(void *arg)
 {
@@ -300,6 +325,10 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
+            break;
+
+        case MSG_CARD_SET_APN:
+            ret = card_set_apn_handler();
             break;
             
         default:

@@ -425,6 +425,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t rand
 
     MSG_PRINTF(LOG_INFO, "apn:%s\n", request->apn.list.array[0]->apnName.buf);
     rt_qmi_modify_profile(1, 0, request->apn.list.array[0]->apnName.buf, 0);
+    card_set_last_opr_apn(request->apn.list.array[0]->apnName.buf);
 
     selected_profile_index = random % request->totalNum;
     MSG_PRINTF(LOG_INFO, "The selected index = %d, random = %u\n", selected_profile_index, random);

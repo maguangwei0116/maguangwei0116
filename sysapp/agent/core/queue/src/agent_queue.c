@@ -263,7 +263,6 @@ int32_t init_queue(void *arg)
         return RT_ERROR;
     }
 
-
     return RT_SUCCESS;
 }
 
