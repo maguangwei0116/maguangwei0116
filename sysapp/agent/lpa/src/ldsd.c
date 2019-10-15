@@ -24,7 +24,7 @@ int get_euicc_configured_address(uint8_t *addr, uint16_t *size, uint8_t channel)
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("EuiccConfiguredAddressesRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("EuiccConfiguredAddressesRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), addr, size, channel));
     *size -= 2;  // Remove sw 9000
 
@@ -46,7 +46,7 @@ int set_default_dp_address(char *addr, uint8_t *out, uint16_t *out_size, uint8_t
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("EuiccConfiguredAddressesRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("EuiccConfiguredAddressesRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
