@@ -15,14 +15,17 @@
 #include "rt_os.h"
 #include "rt_qmi.h"
 
-#define DAIL_UP_WAIT      5
-#define has_more_argv() ((opt < argc) && (argv[opt][0] != '-'))
+#define DAIL_UP_WAIT        5
+#define has_more_argv()     ((opt < argc) && (argv[opt][0] != '-'))
 
 typedef void (*dial_callback)(int32_t state);
-static dial_callback dial_state;
+static dial_callback g_dial_state_func;
 
-static int signal_event_fd[2];
-static int dsi_event_fd[2];
+typedef void (*set_apn_callback)(void *arg);
+static set_apn_callback g_set_apn_func;
+
+static int g_signal_event_fd[2];
+static int g_dsi_event_fd[2];
 
 static void dsi_net_init_cb_func(void *user_data)
 {
@@ -37,7 +40,7 @@ static void dsi_net_cb_fcn( dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt
     if (evt == DSI_EVT_WDS_CONNECTED) {
         phndl->ip_type = payload_ptr->ip_type;
     }
-    write(dsi_event_fd[0], &signo, sizeof(signo));
+    write(g_dsi_event_fd[0], &signo, sizeof(signo));
 }
 
 static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
@@ -268,8 +271,8 @@ int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
         dsi_stop_data_call(dsi_net_hndl->handle);
     }
     dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);
-    close(dsi_event_fd[0]);
-    close(dsi_event_fd[1]);
+    close(g_dsi_event_fd[0]);
+    close(g_dsi_event_fd[1]);
     return RT_SUCCESS;
 }
 
@@ -285,9 +288,9 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     int32_t fd = 0;
     int16_t revents = 0;
 
-    socketpair( AF_LOCAL, SOCK_STREAM, 0, dsi_event_fd);
+    socketpair( AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
 
-    pollfds[0].fd = dsi_event_fd[1];
+    pollfds[0].fd = g_dsi_event_fd[1];
     pollfds[0].events = POLLIN;
     pollfds[0].revents = 0;
     nevents = sizeof(pollfds)/sizeof(pollfds[0]);
@@ -335,7 +338,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                 continue;
             }
 
-            if (fd == dsi_event_fd[1]) {
+            if (fd == g_dsi_event_fd[1]) {
                 if (read(fd, &signo, sizeof(signo)) == sizeof(signo)) {
                     switch (signo) {
                         case DSI_EVT_WDS_CONNECTED:
@@ -369,7 +372,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                         default:
                         break;
                     }
-                    dial_state(dsi_net_hndl->call_state);
+                    g_dial_state_func(dsi_net_hndl->call_state);
                 }
             }
         }
@@ -377,7 +380,13 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     return RT_SUCCESS;
 }
 
-void dial_up_set_dial_callback(void* fun)
+void dial_up_set_dial_callback(void* func)
 {
-    dial_state = (dial_callback)fun;
+    g_dial_state_func = (dial_callback)func;
 }
+
+void dial_up_set_apn_callback(void* func)
+{
+    g_set_apn_func = (set_apn_callback)func;
+}
+
