@@ -1212,7 +1212,6 @@ int MQTTClient_isConnected(MQTTClient handle)
     return rc;
 }
 
-
 int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, int* qos)
 {
     MQTTClients* m = handle;
@@ -1242,7 +1241,6 @@ int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, i
             rc = MQTTCLIENT_BAD_UTF8_STRING;
             goto exit;
         }
-
         if(qos[i] < 0 || qos[i] > 2)
         {
             rc = MQTTCLIENT_BAD_QOS;
@@ -1305,8 +1303,17 @@ exit:
 int MQTTClient_subscribe_many(MQTTClient handle, int count, char** topic)
 {
     int rc = 0;
+    int i;
     int *qos = malloc(count * sizeof(int));
+    
+    #if 0 //bug on memset usage
     memset(qos, DEFAULT_QOS, count);
+    #else
+    for (i = 0; i < count; i++) {
+        qos[i] = DEFAULT_QOS;       
+    }
+    #endif
+    
     FUNC_ENTRY;
     rc = MQTTClient_subscribeMany(handle, count, topic, qos);
     FUNC_EXIT_RC(rc);
