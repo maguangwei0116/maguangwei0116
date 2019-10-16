@@ -80,11 +80,9 @@ static int32_t init_qmi(void *arg)
 static int32_t init_versions(void *arg)
 {
     char libcomm_ver[128] = {0};
-    public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
-    if (public_value_list) {
-        log_set_param(LOG_PRINTF_FILE, public_value_list->config_info->agent_log_level, public_value_list->config_info->log_max_size);
-    }
+    (void)arg;
+    
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
