@@ -21,7 +21,6 @@
 
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
-static char                         g_last_opr_apn[MAX_APN_LEN];
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -116,6 +115,41 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
             if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
                 rt_os_sleep(1);  // dealy some time after get profile info
                 msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
+            }
+        }
+    }
+
+    return ret;
+}
+
+int32_t card_check_profile_info(judge_term_e bootstrap_flag, char *cur_iccid, profile_type_e *type)
+{
+    int32_t ret = RT_SUCCESS;
+    int32_t i;
+
+    if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+        if (g_p_info.type == PROFILE_TYPE_PROVISONING) {
+            msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
+            rt_os_sleep(3);  // delay some time to update profiles info
+        }
+    }
+    
+    ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
+    if (ret == RT_SUCCESS) {
+        /* get current profile type */
+        for (i = 0; i < g_p_info.num; i++) {
+            if (g_p_info.info[i].state == 1) {
+                g_p_info.type = g_p_info.info[i].class;
+                rt_os_memcpy(g_p_info.iccid, g_p_info.info[i].iccid, THE_MAX_CARD_NUM);
+                g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';
+                if (cur_iccid) {
+                    rt_os_memcpy(cur_iccid, g_p_info.iccid, THE_MAX_CARD_NUM);
+                }
+                if (type) {
+                    *type = g_p_info.type; 
+                }
+                MSG_PRINTF(LOG_WARN, "cur using iccid: %s, type: %d\n", g_p_info.iccid, g_p_info.type);
+                break;
             }
         }
     }
@@ -226,7 +260,7 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
     return ret;
 }
 
-static int32_t card_set_apn(void)
+int32_t card_set_opr_profile_apn(void)
 {
     int32_t ii = 0;
 
@@ -238,30 +272,6 @@ static int32_t card_set_apn(void)
     } 
     return RT_ERROR;
 }
-
-int32_t card_set_last_opr_apn(const char *apn)
-{
-    snprintf(g_last_opr_apn, sizeof(g_last_opr_apn), "%s", apn);
-    return RT_SUCCESS;
-}
-
-static int32_t card_set_apn_handler(void)
-{
-    char iccid[THE_ICCID_LENGTH + 1] = {0};
-
-    MSG_PRINTF(LOG_WARN, "recv queue msg to set apn !\r\n");
-    
-    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-
-    if (RT_ERROR == card_set_apn()) {
-        card_get_provisioning_profile_iccid(iccid);
-        rt_qmi_modify_profile(1, 0, g_last_opr_apn, 0);
-        MSG_PRINTF(LOG_INFO, "set provisioning profile apn\r\n");
-        MSG_PRINTF(LOG_WARN, "iccid:%s, set apn_name:%s\n", iccid, g_last_opr_apn);
-    }
-
-    return RT_SUCCESS;
-}   
 
 int32_t init_card_manager(void *arg)
 {
@@ -290,7 +300,7 @@ int32_t init_card_manager(void *arg)
         MSG_PRINTF(LOG_WARN, "card update last eid fail, ret=%d\r\n", ret);
     }
 
-    card_set_apn();
+    card_set_opr_profile_apn();
 
     return ret;
 }
@@ -325,10 +335,6 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
-            break;
-
-        case MSG_CARD_SET_APN:
-            ret = card_set_apn_handler();
             break;
             
         default:

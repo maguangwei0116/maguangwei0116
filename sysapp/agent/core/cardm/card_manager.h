@@ -16,6 +16,7 @@
 
 #include "rt_type.h"
 #include "lpa.h"
+#include "msg_process.h"
 
 #define THE_MAX_CARD_NUM            20
 #define THE_ICCID_LENGTH            20
@@ -39,6 +40,8 @@ typedef struct CARD_INFO {
 
 int32_t init_card_manager(void *arg);
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode);
-int32_t card_set_last_opr_apn(const char *apn);
+int32_t card_update_profile_info(judge_term_e bootstrap_flag);
+int32_t card_check_profile_info(judge_term_e bootstrap_flag, char *cur_iccid, profile_type_e *type);
+int32_t card_set_opr_profile_apn(void);
 
 #endif // __CARD_MANAGER_H__
