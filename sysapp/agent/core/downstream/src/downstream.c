@@ -23,7 +23,7 @@ static int32_t string_trim_single(const char *str_in, int32_t len_in, char *str_
     while(str_in[j] == ch)
         --j;
 
-    strncpy(str_out, str_in + i , j - i + 1);
+    rt_os_strncpy(str_out, str_in + i , j - i + 1);
     str_out[j - i + 1] = '\0';
 
     ret = j - i + 1;

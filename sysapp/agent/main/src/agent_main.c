@@ -99,8 +99,28 @@ static int32_t init_lpa_channel(void *arg)
     return init_lpa(lpa_channel_type);
 }
 
+#ifdef CFG_ENABLE_LIBUNWIND
+#include <stdarg.h>
+static int32_t agent_printf(const char *fmt, ...)
+{
+    char msg[1024] = {0};
+    va_list vl_list;
+
+    va_start(vl_list, fmt);
+    vsnprintf((char *)&msg[0], sizeof(msg), (const char *)fmt, vl_list);
+    va_end(vl_list);
+
+    MSG_PRINTF(LOG_ERR, "%s", msg);
+    
+    return 0;
+}
+
+extern int32_t init_backtrace(void *arg);
+#endif
+
 /*
 List your init call here !
+Adjust the order very carefully !
 **/
 static const init_obj_t g_init_objs[] =
 {
@@ -123,6 +143,10 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_upgrade,              (void *)&g_value_list),
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
     INIT_OBJ(init_logm,                 (void *)&g_value_list),
+
+#ifdef CFG_ENABLE_LIBUNWIND
+    INIT_OBJ(init_backtrace,            agent_printf),
+#endif
 };
 
 static int32_t agent_init_call(void)
@@ -132,7 +156,9 @@ static int32_t agent_init_call(void)
 
     for (i = 0; i < ARRAY_SIZE(g_init_objs); i++) {
         ret = g_init_objs[i].init(g_init_objs[i].arg);
-        MSG_PRINTF(LOG_DBG, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
+        if (rt_os_strcmp("init_log_file", g_init_objs[i].name)) {
+            MSG_PRINTF(LOG_DBG, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
+        }
     }
 
     return RT_SUCCESS;
@@ -148,3 +174,4 @@ int32_t main(int32_t argc, int8_t **argv)
 
     return 0;
 }
+

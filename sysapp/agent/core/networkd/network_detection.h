@@ -17,6 +17,8 @@
 #include "rt_type.h"
 
 int32_t init_network_detection(void *arg);
+void    network_state_update(int32_t timeout);
+void    network_state_force_update(int32_t new_state);
 
 #endif // __NETWORK_DETECTION_H__
 

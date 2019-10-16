@@ -370,6 +370,14 @@ config BR2_PREFER_STATIC_LIB
 
 	  WARNING: This is highly experimental at the moment.
 
+config BR2_CFG_ENABLE_LIBUNWIND
+	bool "BR2_CFG_ENABLE_LIBUNWIND"
+	select BR2_CONFIG_LIBRARY_UNWIND
+	help
+	  When you debug application which was crushed with unknow code, please enable libunwind and run it again to find out which code is crushed.
+
+	  WARNING: Default for off.
+
 endmenu
 
 config BR2_STRIP_EXCLUDE_FILES

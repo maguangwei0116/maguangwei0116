@@ -39,6 +39,11 @@ config BR2_CFG_AGENT_PERSONALISE_ON
 	bool "BR2_CFG_AGENT_PERSONALISE_ON"
 	help
 	  Enable this option if you want to get personalise feature in agent.
+
+config BR2_CFG_LPA_LOG_ON	  
+	bool "BR2_CFG_LPA_LOG_ON"
+	help
+	  Enable this option if you want to open lpa logger.
 	  
 endmenu
 

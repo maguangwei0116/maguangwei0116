@@ -36,6 +36,12 @@
 
 #define MQTT_KEEP_ALIVE_INTERVAL        300
 
+#define MQTT_RECONNECT_MAX_CNT          10
+
+#define MQTT_ALIAS_MAX_LEN              40
+
+#define MQTT_NETWORK_STATE_TIMEOUT      60  // seconds
+
 #define GET_EID_FLAG(flag)              (((flag) >> 0) & 0x01)
 #define GET_AGENT_FLAG(flag)            (((flag) >> 1) & 0x01)
 #define GET_DEVICE_ID_FLAG(flag)        (((flag) >> 2) & 0x01)
@@ -51,7 +57,6 @@
 
 typedef enum NETWORK_STATE {
     NETWORK_STATE_INIT = 0,
-    NETWORK_GET_IP,
     NETWORK_CONNECTING,
     NETWORK_DIS_CONNECTED,
     NETWORK_USING
@@ -62,9 +67,10 @@ typedef struct MQTT_PARAM {
     mqtt_info_t                 opts;
     MQTTClient                  client;
     network_state_info_e        state;
-    char                        alias[40];
+    char                        alias[MQTT_ALIAS_MAX_LEN];
     rt_bool                     mqtt_get_addr;
-    rt_bool                     mqtt_flag;          // mqtt connect ok falg
+    rt_bool                     mqtt_flag;          // mqtt connect ok flag
+    rt_bool                     lost_flag;          // mqtt connect lost flag
     rt_bool                     alias_rc;           // need set alias flag
     uint8_t                     subscribe_flag;     // subscribe ok flag
 } mqtt_param_t;
@@ -201,12 +207,12 @@ exit_entry:
     return ret;
 }
 
-static rt_bool mqtt_get_ip_pair(const int8_t *url, int8_t *addr, int32_t *port)
+static rt_bool mqtt_get_ip_pair(const char *url, int8_t *addr, int32_t *port)
 {
-    int8_t *p = (int8_t *)strstr((char *)url, "http://");
+    char *p = (int8_t *)strstr((char *)url, "http://");
     if (p) {
         p += 7;
-        int8_t *q = (int8_t *)strstr((char *)p, ":");
+        char *q = (int8_t *)strstr((char *)p, ":");
         if (q) {
             int32_t len = rt_os_strlen(p) - rt_os_strlen(q);
             if (len > 0) {
@@ -260,7 +266,7 @@ static rt_bool mqtt_connect_adapter(mqtt_param_t *param)
 }
 
 //connect yunba server
-static rt_bool mqtt_connect_yunba(mqtt_param_t *param, int8_t *ticket_server)
+static rt_bool mqtt_connect_yunba(mqtt_param_t *param, const char *ticket_server)
 {
     uint8_t num = 0;
     int32_t ret;
@@ -303,7 +309,7 @@ static rt_bool mqtt_connect_yunba(mqtt_param_t *param, int8_t *ticket_server)
 }
 
 //connect EMQ server
-static rt_bool mqtt_connect_emq(mqtt_param_t *param, int8_t *ticket_server)
+static rt_bool mqtt_connect_emq(mqtt_param_t *param, const char *ticket_server)
 {
     uint8_t num = 0;
     MQTTClient *c = &param->client;
@@ -377,8 +383,8 @@ static rt_bool mqtt_get_server_addr(mqtt_param_t *param)
 FORCE_TO_ADAPTER:
         if (USE_ADAPTER_SERVER){
             if (mqtt_connect_adapter(param) == RT_TRUE) {
-                MSG_PRINTF(LOG_DBG, "connect adapter ticket server to get mqtt server address EMQ or YUNBA\n");
-                break;
+                MSG_PRINTF(LOG_DBG, "connect adapter server to get mqtt server address EMQ or YUNBA successfull\n");
+                goto ok_exit_entry;
             }
 
             if (mqtt_get_ticket_server(&param->opts) == RT_TRUE) {
@@ -386,14 +392,14 @@ FORCE_TO_ADAPTER:
                 if (!rt_os_strncmp(param->opts.channel, "YUNBA", 5) &&
                       (mqtt_connect_yunba(param, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_DBG, "get YUNBA mqtt server connect param successfull\n");
-                    break;
+                    goto ok_exit_entry;
                 }
 
                 /* If connect EMQ ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.channel, "EMQ", 3) &&
                       (mqtt_connect_emq(param, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_DBG, "get EMQ mqtt server connect param successfull\n");
-                    break;
+                    goto ok_exit_entry;
                 }
             }
         }
@@ -403,17 +409,24 @@ FORCE_TO_ADAPTER:
 FORCE_TO_EMQ:
             if (mqtt_connect_emq(param, NULL) == RT_TRUE) {
                 MSG_PRINTF(LOG_DBG, "get EMQ mqtt server connect param successfull\n");
-                break;
+                goto ok_exit_entry;
             }
         } else if (!rt_os_strncmp(param->opts.channel, "EMQ", 3)) {
 FORCE_TO_YUNBA:
             if (mqtt_connect_yunba(param, NULL) == RT_TRUE) {
                 MSG_PRINTF(LOG_DBG, "get yunba mqtt server connect param successfull\n");
-                break;
+                goto ok_exit_entry;
             }
         }
-    }while(1);
+    }while(0);
 
+fail_exit_entry:
+    
+    MSG_PRINTF(LOG_WARN, "connet adapter/EMQ server/YUNBA server all fail !\n");
+    return RT_FALSE;
+
+ok_exit_entry:
+    
     g_mqtt_param.mqtt_get_addr = RT_TRUE;
     return RT_TRUE;
 }
@@ -450,6 +463,7 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
     //MSG_PRINTF(LOG_WARN, "Connect mqtt broker [%s] !\n", opts->serverURIs);
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
         g_mqtt_param.mqtt_flag = RT_TRUE;
+        g_mqtt_param.lost_flag = RT_FALSE;
         MSG_PRINTF(LOG_WARN, "Connect mqtt ok ! [%p]\n", pthread_self());
         return RT_TRUE;
     } else {
@@ -472,6 +486,7 @@ static void mqtt_connection_lost(void *context, char *cause)
         if (g_mqtt_param.state == NETWORK_USING) {
             g_mqtt_param.state = NETWORK_DIS_CONNECTED;
         }
+        g_mqtt_param.lost_flag = RT_TRUE;
     } else {
         MSG_PRINTF(LOG_WARN, "connect again ok after connection lost !!!\r\n");
     }
@@ -578,12 +593,27 @@ static void rt_mqtt_set_alias(const char *eid, const char *device_id, rt_bool in
 static void mqtt_process_task(void)
 {
     int32_t rc;
+    int32_t wait_cnt = 0;
+    int32_t connect_cnt = 0;
     
     while(1) {        
         if (g_mqtt_param.state == NETWORK_STATE_INIT) {
-            ;
+            /* check network state every 60 seconds after mqtt connect lost */
+            if (g_mqtt_param.lost_flag == RT_TRUE && ++wait_cnt > MQTT_NETWORK_STATE_TIMEOUT) {
+                wait_cnt = 0;
+                network_state_update(1);  // update newest network state after 1 seconds
+                rt_os_sleep(1);
+            }
         } else if (g_mqtt_param.state == NETWORK_CONNECTING) {
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
+                if (++connect_cnt > MQTT_RECONNECT_MAX_CNT) {
+                    MSG_PRINTF(LOG_DBG, "force to set network disconnected !\n");
+                    network_state_force_update(MSG_NETWORK_DISCONNECTED);
+                    g_mqtt_param.state = NETWORK_STATE_INIT;  // reset network state
+                    connect_cnt = 0;
+                    continue;
+                }
+                
                 /* If cache mqtt server addr ok, and then needn't to conenct ticket server to get mqtt server */
                 if (g_mqtt_param.mqtt_get_addr == RT_FALSE) {
                     /* re-subcribe when re-connect mqtt server */
@@ -599,18 +629,21 @@ static void mqtt_process_task(void)
                 if (mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
                     /* set network using */
                     g_mqtt_param.state = NETWORK_USING;
+                    connect_cnt = 0;
                     continue;
                 } else {
                     /* If cache mqtt server and hardcode mqtt server all fail, and then connect ticket server to get mqtt server */
                     g_mqtt_param.mqtt_get_addr = RT_FALSE;
                 }
             }
-        } else if (g_mqtt_param.state == NETWORK_DIS_CONNECTED){
+        } else if (g_mqtt_param.state == NETWORK_DIS_CONNECTED) {
             if (g_mqtt_param.mqtt_flag == RT_TRUE) {
-                MQTTClient_disconnect(g_mqtt_param.client, 0);
                 MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
+                MQTTClient_disconnect(g_mqtt_param.client, 0);                
                 g_mqtt_param.mqtt_flag      = RT_FALSE;
                 g_mqtt_param.subscribe_flag = 0;  // reset subscribe flag
+                g_mqtt_param.state          = NETWORK_STATE_INIT;  // reset network state
+                wait_cnt                    = 0;  // reset wait counter
             }
         } else if (g_mqtt_param.state == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.channel);

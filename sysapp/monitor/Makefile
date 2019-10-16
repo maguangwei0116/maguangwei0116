@@ -14,7 +14,7 @@ TARGET                              = $(shell pwd | sed 's/^\(.*\)[/]//')
 ENV_TYPE                            = $(SYSAPP_ENV_TYPE)
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
-LOCAL_TARGET_VERSION                = 0.0.0.3
+LOCAL_TARGET_VERSION                = 0.0.0.4
 
 # Check input tag version
 ifdef MONITOR_VERSION
@@ -37,6 +37,12 @@ USER_CFLAGS		                    += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME)\"
 USER_CFLAGS		                    += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
 USER_CFLAGS		                    += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
+# Config backtrace module switch [y/n]
+ifeq ($(CFG_ENABLE_LIBUNWIND),y)
+USER_CFLAGS                         += -g -rdynamic -mapcs-frame -funwind-tables -fasynchronous-unwind-tables
+USER_LDFLAGS                        += -lunwind -ldl
+endif
+
 QMI-LIB 				            = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
 COMM-LIB 				            = crypto ssl pthread m
 VUICC-LIB 				            = libvuicc.a
@@ -54,10 +60,20 @@ INC-PATH	= ./inc
 SRC-y 		+= $(SRC-PATH)/vuicc_callback.c
 SRC-y 		+= $(SRC-PATH)/ipc_socket_server.c
 SRC-y 		+= $(SRC-PATH)/main.c
+SRC-y 		+= ./core/backup/src/parse_backup.c
+SRC-y 		+= ./core/backup/src/apdu.c
+SRC-y 		+= ./core/inspect/src/inspect_file.c
+#SRC-y 		+= ./core/networkd/src/parse_backup.c
 
 # Config your include file path by += xxx-inc
 INC-y 		+= ./ipc/
 INC-y 		+= ./ipc/$(INC-PATH)
+INC-y 		+= ./core/backup
+INC-y 		+= ./core/backup/$(INC-PATH)
+INC-y 		+= ./core/inspect
+INC-y 		+= ./core/inspect/$(INC-PATH)
+INC-y 		+= ./core/networkd
+INC-y 		+= ./core/networkd/$(INC-PATH)
 INC-y 		+= ./vuicc/
 INC-y 		+= ./vuicc/$(INC-PATH)
 
@@ -65,7 +81,7 @@ INC-y 		+= ./vuicc/$(INC-PATH)
 LIB-y 		+= $(patsubst %,-l%,$(COMM-LIB))
 LIB-y 		+= $(patsubst %,-l%,$(QMI-LIB))
 
-# Config comm library and vuicc library, keep libvuicc.a before libcomm.a 
+# Config comm library and vuicc library, keep libvuicc.a before libcomm.a
 # set LIBCOMM_STATIC to 'y'(YES) or 'n'(NO)
 LIBCOMM_STATIC  = n
 LIB-y           += -l$(shell pwd)/vuicc/lib/$(VUICC-LIB)

@@ -422,7 +422,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t rand
     rt_qmi_modify_profile(1, 0, request->apn.list.array[0]->apnName.buf, 0);
 
     selected_profile_index = random % request->totalNum;
-    MSG_PRINTF(LOG_INFO, "The selected index = %d; random = %d.\n", selected_profile_index, random);
+    MSG_PRINTF(LOG_INFO, "The selected index = %d, random = %u\n", selected_profile_index, random);
 
     if (request->sequential == 0xFF) {
         profile_len = get_length(buf, 0);

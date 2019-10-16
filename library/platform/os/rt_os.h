@@ -49,22 +49,36 @@ typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);
 typedef pthread_mutex_t    rt_pthread_mutex_t;
 
+#ifdef CFG_ENABLE_LIBUNWIND
+extern int32_t thread_info_record(unsigned long pid, const char *name);
+int32_t _rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
+#define rt_create_task(task_id, task_fun, args)\
+    ({\
+        int32_t _ret = _rt_create_task(task_id, task_fun, args);\
+        if (!_ret) {\
+            thread_info_record((unsigned long)*task_id, #task_fun);\
+        };\
+        _ret;\
+    })
+#else
 int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
+#endif
 int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id);
 int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg);
 int32_t rt_send_queue_msg(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg);
 
 int32_t rt_os_memcmp(const void *mem_des, const void *mem_src, uint32_t len);
 int32_t rt_os_strcmp(const char *mem_des, const char *mem_src);
-int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, int32_t len);
+int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, uint32_t len);
 uint32_t rt_os_strlen(const char *string);
 char *rt_os_strchr(const char *str, int32_t chr);
 char *rt_os_strrchr(const char *str, int32_t chr);
 char *rt_os_strstr(const char *str1, const char *str2);
-void *rt_os_memmove(void *dst, const void *src, size_t len);
+void *rt_os_memmove(void *dst, const void *src, uint32_t len);
 void *rt_os_memset(void *mem, int32_t value, uint32_t len);
-void *rt_os_memcpy(void *mem_des, const void *mem_src, int32_t len);
+void *rt_os_memcpy(void *mem_des, const void *mem_src, uint32_t len);
 void *rt_os_strcpy(char* dest, const char *src);
+void *rt_os_strncpy(char* dest, const char *src, uint32_t len);
 
 //#define RT_OS_MEM_DEBUG 1
 
@@ -72,7 +86,7 @@ void *rt_os_strcpy(char* dest, const char *src);
 void *rt_os_malloc(uint32_t size);
 void *rt_os_realloc(void *mem, uint32_t size);
 void  rt_os_free(void *mem);
-void *rt_os_calloc(size_t count, size_t size);
+void *rt_os_calloc(uint32_t count, uint32_t size);
 #else
 void *_rt_os_malloc(const char *file, uint32_t line, uint32_t size);
 void *_rt_os_realloc(const char *file, uint32_t line, void *mem, uint32_t size);

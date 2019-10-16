@@ -18,6 +18,7 @@
 #include "trigger.h"
 #include "card.h"
 #include "ipc_socket_server.h"
+#include "parse_backup.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"
@@ -28,7 +29,7 @@
 extern int init_file_ops(void);
 extern int vsim_get_ver(char *version);
 
-static log_mode_e g_def_mode = LOG_PRINTF_FILE;
+static log_mode_e g_def_mode = LOG_PRINTF_TERMINAL;
 
 static void cfinish(int32_t sig)
 {
@@ -72,6 +73,8 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
         rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
         rsp[(*rsp_len)++] = sw & 0xFF;
         MSG_INFO_ARRAY("E-APDU RSP:", rsp, *rsp_len);
+
+        /* enable profile and load bootstrap profile, need to reset */
         if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
             cmd = (rsp[0] << 8) + rsp[1];
             if ((cmd & 0xFF00) == 0x6100) {
@@ -133,7 +136,7 @@ static int32_t agent_task_check_start(void)
         }
         exit(0);
     } else {
-        MSG_PRINTF(LOG_INFO, "I am the parent process, my process id is %d, child_pid is %d\r\nn", getpid(), child_pid);
+        MSG_PRINTF(LOG_INFO, "I am the parent process, my process id is %d, child_pid is %d\r\n", getpid(), child_pid);
 
         /* block to wait designative child process's death */
         while (1) {
@@ -168,7 +171,8 @@ int32_t main(int32_t argc, const char *argv[])
     /* init log param */
     init_log_file(RT_MONITOR_LOG);
     log_set_param(g_def_mode, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
-
+    parse_profile(1);
+#if 0
     /* debug versions information */
     init_app_version(NULL);
 
@@ -188,6 +192,6 @@ int32_t main(int32_t argc, const char *argv[])
         agent_task_check_start();
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
     }
-
+#endif
     return RT_SUCCESS;
 }

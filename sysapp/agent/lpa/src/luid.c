@@ -42,7 +42,7 @@ int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out,
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("EnableProfileRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("EnableProfileRequest: ", get_cb_data(), get_cb_size());
     ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
     if (ret == RT_SUCCESS){
         *out_size -= 2;  // Remove sw 9000
@@ -79,7 +79,7 @@ int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("DisableProfileRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("DisableProfileRequest: ", get_cb_data(), get_cb_size());
     ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
     if (ret == RT_SUCCESS){
         *out_size -= 2;  // Remove sw 9000
@@ -115,7 +115,7 @@ int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("DeleteProfileRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("DeleteProfileRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
@@ -137,7 +137,7 @@ int get_eid(uint8_t *eid, uint16_t *size, uint8_t channel)
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("GetEuiccDataRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("GetEuiccDataRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), eid, size, channel));
     *size -= 2;  // Remove sw 9000
 
@@ -154,7 +154,7 @@ int switch_eid(uint8_t *eid, uint16_t size,uint8_t *out, uint16_t *out_size, uin
     clean_cb_data();
     ec = der_encode(&asn_DEF_MoreEIDOperateRequest, &req, encode_cb, NULL);
     MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
-    MSG_INFO_ARRAY("GetEuicclistRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("GetEuicclistRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
     return RT_SUCCESS;
@@ -168,7 +168,7 @@ int get_eid_list(uint8_t *eid, uint16_t *size, uint8_t channel)
     clean_cb_data();
     ec = der_encode(&asn_DEF_MoreEIDOperateRequest, &req, encode_cb, NULL);
     MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
-    MSG_INFO_ARRAY("GetEuicclistRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("GetEuicclistRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), eid, size, channel));
     //*size -= 2;  // Remove sw 9000
     return RT_SUCCESS;
@@ -205,7 +205,7 @@ int get_profiles_info(search_criteria_t sc, uint8_t *criteria, uint16_t c_size,
         goto end;
     }
 
-    MSG_INFO_ARRAY("ProfileInfoListRequest_t: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("ProfileInfoListRequest_t: ", get_cb_data(), get_cb_size());
     // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), profile_info, size));
     ret = cmd_store_data(get_cb_data(), get_cb_size(), profile_info, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -235,7 +235,7 @@ int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
@@ -270,7 +270,7 @@ int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size, uin
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    MSG_INFO_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 

@@ -80,6 +80,31 @@ static void network_state(int32_t state)
     }
 }
 
+static void network_state_notify(void)
+{
+    if (g_network_state == DSI_STATE_CALL_CONNECTED) {  // network connected
+        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
+    } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
+        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
+    }   
+}
+
+/* get newest network state after timeout seconds */
+void network_state_update(int32_t timeout)
+{
+    register_timer(timeout, 0 , &network_state_notify);  
+}
+
+/* force to update network state when other module found network is inactive */
+void network_state_force_update(int32_t new_state)
+{
+    if (MSG_NETWORK_DISCONNECTED == new_state) {
+        network_state(DSI_STATE_CALL_IDLE);
+    } else if (MSG_NETWORK_CONNECTED == new_state) {
+        network_state(DSI_STATE_CALL_CONNECTED);
+    }
+}
+
 int32_t init_network_detection(void *arg)
 {
     rt_task task_id = 0;
