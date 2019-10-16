@@ -308,7 +308,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
         }
 
         do {
-            ret = poll(pollfds,nevents,5);
+            ret = poll(pollfds, nevents, 5);
             rt_os_sleep(2);
         } while (ret < 0);
 
@@ -347,6 +347,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                                 MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
                             }
                         break;
+                        
                         case DSI_EVT_NET_IS_CONN:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
                                 if (RT_SUCCESS == get_ipv4_net_conf(dsi_net_hndl)) {
@@ -358,6 +359,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                                 MSG_PRINTF(LOG_DBG, "donot support DSI_IP_FAMILY_V6 by now!!!!\n");
                             }
                         break;
+                        
                         case DSI_EVT_NET_NO_NET:
                             MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NO_NET\n");
                             dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
@@ -366,10 +368,16 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                                     dsicallend.reason_type,dsicallend.reason_code);
                             }
                         break;
+                        
                         default:
                         break;
                     }
+                    
                     g_dial_state_func(dsi_net_hndl->call_state);
+
+                    if (DSI_EVT_NET_NO_NET == signo) {
+                        return RT_ERROR;
+                    }
                 }
             }
         }
