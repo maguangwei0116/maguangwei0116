@@ -30,10 +30,23 @@ void init_apdu_channel(lpa_channel_type_e channel_mode)
     g_channel_mode = channel_mode;
 }
 
+static uint16_t monitor_send_apdu(uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len)
+{
+    uint16_t sw;
+
+    MSG_INFO_ARRAY("B-APDU REQ:", apdu, apdu_len);
+    sw = card_cmd((uint8_t *)apdu, apdu_len, rsp, rsp_len);
+    rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
+    rsp[(*rsp_len)++] = sw & 0xFF;
+    MSG_INFO_ARRAY("B-APDU RSP:", rsp, *rsp_len);
+
+    return RT_SUCCESS;
+}
+
 static int32_t send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
-        return card_cmd((uint8_t *)data, data_len, rsp, rsp_len);
+        return monitor_send_apdu((uint8_t *)data, data_len, rsp, rsp_len);
     } else if (g_channel_mode == LPA_CHANNEL_BY_QMI) {
         return rt_qmi_send_apdu(data, data_len, rsp, rsp_len, channel);
     }
@@ -55,7 +68,7 @@ int rt_open_channel(uint8_t *channel)
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len;
-        ret = card_cmd((uint8_t *)g_open_channel_cmd, sizeof(g_open_channel_cmd), rsp, &len);
+        ret = monitor_send_apdu((uint8_t *)g_open_channel_cmd, sizeof(g_open_channel_cmd), rsp, &len);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
@@ -63,7 +76,7 @@ int rt_open_channel(uint8_t *channel)
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
             cmd[4] = len;
-            card_cmd((uint8_t *)cmd, 5, rsp, &len);
+            monitor_send_apdu((uint8_t *)cmd, 5, rsp, &len);
             sw = get_sw(rsp, len);
         }
         if (sw != SW_NORMAL) {
@@ -86,7 +99,7 @@ int rt_close_channel(uint8_t channel)
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len;
-        ret = card_cmd((uint8_t *)g_close_channel_cmd, sizeof(g_close_channel_cmd), rsp, &len);
+        ret = monitor_send_apdu((uint8_t *)g_close_channel_cmd, sizeof(g_close_channel_cmd), rsp, &len);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
@@ -94,7 +107,7 @@ int rt_close_channel(uint8_t channel)
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
             cmd[4] = len;
-            card_cmd(cmd, 5, rsp, &len);
+            monitor_send_apdu(cmd, 5, rsp, &len);
             sw = get_sw(rsp, len);
         }
         if (sw != SW_NORMAL) {

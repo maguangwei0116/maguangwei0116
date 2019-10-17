@@ -19,6 +19,7 @@
 #include "card.h"
 #include "ipc_socket_server.h"
 #include "parse_backup.h"
+#include "inspect_file.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"
@@ -171,15 +172,13 @@ int32_t main(int32_t argc, const char *argv[])
     /* init log param */
     init_log_file(RT_MONITOR_LOG);
     log_set_param(g_def_mode, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
-    parse_profile(1);
-#if 0
     /* debug versions information */
-    init_app_version(NULL);
 
     /* install ops callbacks */
     init_callback_ops();
     init_card(log_print);
-
+    monitor_inspect_file(0);
+    init_app_version(NULL);
     /* install system signal handle */
     init_system_signal(NULL);
 
@@ -192,6 +191,5 @@ int32_t main(int32_t argc, const char *argv[])
         agent_task_check_start();
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
     }
-#endif
     return RT_SUCCESS;
 }

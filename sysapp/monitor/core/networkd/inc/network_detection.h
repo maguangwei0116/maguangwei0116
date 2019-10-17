@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : profile_parse.h
- * Date        : 2019.08.28
+ * File name   : network_detection.h
+ * Date        : 2019.10.17
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,17 +11,9 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifndef __PARSE_BACKUP_H__
-#define __PARSE_BACKUP_H__
+#ifndef __NETWORK_DETECTION_H__
+#define __NETWORK_DETECTION_H__
 
 #include "rt_type.h"
 
-typedef enum LPA_CHANNEL_TYPE {
-    LPA_CHANNEL_BY_IPC = 0,
-    LPA_CHANNEL_BY_QMI
-} lpa_channel_type_e;
-
-void init_apdu_channel(lpa_channel_type_e channel_mode);
-int32_t backup_process(lpa_channel_type_e type);
-
-#endif // __PARSE_BACKUP_H__
+#endif // __NETWORK_DETECTION_H__
