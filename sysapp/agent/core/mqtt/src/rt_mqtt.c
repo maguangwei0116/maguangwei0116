@@ -36,6 +36,12 @@
 
 #define MQTT_SUBCRIBE_QOS               MQTT_QOS_1
 
+#define MQTT_PUBLISH_QOS                MQTT_QOS_1
+
+#define MQTT_PUBLISH_TOPIC              "client_report"
+
+#define MQTT_PUBLISH_TIMEOUT            3000L
+
 #define MQTT_SUBCRIBE_TOPIC_MAX_CNT     10
 
 #define MQTT_KEEP_ALIVE_INTERVAL        300
@@ -459,9 +465,65 @@ static int32_t mqtt_subcribe_many_with_default_qos(MQTTClient handle, int32_t co
     return MQTTClient_subscribe_many(handle, count, topic);
 }
 
-int32_t mqtt_publish(MQTTClient handle, const char* topic, int qos, void *data, int32_t len)
+static int32_t mqtt_client_pulish_msg(MQTTClient handle, int32_t qos, const char* topic, const void* data, int32_t data_len)
 {
-    return MQTTClient_subscribe(handle, topic, qos);   
+    MQTTClient_message pubmsg = MQTTClient_message_initializer;
+    MQTTClient_deliveryToken token = 0;
+    int32_t rc;
+    
+    pubmsg.payload      = (void *)data;
+    pubmsg.payloadlen   = data_len;
+    pubmsg.qos          = qos;
+    pubmsg.retained     = 0;
+
+    #if 1
+    while (1) {
+        rc = MQTTClient_publishMessage(handle, topic, &pubmsg, &token);
+        //rc = MQTTClient_publish(client, topic, data_len, data);
+        MSG_PRINTF(LOG_WARN, "Waiting for up to %d seconds for publication of (%d bytes): \r\n\r\n%s\r\n\r\n"
+                "on topic %s for client with ClientID: %s, rc=%d, token=%d\n",
+                (int32_t)(MQTT_PUBLISH_TIMEOUT/1000), data_len, (const char *)data, topic, (const char *)g_mqtt_device_id, rc, token);
+        MQTTClient_waitForCompletion(handle, token, MQTT_PUBLISH_TIMEOUT);
+        MSG_PRINTF(LOG_INFO, "Message with delivery token %d delivered, rc=%d\n", token, rc);
+        //sleep(TIMEOUT/1000);
+        if (rc != 0 && token != 0) {
+            MSG_PRINTF(LOG_WARN, "MQTT publish msg fail !\r\n");
+            rc = -1;
+            goto exit_entry;
+        }
+        break;
+    }
+    #else    
+    deliveredtoken = 0;
+    rc = MQTTClient_publishMessage(client, topic, &pubmsg, &token);
+    MSG_PRINTF(LOG_INFO, "Waiting for up to %d seconds for publication of %s\n"
+                "on topic %s for client with ClientID: %s, rc=%d\n",
+                (int)(TIMEOUT/1000), (const char *)data, topic, (const char *)client_id, rc);
+    while(deliveredtoken != token);
+    #endif
+
+    rc = 0;
+
+exit_entry:
+
+    //MSG_PRINTF(LOG_INFO, "mqtt pulish (%d bytes) ret=%d\r\n", data_len, rc);
+
+    return rc;
+}
+
+static int32_t mqtt_pulish(const char* topic, const void* data, int32_t dataå_len)
+{
+    int32_t ret;
+
+    ret = mqtt_client_pulish_msg(g_mqtt_param.client, g_mqtt_param.opts.qos, topic, data, data_len);
+    //MSG_PRINTF(LOG_WARN, "mqtt pulish (%d bytes): %s, ret=%d\r\n", data_len, (const char*)data, ret);
+
+    return ret;
+}
+
+int32_t mqtt_pulish_msg(const void* data, int32_t data_len)
+{
+    return mqtt_pulish(MQTT_PUBLISH_TOPIC, data, data_len);
 }
 
 static int32_t mqtt_subcribe_all(void)

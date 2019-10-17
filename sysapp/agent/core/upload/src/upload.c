@@ -155,7 +155,7 @@ static int32_t upload_deal_rsp_msg(int8_t *msg)
     return state;
 }
 
-static int32_t upload_send_request(const char *out)
+static int32_t upload_send_http_request(const char *out)
 {
     int32_t ret = RT_ERROR;
     char md5_out[MD5_STRING_LENGTH + 1];
@@ -194,6 +194,19 @@ static int32_t upload_send_request(const char *out)
 exit_entry:
 
     return ret;
+}
+
+extern int32_t mqtt_pulish_msg(const void* data, int32_t data_len);
+static int32_t upload_send_mqtt_request(const char *out)
+{    
+    return mqtt_pulish_msg((const char *)out, rt_os_strlen(out));
+}
+
+static int32_t upload_send_request(const char *out)
+{
+    //return upload_send_http_request(out);
+
+    return upload_send_mqtt_request(out);
 }
 
 static void upload_get_random_tran_id(char *tran_id, uint16_t size)
