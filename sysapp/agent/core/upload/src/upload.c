@@ -31,6 +31,7 @@ const char *g_push_channel                  = NULL;
 const devicde_info_t *g_upload_device_info  = NULL;
 const card_info_t *g_upload_card_info       = NULL;
 static rt_bool g_upload_network             = RT_FALSE;
+static rt_bool g_upload_mqtt                = RT_FALSE;
 
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 #if 0
@@ -95,39 +96,7 @@ static int32_t upload_http_post_single(const char *host_addr, int32_t port, sock
 }
 #endif
 
-static int32_t upload_wait_network_connected(void)
-{
-    while (1) {
-        if (g_upload_network == RT_TRUE) {
-            break;
-        }
-        rt_os_sleep(1);
-    }
-
-    return 0;
-}
-
-int32_t upload_http_post(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
-{
-    int32_t ret = RT_FALSE;
-    int32_t i = 0;
-
-    for (i = 0; i < MAX_UPLOAD_TIMES; i++) {
-        upload_wait_network_connected();
-        ret = upload_http_post_single(host_addr, port, cb, buffer, len);
-        if (HTTP_SOCKET_CONNECT_ERROR == ret || \
-                        HTTP_SOCKET_SEND_ERROR == ret || \
-                        HTTP_SOCKET_RECV_ERROR == ret) {
-            MSG_PRINTF(LOG_WARN, "upload http post fail, ret=%d, retry i=%d\r\n", ret, i);
-            rt_os_sleep(3);
-            continue;
-        }
-        break;
-    }
-    return ret;
-}
-
-static int32_t upload_deal_rsp_msg(int8_t *msg)
+static int32_t upload_deal_rsp_msg(const char *msg)
 {
     int32_t state = RT_ERROR;
     cJSON *rsp_msg = NULL;
@@ -146,7 +115,7 @@ static int32_t upload_deal_rsp_msg(int8_t *msg)
         if (back_state->valueint == 0) {
             state = RT_SUCCESS;
         } else {
-            MSG_PRINTF(LOG_WARN, "state error string: %s\r\n", (const char *) msg);
+            MSG_PRINTF(LOG_WARN, "state error string: %s\r\n", (const char *)msg);
         }
     }
     if (rsp_msg) {
@@ -155,7 +124,7 @@ static int32_t upload_deal_rsp_msg(int8_t *msg)
     return state;
 }
 
-static int32_t upload_send_http_request(const char *out)
+static int32_t upload_send_http_request(const char *data, int32_t data_len)
 {
     int32_t ret = RT_ERROR;
     char md5_out[MD5_STRING_LENGTH + 1];
@@ -166,7 +135,7 @@ static int32_t upload_send_http_request(const char *out)
     uint8_t lpbuf[BUFFER_SIZE * 4] = {0};
     int32_t send_len;
 
-    if (!out) {
+    if (!data) {
         // MSG_PRINTF(LOG_WARN, "out buffer error\n");
         ret = HTTP_PARAMETER_ERROR;
         return ret;
@@ -174,21 +143,21 @@ static int32_t upload_send_http_request(const char *out)
 
     //MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", rt_os_strlen((const char *)out), (const char *)out);
 
-    get_md5_string((int8_t *) out, md5_out);
+    get_md5_string((int8_t *) data, md5_out);
     md5_out[MD5_STRING_LENGTH] = '\0';
 
     //send report by http
     STRUCTURE_OTI_URL(upload_url, MAX_OTI_URL_LEN + 1, g_upload_oti_addr, 7082, "/api/v2/report");
+    MSG_PRINTF(LOG_WARN, "upload_url: %s\r\n", upload_url);
     if (http_parse_url(upload_url, host_addr, file, &port)) {
         MSG_PRINTF(LOG_WARN, "http_parse_url failed!\n");
         ret = HTTP_PARAMETER_ERROR;
         goto exit_entry;
     }
 
-    snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, md5_out, rt_os_strlen(out), out);
-
-    send_len = rt_os_strlen(lpbuf);
-    ret = msg_send_upload_queue(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
+    snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, md5_out, data_len, data);
+    send_len = rt_os_strlen(lpbuf);    
+    ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
     //MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
 
 exit_entry:
@@ -196,17 +165,64 @@ exit_entry:
     return ret;
 }
 
-extern int32_t mqtt_pulish_msg(const void* data, int32_t data_len);
-static int32_t upload_send_mqtt_request(const char *out)
-{    
-    return mqtt_pulish_msg((const char *)out, rt_os_strlen(out));
+static int32_t upload_wait_all_connected(void)
+{
+    while (1) {
+        if (g_upload_network == RT_TRUE && g_upload_mqtt == RT_TRUE) {
+            break;
+        }
+        rt_os_sleep(1);
+    }
+
+    return 0;
 }
 
-static int32_t upload_send_request(const char *out)
-{
-    //return upload_send_http_request(out);
+extern int32_t mqtt_pulish_msg(const void* data, int32_t data_len);
+static int32_t upload_send_mqtt_request(const char *data, int32_t data_len)
+{    
+    return mqtt_pulish_msg((const char *)data, data_len);
+}
 
-    return upload_send_mqtt_request(out);
+static int32_t upload_send_final_request(const char *data, int32_t data_len)
+{
+    int32_t ret = RT_FALSE;
+    
+    /* send with http when MQTT upload fail */
+    ret = upload_send_mqtt_request(data, data_len);
+    if (ret != RT_SUCCESS) {
+        ret = upload_send_http_request(data, data_len);
+    }
+
+    return ret;
+}
+
+int32_t upload_event_final_report(void *buffer, int32_t len)
+{
+    int32_t ret = RT_FALSE;
+    int32_t i = 0;
+
+    for (i = 0; i < MAX_UPLOAD_TIMES; i++) {
+        upload_wait_all_connected();
+        ret = upload_send_final_request(buffer, len);
+        if (HTTP_SOCKET_CONNECT_ERROR == ret || \
+                        HTTP_SOCKET_SEND_ERROR == ret || \
+                        HTTP_SOCKET_RECV_ERROR == ret) {
+            MSG_PRINTF(LOG_WARN, "upload event final report fail, ret=%d, retry i=%d\r\n", ret, i);
+            rt_os_sleep(3);
+            continue;
+        }
+        break;
+    }
+    return ret;
+}
+
+static int32_t upload_send_request(const void *data, int32_t data_len)
+{
+    int32_t ret = RT_ERROR;
+    
+    ret = msg_send_upload_queue((void *)data, data_len);
+
+    return ret;
 }
 
 static void upload_get_random_tran_id(char *tran_id, uint16_t size)
@@ -402,7 +418,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             //MSG_PRINTF(LOG_WARN, "upload [%p] !!!\r\n", upload);
             upload_json_pag = (char *)cJSON_PrintUnformatted(upload);
             //MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
-            ret = upload_send_request((const char *)upload_json_pag);
+            ret = upload_send_request((const void *)upload_json_pag, rt_os_strlen(upload_json_pag));
 
             if (upload) {
                 cJSON_Delete(upload);
@@ -464,6 +480,12 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;
+    } else if (MSG_MQTT_CONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "upload module recv mqtt connected\r\n");
+        g_upload_mqtt = RT_TRUE;
+    } else if (MSG_MQTT_DISCONNECTED == mode) {
+        MSG_PRINTF(LOG_INFO, "upload module recv mqtt disconnected\r\n");
+        g_upload_mqtt = RT_FALSE;
     }
 }
 

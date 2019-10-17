@@ -469,7 +469,8 @@ static int32_t mqtt_client_pulish_msg(MQTTClient handle, int32_t qos, const char
 {
     MQTTClient_message pubmsg = MQTTClient_message_initializer;
     MQTTClient_deliveryToken token = 0;
-    int32_t rc;
+    int32_t rc1;
+    int32_t rc2;
     
     pubmsg.payload      = (void *)data;
     pubmsg.payloadlen   = data_len;
@@ -477,22 +478,19 @@ static int32_t mqtt_client_pulish_msg(MQTTClient handle, int32_t qos, const char
     pubmsg.retained     = 0;
 
     #if 1
-    while (1) {
-        rc = MQTTClient_publishMessage(handle, topic, &pubmsg, &token);
-        //rc = MQTTClient_publish(client, topic, data_len, data);
-        MSG_PRINTF(LOG_WARN, "Waiting for up to %d seconds for publication of (%d bytes): \r\n\r\n%s\r\n\r\n"
-                "on topic %s for client with ClientID: %s, rc=%d, token=%d\n",
-                (int32_t)(MQTT_PUBLISH_TIMEOUT/1000), data_len, (const char *)data, topic, (const char *)g_mqtt_device_id, rc, token);
-        MQTTClient_waitForCompletion(handle, token, MQTT_PUBLISH_TIMEOUT);
-        MSG_PRINTF(LOG_INFO, "Message with delivery token %d delivered, rc=%d\n", token, rc);
-        //sleep(TIMEOUT/1000);
-        if (rc != 0 && token != 0) {
+    do {
+        rc1 = MQTTClient_publishMessage(handle, topic, &pubmsg, &token);
+        MSG_PRINTF(LOG_INFO, "Waiting for up to %dS to publish (%d bytes): \r\n%s\r\n", 
+                (int32_t)(MQTT_PUBLISH_TIMEOUT/1000), data_len, (const char *)data);
+        MSG_PRINTF(LOG_INFO, "on topic [%s] ClientID: [%s] rc1=%d, token=%lld\r\n", topic, g_mqtt_device_id, rc1, token);
+        rc2 = MQTTClient_waitForCompletion(handle, token, MQTT_PUBLISH_TIMEOUT);
+        MSG_PRINTF(LOG_INFO, "Message with delivery token %lld delivered, rc2=%d\n", token, rc2);
+        if (rc1 != 0 || rc2 != 0) {
             MSG_PRINTF(LOG_WARN, "MQTT publish msg fail !\r\n");
-            rc = -1;
+            rc1 = RT_ERROR;
             goto exit_entry;
         }
-        break;
-    }
+    } while(0);
     #else    
     deliveredtoken = 0;
     rc = MQTTClient_publishMessage(client, topic, &pubmsg, &token);
@@ -502,16 +500,14 @@ static int32_t mqtt_client_pulish_msg(MQTTClient handle, int32_t qos, const char
     while(deliveredtoken != token);
     #endif
 
-    rc = 0;
+    rc1 = RT_SUCCESS;
 
 exit_entry:
 
-    //MSG_PRINTF(LOG_INFO, "mqtt pulish (%d bytes) ret=%d\r\n", data_len, rc);
-
-    return rc;
+    return rc1;
 }
 
-static int32_t mqtt_pulish(const char* topic, const void* data, int32_t dataå_len)
+static int32_t mqtt_pulish(const char* topic, const void* data, int32_t data_len)
 {
     int32_t ret;
 
@@ -625,7 +621,7 @@ static int32_t mqtt_msg_arrived(void* context, char* topic_name, int32_t topic_l
     int32_t len = md->payloadlen;
     
     msg[len] = '\0';
-    MSG_PRINTF(LOG_INFO, "msg arrived, topic:%s, len: %d bytes, %s\r\n", topic_name, len, msg);
+    MSG_PRINTF(LOG_INFO, "msg arrived, topic:%s, len: %d bytes: \r\n%s\r\n", topic_name, len, msg);
     
     if (!mqtt_check_topic(topic_name)) {
         MSG_PRINTF(LOG_WARN, "mqtt unexpected topic [%s] arrived, ignore !\r\n", topic_name);
@@ -820,6 +816,7 @@ static void mqtt_process_task(void)
                     /* set network using */
                     g_mqtt_param.state = NETWORK_USING;
                     connect_cnt = 0;
+                    msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_CONNECTED, NULL, 0);
                     continue;
                 } else {
                     /* If cache mqtt server and hardcode mqtt server all fail, and then connect ticket server to get mqtt server */
@@ -834,6 +831,7 @@ static void mqtt_process_task(void)
                 g_mqtt_param.subscribe_flag = 0;  // reset subscribe flag
                 g_mqtt_param.state          = NETWORK_STATE_INIT;  // reset network state
                 wait_cnt                    = 0;  // reset wait counter
+                msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_DISCONNECTED, NULL, 0);
             }
         } else if (g_mqtt_param.state == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.channel);

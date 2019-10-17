@@ -45,6 +45,8 @@ typedef enum MSG_MODE {
     MSG_BOOTSTRAP_DISCONNECTED,
     MSG_MQTT_SUBSCRIBE_EID,
     MSG_BOOTSTRAP_SELECT_CARD,
+    MSG_MQTT_CONNECTED,
+    MSG_MQTT_DISCONNECTED,
 } msg_mode_e;
 
 typedef struct PUBLIC_VALUE_LIST {
@@ -56,5 +58,6 @@ typedef struct PUBLIC_VALUE_LIST {
 
 int32_t init_queue(void *arg);
 int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len);
-int32_t msg_send_upload_queue(const char *host_addr, int32_t port, void *cb, void *buffer, int32_t len);
+int32_t msg_send_upload_queue(void *buffer, int32_t len);
+
 #endif // __AGENT_QUEUE_H__
