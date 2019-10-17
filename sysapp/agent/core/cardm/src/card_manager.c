@@ -219,16 +219,16 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
         MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
     }
 
-    rt_os_sleep(1); // must have
+    rt_os_sleep(3); // must have
 
     if ((ret == RT_SUCCESS) || (ret == RT_PROFILE_STATE_ENABLED)) {
         ret = lpa_load_profile(buf, len);
         if (ret) {
             MSG_PRINTF(LOG_WARN, "lpa load porfile fail, ret=%d\r\n", ret);
         }
-    }
 
-    rt_os_sleep(1); // must have
+        rt_os_sleep(3); // must have
+    }
 
     ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
     if (ret) {
