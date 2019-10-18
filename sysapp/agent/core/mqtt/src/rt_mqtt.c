@@ -40,7 +40,7 @@
 
 #define MQTT_PUBLISH_TOPIC              "client_report"
 
-#define MQTT_PUBLISH_TIMEOUT            3000L
+#define MQTT_PUBLISH_TIMEOUT            10000L
 
 #define MQTT_SUBCRIBE_TOPIC_MAX_CNT     10
 
@@ -585,7 +585,7 @@ static int32_t mqtt_subcribe_all(void)
         CLR_IMEI_FLAG(g_mqtt_param.subscribe_flag);
         CLR_AGENT_FLAG(g_mqtt_param.subscribe_flag);
         g_mqtt_sub_info.cnt = 0;  // clear counter
-        MSG_PRINTF(LOG_WARN, "mqtt subcribe %s fail !\r\n", topic_list);
+        MSG_PRINTF(LOG_WARN, "mqtt subcribe %s fail, ret=%d !\r\n", topic_list, ret);
         if (ret == MQTTCLIENT_DISCONNECTED) {
             g_mqtt_param.state = NETWORK_DIS_CONNECTED;
             MSG_PRINTF(LOG_WARN, "mqtt disconnected !\r\n");
@@ -605,6 +605,11 @@ static rt_bool mqtt_check_topic(const char *topic)
         MSG_PRINTF(LOG_INFO, "%d: %s\r\n", i, g_mqtt_sub_info.topic[i]);
     }
 #endif
+
+    /* never deal with EID topic */
+    if (!rt_os_strcmp(g_mqtt_eid, topic)) {
+        return RT_TRUE;
+    }
 
     for (i = 0; i < g_mqtt_sub_info.cnt; i++) {
         if (!rt_os_strcmp(g_mqtt_sub_info.topic[i], topic)) {
@@ -862,7 +867,7 @@ static int32_t mqtt_create_task(void)
     int32_t ret = RT_ERROR;
     rt_task id_connect;
 
-    ret = rt_create_task(&id_connect, (void *)mqtt_process_task, NULL);
+    ret = rt_create_task(&id_connect, (void *) mqtt_process_task, NULL);
     if (ret == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "creat mqtt pthread error, err(%d)=%s\r\n", errno, strerror(errno));
     }
