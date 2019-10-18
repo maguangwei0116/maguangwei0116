@@ -35,17 +35,17 @@ config BR2_PLATFORM_TYPE
 
 choice
 	prompt "Software Type"
-	default BR2_SOFTWARE_TYPE_RELEASE
+	default BR2_CFG_SOFTWARE_TYPE_RELEASE
 	help
 	  Select software type, Release, Debug ...
 
-config BR2_SOFTWARE_TYPE_RELEASE
+config BR2_CFG_SOFTWARE_TYPE_RELEASE
 	bool "Release"
 	help
 	  Compile software with Signature/Authentication.
 	  This version used for final release.
 
-config BR2_SOFTWARE_TYPE_DEBUG
+config BR2_CFG_SOFTWARE_TYPE_DEBUG
 	bool "Debug"
 	help
 	  Compile software debug version.
@@ -55,8 +55,8 @@ endchoice
 
 config BR2_SOFTWARE_TYPE
 	string
-	default "debug"		if BR2_SOFTWARE_TYPE_DEBUG
-	default "release"	if BR2_SOFTWARE_TYPE_RELEASE
+	default "debug"		if BR2_CFG_SOFTWARE_TYPE_DEBUG
+	default "release"	if BR2_CFG_SOFTWARE_TYPE_RELEASE
 
 choice
 	prompt "Environment Type"
