@@ -23,7 +23,14 @@
 #define RT_AGENT_PTROCESS           "rt_agent"
 #define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_LOG              "/data/redtea/rt_monitor_log"
+
+#ifdef CFG_SOFTWARE_TYPE_DEBUG
+#define RT_MONITOR_LOG_MAX_SIZE     (30 * 1024 * 1024)
+#endif
+
+#ifdef CFG_SOFTWARE_TYPE_RELEASE
 #define RT_MONITOR_LOG_MAX_SIZE     (1 * 1024 * 1024)
+#endif
 
 extern int init_file_ops(void);
 extern int vsim_get_ver(char *version);
