@@ -58,4 +58,5 @@ static void dsi_net_cb_fcn( dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt
 int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl);
 int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl);
 void regist_dial_callback(void *fun);
+
 #endif  //__DIAL_UP_H__

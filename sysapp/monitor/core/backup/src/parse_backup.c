@@ -75,15 +75,6 @@ end:
 
 int32_t backup_process(lpa_channel_type_e type)
 {
-    int32_t ret = RT_ERROR;
-
     init_apdu_channel(type);
-    ret = parse_profile(1);
-    if (type == LPA_CHANNEL_BY_IPC) {
-        trigegr_regist_reset(card_reset);
-        trigegr_regist_cmd(card_cmd);
-        trigger_swap_card(1);
-    }
-
-    return ret;
+    return parse_profile(1);
 }

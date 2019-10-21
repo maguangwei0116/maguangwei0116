@@ -63,6 +63,7 @@ SRC-y 		+= $(SRC-PATH)/main.c
 SRC-y 		+= ./core/backup/src/parse_backup.c
 SRC-y 		+= ./core/backup/src/apdu.c
 SRC-y 		+= ./core/inspect/src/inspect_file.c
+SRC-y 		+= ./core/networkd/src/network_detection.c
 #SRC-y 		+= ./core/networkd/src/parse_backup.c
 
 # Config your include file path by += xxx-inc

@@ -15,7 +15,8 @@
 #include "file.h"
 #include "hash.h"
 
-#define MONITOR   "/data/monitor"
+#define MONITOR                         "/data/monitor"
+#define AGENT                           "/data/agent1"
 #define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
 #define MAX_FILE_HASH_BYTE_LEN          32
 #define PRIVATE_HASH_STR_LEN            64
@@ -23,7 +24,7 @@
 #define RT_CHECK_ERR(process, result) \
     if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
-rt_bool monitor_inspect_file(file_type_e type)
+static rt_bool monitor_inspect_file(uint8_t *file_name)
 {
     rt_fshandle_t fp = NULL;
     sha256_ctx_t sha_ctx;
@@ -36,9 +37,9 @@ rt_bool monitor_inspect_file(file_type_e type)
     int32_t partlen;
     rt_bool ret = RT_FALSE;
 
-    file_size = linux_file_size(MONITOR);
+    file_size = linux_file_size(file_name);
 
-    RT_CHECK_ERR(fp = rt_fopen((char *)MONITOR, "r") , NULL);
+    RT_CHECK_ERR(fp = rt_fopen((char *)file_name, "r"), NULL);
     sha256_init(&sha_ctx);
     file_size -= PRIVATE_HASH_STR_LEN;
     if (file_size < HASH_CHECK_BLOCK) {
@@ -68,9 +69,29 @@ rt_bool monitor_inspect_file(file_type_e type)
         goto end;
     }
     ret = RT_TRUE;
+
 end:
     if (fp != NULL) {
         rt_fclose(fp);
     }
+
+    return ret;
+}
+
+rt_bool inspect_monitor_file(void)
+{
+    return monitor_inspect_file(MONITOR);
+}
+
+rt_bool inspect_agent_file(void)
+{
+    return monitor_inspect_file(AGENT);
+}
+
+rt_bool inspect_abstract_content(uint8_t *hash, uint8_t *signature)
+{
+    rt_bool ret = RT_FALSE;
+
+    ret = RT_TRUE;
     return ret;
 }

@@ -16,12 +16,8 @@
 
 #include "rt_type.h"
 
-typedef enum FILE_TYPE {
-    FILE_TYPE_MONITOR = 0,
-    FILE_TYPE_SHARE_PROFILE,
-    FILE_TYPE_AGENT
-} file_type_e;
-
-rt_bool monitor_inspect_file(file_type_e type);
+rt_bool inspect_monitor_file(void);
+rt_bool inspect_agent_file(void);
+rt_bool inspect_abstract_content(uint8_t *hash, uint8_t *signature);
 
 #endif // __INSPECT_FILE_H__

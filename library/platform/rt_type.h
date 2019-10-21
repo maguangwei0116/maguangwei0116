@@ -22,7 +22,7 @@
 #include "rt_os.h"
 #include "rt_timer.h"
 
-typedef enum RT_BOOL{
+typedef enum RT_BOOL {
     RT_FALSE = 0,
     RT_TRUE
 } rt_bool;

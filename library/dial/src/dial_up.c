@@ -297,6 +297,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
             if (get_regist_state() != RT_TRUE) {
                 rt_os_sleep(2);
+                dial_state(dsi_net_hndl->call_state);
                 continue;
             }
             rval = dsi_start_data_call(dsi_net_hndl->handle);
@@ -308,7 +309,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
         }
 
         do {
-            ret = poll(pollfds,nevents,5);
+            ret = poll(pollfds, nevents, 5);
             rt_os_sleep(2);
         } while (ret < 0);
 

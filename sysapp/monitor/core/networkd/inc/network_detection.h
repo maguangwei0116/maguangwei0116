@@ -16,4 +16,6 @@
 
 #include "rt_type.h"
 
+void network_detection_task(void);
+
 #endif // __NETWORK_DETECTION_H__

@@ -18,7 +18,7 @@
 #define MAX_WAIT_REGIST_TIME     180
 
 static int32_t g_network_state = 0;
-static rt_bool g_network_timer_flag = RT_TRUE;
+static rt_bool g_network_timer_flag = RT_FALSE;
 
 static void network_timer_callback(void)
 {

@@ -12,11 +12,19 @@
  *******************************************************************************/
 
 #include "network_detection.h"
+#include "parse_backup.h"
+#include "rt_timer.h"
+#include "dial_up.h"
+
+#define MAX_WAIT_REGIST_TIME     180
+
+static int32_t g_network_state = -1;
+static rt_bool g_network_timer_flag = RT_FALSE;
 
 static void network_timer_callback(void)
 {
     if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_BOOTSTRAP_DISCONNECTED, NULL, 0);
+        backup_process(LPA_CHANNEL_BY_IPC);
     }
     g_network_timer_flag = RT_FALSE;
     MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
@@ -30,16 +38,6 @@ static void network_start_timer(void)
     }
 }
 
-static void network_detection_task(void)
-{
-    dsi_call_info_t dsi_net_hndl;
-    dial_up_init(&dsi_net_hndl);
-    while (1) {
-        dial_up_to_connect(&dsi_net_hndl);
-        dial_up_stop(dsi_net_hndl);
-    }
-}
-
 static void network_state(int32_t state)
 {
     if (state == g_network_state) {
@@ -49,23 +47,21 @@ static void network_state(int32_t state)
     g_network_state = state;
 
     if (g_network_state == DSI_STATE_CALL_CONNECTED) {  // network connected
+        MSG_PRINTF(LOG_INFO, "Network state:%d\n", state);
     } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
+        MSG_PRINTF(LOG_INFO, "Network state:%d\n", state);
         network_start_timer();
     }
 }
 
-int32_t init_network_detection(void *arg)
+void network_detection_task(void)
 {
-    rt_task task_id = 0;
-    int32_t ret = RT_ERROR;
-
+    dsi_call_info_t dsi_net_hndl;
     regist_dial_callback((void *)network_state);
-    ret = rt_create_task(&task_id, (void *) network_detection_task, NULL);
-    if (ret != RT_SUCCESS) {
-        MSG_PRINTF(LOG_ERR, "create task fail\n");
-        return RT_ERROR;
+    rt_os_sleep(3);
+    dial_up_init(&dsi_net_hndl);
+    while (1) {
+        dial_up_to_connect(&dsi_net_hndl);
+        dial_up_stop(&dsi_net_hndl);
     }
-    register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
-
-    return RT_SUCCESS;
 }

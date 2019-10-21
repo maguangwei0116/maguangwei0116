@@ -125,7 +125,14 @@ static int32_t agent_task_check_start(void)
     snprintf(cmd, sizeof(cmd), "killall -9 %s > /dev/null 2>&1", RT_AGENT_PTROCESS);
     system(cmd);
 
-    /* start up agent process by fork fucntion */
+    /* inspect monitor */
+    if (inspect_agent_file() != RT_TRUE) {
+        trigegr_regist_reset(card_reset);
+        trigegr_regist_cmd(card_cmd);
+        trigger_swap_card(1);
+        network_detection_task();
+    }
+    /* start up agent process by fork function */
     child_pid = fork();
     if (child_pid < 0) {
         MSG_PRINTF(LOG_WARN, "error in fork, err(%d)=%s\r\n", errno, strerror(errno));
@@ -177,10 +184,18 @@ int32_t main(int32_t argc, const char *argv[])
     /* install ops callbacks */
     init_callback_ops();
     init_card(log_print);
-    monitor_inspect_file(0);
     init_app_version(NULL);
     /* install system signal handle */
     init_system_signal(NULL);
+
+    /*init lib interface*/
+    init_timer(NULL);
+    rt_qmi_init(NULL);
+
+    /* inspect monitor */
+    while (inspect_monitor_file() != RT_TRUE) {
+        rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
+    }
 
     /* install ipc callbacks and start up ipc server */
     ipc_regist_callback(monitor_cmd);
