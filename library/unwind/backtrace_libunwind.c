@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <execinfo.h>
 #include <signal.h>
+#include <errno.h>
 #if 1
 #include <unwind.h>
 #define UNW_LOCAL_ONLY
@@ -51,6 +52,7 @@ static all_thread_info_t g_all_thread_info;
 
 int32_t thread_info_record(unsigned long pid, const char *name)
 {
+	g_backtrac_log_func("Thread create: %p, %s\r\n", pid, name);
 	g_all_thread_info.thread[g_all_thread_info.cnt].pid = pid;
 	g_all_thread_info.thread[g_all_thread_info.cnt].name = name;
 	g_all_thread_info.cnt++;
@@ -75,6 +77,7 @@ static int32_t thread_info_check(void)
 	int32_t i;
 	unsigned long cur_pid = pthread_self();
 	
+	g_backtrac_log_func("crush thread ===> %p\r\n", cur_pid);
 	for (i = 0; i < g_all_thread_info.cnt; i++) {
 		if (cur_pid == g_all_thread_info.thread[i].pid) {
 			g_backtrac_log_func("crush thread ===> # %02d %p: %s\r\n", i+1, g_all_thread_info.thread[i].pid, g_all_thread_info.thread[i].name);
@@ -149,7 +152,7 @@ exit_entry:
 	return ret;
 }
 
-static void handle_sigsegv(int sig, siginfo_t *info, void *ucontext)
+void handle_sigsegv(int sig, siginfo_t *info, void *ucontext)
 {
 	static const char *si_codes[3] = {"", "SEGV_MAPERR", "SEGV_ACCERR"};
 	long ip = 0;
@@ -173,7 +176,8 @@ static void handle_sigsegv(int sig, siginfo_t *info, void *ucontext)
          t->uc_mcontext.arm_r6, t->uc_mcontext.arm_r7, t->uc_mcontext.arm_r8,
          t->uc_mcontext.arm_r9, t->uc_mcontext.arm_r10, t->uc_mcontext.arm_fp,
          t->uc_mcontext.arm_ip, t->uc_mcontext.arm_sp, t->uc_mcontext.arm_lr,
-         t->uc_mcontext.arm_pc, t->uc_mcontext.arm_cpsr);	
+         t->uc_mcontext.arm_pc, t->uc_mcontext.arm_cpsr);
+	g_backtrac_log_func("t->uc_mcontext.arm_r1=%s\r\n", t->uc_mcontext.arm_r1);
 #endif
 #elif defined(__FreeBSD__)
 #ifdef __i386__
@@ -188,11 +192,12 @@ static void handle_sigsegv(int sig, siginfo_t *info, void *ucontext)
 #endif
 
 	g_backtrac_log_func("\r\n=======================================================\r\n");
-	g_backtrac_log_func("Signal Info:\r\nrecv signal:%d  si_errno:%d, si_code:%d(%s), address:0x%lx  ip:0x%08lx\r\n\r\n",
+	g_backtrac_log_func("Signal Info:\r\nrecv signal:%d  si_errno:%d, si_code:%d(%s), si_pid:%p, address:0x%lx  ip:0x%08lx\r\n\r\n",
 			sig,
 			info->si_errno, 
 			info->si_code,
 			si_codes[info->si_code],
+			info->si_pid,
 			/* this is void*, but using %p would print "(null)"
 			 * even for ptrs which are not exactly 0, but, say, 0x123:
 			 */
@@ -243,20 +248,25 @@ static const signal_info_t g_signal_array[] =
 
 int32_t init_backtrace(void *arg)
 {
-	struct sigaction handler;
+	struct sigaction act;
 	int32_t i;
+	int32_t ret;
 	int32_t cnt = ARRAY_SIZE(g_signal_array);
   
-	g_backtrac_log_func = (backtrac_log_func)arg;
-  
-	memset(&handler,0,sizeof(handler));
-	handler.sa_sigaction 	= handle_sigsegv;
-	handler.sa_flags 		= SA_SIGINFO;
-	
-	for (i = 0; i < cnt; i++) {
-		g_backtrac_log_func("install signal %3d [%-10s] handler !\r\n", g_signal_array[i].no, g_signal_array[i].name);
-		sigaction(g_signal_array[i].no, &handler, NULL);
+	if (arg) {
+		g_backtrac_log_func = (backtrac_log_func)arg;
 	}
+  
+	memset(&act, 0, sizeof(act));
+	act.sa_sigaction 	= handle_sigsegv;
+	act.sa_flags 		= SA_SIGINFO;
+	
+	for (i = 0; i < cnt; i++) {		
+		ret = sigaction(g_signal_array[i].no, &act, NULL);
+		g_backtrac_log_func("install signal %3d [%-10s] handler, ret=%d, err(%d)=%s\r\n", g_signal_array[i].no, g_signal_array[i].name, ret, errno, strerror(errno));
+	}
+	
+	thread_info_record(pthread_self(), "main-thread");
 	
 	return 0;
 }

@@ -111,7 +111,7 @@ int32_t linux_mutex_lock(pthread_mutex_t *mutex)
     if (!mutex) {
         return RT_ERROR;
     }
-    return rt_mutex_unlock(mutex);
+    return rt_mutex_lock(mutex);
 }
 
 int32_t linux_mutex_unlock(pthread_mutex_t *mutex)
