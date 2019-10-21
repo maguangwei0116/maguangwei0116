@@ -71,14 +71,20 @@ typedef struct
     const char* value;
 } Log_nameValue;
 
+#define REDTEA_MQTT_LOG_ON  1 /* set mqtt log switch status */
+
 int Log_initialize(Log_nameValue*);
 void Log_terminate();
+#ifdef REDTEA_MQTT_LOG_ON
+void _Log(const char *file, int line, int log_level, int msgno, char* format, ...);
+#define __FILENAME__                    (strrchr("/"__FILE__, '/') + 1)
+#define Log(level, no, format, ...)     _Log(__FILENAME__, __LINE__, level, no, format, ##__VA_ARGS__)
+#else
 void Log(int, int, char *, ...);
+#endif
 void Log_stackTrace(int, int, int, int, const char*, int, int*);
 typedef void Log_traceCallback(enum LOG_LEVELS level, char* message);
 void Log_setTraceCallback(Log_traceCallback* callback);
 DLLExport void Log_setTraceLevel(enum LOG_LEVELS level);
-
-#define REDTEA_MQTT_LOG_ON  1 /* set mqtt log switch status */
 
 #endif

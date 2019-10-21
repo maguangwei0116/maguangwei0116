@@ -67,7 +67,7 @@
 static trace_settings_type trace_settings =
 {
 #ifdef REDTEA_MQTT_LOG_ON
-    TRACE_MED,
+    TRACE_MINIMUM,
 #else
     TRACE_MAXIMUM,
 #endif
@@ -386,13 +386,8 @@ static void Log_trace(int log_level, char* buf)
 
 #ifdef REDTEA_MQTT_LOG_ON
 #include "log.h"
-#define MQTT_LOG(format,...)\
-do {\
-    unsigned long pid = pthread_self();\
-    char pid_str[16];\
-    snprintf(pid_str, sizeof(pid_str), "%p", pid);\
-    log_print(4, 0, "[%s][ %d %s ] "format, pid_str, __LINE__, __FILENAME__, ##__VA_ARGS__);\
-} while(0)
+// log level: LOG INFO [4]
+#define MQTT_LOG(format, ...)    MSG_PRINTF(4, format, ##__VA_ARGS__)
 #endif
 
 /**
@@ -404,7 +399,11 @@ do {\
  * @param aFormat the printf format string to be used if the message id does not exist
  * @param ... the printf inserts
  */
+#ifdef REDTEA_MQTT_LOG_ON
+void _Log(const char *file, int line, int log_level, int msgno, char* format, ...)
+#else
 void Log(int log_level, int msgno, char* format, ...)
+#endif
 {
     if (log_level >= trace_settings.trace_level)
     {
@@ -421,7 +420,7 @@ void Log(int log_level, int msgno, char* format, ...)
         vsnprintf(msg_buf, sizeof(msg_buf), format, args);
 
         #ifdef REDTEA_MQTT_LOG_ON
-        MQTT_LOG("%s\r\n", msg_buf);
+        MQTT_LOG("[%s, %d]%s\r\n", file, line, msg_buf);
         #else
         Log_trace(log_level, msg_buf);
         #endif
