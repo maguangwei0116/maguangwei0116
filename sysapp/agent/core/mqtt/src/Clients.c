@@ -70,7 +70,7 @@ int get_client_mqtt_version_from_network_handler(networkHandles* handler)
         return MQTTVERSION_YUNBA_3_1;
     }else{
 
-        Log(TRACE_MINIMUM, -1, "mqttversion is :%d", client->MQTTVersion);
+        Log(TRACE_MAXIMUM, -1, "mqttversion is :%d", client->MQTTVersion);
         if(client->MQTTVersion == 0)
         {
             return MQTTVERSION_YUNBA_3_1;
