@@ -655,10 +655,10 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
         g_mqtt_param.mqtt_flag = RT_TRUE;
         g_mqtt_param.lost_flag = RT_FALSE;
-        MSG_PRINTF(LOG_WARN, "Connect mqtt ok ! [%p]\n", pthread_self());
+        MSG_PRINTF(LOG_WARN, "Connect mqtt ok !\n");
         return RT_TRUE;
     } else {
-        MSG_PRINTF(LOG_WARN, "Failed to connect error:%d [%p]\n", c, pthread_self());
+        MSG_PRINTF(LOG_WARN, "Failed to connect error:%d\n", c);
         return RT_FALSE;
     }
 }
