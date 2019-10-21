@@ -54,9 +54,9 @@ extern int32_t thread_info_record(unsigned long pid, const char *name);
 int32_t _rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
 #define rt_create_task(task_id, task_fun, args)\
     ({\
-        int32_t _ret = _rt_create_task(task_id, task_fun, args);\
+        int32_t _ret = _rt_create_task((task_id), (task_fun), (args));\
         if (!_ret) {\
-            thread_info_record((unsigned long)*task_id, #task_fun);\
+            thread_info_record((unsigned long)*(task_id), #task_fun);\
         };\
         _ret;\
     })
