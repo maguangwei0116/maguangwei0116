@@ -47,6 +47,11 @@
 #include <memory.h>
 #include <stdlib.h>
 
+#ifdef CFG_ENABLE_LIBUNWIND
+#include "rt_os.h"
+#define pthread_create(id, attr, fn, param) rt_create_task(id, fn, param)
+#endif
+
 /**
  * Start a new thread
  * @param fn the function to run, must be of the correct signature
@@ -68,7 +73,7 @@ thread_type Thread_start(thread_fn fn, void* parameter)
 #else
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if (pthread_create(&thread, &attr, fn, parameter) != 0)
+    if (pthread_create((&thread), &attr, fn, parameter) != 0)
         thread = 0;
     pthread_attr_destroy(&attr);
 #endif
