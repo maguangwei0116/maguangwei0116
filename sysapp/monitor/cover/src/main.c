@@ -169,6 +169,8 @@ static void init_app_version(void *arg)
 
 int32_t main(int32_t argc, const char *argv[])
 {
+    rt_bool keep_agent_alive = RT_TRUE;
+	
     /* check input param to debug in terminal */
     if (argc > 1) {
         g_def_mode = LOG_PRINTF_TERMINAL;
@@ -191,11 +193,27 @@ int32_t main(int32_t argc, const char *argv[])
     /* install ipc callbacks and start up ipc server */
     ipc_regist_callback(monitor_cmd);
     ipc_socket_server_start();
+	
+    #if 0 /* only for test */
+    /* force to change to vUICC mode */
+    trigegr_regist_reset(card_reset);
+    trigegr_regist_cmd(card_cmd);
+    trigger_swap_card(1);
+
+    while (1) {
+	    rt_os_sleep(1);
+    }
+    #endif
 
     /* start up agent */
-    while (1) {
+    do {
         agent_task_check_start();
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
+    } while(keep_agent_alive);
+	
+    /* stop here */
+    while (1) {
+	    rt_os_sleep(1);
     }
 
     return RT_SUCCESS;
