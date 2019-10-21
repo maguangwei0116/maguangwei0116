@@ -64,9 +64,13 @@
 #define min(A,B) ( (A) < (B) ? (A):(B))
 #endif
 
-trace_settings_type trace_settings =
+static trace_settings_type trace_settings =
 {
+#ifdef REDTEA_MQTT_LOG_ON
+    TRACE_MED,
+#else
     TRACE_MAXIMUM,
+#endif
     400,
     -1
 };
@@ -380,6 +384,16 @@ static void Log_trace(int log_level, char* buf)
     Log_posttrace(log_level, cur_entry);
 }
 
+#ifdef REDTEA_MQTT_LOG_ON
+#include "log.h"
+#define MQTT_LOG(format,...)\
+do {\
+    unsigned long pid = pthread_self();\
+    char pid_str[16];\
+    snprintf(pid_str, sizeof(pid_str), "%p", pid);\
+    log_print(4, 0, "[%s][ %d %s ] "format, pid_str, __LINE__, __FILENAME__, ##__VA_ARGS__);\
+} while(0)
+#endif
 
 /**
  * Log a message.  If possible, all messages should be indexed by message number, and
@@ -406,7 +420,11 @@ void Log(int log_level, int msgno, char* format, ...)
         va_start(args, format);
         vsnprintf(msg_buf, sizeof(msg_buf), format, args);
 
+        #ifdef REDTEA_MQTT_LOG_ON
+        MQTT_LOG("%s\r\n", msg_buf);
+        #else
         Log_trace(log_level, msg_buf);
+        #endif
         va_end(args);
         Thread_unlock_mutex(log_mutex);
     }

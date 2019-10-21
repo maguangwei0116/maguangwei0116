@@ -58,7 +58,7 @@ typedef struct
     int trace_output_level;     /**< trace level to output to destination */
 } trace_settings_type;
 
-extern trace_settings_type trace_settings;
+//extern trace_settings_type trace_settings;
 
 #define LOG_PROTOCOL TRACE_PROTOCOL
 #define TRACE_MAX TRACE_MAXIMUM
@@ -73,12 +73,12 @@ typedef struct
 
 int Log_initialize(Log_nameValue*);
 void Log_terminate();
-
 void Log(int, int, char *, ...);
 void Log_stackTrace(int, int, int, int, const char*, int, int*);
-
 typedef void Log_traceCallback(enum LOG_LEVELS level, char* message);
 void Log_setTraceCallback(Log_traceCallback* callback);
 DLLExport void Log_setTraceLevel(enum LOG_LEVELS level);
+
+#define REDTEA_MQTT_LOG_ON  1 /* set mqtt log switch status */
 
 #endif
