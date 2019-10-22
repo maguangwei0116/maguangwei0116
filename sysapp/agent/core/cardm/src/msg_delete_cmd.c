@@ -134,11 +134,14 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 MSG_PRINTF(LOG_ERR, "Parse iccid failed!!\n");
                 continue;
             }
+            
             code_info = cJSON_CreateObject();
             if (!code_info) {
                 MSG_PRINTF(LOG_ERR, "Code info create error\n");
                 continue;
             }
+
+            opr_iccid_using = RT_FALSE;
             code = msg_delete_profile(iccid->valuestring, &opr_iccid_using);
             if (opr_iccid_using && code == RT_SUCCESS) {
                 MSG_PRINTF(LOG_WARN, "delete using operational profile, start bootstrap ...\n");
@@ -174,8 +177,27 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         cJSON_AddItemToObject(content, "results", delete_result);
     } while(0);
 
+#if 0
     rt_os_sleep(1);
-    card_update_profile_info(bootstrap_flag);
+    card_update_profile_info(bootstrap_flag);    
+    if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+        rt_os_sleep(5);  // wait some time for provisioning network disconnected, or it may report ON_DELETE twice !!!
+    }
+#else
+    /* 
+    when delete all oprtional profiles ok, it will changed to provisoning profile.
+    So it will accur network disconnected from oprtional profiles to provisoning profile.
+    Need to enable provisoning profile frist.
+    It will call network_set_apn_handler, and start bootstrap.
+    It will avoid repporting ON_DELETE twice.
+    */ 
+    if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+        card_force_enable_provisoning_profile();
+    }
+    rt_os_sleep(3);
+    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+       
+#endif
     *out = content;
 end:
     rt_os_free((void *)in);
