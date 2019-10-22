@@ -108,6 +108,7 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
     confirmation_code = cJSON_GetObjectItem(command_content, "cc");
     if (!confirmation_code) {
         MSG_PRINTF(LOG_ERR, "Error before JSON: [%s] (No CC)\n", cJSON_GetErrorPtr());
+        return ERROR_NO_REQUIRED_DATA;
     } else {
         cc = confirmation_code->valuestring;
     }
@@ -115,8 +116,10 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
     priority = cJSON_GetObjectItem(command_content, "priority");
     if (!priority) {
         MSG_PRINTF(LOG_ERR, "Error before JSON: [%s] (No priority)\n", cJSON_GetErrorPtr());
+        return ERROR_NO_REQUIRED_DATA;
     }
     *prio = priority->valueint;
+    
     while(1) {
         //debug_json_data(activation_code, activation_code);
         MSG_PRINTF(LOG_INFO, "AC: %s\r\n", activation_code->valuestring);
@@ -169,9 +172,9 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
     int32_t state = RT_SUCCESS;
     int32_t code = RT_ERROR;
     int32_t priority = 0;
-    int32_t prio = 0;
+    int32_t min_prio_value = 0;  //The smaller the number, the higher the priority.
     uint8_t iccid_t[THE_ICCID_LENGTH + 1] = {0};
-
+    rt_bool frist_download_ok = RT_TRUE;
     cJSON *up_content = NULL;
     cJSON *payload = NULL;
     cJSON *ac_infos = NULL;
@@ -223,11 +226,16 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
             cJSON_AddItemToArray(install_result, code_info);
             MSG_PRINTF(LOG_WARN, "add %d, code:%d, iccid_t=%s\r\n", ii, code, iccid_t);
             if (code == RT_SUCCESS) {
-                if (prio == 0 || priority <= prio) {
+                MSG_PRINTF(LOG_INFO, "111111 min_prio_value=%d, priority=%d\r\n", min_prio_value, priority);
+                if ((frist_download_ok == RT_TRUE) || (priority <= min_prio_value)) {
                     rt_os_memcpy(g_iccid, iccid_t, THE_ICCID_LENGTH);
                     g_iccid[THE_ICCID_LENGTH] = '\0';
+                    min_prio_value = priority;
+                }            
+                MSG_PRINTF(LOG_INFO, "222222 min_prio_value=%d, priority=%d, g_iccid=%s\r\n", min_prio_value, priority, g_iccid);
+                if (frist_download_ok == RT_TRUE) {
+                    frist_download_ok = RT_FALSE;
                 }
-                prio = priority;
             } else {
                 fail_times++;
                 state = 1;
