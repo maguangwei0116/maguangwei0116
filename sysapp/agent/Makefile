@@ -87,7 +87,6 @@ SRC-y 			                        += src/lpdd.c
 SRC-y 			                        += src/luid.c
 SRC-y 			                        += src/ldsd.c
 SRC-y 			                        += src/apdu.c
-SRC-y 			                        += ./core/random/src/random.c
 
 # Add your upload-xxx cmd here
 SRC-y 			                        += ./core/upload/src/upload.c
@@ -138,7 +137,6 @@ INC-PATH-y 		                        += ./main/
 INC-PATH-y 		                        += ./ipc/
 INC-PATH-y 		                        += ./lpa/
 INC-PATH-y 		                        += ./core/upload/
-INC-PATH-y 		                        += ./core/random/
 INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
 INC-PATH-y 		                        += ./core/logm/
