@@ -27,9 +27,10 @@ int32_t rt_create_file(uint8_t *file_name)
     } else {
         status = RT_SUCCESS;
     }
-    if(fp != NULL) {
+    if (fp != NULL) {
         fclose(fp);
     }
+
     return status;
 }
 
@@ -37,8 +38,8 @@ int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer
 {
     FILE *fp = NULL;
     int32_t status = RT_ERROR;
-    fp = fopen(addr, "rb+");
 
+    fp = fopen(addr, "rb+");
     if (fp == NULL) {
         MSG_PRINTF(LOG_WARN, "open file failed\n");
     } else {
@@ -50,8 +51,8 @@ int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer
         }
         fclose(fp);
     }
-
     rt_os_sync();
+
     return status;
 }
 
@@ -90,13 +91,12 @@ int32_t rm_dir(const int8_t *dirpath)
     struct stat st;
 
     opendir(dirpath);
-    if(!dirp) {
+    if (!dirp) {
         return RT_ERROR;
     }
 
     while ((dir = readdir(dirp)) != NULL) {
-        if (strcmp(dir->d_name,".") == 0
-                || strcmp(dir->d_name,"..") == 0) {
+        if (strcmp(dir->d_name,".") == 0 || strcmp(dir->d_name,"..") == 0) {
             continue;
         }
 
@@ -113,14 +113,14 @@ int32_t rm_dir(const int8_t *dirpath)
                 return -1;
             }
             rt_os_rmdir(sub_path);
-        } else if(S_ISREG(st.st_mode)) {
+        } else if (S_ISREG(st.st_mode)) {  // 普通文件
             rt_os_unlink(sub_path);
         } else {
             MSG_PRINTF(LOG_WARN, "rm_dir:lstat %s error\n", sub_path);
             continue;
         }
     }
-    if (rt_os_rmdir(dirpath) == -1) {//delete dir itself.
+    if (rt_os_rmdir(dirpath) == -1) { // delete dir itself.
         closedir(dirp);
         return -1;
     }
@@ -138,7 +138,7 @@ int32_t rm(const int8_t *file_name)
     }
 
     if (S_ISREG(st.st_mode)) {
-        if(rt_os_unlink(file_name) == -1) {
+        if (rt_os_unlink(file_name) == -1) {
             return RT_ERROR;
         }
     } else if (S_ISDIR(st.st_mode)) {

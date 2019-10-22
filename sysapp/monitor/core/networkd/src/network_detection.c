@@ -24,7 +24,8 @@ static rt_bool g_network_timer_flag = RT_FALSE;
 static void network_timer_callback(void)
 {
     if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
-        backup_process(LPA_CHANNEL_BY_IPC);
+        backup_process();
+        register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
     }
     g_network_timer_flag = RT_FALSE;
     MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);

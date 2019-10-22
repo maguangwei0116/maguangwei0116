@@ -113,6 +113,21 @@ static int32_t ipc_socket_server_start(void)
     return ret;
 }
 
+// choose euicc or vuicc
+static int32_t choose_sim_type(void)
+{
+    lpa_channel_type_e type = LPA_CHANNEL_BY_IPC;
+
+    if (type == LPA_CHANNEL_BY_IPC) {
+        trigegr_regist_reset(card_reset);
+        trigegr_regist_cmd(card_cmd);
+        trigger_swap_card(1);
+    }
+    init_apdu_channel(type);
+
+    return RT_SUCCESS;
+}
+
 static int32_t agent_task_check_start(void)
 {
     int32_t ret;
@@ -125,11 +140,9 @@ static int32_t agent_task_check_start(void)
     snprintf(cmd, sizeof(cmd), "killall -9 %s > /dev/null 2>&1", RT_AGENT_PTROCESS);
     system(cmd);
 
-    /* inspect monitor */
+    /* inspect agent, if inspect failed, go to backup process */
     if (inspect_agent_file() != RT_TRUE) {
-        trigegr_regist_reset(card_reset);
-        trigegr_regist_cmd(card_cmd);
-        trigger_swap_card(1);
+        choose_sim_type();
         network_detection_task();
     }
     /* start up agent process by fork function */

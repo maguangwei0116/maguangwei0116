@@ -30,6 +30,8 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     ret = cmd_store_data((const uint8_t *)buf, len, rsp, &rsp_len, channel);
     rt_close_channel(channel);
 
+    trigger_swap_card(1);  // reset card
+
     return ret;
 }
 
@@ -73,8 +75,7 @@ end:
     return ret;
 }
 
-int32_t backup_process(lpa_channel_type_e type)
+int32_t backup_process(void)
 {
-    init_apdu_channel(type);
     return parse_profile(1);
 }
