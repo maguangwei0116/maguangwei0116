@@ -43,5 +43,6 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode);
 int32_t card_update_profile_info(judge_term_e bootstrap_flag);
 int32_t card_check_profile_info(judge_term_e bootstrap_flag, char *cur_iccid, profile_type_e *type);
 int32_t card_set_opr_profile_apn(void);
+int32_t card_force_enable_provisoning_profile(void);
 
 #endif // __CARD_MANAGER_H__

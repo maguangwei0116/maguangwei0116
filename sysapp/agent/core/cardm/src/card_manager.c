@@ -204,6 +204,14 @@ static int32_t card_get_provisioning_profile_iccid(char *iccid)
     return ret;
 }
 
+int32_t card_force_enable_provisoning_profile(void)
+{
+    char iccid[THE_ICCID_LENGTH + 1] = {0};
+
+    card_get_provisioning_profile_iccid(iccid);
+    return msg_enable_profile(iccid);   
+}
+
 static int32_t card_load_profile(const uint8_t *buf, int32_t len)
 {
     int32_t ret = RT_SUCCESS;
