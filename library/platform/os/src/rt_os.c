@@ -43,8 +43,6 @@ int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
 int32_t rt_mutex_init(pthread_mutex_t *mutex)
 {
     int32_t ret = 0;
-    static pthread_mutex_t mutex_t;
-    mutex = &mutex_t;
 
     ret = pthread_mutex_init(mutex, NULL);
     if(ret != 0){
