@@ -15,8 +15,11 @@
 #include "rt_os.h"
 #include "rt_qmi.h"
 
-#define DAIL_UP_WAIT        5
-#define has_more_argv()     ((opt < argc) && (argv[opt][0] != '-'))
+#define DAIL_UP_WAIT                5           // timers
+#define CHK_DIAL_STATE_INTERVAL     2           // seconds
+#define MAX_CHK_DIAL_STATE          (5 * 60)    // for total 5 mins
+#define MAX_CHK_DIAL_STATE_CNT      (MAX_CHK_DIAL_STATE / CHK_DIAL_STATE_INTERVAL) 
+#define has_more_argv()             ((opt < argc) && (argv[opt][0] != '-'))
 
 typedef void (*dial_callback)(int32_t state);
 static dial_callback g_dial_state_func;
@@ -284,6 +287,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     int32_t nevents = 0;
     int32_t fd = 0;
     int16_t revents = 0;
+    int32_t cgk_state_cnt = 0;
 
     socketpair( AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
 
@@ -297,8 +301,12 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
             if (get_regist_state() != RT_TRUE) {
                 rt_os_sleep(2);
+                if (++cgk_state_cnt >= MAX_CHK_DIAL_STATE_CNT) {
+                    return RT_ERROR;
+                }
                 continue;
             }
+            cgk_state_cnt = 0;
             rval = dsi_start_data_call(dsi_net_hndl->handle);
             if (DSI_SUCCESS != rval) {
                 MSG_PRINTF(LOG_WARN, "dsi_start_data_call rval = %d\n", rval);
