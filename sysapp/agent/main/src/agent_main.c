@@ -124,6 +124,11 @@ static const init_obj_t g_init_objs[] =
 {
     INIT_OBJ(init_log_file,             NULL),
     INIT_OBJ(init_config,               (void *)&g_value_list),
+
+#ifdef CFG_ENABLE_LIBUNWIND
+    INIT_OBJ(init_backtrace,            agent_printf),
+#endif
+    
     INIT_OBJ(init_versions,             (void *)&g_value_list),   
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
@@ -141,10 +146,6 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_upgrade,              (void *)&g_value_list),
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
     INIT_OBJ(init_logm,                 (void *)&g_value_list),
-
-#ifdef CFG_ENABLE_LIBUNWIND
-    INIT_OBJ(init_backtrace,            agent_printf),
-#endif
 };
 
 static int32_t agent_init_call(void)
