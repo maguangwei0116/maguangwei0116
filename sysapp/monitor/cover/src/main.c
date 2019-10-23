@@ -23,7 +23,8 @@
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"
-#define RT_AGENT_FILE               "/usr/bin/rt_agent"
+#define RT_AGENT_FILE               "/data/agent1"
+#define RT_MONITOR_FILE             "/data/monitor"
 #define RT_MONITOR_LOG              "/data/redtea/rt_monitor_log"
 #define RT_MONITOR_LOG_MAX_SIZE     (1 * 1024 * 1024)
 
@@ -50,23 +51,28 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
 {
     uint16_t cmd = 0;
     uint16_t sw = 0;
+    int8_t log_level;
+    uint32_t log_max_size;
     static rt_bool reset_flag = RT_FALSE;
 
     cmd = (data[5] << 8) + data[6];
     if (cmd == 0xFFFF) { // msg from agent
-        MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (data[7] == 0x00) ? "vUICC" : "eUICC");
-        if (data[7] == 0x00) {  // used vuicc
-            trigegr_regist_reset(card_reset);
-            trigegr_regist_cmd(card_cmd);
-            trigger_swap_card(1);
-            *rsp_len = 0;
-        }
-        if (data[9] != 0x00) { //set monitor log level and max log size
-            int8_t log_level = data[9];
-            uint32_t log_max_size;
-            rt_os_memcpy(&log_max_size, &data[12], sizeof(log_max_size));
+        if (data[7] == 0x00) {  // config monitor
+            MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (data[7] == 0x00) ? "vUICC" : "eUICC");
+            if (data[12] == 0x00) {
+                trigegr_regist_reset(card_reset);
+                trigegr_regist_cmd(card_cmd);
+                trigger_swap_card(1);
+                *rsp_len = 0;
+            }
+            log_level = data[13];
+            rt_os_memcpy(&log_max_size, &data[16], sizeof(log_max_size));
             MSG_PRINTF(LOG_WARN, "set log_level=%d, log_max_size=%d\n", log_level, log_max_size);
             log_set_param(g_def_mode, log_level, log_max_size);
+        } else if (data[7] == 0x01) { // check signature
+
+        } else if (data[7] == 0x02) { // choose one profile from backup profile
+            backup_process();
         }
     } else {
         MSG_INFO_ARRAY("E-APDU REQ:", data, len);
@@ -114,7 +120,7 @@ static int32_t ipc_socket_server_start(void)
 }
 
 // choose euicc or vuicc
-static int32_t choose_sim_type(void)
+static int32_t choose_uicc_type(void)
 {
     lpa_channel_type_e type = LPA_CHANNEL_BY_IPC;
 
@@ -141,8 +147,8 @@ static int32_t agent_task_check_start(void)
     system(cmd);
 
     /* inspect agent, if inspect failed, go to backup process */
-    if (inspect_agent_file() != RT_TRUE) {
-        choose_sim_type();
+    if (monitor_inspect_file(RT_AGENT_FILE) != RT_TRUE) {
+        choose_uicc_type();
         network_detection_task();
     }
     /* start up agent process by fork function */
@@ -206,7 +212,7 @@ int32_t main(int32_t argc, const char *argv[])
     rt_qmi_init(NULL);
 
     /* inspect monitor */
-    while (inspect_monitor_file() != RT_TRUE) {
+    while (monitor_inspect_file(RT_MONITOR_FILE) != RT_TRUE) {
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
     }
 

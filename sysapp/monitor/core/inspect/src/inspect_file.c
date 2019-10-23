@@ -15,8 +15,6 @@
 #include "file.h"
 #include "hash.h"
 
-#define MONITOR                         "/data/monitor"
-#define AGENT                           "/data/agent1"
 #define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
 #define MAX_FILE_HASH_BYTE_LEN          32
 #define PRIVATE_HASH_STR_LEN            64
@@ -24,7 +22,7 @@
 #define RT_CHECK_ERR(process, result) \
     if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
-static rt_bool monitor_inspect_file(uint8_t *file_name)
+rt_bool monitor_inspect_file(uint8_t *file_name)
 {
     rt_fshandle_t fp = NULL;
     sha256_ctx_t sha_ctx;
@@ -76,16 +74,6 @@ end:
     }
 
     return ret;
-}
-
-rt_bool inspect_monitor_file(void)
-{
-    return monitor_inspect_file(MONITOR);
-}
-
-rt_bool inspect_agent_file(void)
-{
-    return monitor_inspect_file(AGENT);
 }
 
 rt_bool inspect_abstract_content(uint8_t *hash, uint8_t *signature)
