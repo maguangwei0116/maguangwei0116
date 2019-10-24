@@ -304,10 +304,8 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     MSG_PRINTF(LOG_INFO, "Start dial up\n");
 
     while (1) {
-        MSG_PRINTF(LOG_DBG, "dsi_net_hndl->call_state = %d\n", dsi_net_hndl->call_state);
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
             if (get_regist_state() != RT_TRUE) {
-                MSG_PRINTF(LOG_DBG, "dsi_net_hndl->call_state = %d\n", dsi_net_hndl->call_state);
                 rt_os_sleep(3);
                 dial_state(dsi_net_hndl->call_state);
                 continue;
