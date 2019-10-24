@@ -14,6 +14,7 @@ vpath %.c ./log
 vpath %.c ./os
 vpath %.c ./qualcomm
 vpath %.c ./socket
+vpath %.c ./random
 
 # Config your resource file list by += xxx.c
 SRC-y 		+= src/file.c
@@ -31,6 +32,7 @@ SRC-y 		+= src/qmi_uim.c
 SRC-y 		+= src/qmi_wds.c
 SRC-y 		+= src/rt_qmi.c
 SRC-y 		+= src/socket.c
+SRC-y 		+= src/random.c
 
 # Config your include file path by += xxx-inc
 INC-PATH 	+= ./file/
@@ -39,6 +41,7 @@ INC-PATH 	+= ./os/
 INC-PATH 	+= ./log/
 INC-PATH 	+= ./qualcomm/
 INC-PATH 	+= ./socket/
+INC-PATH 	+= ./random/
 
 INC-y 		+= ./
 INC-y 		+= $(INC-PATH)

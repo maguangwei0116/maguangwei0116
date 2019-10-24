@@ -18,6 +18,7 @@
 #include "apdu.h"
 #include "trigger.h"
 #include "card.h"
+#include "random.h"
 
 static int32_t insert_profile(const uint8_t *buf, int32_t len)
 {
@@ -39,16 +40,20 @@ static int32_t parse_profile(int32_t rand_num)
 {
     ProfileFile_t *profile_file = NULL;
     ProfileInfo1_t *profile_info = NULL;
-    uint8_t *profiles = NULL;
-    int32_t size;
-    asn_dec_rval_t dc;
     int32_t ret = RT_ERROR;
+    uint8_t *profiles = NULL;
+    asn_dec_rval_t dc;
+    int32_t size;
+    int32_t operator_num;
 
     dc = ber_decode(NULL, &asn_DEF_ProfileFile, (void **) &profile_file, card_buf, sizeof(card_buf));
     if (dc.code != RC_OK) {
         MSG_PRINTF(LOG_ERR, "Consumed:%ld\n", dc.consumed);
         goto end;
     }
+
+    operator_num = profile_file->sharedProfile.fileInfo.operatorNum;
+    MSG_PRINTF(LOG_INFO, "Operator num:%d!!\n", operator_num);
 
     profile_info = &(profile_file->sharedProfile.optProfiles.list.array[0]->profileInfo);
     profiles = profile_file->sharedProfile.optProfiles.list.array[0]->content.buf;
@@ -77,5 +82,5 @@ end:
 
 int32_t backup_process(void)
 {
-    return parse_profile(1);
+    return parse_profile((uint64_t)rt_get_random_num());
 }

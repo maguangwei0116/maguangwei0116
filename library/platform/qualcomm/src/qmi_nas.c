@@ -5,13 +5,16 @@
 #include <stdlib.h>
 
 static qmi_client_type g_nas_client;
+
 int qmi_nas_init(void)
 {
     qmi_client_error_type err;
+
     err = qmi_ctrl_point_init(nas_get_service_object_v01(), &g_nas_client, NULL, NULL);
     if(err != QMI_NO_ERR) {
         MSG_PRINTF(LOG_WARN, "failed to initialize control point of NAS: %d\n", err);
     }
+
     return err;
 }
 
@@ -59,6 +62,7 @@ int qmi_perform_network_scan(qmi_network_scan_result *scan_result, int timeout)
         }
     }
 out:
+
     return err;
 }
 

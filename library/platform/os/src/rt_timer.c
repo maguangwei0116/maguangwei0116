@@ -122,14 +122,17 @@ int32_t register_timer(int sec, int usec, void (*action)())
     MSG_PRINTF(LOG_INFO, "time:%d\n", itimer.it_value.tv_sec);
     setitimer(ITIMER_REAL, &itimer, NULL);
     rt_mutex_unlock(&g_mutex);
+
     return 0;
 }
 
 int32_t init_timer(void *arg)
 {
     int32_t ret = RT_SUCCESS;
+
     ret = rt_mutex_init(&g_mutex);
     signal(SIGALRM, timer_handler);
+
     return ret;
 }
 
