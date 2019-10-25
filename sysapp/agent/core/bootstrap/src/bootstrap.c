@@ -21,20 +21,22 @@
 #include "rt_type.h"
 #include "random.h"
 
-static uint32_t g_single_interval_time  = 10;           // single interval time for activating fail
-static uint32_t g_max_retry_times       = 7;            // max retry counter
-static uint32_t g_sleep_time            = 24 * 60 * 60; // sleep time
+#define DEFAULT_SINGLE_INTERVAL_TIME    10                              // default interval time (seconds)
+static uint32_t g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME; // single interval time for activating fail
+static uint32_t g_max_retry_times       = 7;                            // max retry counter
 static uint32_t g_is_profile_damaged    = RT_ERROR;
 static uint32_t g_retry_times           = 0;
 
 static void bootstrap_select_profile(void)
 {
     if (g_retry_times > g_max_retry_times) {
-        g_retry_times = 0;
+        g_retry_times           = 0;
+        g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME;
     } else {
         selected_profile((uint32_t)rt_get_random_num());
         g_retry_times++;
         g_single_interval_time *= g_retry_times;
+        MSG_PRINTF(LOG_INFO, "g_single_interval_time(%d)=%d\n", g_retry_times, g_single_interval_time);
     }
 }
 
@@ -52,10 +54,11 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
     }
     MSG_PRINTF(LOG_INFO, "The current mode is %d.\n", mode);
     if (mode == MSG_BOOTSTRAP_SELECT_CARD) {
-        g_retry_times = 0;
+        g_retry_times           = 0;
+        g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME;
         bootstrap_select_profile();
     } else if (mode == MSG_BOOTSTRAP_DISCONNECTED) {
-        MSG_PRINTF(LOG_INFO, "g_single_interval_time:%d\n", g_single_interval_time);
+        MSG_PRINTF(LOG_INFO, "g_single_interval_time(%d)=%d\n", g_retry_times, g_single_interval_time);
         register_timer(g_single_interval_time, 0, &bootstrap_select_profile);
     } else if (mode == MSG_NETWORK_CONNECTED) {
 
