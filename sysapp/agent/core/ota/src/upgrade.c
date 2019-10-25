@@ -259,6 +259,8 @@ static void * check_upgrade_process(void *args)
     if (d_info->on_event) {
         d_info->on_event(d_info);
     }
+
+    return NULL;
 }
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info)

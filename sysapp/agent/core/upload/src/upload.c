@@ -438,7 +438,6 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
 
 int32_t init_upload(void *arg)
 {
-    rt_bool report_all_info;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
     g_upload_device_info    = (const devicde_info_t *)public_value_list->device_info;
@@ -488,5 +487,7 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
         MSG_PRINTF(LOG_INFO, "upload module recv mqtt disconnected\r\n");
         g_upload_mqtt = RT_FALSE;
     }
+
+    return RT_SUCCESS;
 }
 

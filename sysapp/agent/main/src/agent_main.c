@@ -163,7 +163,7 @@ static int32_t agent_init_call(void)
     return RT_SUCCESS;
 }
 
-int32_t main(int32_t argc, int8_t **argv)
+int32_t main(int32_t argc, char **argv)
 {
     agent_init_call();
     

@@ -57,11 +57,12 @@ extern log_level_e log_get_level(const char *level_string);
 #if 0
 #define MSG_PRINTF(LOG_LEVEL, format, ...)      log_print(LOG_LEVEL, LOG_HAVE_LEVEL_PRINTF, "[%d %s ] "format, __LINE__, __FILENAME__, ##__VA_ARGS__)
 #else  // add print out pid info
+#include "pthread.h"
 #define MSG_PRINTF(LOG_LEVEL, format, ...)\
 do {\
     unsigned long pid = pthread_self();\
     char pid_str[16];\
-    snprintf(pid_str, sizeof(pid_str), "%p", pid);\
+    snprintf(pid_str, sizeof(pid_str), "%p", (void *)pid);\
     log_print(LOG_LEVEL, LOG_HAVE_LEVEL_PRINTF, "[%s][ %d %s ] "format, pid_str, __LINE__, __FILENAME__, ##__VA_ARGS__);\
 } while (0)
 #endif
