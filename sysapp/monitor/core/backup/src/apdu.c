@@ -56,6 +56,7 @@ static uint16_t get_sw(uint8_t *rsp, uint16_t len)
 {
     uint16_t sw = 0;
     sw = ((uint16_t)rsp[len-2] << 8) + rsp[len-1];
+
     return sw;
 }
 
@@ -87,6 +88,7 @@ int rt_open_channel(uint8_t *channel)
         ret = rt_qmi_open_channel(euicc_aid, sizeof(euicc_aid), channel);
     }
     MSG_PRINTF(LOG_INFO, "Open Channel: %d\n", *channel);
+
     return ret;
 }
 
@@ -117,6 +119,7 @@ int rt_close_channel(uint8_t channel)
         ret = rt_qmi_close_channel(channel);
     }
     MSG_PRINTF(LOG_INFO, "channel %d, ret:%d\n", channel, ret);
+
     return ret;
 }
 
@@ -216,5 +219,6 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
                 return RT_ERR_APDU_STORE_DATA_FAIL;
         }
     }
+
     return RT_SUCCESS;
 }

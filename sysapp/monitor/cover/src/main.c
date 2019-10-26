@@ -225,5 +225,6 @@ int32_t main(int32_t argc, const char *argv[])
         agent_task_check_start();
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
     }
+
     return RT_SUCCESS;
 }

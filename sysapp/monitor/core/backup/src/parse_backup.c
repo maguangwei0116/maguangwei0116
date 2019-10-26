@@ -20,6 +20,8 @@
 #include "card.h"
 #include "random.h"
 
+static int32_t g_operator_num = 0;
+
 static int32_t insert_profile(const uint8_t *buf, int32_t len)
 {
     uint8_t channel;
@@ -36,6 +38,7 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     return ret;
 }
 
+/*According rand num to select one profile. Insert vuicc and set apn name*/
 static int32_t parse_profile(int32_t rand_num)
 {
     ProfileFile_t *profile_file = NULL;
@@ -45,6 +48,7 @@ static int32_t parse_profile(int32_t rand_num)
     asn_dec_rval_t dc;
     int32_t size;
     int32_t operator_num;
+    int32_t profile_seq;
 
     dc = ber_decode(NULL, &asn_DEF_ProfileFile, (void **) &profile_file, card_buf, sizeof(card_buf));
     if (dc.code != RC_OK) {
@@ -54,25 +58,32 @@ static int32_t parse_profile(int32_t rand_num)
 
     operator_num = profile_file->sharedProfile.fileInfo.operatorNum;
     MSG_PRINTF(LOG_INFO, "Operator num:%d!!\n", operator_num);
+    if (g_operator_num >= operator_num) {
+        g_operator_num = 0;
+    }
 
-    profile_info = &(profile_file->sharedProfile.optProfiles.list.array[0]->profileInfo);
-    profiles = profile_file->sharedProfile.optProfiles.list.array[0]->content.buf;
-    size = profile_file->sharedProfile.optProfiles.list.array[0]->content.size;
+    profile_info = &(profile_file->sharedProfile.optProfiles.list.array[g_operator_num]->profileInfo);
+    profiles = profile_file->sharedProfile.optProfiles.list.array[g_operator_num]->content.buf;
+    size = profile_file->sharedProfile.optProfiles.list.array[g_operator_num]->content.size;
     size = size / profile_info->totalNum;  // one profile size
+    profile_seq = rand_num % profile_info->totalNum;
 
     MSG_PRINTF(LOG_INFO, "Profiles size:%d!!\n", size);
+    MSG_PRINTF(LOG_INFO, "profile_seq:%d!!\n", profile_seq);
 
-    insert_profile(profiles, size);
-    MSG_PRINTF(LOG_INFO, "apn:%s\n", profile_info->apn.list.array[0]->apnName.buf);
-    rt_qmi_modify_profile(1, 0, profile_info->apn.list.array[0]->apnName.buf, 0);
-    MSG_PRINTF(LOG_INFO, "Apn size:%d!!\n", profile_info->apn.list.array[0]->apnName.size);
-    MSG_PRINTF(LOG_INFO, "Apn name:%s!!\n", profile_info->apn.list.array[0]->apnName.buf);
+    insert_profile(profiles + (profile_seq * size), size);
+    MSG_PRINTF(LOG_INFO, "apn:%s\n", profile_info->apn.list.array[g_operator_num]->apnName.buf);
+    rt_qmi_modify_profile(1, 0, profile_info->apn.list.array[g_operator_num]->apnName.buf, 0);
+    MSG_PRINTF(LOG_INFO, "Apn size:%d!!\n", profile_info->apn.list.array[g_operator_num]->apnName.size);
+    MSG_PRINTF(LOG_INFO, "Apn name:%s!!\n", profile_info->apn.list.array[g_operator_num]->apnName.buf);
     MSG_PRINTF(LOG_INFO, "Totle number:%d!!\n", profile_info->totalNum);
     MSG_PRINTF(LOG_INFO, "Backup profile size:%d!!\n", profile_file->sharedProfile.optProfiles.list.size);
     MSG_PRINTF(LOG_INFO, "Backup profile count:%d!!\n", profile_file->sharedProfile.optProfiles.list.count);
     MSG_PRINTF(LOG_INFO, "Decode success, backup profile size:%d!!\n", sizeof(card_buf));
+    ret = RT_SUCCESS;
 
 end:
+    g_operator_num ++;
     if (profile_file != NULL) {
         ASN_STRUCT_FREE(asn_DEF_ProfileFile, profile_file);
     }
@@ -82,5 +93,5 @@ end:
 
 int32_t backup_process(void)
 {
-    return parse_profile((uint64_t)rt_get_random_num());
+    return parse_profile((int32_t)rt_get_random_num());
 }
