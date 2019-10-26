@@ -74,6 +74,7 @@ static void network_set_apn_handler(int32_t state)
     static char using_iccid[THE_ICCID_LENGTH + 1] = {0};
     char new_iccid[THE_ICCID_LENGTH + 1] = {0};
     profile_type_e type;
+    rt_bool update_using_iccid = RT_FALSE;
 
     MSG_PRINTF(LOG_INFO, "state: %d ==> %d\r\n", g_network_state, state);
     
@@ -93,6 +94,7 @@ static void network_set_apn_handler(int32_t state)
             MSG_PRINTF(LOG_WARN, "state changed: DSI_STATE_CALL_CONNECTED ==> DSI_STATE_CALL_IDLE/DSI_STATE_CALL_CONNECTING\r\n");
         } else if (g_network_state == DSI_STATE_CALL_IDLE) {
             MSG_PRINTF(LOG_WARN, "state changed: DSI_STATE_CALL_IDLE ==> DSI_STATE_CALL_IDLE\r\n");
+            update_using_iccid = RT_TRUE;
         }
         
         /* update profiles info only */
@@ -108,6 +110,10 @@ static void network_set_apn_handler(int32_t state)
                 card_check_profile_info(UPDATE_JUDGE_BOOTSTRAP, new_iccid, &type);
             }
         }
+    }
+
+    if (update_using_iccid) {
+        rt_os_memcpy(using_iccid, new_iccid, THE_MAX_CARD_NUM);   
     }
 }
 

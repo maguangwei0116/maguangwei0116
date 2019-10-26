@@ -269,10 +269,12 @@ static int32_t g_dsi_start_data_call = 0;
 
 int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
 {
+    int32_t rval;
+    
     if (dsi_net_hndl->call_state != DSI_STATE_CALL_IDLE) {
-        dsi_stop_data_call(dsi_net_hndl->handle);
+        rval = dsi_stop_data_call(dsi_net_hndl->handle);
         dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
-        MSG_PRINTF(LOG_INFO, "dsi_start_data_call ------ (%d)\n", --g_dsi_start_data_call);
+        MSG_PRINTF(LOG_INFO, "dsi_start_data_call rval = %d, ------ (%d)\n", rval, --g_dsi_start_data_call);
     }
     
     //dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);  // it will release all handle, and you should reinit again !!!
@@ -309,13 +311,12 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
             if (get_regist_state() != RT_TRUE) {
                 rt_os_sleep(2);
                 if (++cgk_state_cnt >= MAX_CHK_DIAL_STATE_CNT) {
+                    dsi_net_hndl->call_state = DSI_STATE_CALL_DISCONNECTING;  // set disconnected state
                     return RT_ERROR;
                 }
                 continue;
             }
-            cgk_state_cnt = 0;
-            rval = dsi_stop_data_call(dsi_net_hndl->handle);
-            MSG_PRINTF(LOG_INFO, "dsi_stop_data_call rval = %d\n", rval);
+            cgk_state_cnt = 0;            
             rval = dsi_start_data_call(dsi_net_hndl->handle);
             if (DSI_SUCCESS != rval) {
                 MSG_PRINTF(LOG_WARN, "dsi_start_data_call rval = %d\n", rval);
@@ -347,6 +348,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                     MSG_PRINTF(LOG_DBG, "call_count:%d\n",count);
                     if (count >= DAIL_UP_WAIT) {
                         count = 0;
+                        dsi_net_hndl->call_state = DSI_STATE_CALL_DISCONNECTING;  // set disconnected state
                         return RT_ERROR;
                     }
                 }
