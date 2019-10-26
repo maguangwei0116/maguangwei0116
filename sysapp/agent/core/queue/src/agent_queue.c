@@ -156,6 +156,8 @@ static void agent_queue_task(void)
             }
         }
     }
+
+    rt_exit_task(NULL);
 }
 
 // upload queue, only deal with upload msg
@@ -178,6 +180,8 @@ static void upload_queue_task(void)
             }
         }
     }
+
+    rt_exit_task(NULL);
 }
 
 static int32_t agent_queue_clear_msg(int32_t time_cnt)
@@ -249,13 +253,13 @@ int32_t init_queue(void *arg)
     agent_queue_clear_msg(MAX_RECV_QUEUE_CNT);
     upload_queue_clear_msg(MAX_RECV_QUEUE_CNT);
 
-    ret = rt_create_task(&task_id, (void *) agent_queue_task, NULL);
+    ret = rt_create_task(&task_id, (void *)agent_queue_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");
         return RT_ERROR;
     }
 
-    ret = rt_create_task(&upload_task_id, (void *) upload_queue_task, NULL);
+    ret = rt_create_task(&upload_task_id, (void *)upload_queue_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");
         return RT_ERROR;

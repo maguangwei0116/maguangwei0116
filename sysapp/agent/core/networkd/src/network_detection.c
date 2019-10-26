@@ -45,10 +45,11 @@ static void network_detection_task(void)
     dial_up_init(&dsi_net_hndl);
     
     while (1) {  
-        dial_up_to_connect(&dsi_net_hndl);        
+        dial_up_to_connect(&dsi_net_hndl);
+        dial_up_stop(&dsi_net_hndl);
     }
 
-    dial_up_stop(&dsi_net_hndl);
+    rt_exit_task(NULL);
 }
 
 int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
@@ -160,7 +161,7 @@ int32_t init_network_detection(void *arg)
 
     dial_up_set_dial_callback((void *)network_state);
     
-    ret = rt_create_task(&task_id, (void *) network_detection_task, NULL);
+    ret = rt_create_task(&task_id, (void *)network_detection_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");
         return RT_ERROR;

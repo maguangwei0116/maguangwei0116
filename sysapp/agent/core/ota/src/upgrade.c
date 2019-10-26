@@ -241,12 +241,10 @@ static upgrade_result_e start_fota_upgrade_process(upgrade_struct_t *d_info)
     return RT_TRUE;
 }
 
-static void * check_upgrade_process(void *args)
+static void check_upgrade_process(void *args)
 {
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
     upgrade_result_e result;
-
-    //MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
     
     if (GET_UPDATEMODE(d_info) == 1) { /* full upgrade */
         result = start_comman_upgrade_process(d_info);
@@ -260,7 +258,7 @@ static void * check_upgrade_process(void *args)
         d_info->on_event(d_info);
     }
 
-    return NULL;
+    rt_exit_task(NULL);
 }
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info)
@@ -276,7 +274,8 @@ int32_t upgrade_process_create(upgrade_struct_t **d_info)
 int32_t upgrade_process_start(upgrade_struct_t *d_info)
 {
     rt_task id;
-    if (rt_create_task(&id, check_upgrade_process, (void *)d_info) != RT_SUCCESS) {
+    
+    if (rt_create_task(&id, (void *)check_upgrade_process, (void *)d_info) != RT_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
         return -1;
     }

@@ -206,7 +206,7 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
 
 static int32_t msg_delete(const char *iccid)
 {
-    uint8_t buffer[MSG_ONE_BLOCK_SIZE+1];
+    uint8_t buffer[MSG_ONE_BLOCK_SIZE+1] = {0};
     int32_t block = 0;
     int32_t num = 0;
 

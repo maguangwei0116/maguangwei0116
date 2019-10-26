@@ -258,14 +258,14 @@ end:
     rt_os_free(obj);
     rt_os_free((void *)param);
     rt_os_unlink(log_cut_file);
-    return;
+    rt_exit_task(NULL);
 }
 
 static void downstream_log_start(const log_param_t *param)
 {
     rt_task task_id;
     if (rt_create_task(&task_id , (void *)log_file_upload, (void *)param) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt_create_task log_file_upload error !!!\n");
+        MSG_PRINTF(LOG_WARN, "rt_create task log_file_upload error !!!\n");
     }
 }
 
