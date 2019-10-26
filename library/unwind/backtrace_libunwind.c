@@ -48,14 +48,40 @@ typedef struct ALL_THREAD_INFO {
 	thread_info_t 	thread[MAX_THREAD_CNT];
 } all_thread_info_t;
 
-static all_thread_info_t g_all_thread_info;
+static all_thread_info_t g_all_thread_info = {0};
 
 int32_t thread_info_record(unsigned long pid, const char *name)
+{	
+	int32_t i = 0;
+	
+	for (i = 0; i < MAX_THREAD_CNT; i++) {
+		if (g_all_thread_info.thread[i].pid == 0) {			
+			g_backtrac_log_func("+++>>>>>>>>>>>>>>>>Thread create: %p, %s (%d)\r\n", (void *)pid, name, g_all_thread_info.cnt + 1);
+			g_all_thread_info.thread[i].pid = pid;
+			g_all_thread_info.thread[i].name = name;
+			g_all_thread_info.cnt++;
+			break;
+		}
+	}
+
+	return 0;	
+}
+
+int32_t thread_info_clear(unsigned long pid)
 {
-	g_backtrac_log_func("Thread create: %p, %s\r\n", pid, name);
-	g_all_thread_info.thread[g_all_thread_info.cnt].pid = pid;
-	g_all_thread_info.thread[g_all_thread_info.cnt].name = name;
-	g_all_thread_info.cnt++;
+	int32_t i = 0;
+	const char *name;
+	
+	for (i = 0; i < MAX_THREAD_CNT; i++) {
+		if (g_all_thread_info.thread[i].pid == pid) {
+			name = g_all_thread_info.thread[i].name;			
+			g_backtrac_log_func("--->>>>>>>>>>>>>>>>Thread exit: %p, %s (%d)\r\n", (void *)pid, name, g_all_thread_info.cnt - 1);
+			g_all_thread_info.thread[i].pid = 0;
+			g_all_thread_info.thread[i].name = NULL;
+			g_all_thread_info.cnt--;
+			break;
+		}
+	}
 
 	return 0;	
 }
@@ -67,11 +93,11 @@ static int32_t thread_info_dump(void)
 	unsigned long cur_pid = pthread_self();
 	
 	g_backtrac_log_func("All user threads:\r\n");
-	for (i = 0; i < g_all_thread_info.cnt; i++) {
+	for (i = 0; i < MAX_THREAD_CNT; i++) {
 		if (!get_pid && cur_pid == g_all_thread_info.thread[i].pid) {
 			g_backtrac_log_func("# %02d [ * ] %p: %s\r\n", i+1, g_all_thread_info.thread[i].pid, g_all_thread_info.thread[i].name);
 			get_pid = 1;
-		} else {
+		} else if (0 != g_all_thread_info.thread[i].pid) {
 			g_backtrac_log_func("# %02d [   ] %p: %s\r\n", i+1, g_all_thread_info.thread[i].pid, g_all_thread_info.thread[i].name);
 		}
 	}
@@ -79,6 +105,8 @@ static int32_t thread_info_dump(void)
 	if (!get_pid) {
 		g_backtrac_log_func("# %02d [ * ] %p: %s\r\n", i+1, cur_pid, "unknow");
 	}
+	
+	g_backtrac_log_func("\r\n");
 
 	return 0;
 }
@@ -90,6 +118,30 @@ static unsigned long _Unwind_GetIP0 (struct _Unwind_Context *context)
 	unw_get_reg (&context->cursor, UNW_REG_IP, &val);
   
 	return val;
+}
+
+#define BACKTRACE_SIZE   16
+ 
+static void backtrace_dump(void)
+{
+	int j, nptrs;
+	void *buffer[BACKTRACE_SIZE];
+	char **strings;
+	
+	nptrs = backtrace(buffer, BACKTRACE_SIZE);
+	
+	g_backtrac_log_func("Backtrace() returned %d addresses\n", nptrs);
+ 
+	strings = backtrace_symbols(buffer, nptrs);
+	if (strings == NULL) {
+		g_backtrac_log_func("backtrace_symbols error\r\n");
+	} else { 
+		for (j = 0; j < nptrs; j++) {
+			g_backtrac_log_func("# %02d  %s\n", j+1, strings[j]);
+		}	 
+		free(strings);
+	}
+	g_backtrac_log_func("\r\n");
 }
 
 #define _Unwind_InitContext(context, uc)                                     \
@@ -106,6 +158,8 @@ static _Unwind_Reason_Code _Unwind_Backtrace(void)
 	Dl_info info;  
 	void * const nearest;
 	const void *addr;
+	
+	backtrace_dump();
 
 	if (_Unwind_InitContext (&context, &uc_org) < 0) {
 		return _URC_FATAL_PHASE1_ERROR;
@@ -114,10 +168,10 @@ static _Unwind_Reason_Code _Unwind_Backtrace(void)
 	g_backtrac_log_func("Stack frames:\r\n");
 	while (1) {
 		if ((ret = unw_step (&context.cursor)) <= 0) {
-			//g_backtrac_log_func("unw step ret=%d\r\n", ret);
 			if (ret == 0) {
 				ret = _URC_END_OF_STACK;
 			} else {
+				g_backtrac_log_func("unw step ret=%d, err(%d)=%s\r\n", ret, errno, strerror(errno));
 				ret = _URC_FATAL_PHASE1_ERROR;
 			}
 			goto exit_entry;
@@ -130,11 +184,13 @@ static _Unwind_Reason_Code _Unwind_Backtrace(void)
 		}
 		
 		addr = (const void *)_Unwind_GetIP0(&context);
-		memset(&info, 0, sizeof(Dl_info));
-		ret = dladdr((void *)addr, &info);		
-		g_backtrac_log_func("# %02d  %08x  %-25s  %-25s  [%p]\r\n", i+1, addr, info.dli_fname, context.symbol, context.offset);			
-
-		i++;
+		if (addr) {
+			memset(&info, 0, sizeof(Dl_info));
+			ret = dladdr((void *)addr, &info);	
+			g_backtrac_log_func("# %02d  %08x\r\n", i+1, addr);	
+			g_backtrac_log_func("# %02d  %08x  %-25s  %-25s  [%p]\r\n", i+1, addr, info.dli_fname, context.symbol, context.offset);			
+			i++;
+		}
     }
 	
 exit_entry:
@@ -224,6 +280,8 @@ void handle_sigsegv(int signo, siginfo_t *info, void *ucontext)
 	}
 	g_backtrac_log_func("\r\n");
 	
+	thread_info_dump();
+	
 #if defined(__linux__)
 #ifdef UNW_TARGET_X86
 	ip = uc->uc_mcontext.gregs[REG_EIP];
@@ -260,14 +318,12 @@ void handle_sigsegv(int signo, siginfo_t *info, void *ucontext)
 	 */
 	g_backtrac_log_func("si_pid:%p  address:0x%08lx  ip:0x%08lx\r\n",	info->si_pid, (long)info->si_addr, ip);
 	g_backtrac_log_func("\r\n");
-			
+		
 	void * gcc_crush_addr = __builtin_return_address (0);
 	g_backtrac_log_func("gcc_crush_addr: %p\r\n", gcc_crush_addr);
 	g_backtrac_log_func("\r\n");	
 	
 	_Unwind_Backtrace();
-	
-	thread_info_dump();
 	
 	g_backtrac_log_func("=======================================================\r\n");
 		
