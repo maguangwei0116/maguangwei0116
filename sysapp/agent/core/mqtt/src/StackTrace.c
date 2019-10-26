@@ -15,9 +15,11 @@
  *******************************************************************************/
 
 #include "StackTrace.h"
+
+#if !defined(NOSTACKTRACE)
+
 #include "Log.h"
 #include "LinkedList.h"
-
 #include "Clients.h"
 #include "Thread.h"
 
@@ -101,6 +103,7 @@ int setStack(int create)
 void StackTrace_entry(const char* name, int line, int trace_level)
 {
     Thread_lock_mutex(stack_mutex);
+    //Log(TRACE_MINIMUM, -1, "%s, %d, [pid=%p] entry ===>\r\n", name, line, Thread_getid());
     if (!setStack(1))
         goto exit;
     if (trace_level != -1)
@@ -109,8 +112,9 @@ void StackTrace_entry(const char* name, int line, int trace_level)
     cur_thread->callstack[(cur_thread->current_depth)++].line = line;
     if (cur_thread->current_depth > cur_thread->maxdepth)
         cur_thread->maxdepth = cur_thread->current_depth;
-    if (cur_thread->current_depth >= MAX_STACK_DEPTH)
-        Log(LOG_FATAL, -1, "Max stack depth exceeded");
+    if (cur_thread->current_depth >= MAX_STACK_DEPTH) {
+        Log(TRACE_MAXIMUM, -1, "Max stack depth exceeded");
+    }
 exit:
     Thread_unlock_mutex(stack_mutex);
 }
@@ -119,6 +123,7 @@ exit:
 void StackTrace_exit(const char* name, int line, void* rc, int trace_level)
 {
     Thread_lock_mutex(stack_mutex);
+    //Log(TRACE_MINIMUM, -1, "%s, %d, [pid=%p] exit  ===>\r\n", name, line, Thread_getid());
     if (!setStack(0))
         goto exit;
     if (--(cur_thread->current_depth) < 0)
@@ -201,4 +206,6 @@ char* StackTrace_get(thread_id_type threadid)
 exit:
     return buf;
 }
+
+#endif
 
