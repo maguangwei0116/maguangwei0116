@@ -221,7 +221,7 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
     rt_os_sleep(1);
     dsi_net_hndl->handle = dsi_get_data_srvc_hndl(dsi_net_cb_fcn, (void*) dsi_net_hndl);
     if (dsi_net_hndl->handle == NULL){
-        MSG_PRINTF(LOG_ERR, "dsi_get_data_srvc_hndl fail!!!\n");
+        MSG_PRINTF(LOG_ERR, "dsi_get_data_srvc hndl fail!!!\n");
         return RT_ERROR;
     }
 
@@ -265,14 +265,21 @@ static rt_bool get_regist_state(void)
     return RT_FALSE;
 }
 
+static int32_t g_dsi_start_data_call = 0;
+
 int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
 {
     if (dsi_net_hndl->call_state != DSI_STATE_CALL_IDLE) {
         dsi_stop_data_call(dsi_net_hndl->handle);
+        dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
+        MSG_PRINTF(LOG_INFO, "dsi_start_data_call ------ (%d)\n", --g_dsi_start_data_call);
     }
-    dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);
+    
+    //dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);  // it will release all handle, and you should reinit again !!!
+    
     close(g_dsi_event_fd[0]);
     close(g_dsi_event_fd[1]);
+    
     return RT_SUCCESS;
 }
 
@@ -289,13 +296,13 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     int16_t revents = 0;
     int32_t cgk_state_cnt = 0;
 
-    socketpair( AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
+    socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
 
     pollfds[0].fd = g_dsi_event_fd[1];
     pollfds[0].events = POLLIN;
     pollfds[0].revents = 0;
     nevents = sizeof(pollfds)/sizeof(pollfds[0]);
-    MSG_PRINTF(LOG_INFO, "Start dial up\n");
+    MSG_PRINTF(LOG_WARN, "Start dial up\n");
 
     while (1) {
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
@@ -307,10 +314,13 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                 continue;
             }
             cgk_state_cnt = 0;
+            rval = dsi_stop_data_call(dsi_net_hndl->handle);
+            MSG_PRINTF(LOG_INFO, "dsi_stop_data_call rval = %d\n", rval);
             rval = dsi_start_data_call(dsi_net_hndl->handle);
             if (DSI_SUCCESS != rval) {
                 MSG_PRINTF(LOG_WARN, "dsi_start_data_call rval = %d\n", rval);
             } else {
+                MSG_PRINTF(LOG_INFO, "dsi_start_data_call ++++++ (%d)\n", ++g_dsi_start_data_call);
                 dsi_net_hndl->call_state = DSI_STATE_CALL_CONNECTING;
             }
         }
