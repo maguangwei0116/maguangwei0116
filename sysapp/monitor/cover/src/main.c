@@ -167,6 +167,25 @@ static void init_app_version(void *arg)
     MSG_PRINTF(LOG_WARN, "vUICC version: %s\n", version);
 }
 
+#ifdef CFG_ENABLE_LIBUNWIND
+#include <stdarg.h>
+static int32_t monitor_printf(const char *fmt, ...)
+{
+    char msg[1024] = {0};
+    va_list vl_list;
+
+    va_start(vl_list, fmt);
+    vsnprintf((char *)&msg[0], sizeof(msg), (const char *)fmt, vl_list);
+    va_end(vl_list);
+
+    MSG_PRINTF(LOG_ERR, "%s", msg);
+    
+    return 0;
+}
+
+extern int32_t init_backtrace(void *arg);
+#endif
+
 int32_t main(int32_t argc, const char *argv[])
 {
     rt_bool keep_agent_alive = RT_TRUE;
@@ -179,6 +198,10 @@ int32_t main(int32_t argc, const char *argv[])
     /* init log param */
     init_log_file(RT_MONITOR_LOG);
     log_set_param(g_def_mode, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
+	
+    #ifdef CFG_ENABLE_LIBUNWIND
+    init_backtrace(monitor_printf);
+    #endif
 
     /* debug versions information */
     init_app_version(NULL);
