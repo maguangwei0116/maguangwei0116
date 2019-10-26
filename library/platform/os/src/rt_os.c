@@ -40,6 +40,20 @@ int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
     return RT_SUCCESS;
 }
 
+#ifdef CFG_ENABLE_LIBUNWIND
+void _rt_exit_task(void * args)
+#else
+void rt_exit_task(void * args)
+#endif
+{
+    return pthread_exit(args);  
+}
+
+rt_task rt_get_pid(void)
+{
+    return pthread_self();
+}
+
 int32_t rt_mutex_init(pthread_mutex_t *mutex)
 {
     int32_t ret = 0;
