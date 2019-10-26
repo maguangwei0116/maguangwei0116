@@ -85,6 +85,7 @@ typedef struct MQTT_PARAM {
     network_state_info_e        state;
     char                        alias[MQTT_ALIAS_MAX_LEN];
     rt_bool                     mqtt_get_addr;
+    rt_bool                     mqtt_conn_state;    // mqtt connect state flag
     rt_bool                     mqtt_flag;          // mqtt connect ok flag
     rt_bool                     lost_flag;          // mqtt connect lost flag
     rt_bool                     alias_rc;           // need set alias flag
@@ -490,6 +491,7 @@ static int32_t mqtt_client_pulish_msg(MQTTClient handle, int32_t qos, const char
             rc1 = RT_ERROR;
             goto exit_entry;
         }
+        MSG_PRINTF(LOG_INFO, "MQTT publish msg ok !\r\n");
     } while(0);
     #else    
     deliveredtoken = 0;
@@ -653,14 +655,32 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
 
     //MSG_PRINTF(LOG_WARN, "Connect mqtt broker [%s] !\n", opts->serverURIs);
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
-        g_mqtt_param.mqtt_flag = RT_TRUE;
-        g_mqtt_param.lost_flag = RT_FALSE;
-        MSG_PRINTF(LOG_WARN, "Connect mqtt ok !\n");
+        g_mqtt_param.mqtt_conn_state    = RT_TRUE;
+        g_mqtt_param.mqtt_flag          = RT_TRUE;
+        g_mqtt_param.lost_flag          = RT_FALSE;
+        MSG_PRINTF(LOG_WARN, "Connect mqtt ok !\r\n");
         return RT_TRUE;
     } else {
-        MSG_PRINTF(LOG_WARN, "Failed to connect error:%d\n", c);
+        g_mqtt_param.mqtt_conn_state    = RT_FALSE;
+        MSG_PRINTF(LOG_WARN, "Connect mqtt fail, error:%d\r\n", c);
         return RT_FALSE;
     }
+}
+
+static rt_bool mqtt_disconnect(MQTTClient* client, int32_t *wait_cnt)
+{
+    MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
+    MQTTClient_disconnect(*client, 0);                
+    g_mqtt_param.mqtt_flag      = RT_FALSE;
+    g_mqtt_param.mqtt_conn_state= RT_FALSE;
+    g_mqtt_param.lost_flag      = RT_FALSE;
+    g_mqtt_param.subscribe_flag = 0;  // reset subscribe flag
+    g_mqtt_param.state          = NETWORK_STATE_INIT;  // reset network state
+    *wait_cnt                   = 0;  // reset wait counter
+    msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_DISCONNECTED, NULL, 0); 
+    MSG_PRINTF(LOG_INFO, "MQTTClient disconnect msg throw out !\n");
+
+    return RT_TRUE;
 }
 
 static void mqtt_connection_lost(void *context, char *cause)
@@ -756,9 +776,10 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     opts->try_connect_timer = 0;
     param->alias_rc = 1;
 
+    MSG_PRINTF(LOG_WARN, "Connect mqtt server ok !\r\n");
     upload_event_report("REGISTERED", NULL, 0, NULL);
     mqtt_eid_check_upload();
-    
+
     return RT_TRUE;
 }
 
@@ -796,6 +817,12 @@ static void mqtt_process_task(void)
                 rt_os_sleep(1);
             }
         } else if (g_mqtt_param.state == NETWORK_CONNECTING) {
+            /* check mqtt connect state, maybe need to reset connect state */
+            if (g_mqtt_param.mqtt_flag == RT_TRUE && g_mqtt_param.mqtt_conn_state == RT_FALSE) {               
+                mqtt_disconnect(&g_mqtt_param.client, &wait_cnt);
+                g_mqtt_param.mqtt_flag = RT_FALSE;
+            }
+            
             if(g_mqtt_param.mqtt_flag == RT_FALSE) {
                 if (++connect_cnt > MQTT_RECONNECT_MAX_CNT) {
                     MSG_PRINTF(LOG_DBG, "force to set network disconnected !\n");
@@ -829,14 +856,8 @@ static void mqtt_process_task(void)
                 }
             }
         } else if (g_mqtt_param.state == NETWORK_DIS_CONNECTED) {
-            if (g_mqtt_param.mqtt_flag == RT_TRUE) {
-                MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
-                MQTTClient_disconnect(g_mqtt_param.client, 0);                
-                g_mqtt_param.mqtt_flag      = RT_FALSE;
-                g_mqtt_param.subscribe_flag = 0;  // reset subscribe flag
-                g_mqtt_param.state          = NETWORK_STATE_INIT;  // reset network state
-                wait_cnt                    = 0;  // reset wait counter
-                msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_DISCONNECTED, NULL, 0);
+            if (g_mqtt_param.mqtt_flag == RT_TRUE || g_mqtt_param.mqtt_conn_state == RT_FALSE) {               
+                mqtt_disconnect(&g_mqtt_param.client, &wait_cnt);
             }
         } else if (g_mqtt_param.state == NETWORK_USING) {
             //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.channel);
@@ -860,6 +881,7 @@ static void mqtt_process_task(void)
 
     MSG_PRINTF(LOG_DBG, "exit mqtt task\n");
     MQTTClient_destroy(&g_mqtt_param.client);
+    rt_exit_task(NULL);
 }
 
 static int32_t mqtt_create_task(void)
@@ -867,7 +889,7 @@ static int32_t mqtt_create_task(void)
     int32_t ret = RT_ERROR;
     rt_task id_connect;
 
-    ret = rt_create_task(&id_connect, (void *) mqtt_process_task, NULL);
+    ret = rt_create_task(&id_connect, (void *)mqtt_process_task, NULL);
     if (ret == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "creat mqtt pthread error, err(%d)=%s\r\n", errno, strerror(errno));
     }
