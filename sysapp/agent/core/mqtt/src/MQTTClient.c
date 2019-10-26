@@ -473,8 +473,9 @@ int clientSockCompare(void* a, void* b)
 thread_return_type WINAPI connectionLost_call(void* context)
 {
     MQTTClients* m = (MQTTClients*)context;
-
+    Log(TRACE_MINIMUM, -1, "------------------------%s, %d, [pid=%p] entry ===>\r\n", __func__, __LINE__, Thread_getid());
     (*(m->cl))(m->context, NULL);
+    Thread_stop();
     return 0;
 }
 
@@ -487,7 +488,7 @@ thread_return_type WINAPI MQTTClient_run(void* n)
     FUNC_ENTRY;
     running = 1;
     run_id = Thread_getid();
-
+    Log(TRACE_MINIMUM, -1, "------------------------%s, %d, [pid=%p] entry ===>\r\n", __func__, __LINE__, Thread_getid());
     Thread_lock_mutex(mqttclient_mutex);
     while (!tostop)
     {
@@ -615,6 +616,7 @@ thread_return_type WINAPI MQTTClient_run(void* n)
     running = tostop = 0;
     Thread_unlock_mutex(mqttclient_mutex);
     FUNC_EXIT;
+    Thread_stop();
     return 0;
 }
 

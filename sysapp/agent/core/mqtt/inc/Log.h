@@ -15,9 +15,34 @@
  *    Ian Craggs - updates for the async client
  *******************************************************************************/
 
-#if !defined(LOG_H)
-#define LOG_H
+#ifndef __MQTT_LOG_H__
+#define __MQTT_LOG_H__
+
+enum LOG_LEVELS {
+    TRACE_MAXIMUM = 1,
+    TRACE_MEDIUM,
+    TRACE_MINIMUM,
+    TRACE_PROTOCOL,
+    LOG_ERROR,
+    LOG_SEVERE,
+    LOG_FATAL,
+} Log_levels;
+
+
+/* config mqtt module log */
+#define MQTT_ALL_LOG_OFF                0       /* MQTT module all log off */
+#define REDTEA_MQTT_LOG_ON              1       /* MQTT module all log on with redtea log methord */
+#define REDTEA_MQTT_DEF_LOG_LEVEL       TRACE_MINIMUM
+
+#if (MQTT_ALL_LOG_OFF)
+
+#define Log_terminate()                 do {} while(0)
+#define Log(level, no, format, ...)     do {} while(0)
+
+#else
+
 #include "MQTTClient.h"
+
 /*BE
 map LOG_LEVELS
 {
@@ -31,17 +56,6 @@ map LOG_LEVELS
     "FATAL" 7
 }
 BE*/
-
-enum LOG_LEVELS {
-    TRACE_MAXIMUM = 1,
-    TRACE_MEDIUM,
-    TRACE_MINIMUM,
-    TRACE_PROTOCOL,
-    LOG_ERROR,
-    LOG_SEVERE,
-    LOG_FATAL,
-} Log_levels;
-
 
 /*BE
 def trace_settings_type
@@ -65,26 +79,31 @@ typedef struct
 #define TRACE_MIN TRACE_MINIMUM
 #define TRACE_MED TRACE_MEDIUM
 
-typedef struct
-{
+typedef struct {
     const char* name;
     const char* value;
 } Log_nameValue;
 
-#define REDTEA_MQTT_LOG_ON  1 /* set mqtt log switch status */
+#if (REDTEA_MQTT_LOG_ON)
 
-int Log_initialize(Log_nameValue*);
-void Log_terminate();
-#ifdef REDTEA_MQTT_LOG_ON
+#define Log_terminate()                 do {} while(0)
 void _Log(const char *file, int line, int log_level, int msgno, char* format, ...);
 #define __FILENAME__                    (strrchr("/"__FILE__, '/') + 1)
 #define Log(level, no, format, ...)     _Log(__FILENAME__, __LINE__, level, no, format, ##__VA_ARGS__)
+
 #else
+
+int  Log_initialize(Log_nameValue*);
+void Log_terminate();
 void Log(int, int, char *, ...);
-#endif
 void Log_stackTrace(int, int, int, int, const char*, int, int*);
 typedef void Log_traceCallback(enum LOG_LEVELS level, char* message);
 void Log_setTraceCallback(Log_traceCallback* callback);
 DLLExport void Log_setTraceLevel(enum LOG_LEVELS level);
 
-#endif
+#endif /* end of REDTEA_MQTT_LOG_ON */
+
+#endif /* end of MQTT_ALL_LOG_OFF */
+
+#endif /* endof __MQTT_LOG_H__ */
+

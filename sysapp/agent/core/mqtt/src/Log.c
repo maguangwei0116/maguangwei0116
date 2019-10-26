@@ -24,6 +24,9 @@
  */
 
 #include "Log.h"
+
+#if !(MQTT_ALL_LOG_OFF)
+
 #include "MQTTPacket.h"
 #include "MQTTProtocol.h"
 #include "MQTTProtocolClient.h"
@@ -66,14 +69,16 @@
 
 static trace_settings_type trace_settings =
 {
-#ifdef REDTEA_MQTT_LOG_ON
-    TRACE_MINIMUM,
+#if (REDTEA_MQTT_LOG_ON)
+    REDTEA_MQTT_DEF_LOG_LEVEL,
 #else
     TRACE_MAXIMUM,
 #endif
     400,
     -1
 };
+
+#if !(REDTEA_MQTT_LOG_ON)
 
 #define MAX_FUNCTION_NAME_LENGTH 256
 
@@ -117,6 +122,8 @@ struct timeb ts, last_ts;
 #endif
 static char msg_buf[512];
 
+#endif
+
 #if defined(WIN32) || defined(WIN64)
 mutex_type log_mutex;
 #else
@@ -124,6 +131,7 @@ static pthread_mutex_t log_mutex_store = PTHREAD_MUTEX_INITIALIZER;
 static mutex_type log_mutex = &log_mutex_store;
 #endif
 
+#if !(REDTEA_MQTT_LOG_ON)
 
 int Log_initialize(Log_nameValue* info)
 {
@@ -364,7 +372,6 @@ static void Log_posttrace(int log_level, traceEntry* cur_entry)
     }
 }
 
-
 static void Log_trace(int log_level, char* buf)
 {
     traceEntry *cur_entry = NULL;
@@ -384,7 +391,9 @@ static void Log_trace(int log_level, char* buf)
     Log_posttrace(log_level, cur_entry);
 }
 
-#ifdef REDTEA_MQTT_LOG_ON
+#endif
+
+#if (REDTEA_MQTT_LOG_ON)
 #include "log.h"
 // log level: LOG INFO [4]
 #define MQTT_LOG(format, ...)    MSG_PRINTF(4, format, ##__VA_ARGS__)
@@ -399,7 +408,7 @@ static void Log_trace(int log_level, char* buf)
  * @param aFormat the printf format string to be used if the message id does not exist
  * @param ... the printf inserts
  */
-#ifdef REDTEA_MQTT_LOG_ON
+#if (REDTEA_MQTT_LOG_ON)
 void _Log(const char *file, int line, int log_level, int msgno, char* format, ...)
 #else
 void Log(int log_level, int msgno, char* format, ...)
@@ -419,8 +428,8 @@ void Log(int log_level, int msgno, char* format, ...)
         va_start(args, format);
         vsnprintf(msg_buf, sizeof(msg_buf), format, args);
 
-        #ifdef REDTEA_MQTT_LOG_ON
-        MQTT_LOG("[%s, %d]%s\r\n", file, line, msg_buf);
+        #if (REDTEA_MQTT_LOG_ON)
+        MQTT_LOG("[%s, %d] %s\r\n", file, line, msg_buf);
         #else
         Log_trace(log_level, msg_buf);
         #endif
@@ -436,7 +445,7 @@ void Log(int log_level, int msgno, char* format, ...)
     */
 }
 
-
+#if !(REDTEA_MQTT_LOG_ON)
 /**
  * The reason for this function is to make trace logging as fast as possible so that the
  * function exit/entry history can be captured by default without unduly impacting
@@ -574,5 +583,7 @@ exit:
     return rc;
 }
 #endif
+#endif
 
+#endif
 
