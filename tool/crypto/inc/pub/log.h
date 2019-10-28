@@ -37,7 +37,7 @@ typedef enum LOG_LEVE {
         for (i = 0; i < len; i++) {                        \
             softsim_printf(LOG_DBG, 1, "%02X", _p_[i]);    \
         }                                                  \
-        softsim_printf(LOG_DBG, 1, "\n");                  \
+        softsim_printf(LOG_DBG, 1, "\r\n");                  \
     } while(0)
 
 // into card

@@ -20,6 +20,7 @@
 #include "ipc_socket_server.h"
 #include "parse_backup.h"
 #include "inspect_file.h"
+#include "libcomm.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"

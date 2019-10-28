@@ -11,7 +11,7 @@ BIN_FILE_NAME 		= $(TARGET).bin
 
 all: $(TARGET)
 
-$(TARGET): $(O)/$(TARGET_FILE_NAME)
+$(TARGET): $(O)/$(TARGET_FILE_NAME) generate_signature
 
 info:
 	@echo "COBJS=$(COBJS)"
@@ -39,8 +39,20 @@ clean:
 
 # Add SHA256 sum to the tail of a file
 define SYSAPP_ADD_SHA256SUM
-	sha256sum $(1) | awk '{ print $$1 }' | xargs echo -n >> $(1)
+	$(REDTEA_SUPPORT_SCRIPT_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPT_PATH)
 endef
+
+generate_signature: $(O)/$(TARGET_FILE_NAME)
+	$(call SYSAPP_ADD_SHA256SUM,$(O)/$(TARGET_FILE_NAME))
+	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(LOCAL_TARGET_RELEASE)
+	-$(Q)$(CP) -rf $(O)/$(LOCAL_TARGET_RELEASE) $(SYSAPP_INSTALL_PATH)/
+	@$(ECHO) ""
+	@$(ECHO) "+---------------------------------------------------"
+	@$(ECHO) "|"
+	@$(ECHO) "|   Finished building target: $(LOCAL_TARGET_RELEASE)"
+	@$(ECHO) "|"
+	@$(ECHO) "+---------------------------------------------------"
+	@$(ECHO) ""
 
 # Every object file depend on conf-file
 $(OBJS): $(conf-file)
@@ -52,16 +64,6 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	@$(CHMOD) +x "$@"
 	$($(quiet)do_strip) --strip-all "$@"
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(ELF_FILE_NAME)
-	-$(Q)$(call SYSAPP_ADD_SHA256SUM,$(O)/$(TARGET_FILE_NAME))
-	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(LOCAL_TARGET_RELEASE)
-	-$(Q)$(CP) -rf $(O)/$(LOCAL_TARGET_RELEASE) $(SYSAPP_INSTALL_PATH)/
-	@$(ECHO) ""
-	@$(ECHO) "+---------------------------------------------------"
-	@$(ECHO) "|"
-	@$(ECHO) "|   Finished building target: $(LOCAL_TARGET_RELEASE)"
-	@$(ECHO) "|"
-	@$(ECHO) "+---------------------------------------------------"
-	@$(ECHO) ""
 
 .PHONY: all clean info $(TARGET) FORCE
 
