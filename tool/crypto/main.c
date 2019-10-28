@@ -51,9 +51,10 @@ int main(int argc, char * const *argv)
     uint8_t sk[64];
     int pk_len = 0;
     int sk_len = 0;
+    int s_len = 0;
+    int h_len = 0;
     uint8_t output[64];
     int output_len = 0;
-    int ret = 0;
 
     init_curve_parameter(curve_parameter);
 
@@ -73,19 +74,23 @@ int main(int argc, char * const *argv)
                 break;
             case 'h':
                 hash = (uint8_t *)optarg;
-                printf("hash:%s, len:%d\n", hash, (int)strlen((char *)hash));
+                h_len = (int)strlen((char *)hash);
+                printf("hash:%s, len:%d\n", hash, h_len);
                 break;
             case 'i':
                 signature = (uint8_t *)optarg;
-                printf("signature:%s, len:%d\n", signature, (int)strlen((char *)signature));
+                s_len = (int)strlen((char *)signature);
+                printf("signature:%s, len:%d\n", signature, s_len);
                 break;
             case 's':
                 sk_key = (uint8_t *)optarg;
-                printf("sk:%s, len:%d\n", sk_key, (int)strlen((char *)sk_key));
+                sk_len = (int)strlen((char *)sk_key);
+                printf("sk:%s, len:%d\n", sk_key, sk_len);
                 break;
             case 'p':
                 pk_key = (uint8_t *)optarg;
-                printf("pk:%s, len:%d\n", pk_key, (int)strlen((char *)pk_key));
+                pk_len = (int)strlen((char *)pk_key);
+                printf("pk:%s, len:%d\n", pk_key, pk_len);
                 break;
             case '?':
                 display_usage();
@@ -97,9 +102,9 @@ int main(int argc, char * const *argv)
         opt = getopt(argc, argv, opt_string);
     }
     if ((hash != NULL) && (signature != NULL) && (pk_key != NULL)) {
-        ret = ecc_verify_signature( hash, 64, pk_key, 128, signature, 128);
+        ecc_verify_signature( hash, h_len, pk_key, pk_len, signature, s_len);
     } else if ((hash != NULL) && (signature == NULL) && (sk_key != NULL)) {
-        ecc_sign_hash( hash, 64, sk_key, 64, output, &output_len);
+        ecc_sign_hash( hash, h_len, sk_key, sk_len, output, &output_len);
         LOG_INFO_ARRAY(output, output_len, "signature:");
     } else if (pk_len == 0) {
         printf("Input parameter error!!\n");
