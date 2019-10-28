@@ -177,7 +177,6 @@ static int32_t upload_wait_all_connected(void)
     return 0;
 }
 
-extern int32_t mqtt_pulish_msg(const void* data, int32_t data_len);
 static int32_t upload_send_mqtt_request(const char *data, int32_t data_len)
 {    
     return mqtt_pulish_msg((const char *)data, data_len);

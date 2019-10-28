@@ -274,7 +274,7 @@ int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
     if (dsi_net_hndl->call_state != DSI_STATE_CALL_IDLE) {
         rval = dsi_stop_data_call(dsi_net_hndl->handle);
         dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
-        MSG_PRINTF(LOG_INFO, "dsi_start_data_call rval = %d, ------ (%d)\n", rval, --g_dsi_start_data_call);
+        MSG_PRINTF(LOG_INFO, "dsi_stop_data_call rval = %d, ------ (%d)\n", rval, --g_dsi_start_data_call);
     }
     
     //dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);  // it will release all handle, and you should reinit again !!!
