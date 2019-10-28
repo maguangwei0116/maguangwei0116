@@ -76,8 +76,8 @@ typedef enum LOG_LEVE {
 #define LOGE(format,...)
 #endif
 
-#define LOG_DEBUG_ARRAY(array, len, tag, fun)         INNER_DUMP_ARRAY(array, len, tag, fun)
-#define LOG_INFO_ARRAY(array, len, tag, fun)          INNER_DUMP_ARRAY(array, len, tag, fun)
+#define LOG_DEBUG_ARRAY(array, len, tag)         INNER_DUMP_ARRAY(array, len, tag, fun)
+#define LOG_INFO_ARRAY(array, len, tag)          INNER_DUMP_ARRAY(array, len, tag, fun)
 
 #define LOGA_FUNC()     //LOGA("%s", __FUNCTION__)
 

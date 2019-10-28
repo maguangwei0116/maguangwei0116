@@ -74,6 +74,43 @@ int ecc_gen_key_pair(char *ca_private_key , char *ca_public_key_x , char *ca_pub
     }
     return 1;
 }
+int ecc_verify_signature(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_len, uint8_t *sigBuff, int  sig_len)
+{
+    char ca_public_key_x[70];
+    char ca_public_key_y[70];
+    char car[70];
+    char cas[70];
+
+    memset(ca_public_key_x, 0, sizeof(ca_public_key_x));
+    memset(ca_public_key_y, 0, sizeof(ca_public_key_y));
+    memset(car, 0, sizeof(car));
+    memset(cas, 0, sizeof(cas));
+
+    if ( SetCurveParam( ca_module , ca_coef_a , ca_coef_b , ca_basepoint_x , ca_basepoint_y , ca_basepoint_order ) != 1 ) {
+        LOGE("set curvcaPublicKeyYe parameter error");
+        return 0;
+    }
+
+    //LOGI_STR("verify beginning...");
+    memcpy(ca_public_key_x, (SZ_UBYTE1 *)pubkey, 64);
+    memcpy(ca_public_key_y, (SZ_UBYTE1 *)pubkey + 64, 64);
+    if ( CheckPublicKey( ca_public_key_x , ca_public_key_y ) != 1 ) {
+        LOGE("Check pk failed\n");
+        return 0;
+    }
+    //printByteString(input,input_len);
+    memcpy(car, sigBuff, 64);
+    memcpy(cas, sigBuff + 64, 64);
+    if ( Verify( (char *)input , ca_public_key_x , ca_public_key_y , car , cas ) ) {
+        LOGD("verify sucess");
+        return 1;
+    } else {
+        LOGE("verify fail");
+        return 0;
+    }
+
+}
+
 int ecc_verify(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_len, uint8_t *sigBuff, int  sig_len)
 {
     char ca_hm[80];
@@ -111,7 +148,7 @@ int ecc_verify(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_
     fnHexToAsc(ca_hm, 64, sha, 32);
     fnHexToAsc(car, 64, sigBuff, 32);
     fnHexToAsc(cas, 64, sigBuff + 32, 32);
-    if( Verify( ca_hm , ca_public_key_x , ca_public_key_y , car , cas ) ) {
+    if ( Verify( ca_hm , ca_public_key_x , ca_public_key_y , car , cas ) ) {
         LOGD("verify sucess");
         return 1;
     } else {
@@ -120,7 +157,8 @@ int ecc_verify(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_
     }
 
 }
-int ecc_sign( uint8_t *input, int input_len, uint8_t* privkey, int privkey_len, uint8_t *output, int *output_len)
+
+int ecc_sign( uint8_t *input, int input_len, uint8_t *privkey, int privkey_len, uint8_t *output, int *output_len)
 {
     char *pcak;
     char ca_hm[80];
@@ -136,7 +174,7 @@ int ecc_sign( uint8_t *input, int input_len, uint8_t* privkey, int privkey_len, 
         LOGE("set curve parameter error");
         return 0;
     }
-    fnHexToAsc(ca_private_key,64,privkey,privkey_len);
+    fnHexToAsc(ca_private_key, 64, privkey, privkey_len);
     //printByteString(privkey,privkey_len);
     if ( CheckPrivateKey( ca_private_key ) != 1 ) {
         LOGE("check private Key error");
@@ -149,11 +187,11 @@ int ecc_sign( uint8_t *input, int input_len, uint8_t* privkey, int privkey_len, 
         pcak = NULL;
     //}
 
-    memset(ca_hm,0,sizeof(ca_hm));
+    memset(ca_hm, 0, sizeof(ca_hm));
     Sha256Calc_calculate(input ,input_len, sha);
     //printByteString(sha,32);
-    fnHexToAsc(ca_hm,64,sha,32);
-    if( Sign(ca_hm , pcak , ca_private_key , car , cas ) != 1 ) {
+    fnHexToAsc(ca_hm, 64, sha, 32);
+    if ( Sign(ca_hm , pcak , ca_private_key , car , cas ) != 1 ) {
         return 0;
     }
 
@@ -162,8 +200,40 @@ int ecc_sign( uint8_t *input, int input_len, uint8_t* privkey, int privkey_len, 
 
     *output_len = 64 ;
     return 1;
-
 }
+
+int ecc_sign_hash( uint8_t *input, int input_len, uint8_t *privkey, int privkey_len, uint8_t *output, int *output_len)
+{
+    char *pcak;
+    char car[70] ;
+    char cas[70] ;
+
+    if ( SetCurveParam( ca_module , ca_coef_a , ca_coef_b , ca_basepoint_x , ca_basepoint_y , ca_basepoint_order ) != 1 ) {
+        LOGE("set curve parameter error");
+        return 0;
+    }
+    //printByteString(privkey,privkey_len);
+    if ( CheckPrivateKey( (char *)privkey ) != 1 ) {
+        LOGE("check private Key error");
+        return 0;
+    }
+
+    //pcak = cak;
+    //if( strlen(cak) == 0x00 )
+    //{
+        pcak = NULL;
+    //}
+    if ( Sign((char *)input , pcak , (char *)privkey , car , cas ) != 1 ) {
+        return 0;
+    }
+
+    fnAscToHex(output, 32, car, strlen(car));
+    fnAscToHex(output+32, 32, cas, strlen(cas));
+    *output_len = 64 ;
+
+    return 1;
+}
+
 int ecc_generate_key( uint8_t* outpub, int *outpub_len, uint8_t * outprv, int *outprv_len)
 {
     char publicX[70] ;
@@ -176,8 +246,8 @@ int ecc_generate_key( uint8_t* outpub, int *outpub_len, uint8_t * outprv, int *o
     int returnCode = ecc_gen_key_pair (privateKey, publicX, publicY);
     //printByteString(privateKey,64);
     if (returnCode != 0) {
-        fnAscToHex(outpub,32,publicX,64);
-        fnAscToHex(outpub+32,32,publicY,64);
+        fnAscToHex(outpub,32, publicX,64);
+        fnAscToHex(outpub+32,32, publicY,64);
         *outpub_len = 64 ;
         fnAscToHex(outprv,32,privateKey,64);
         *outprv_len = 32 ;
@@ -202,24 +272,24 @@ int ecc_key_agreement(uint8_t*prvkey, int prvkey_len, uint8_t * pubkey, int pubk
     memset(ca_z_ab, 0, sizeof(ca_z_ab));
 
     //LOGI_STR("key agrreement begin...") ;
-    if( SetCurveParam( ca_module , ca_coef_a , ca_coef_b , ca_basepoint_x , ca_basepoint_y , ca_basepoint_order ) != 1 ) {
+    if ( SetCurveParam( ca_module , ca_coef_a , ca_coef_b , ca_basepoint_x , ca_basepoint_y , ca_basepoint_order ) != 1 ) {
         LOGE("key curve parameter error...");
         return 0;
     }
     fnHexToAsc(cad_a,64,prvkey,prvkey_len);
-    if( CheckPrivateKey( cad_a ) != 1 ) {
+    if ( CheckPrivateKey( cad_a ) != 1 ) {
         LOGE("key private key error...");
         return 0;
     }
 
     fnHexToAsc(ca_pb_x,64,pubkey+1,32);
     fnHexToAsc(ca_pb_y,64,pubkey+33,32);
-    if( CheckPublicKey( ca_pb_x , ca_pb_y ) != 1 ) {
+    if ( CheckPublicKey( ca_pb_x , ca_pb_y ) != 1 ) {
         LOGE("key public key error...");
         return 0;
     }
 
-    if( KeyAgreement( cad_a , ca_pb_x , ca_pb_y , ca_z_ab ) != 1 ) {
+    if ( KeyAgreement( cad_a , ca_pb_x , ca_pb_y , ca_z_ab ) != 1 ) {
         LOGE("key agrreement error...");
         return 0;
     } else {
@@ -241,7 +311,7 @@ int sha256_cos(uint8_t* input, int input_len, uint8_t *output, int * output_len)
 
 int aes_sign(uint8_t*input, int input_len, uint8_t* key, uint8_t* output, int *output_len)
 {
-    if(AES_Init(key, 128)!=0) {
+    if (AES_Init(key, 128)!=0) {
         LOGE("AES init key error...");
         return 0;
     }
@@ -253,7 +323,7 @@ int aes_sign(uint8_t*input, int input_len, uint8_t* key, uint8_t* output, int *o
 int aes_enc(uint8_t *input, int input_len, uint8_t *key, uint8_t * icv, uint8_t *output, int *output_len, int mode)
 {
     AES_Init(key,128);
-    if(AES_Encrypt(input,output,input_len,icv,mode) != 0) {
+    if (AES_Encrypt(input,output,input_len,icv,mode) != 0) {
         LOGE("error occurrent...");
         return 1 ;
     }
