@@ -20,6 +20,6 @@ int32_t init_bootstrap(void *arg);
 void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode);
 int32_t get_aes_key(uint8_t *data);
 int32_t get_root_sk(uint8_t *data);
-int32_t get_file_version(uint8_t *data);
+int32_t get_share_profile_version(uint8_t *data);
 
 #endif // __BOOTSTRAP_H__
