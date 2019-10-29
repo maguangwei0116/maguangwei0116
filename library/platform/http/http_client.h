@@ -31,67 +31,52 @@
     if((process) < result){ MSG_PRINTF(LOG_WARN, "[%s] error\n",  #process);  goto end;}
 #endif
 
-typedef struct HTTP_REQUEST_HEADER_RECORD {
 #define MAX_KEY_LEN                           30
 #define MAX_VALUE_LEN                         100
+typedef struct HTTP_REQUEST_HEADER_RECORD {
     char key[MAX_KEY_LEN + 1];
     char value[MAX_VALUE_LEN + 1];
 } http_request_header_record_t;
 
-
-typedef struct HTTP_HEADER {
 #define MAX_HEADER_REQ_BODY_LEN               256
 #define MAX_URL_LEN                           200
 #define MAX_IP_ADDR_LEN                       20
 #define MAX_RESUEST_HEADER_RECORD_SIZE        10
+typedef struct HTTP_HEADER {
     unsigned char method;
-    /*
-      <the Content-Disposition	 of the http request>
-      -0--post
-      -1--get
-      ....
-     */
-    char url[MAX_URL_LEN + 1];
-    char url_interface[MAX_URL_LEN + 1];
-    unsigned int port;
-    unsigned char addr[MAX_IP_ADDR_LEN + 1];
-    unsigned char   version;
-    /*
-          <the version	 of this http request>
-          -0--HTTP/1.1
-          ....
-     */
+    char                         url[MAX_URL_LEN + 1];
+    char                         url_interface[MAX_URL_LEN + 1];
+    unsigned int                 port;
+    unsigned char                addr[MAX_IP_ADDR_LEN + 1];
+    unsigned char                version;
     http_request_header_record_t record[MAX_RESUEST_HEADER_RECORD_SIZE];
-    char record_size;  //the number of record
-    char buf[MAX_HEADER_REQ_BODY_LEN];
+    char                         record_size;    //the number of record
+    char                         buf[MAX_HEADER_REQ_BODY_LEN];
 } http_header_t;
 
-typedef struct HTTP_CLIENT_STRUCT {
 #define MAX_BLOCK_LEN                         4096  // date block size
 #define MAX_FILE_PATH_LEN                     100
 #define MAX_TRY_COUNT                         3
-
-    int if_continue;  //  if needed continue download
-    char manager_type;  // management type, 0:upload  1:download
-    http_header_t http_header;
-    const char *file_path;
-    unsigned int file_length;  // the total length of send \ recv
-    unsigned int process_length;  // Has the length of the data processing
-    unsigned int remain_length;  // Has the length of the data processing
-    unsigned int process_set;  // The need to deal with the length of the data
-    unsigned int range;
-    unsigned char try_count;  // Data processing of attempts count
-
-    rt_fshandle_t fp;
-    int socket;
-    char *buf;
+typedef struct HTTP_CLIENT_STRUCT {
+    int                if_continue;      //  if needed continue download
+    char               manager_type;     // management type, 0:upload  1:download
+    http_header_t      http_header;
+    const char         *file_path;
+    unsigned int       file_length;      // the total length of send \ recv
+    unsigned int       process_length;   // Has the length of the data processing
+    unsigned int       remain_length;    // Has the length of the data processing
+    unsigned int       process_set;      // The need to deal with the length of the data
+    unsigned int       range;
+    unsigned char      try_count;        // Data processing of attempts count
+    rt_fshandle_t      fp;
+    int                socket;
+    char               *buf;
     /* the buffer which used to send block data in the upload process and
      * used to send body in the download process*/
-
 } http_client_struct_t;
 
-extern int http_client_file_download(http_client_struct_t *d_state);
-extern int http_client_file_upload(http_client_struct_t *up_state);
-extern int get_file_size(const char *file_name);
-extern int http_set_header_record(http_client_struct_t *obj, const char *key, const char *value);
-#endif /* __HTTP_CLIENT_H__ */
+int http_client_file_download(http_client_struct_t *d_state);
+int http_client_file_upload(http_client_struct_t *up_state);
+int http_set_header_record(http_client_struct_t *obj, const char *key, const char *value);
+
+#endif  // __HTTP_CLIENT_H__

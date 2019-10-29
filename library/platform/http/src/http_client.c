@@ -10,27 +10,12 @@
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
 
-#include "http_client.h"
-#include "rt_manage_data.h"
-#include "rt_os.h"
-#include "http.h"
-#include "rt_type.h"
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "http_client.h"
+#include "rt_type.h"
 
-/********************************************************
-*name： void display_progress(void)
-*funcition：显示下载进度
-*Entrance parameters：
-*   obj：http_client结构对象
-*
-*return value
-*  -0--成功
-********************************************************/
 static void display_progress(http_client_struct_t *obj)
 {
 #if (VERSION_TYPE == DEBUG)
@@ -57,25 +42,16 @@ static void display_progress(http_client_struct_t *obj)
 #endif
 }
 
-/********************************************************
-*name：static int http_client_upload_init(http_client_struct_t obj)
-*funcition：结构初始化，包括打开要发送的文件，计算文件大小，连接服务器
-*Entrance parameters：
-*   obj：http_client结构对象
-*
-*return value
-*  -0--成功
-********************************************************/
 static int http_client_upload_init(http_client_struct_t *obj)
 {
-    int ret = -1;
+    int ret = RT_ERROR;
     struct sockaddr_in server_addr;
     struct in_addr ipAddr;
     struct timeval timeout = {30,0};
 
     RT_CHECK_ERR(obj, NULL);
 
-    RT_CHECK_LESE(obj->file_length  = get_file_size(obj->file_path), 0);
+    RT_CHECK_LESE(obj->file_length  = linux_file_size(obj->file_path), 0);
 
     obj->remain_length = obj->file_length;
     obj->process_length = 0;
@@ -104,20 +80,11 @@ static int http_client_upload_init(http_client_struct_t *obj)
 
     RT_CHECK_ERR(connect(obj->socket, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)), -1);
 
-     ret = 0;
+     ret = RT_SUCCESS;
 end:
     return ret;
 }
 
-/********************************************************
-*name：static int http_client_download_init(http_client_struct_t obj)
-*funcition：结构初始化，创建下载文件，创建于服务器的socket连接
-*Entrance parameters：
-*   obj：http_client结构对象
-*
-*return value
-*  -0--成功
-********************************************************/
 static int http_client_download_init(http_client_struct_t *obj)
 {
     int ret = -1;
@@ -132,8 +99,6 @@ static int http_client_download_init(http_client_struct_t *obj)
     obj->process_set = 0;
     obj->remain_length = 0;
 
-
-    /* 连接服务器 */
     RT_CHECK_NEQ(http_parse_url(obj->http_header.url,
                                 obj->http_header.addr,
                                 obj->http_header.url_interface,
@@ -149,7 +114,6 @@ static int http_client_download_init(http_client_struct_t *obj)
     RT_CHECK_ERR(obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN), NULL);
     RT_CHECK_ERR(obj->socket = socket(AF_INET, SOCK_STREAM, 0), -1);
 
-    //设置接收超时
     setsockopt(obj->socket, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(struct timeval));
     setsockopt(obj->socket, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(struct timeval));
 
@@ -160,13 +124,6 @@ end:
     return ret;
 }
 
-/********************************************************
-*name：static void http_client_release(http_client_struct_t *obj)
-*funcition：释放http操作对象申请的一些资源
-*Entrance parameters：
-*   obj：http_client结构对象
-*
-********************************************************/
 static void http_client_release(http_client_struct_t *obj)
 {
     if (obj->buf != NULL) {
@@ -182,13 +139,6 @@ static void http_client_release(http_client_struct_t *obj)
     }
 }
 
-/********************************************************
-*name：static int http_client_send(http_client_struct_t obj)
-*funcition：文件发送
-*Entrance parameters：
-*   obj：http_client结构对象
-*
-********************************************************/
 static int http_client_send(http_client_struct_t *obj)
 {
     int sent = 0;
@@ -209,13 +159,6 @@ static int http_client_send(http_client_struct_t *obj)
     return sent;
 }
 
-/********************************************************
-*name：static int http_client_recv(http_client_struct_t obj)
-*funcition：文件接收
-*Entrance parameters：
-*   obj：http_client结构对象
-*
-********************************************************/
 static int http_client_recv(http_client_struct_t *obj)
 {
     int cnt = 0;
@@ -280,38 +223,11 @@ static int http_client_send_header(http_client_struct_t *obj)
 
     MSG_PRINTF(LOG_INFO, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
     obj->process_set = rt_os_strlen(obj->buf);
-    
+
     return http_client_send(obj);
 
 end:
     return ret;
-}
-
-static int http_client_get_resp_header(http_client_struct_t *obj)
-{
-    int flag = 0;
-
-    obj->process_length = 0;
-    rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
-    
-    while (recv(obj->socket, obj->buf + obj->process_length, 1, 0) == 1) {
-        /* http header end with a empty line (at least 3 '\r' or '\n', normal for 4 '\r' or '\n') */
-        if (flag < 3) {
-            if (obj->buf[obj->process_length] == '\r' || obj->buf[obj->process_length] == '\n') {
-                flag++;
-            } else {
-                flag = 0;
-            }
-        } else {
-            obj->buf[obj->process_length] = '\0';
-            MSG_PRINTF(LOG_INFO,"recv http header ok, flag:%d, buf:%s\n", flag, obj->buf);
-            return 0;
-        }
-        //MSG_PRINTF(LOG_INFO,"->>> flag:%d, char:%c\n", flag, obj->buf[obj->process_length]);
-        obj->process_length++;
-    }
-    MSG_PRINTF(LOG_WARN,"recv http header fail, flag:%d, buf:%s\n", flag, obj->buf);
-    return -1;
 }
 
 static int http_client_send_body(http_client_struct_t *obj)
@@ -347,7 +263,7 @@ static int http_client_send_body(http_client_struct_t *obj)
             if (ret <= 0) {
                 /* return error because of send error (broken pipe) */
                 if (ret == -2) {
-                    return -1;  
+                    return -1;
                 }
                 /* send data error more than MAX_TRY_COUNT times */
                 if (obj->try_count++ > MAX_TRY_COUNT) {
@@ -378,7 +294,35 @@ end:
     return ret;
 }
 
-//接收服务器文件
+static int http_client_get_resp_header(http_client_struct_t *obj)
+{
+    int flag = 0;
+
+    obj->process_length = 0;
+    rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
+
+    while (recv(obj->socket, obj->buf + obj->process_length, 1, 0) == 1) {
+        /* http header end with a empty line (at least 3 '\r' or '\n', normal for 4 '\r' or '\n') */
+        if (flag < 3) {
+            if (obj->buf[obj->process_length] == '\r' || obj->buf[obj->process_length] == '\n') {
+                flag++;
+            } else {
+                flag = 0;
+            }
+        } else {
+            obj->buf[obj->process_length] = '\0';
+            MSG_PRINTF(LOG_INFO,"recv http header ok, flag:%d, buf:%s\n", flag, obj->buf);
+            return 0;
+        }
+        //MSG_PRINTF(LOG_INFO,"->>> flag:%d, char:%c\n", flag, obj->buf[obj->process_length]);
+        obj->process_length++;
+    }
+    MSG_PRINTF(LOG_WARN,"recv http header fail, flag:%d, buf:%s\n", flag, obj->buf);
+    return -1;
+}
+
+
+
 static int http_client_recv_data(http_client_struct_t *obj)
 {
     int ret = -1;
@@ -397,10 +341,9 @@ static int http_client_recv_data(http_client_struct_t *obj)
             obj->process_set = obj->remain_length;
         }
 
-        /* http_client_recv内部已经做了失败的重新接收的机制，所以函数调用失败直接认定为此次下载失败 */
-        RT_CHECK_NEQ(http_client_recv(obj), obj->process_set);        
+        RT_CHECK_NEQ(http_client_recv(obj), obj->process_set);
         obj->remain_length -= obj->process_set;
-        obj->process_length += obj->process_set;        
+        obj->process_length += obj->process_set;
 
         //MSG_PRINTF(LOG_WARN, "obj->process_length=%d, obj->range=%d\r\n", obj->process_length, obj->range);
         if (obj->process_length > obj->range) {
@@ -418,6 +361,7 @@ end:
 static uint32_t msg_string_to_int(uint8_t* str)
 {
     uint32_t length = 0;
+
     if (str == NULL) {
         MSG_PRINTF(LOG_WARN, "The string is error\n");
         return 0;
@@ -428,12 +372,13 @@ static uint32_t msg_string_to_int(uint8_t* str)
         }
         str++;
     }
+
     return length;
 }
 
 static int http_client_error_prase(http_client_struct_t *obj)
 {
-    int ret = -1;
+    int ret = RT_ERROR;
     int resp_status;
     char *pos = NULL;
     char *end = NULL;
@@ -455,10 +400,8 @@ static int http_client_error_prase(http_client_struct_t *obj)
         goto end;
     }
 
-        /* 如果是文件上传，只需要判断文件上传是否成功即可 */
     if (obj->manager_type == 0) {
     } else {
-        /* 如果为文件下载，解析返回头 */
 
         rt_os_memset(length,0,sizeof(length));
         RT_CHECK_ERR(pos = rt_os_strstr(obj->buf, (const int8_t *)"Content-Length"), NULL);
@@ -471,38 +414,30 @@ static int http_client_error_prase(http_client_struct_t *obj)
         obj->remain_length = obj->file_length;
     }
 
-    ret = 0;
+    ret = RT_SUCCESS;
 end:
     return ret;
 }
 
-/********************************************************
-*name：int http_set_header_record(http_file_upload_t *obj, const char *key, const char *value)
-*funcition：设置http头的参数对
-*Entrance parameters：
-*   obj：http操作对象
-*   key：参数的的key
-*   value：参数对的值
-*
-********************************************************/
 int http_set_header_record(http_client_struct_t *obj, const char *key, const char *value)
 {
     int8_t i;
+
     if (obj == NULL || key == NULL || value ==NULL) {
         MSG_PRINTF(LOG_WARN, "The param is NULL\n");
-        return -1;
+        return RT_ERROR;
     }
 
     if (obj->http_header.record_size > MAX_RESUEST_HEADER_RECORD_SIZE - 1) {
         MSG_PRINTF(LOG_WARN, "THE http header record is full!!\n");
-        return -1;
+        return RT_ERROR;
     }
 
     for (i = 0; i < obj->http_header.record_size; i++) {
         if(rt_os_strncmp(obj->http_header.record[i].key, key, strlen(key)) == 0) {
             rt_os_memset(obj->http_header.record[i].value, 0x00, MAX_VALUE_LEN + 1);
             rt_os_memcpy(obj->http_header.record[i].value, value, rt_os_strlen(value));
-            return 0;
+            return RT_SUCCESS;
         }
     }
 
@@ -512,76 +447,43 @@ int http_set_header_record(http_client_struct_t *obj, const char *key, const cha
     rt_os_memcpy(obj->http_header.record[obj->http_header.record_size].value, value, rt_os_strlen(value));
     obj->http_header.record[obj->http_header.record_size].value[rt_os_strlen(value)] = '\0';
     obj->http_header.record_size++;
-    return 0;
+
+    return RT_SUCCESS;
 }
 
-/********************************************************
-*name：int get_file_size(const char *file_name)
-*funcition：获取文件大小
-*Entrance parameters：
-*   file_name：文件绝对路径
-*
-********************************************************/
-int get_file_size(const char *file_name)
-{
-    struct stat f_info;
-
-    rt_os_memset(&f_info, 0, sizeof(f_info));
-    if (file_name == NULL) {
-        return -1;
-    }
-    stat(file_name, &f_info);
-    return (int32_t)f_info.st_size;
-}
-
-
-/********************************************************
-*name：void http_client_file_download(const char *url, const char *file_name)
-*funcition：下载文件
-*Entrance parameters：
-*   url：文件下载地址
-*   file_name：要下载的文件名
-*
-********************************************************/
 int http_client_file_download(http_client_struct_t *d_state)
 {
-    int ret = -1;
+    int ret = RT_ERROR;
 
     RT_CHECK_ERR(d_state, NULL);
-    RT_CHECK_NEQ(http_client_download_init(d_state), 0);  // 结构初始化
-    RT_CHECK_LES(http_client_send_header(d_state), 0);  // 发送http头
-    RT_CHECK_LES(http_client_send_body(d_state), 0);  // 发送http 数据部分
-    RT_CHECK_LES(http_client_get_resp_header(d_state), 0);  // 获取http 返回头
-    RT_CHECK_LES(http_client_error_prase(d_state), 0);  // 解析http返回结果
-    RT_CHECK_ERR(http_client_recv_data(d_state), -1);  // 接收文件数据
+    RT_CHECK_NEQ(http_client_download_init(d_state), 0);
+    RT_CHECK_LES(http_client_send_header(d_state), 0);
+    RT_CHECK_LES(http_client_send_body(d_state), 0);
+    RT_CHECK_LES(http_client_get_resp_header(d_state), 0);
+    RT_CHECK_LES(http_client_error_prase(d_state), 0);
+    RT_CHECK_ERR(http_client_recv_data(d_state), -1);
     MSG_PRINTF(LOG_WARN, "Download  %s success\n", d_state->file_path);
-    ret = 0;
+    ret = RT_SUCCESS;
+
 end:
-    http_client_release(d_state);  // 释放结构
+    http_client_release(d_state);
+
     return ret;
 }
 
-/********************************************************
-*name：void http_client_upload(const char *url, const char *file_name)
-*funcition：上传文件
-*Entrance parameters：
-*   url：文件上传地址
-*   file_name：要上传的文件绝对路径
-*
-********************************************************/
 int http_client_file_upload(http_client_struct_t *up_state)
 {
-    int ret = -1;
+    int ret = RT_ERROR;
 
     RT_CHECK_ERR(up_state, NULL);
-    RT_CHECK_NEQ(http_client_upload_init(up_state), 0);  // 结构初始化
-    RT_CHECK_LES(http_client_send_header(up_state), 0);  // 发送http头
-    RT_CHECK_LES(http_client_send_body(up_state), 0);  // 发送http 数据部分
-    RT_CHECK_LES(http_client_get_resp_header(up_state), 0);  // 获取http 返回头
-    RT_CHECK_LES(http_client_error_prase(up_state), 0);  // 解析http返回结果
+    RT_CHECK_NEQ(http_client_upload_init(up_state), 0);
+    RT_CHECK_LES(http_client_send_header(up_state), 0);
+    RT_CHECK_LES(http_client_send_body(up_state), 0);
+    RT_CHECK_LES(http_client_get_resp_header(up_state), 0);
+    RT_CHECK_LES(http_client_error_prase(up_state), 0);
     MSG_PRINTF(LOG_WARN, "Uplaad  %s success\n", up_state->file_path);
 
-    ret = 0;
+    ret = RT_SUCCESS;
 end:
     http_client_release(up_state);  // 释放结构
     return ret;

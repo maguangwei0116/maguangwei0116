@@ -75,7 +75,7 @@ static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void 
     msg =  cJSON_Parse((const char *)in);
 
     cJSON_GET_JSON_DATA(msg, tranId);
-    
+
     rt_os_strcpy(tran_id, tranId->valuestring);
 
     param = (issue_cert_struct_t *)rt_os_malloc(sizeof(issue_cert_struct_t)); //todo 非空判断
@@ -123,7 +123,7 @@ static rt_bool on_issue_cert_install(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
     rt_bool ret = RT_FALSE;
-    
+
     MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
     if (rt_os_rename(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
         MSG_PRINTF(LOG_WARN, "re-name error\n");
@@ -141,9 +141,9 @@ static rt_bool on_issue_cert_install(const void *arg)
     rt_os_sync();
 
     ret = RT_TRUE;
-    
+
 exit_entry:
-    
+
     return ret;
 }
 
@@ -179,7 +179,7 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
             MSG_PRINTF(LOG_ERR, "open cert file failed!\n");
             goto exit_entry;
         }
-        length = get_file_size(RT_CERTIFICATE);
+        length = linux_file_size(RT_CERTIFICATE);
         buf = (uint8_t *) rt_os_malloc(length);
         if (!buf) {
             MSG_PRINTF(LOG_ERR, "malloc failed!\n");
@@ -203,8 +203,8 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
 
 exit_entry:
 
-    upload_event_report(upgrade->event, (const char *)upgrade->tranId, on_issue_cert_status, (void *)upgrade); 
-    
+    upload_event_report(upgrade->event, (const char *)upgrade->tranId, on_issue_cert_status, (void *)upgrade);
+
     /* release upgrade struct memory */
     if (upgrade) {
         rt_os_free((void *)upgrade);
@@ -221,7 +221,7 @@ static int32_t upgrade_download_package(const void *in, const char *upload_event
     uint8_t update_mode = 1;
     uint8_t force_update = 0;
     const issue_cert_struct_t *param = (const issue_cert_struct_t *)in;
-    upgrade_struct_t *upgrade_info = NULL;  
+    upgrade_struct_t *upgrade_info = NULL;
 
     OTA_CHK_PINTER_NULL(param, UPGRADE_NULL_POINTER_ERROR);
     upgrade_process_create(&upgrade_info);
@@ -253,9 +253,9 @@ static int32_t upgrade_download_package(const void *in, const char *upload_event
         ret = UPGRADE_START_UPGRADE_ERROR;
         goto exit_entry;
     }
-    
+
     ret = 0;
-        
+
 exit_entry:
     // todo  handler中释放
     if (param) {
@@ -277,7 +277,7 @@ static int32_t downstream_issue_cert_handler(const void *in, const char *event, 
 
 static cJSON *upload_on_issue_cert_packer(void *arg)
 {
-    return NULL;   
+    return NULL;
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(ISSUE_CERT, MSG_ID_PERSONLLISE, ON_ISSUE_CERT, downstream_issue_cert_parser, downstream_issue_cert_handler);

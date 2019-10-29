@@ -210,6 +210,7 @@ int32_t linux_file_size(const char *file)
 
     stat(file, &statbuf);
     size = statbuf.st_size;
+
     return size;
 }
 

@@ -122,7 +122,7 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
     cmd = (data[5] << 8) + data[6];
     if (cmd == 0xFFFF) { // msg from agent
         return monitor_deal_agent_msg(data[7], &data[12], data[11], rsp, rsp_len);
-    } else {
+    } else { // msg for vuicc
         MSG_INFO_ARRAY("E-APDU REQ:", data, len);
         sw = card_cmd((uint8_t *)data, len, rsp, rsp_len);
         rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
