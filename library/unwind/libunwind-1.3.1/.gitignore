@@ -1,0 +1,37 @@
+# ignore file
+
+Makefile
+config.log
+config.status
+libtool
+src/arm/*.lo
+src/arm/*.o
+src/coredump/*.lo
+src/coredump/*.o
+src/dwarf/*.lo
+src/dwarf/*.o
+src/mi/*.lo
+src/mi/*.o
+src/ptrace/*.lo
+src/ptrace/*.o
+src/setjmp/*.lo
+src/setjmp/*.o
+src/*.lo
+src/*.o
+src/libunwind*
+
+tests/*.o
+tests/Gperf-simple
+tests/Gperf-trace
+tests/Lperf-simple
+tests/Lperf-trace
+tests/check-namespace.sh
+tests/crasher
+tests/forker
+tests/mapper
+tests/test-coredump-unwind
+tests/test-ptrace-misc
+.*
+
+# not ignore
+!.gitignore
