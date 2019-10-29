@@ -49,7 +49,7 @@ typedef struct {
 /* All data should be a string which end with ‘\0’ */
 typedef struct {
     uint8_t             name[64];                  // example: linux-euicc-monitor-general
-    uint8_t             version[8];                // example: 0.0.0.1
+    uint8_t             version[16];                // example: 0.0.0.1
     uint8_t             chip_model[16];            // example: 9x07
 } monitor_version_t;
 
