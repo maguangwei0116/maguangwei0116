@@ -14,18 +14,25 @@
 #include "dial_up.h"
 #include "rt_os.h"
 #include "rt_qmi.h"
+#include "errno.h"
 
 #define DAIL_UP_WAIT                5           // timers
-#define CHK_DIAL_STATE_INTERVAL     2           // seconds
+#define CHK_REG_STATE_INTERVAL      2           // seconds
+#define MAX_CHK_REG_STATE          (5 * 60)    // for total 5 mins
+#define MAX_CHK_REG_STATE_CNT      (MAX_CHK_REG_STATE / CHK_REG_STATE_INTERVAL) 
+#define DIAL_UP_INTERVAL            5           // seconds
 #define MAX_CHK_DIAL_STATE          (5 * 60)    // for total 5 mins
-#define MAX_CHK_DIAL_STATE_CNT      (MAX_CHK_DIAL_STATE / CHK_DIAL_STATE_INTERVAL) 
+#define MAX_CHK_DIAL_STATE_CNT      (MAX_CHK_DIAL_STATE / DIAL_UP_INTERVAL) 
 #define has_more_argv()             ((opt < argc) && (argv[opt][0] != '-'))
+
+typedef enum LOCAL_DIAL_UP_STATE {
+    LOCAL_DIAL_UP_NO_NET = 0,
+    LOCAL_DIAL_UP_IS_CONN,
+} local_dial_up_e;
 
 typedef void (*dial_callback)(int32_t state);
 static dial_callback g_dial_state_func;
-
-static int g_signal_event_fd[2];
-static int g_dsi_event_fd[2];
+static int32_t g_dsi_event_fd[2];
 
 static void dsi_net_init_cb_func(void *user_data)
 {
@@ -33,13 +40,16 @@ static void dsi_net_init_cb_func(void *user_data)
     phndl->dsi_inited = 1;
 }
 
-static void dsi_net_cb_fcn( dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt, dsi_evt_payload_t *payload_ptr )
+static void dsi_net_cb_fcn(dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt, dsi_evt_payload_t *payload_ptr)
 {
     int32_t signo = evt;
     dsi_call_info_t *phndl = (dsi_call_info_t *)user_data;
+    
     if (evt == DSI_EVT_WDS_CONNECTED) {
         phndl->ip_type = payload_ptr->ip_type;
     }
+
+    /* Pass on the EVENT to upper application */
     write(g_dsi_event_fd[0], &signo, sizeof(signo));
 }
 
@@ -249,43 +259,74 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
         param_info.num_val = dsi_net_hndl->auth_pref;
         dsi_set_data_call_param(dsi_net_hndl->handle, DSI_CALL_INFO_AUTH_PREF, &param_info);
     }
+
+    socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
+    MSG_PRINTF(LOG_INFO, "< create two new sockets --- g_dsi_event_fd(%d,%d) >\n", g_dsi_event_fd[0], g_dsi_event_fd[1]);
+    
     return RT_SUCCESS;
 }
 
-static rt_bool get_regist_state(void)
+int32_t dial_up_deinit(dsi_call_info_t *dsi_net_hndl)
+{
+    close(g_dsi_event_fd[0]);
+    close(g_dsi_event_fd[1]);
+    
+    dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);  // it will release all handle, and you should reinit again !!! 
+
+    return RT_SUCCESS;
+}
+
+static rt_bool dial_up_get_regist_state(void)
 {
     int32_t regist_state = 0;
     int32_t ret;
+    
     ret = rt_qmi_get_register_state(&regist_state);
     if (regist_state == 1) {
         MSG_PRINTF(LOG_INFO, "regist state:%d\n", regist_state);
         return RT_TRUE;
     }
     MSG_PRINTF(LOG_INFO, "regist state:%d, ret=%d\n", regist_state, ret);
+    
     return RT_FALSE;
 }
 
-static int32_t g_dsi_start_data_call = 0;
-
-int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
+static int32_t dial_up_check_register_state(int32_t interval, int32_t max_cnt)
 {
-    int32_t rval;
-    
-    if (dsi_net_hndl->call_state != DSI_STATE_CALL_IDLE) {
-        rval = dsi_stop_data_call(dsi_net_hndl->handle);
-        dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
-        MSG_PRINTF(LOG_INFO, "dsi_start_data_call rval = %d, ------ (%d)\n", rval, --g_dsi_start_data_call);
+    int32_t cgk_reg_state_cnt = 0;
+
+    while (dial_up_get_regist_state() != RT_TRUE) {
+        rt_os_sleep(interval);
+        if (++cgk_reg_state_cnt >= max_cnt) {
+            return RT_ERROR;
+        }
     }
-    
-    //dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);  // it will release all handle, and you should reinit again !!!
-    
-    close(g_dsi_event_fd[0]);
-    close(g_dsi_event_fd[1]);
-    
+
     return RT_SUCCESS;
 }
 
-int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
+static int32_t dial_up_start(dsi_call_info_t *dsi_net_hndl, int32_t interval, int32_t max_cnt)
+{
+    int32_t rval;
+    int32_t dsi_start_cnt = 0;
+
+    while (1) {
+        rval = dsi_start_data_call(dsi_net_hndl->handle);        
+        if (rval == RT_SUCCESS) {
+            break;
+        }
+        MSG_PRINTF(LOG_INFO, "dsi_start_data_call rval = %d\n", rval);
+        
+        rt_os_sleep(interval);
+        if (++dsi_start_cnt >= max_cnt) {
+            return RT_ERROR;
+        }
+    }
+
+    return RT_SUCCESS;
+}
+
+static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_dial_up_e *state)
 {
     dsi_ce_reason_t dsicallend;
     int32_t rval, signo;
@@ -296,45 +337,33 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     int32_t nevents = 0;
     int32_t fd = 0;
     int16_t revents = 0;
-    int32_t cgk_state_cnt = 0;
-
-    socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
+    rt_bool exit_flag = RT_FALSE;
 
     pollfds[0].fd = g_dsi_event_fd[1];
     pollfds[0].events = POLLIN;
     pollfds[0].revents = 0;
     nevents = sizeof(pollfds)/sizeof(pollfds[0]);
-    MSG_PRINTF(LOG_WARN, "Start dial up\n");
 
     while (1) {
-        if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
-            if (get_regist_state() != RT_TRUE) {
-                rt_os_sleep(2);
-                if (++cgk_state_cnt >= MAX_CHK_DIAL_STATE_CNT) {
-                    dsi_net_hndl->call_state = DSI_STATE_CALL_DISCONNECTING;  // set disconnected state
-                    return RT_ERROR;
-                }
-                continue;
-            }
-            cgk_state_cnt = 0;            
-            rval = dsi_start_data_call(dsi_net_hndl->handle);
-            if (DSI_SUCCESS != rval) {
-                MSG_PRINTF(LOG_WARN, "dsi_start_data_call rval = %d\n", rval);
-            } else {
-                MSG_PRINTF(LOG_INFO, "dsi_start_data_call ++++++ (%d)\n", ++g_dsi_start_data_call);
-                dsi_net_hndl->call_state = DSI_STATE_CALL_CONNECTING;
-            }
-        }
-
+#if 0
         do {
             ret = poll(pollfds, nevents, 5);
+            MSG_PRINTF(LOG_INFO, "poll ret: %d\r\n", ret);
             rt_os_sleep(2);
         } while (ret < 0);
+#else
+        MSG_PRINTF(LOG_INFO, "< [BGN]: detect POLLIN event on sockets > \n");        
+        do {            
+            ret = poll(pollfds, nevents, -1);        
+        } while ((ret < 0) && (errno == EINTR));        
+        MSG_PRINTF(LOG_INFO, "< [END]: detect POLLIN event on sockets > \n");
+#endif
 
         for (ne = 0; ne < nevents; ne++) {
             fd = pollfds[0].fd;
             revents = pollfds[0].revents;
 
+            /* Check the current events after poll() returns. */
             if (revents & (POLLERR | POLLHUP | POLLNVAL)) {
                 MSG_PRINTF(LOG_DBG, "epoll fd = %d, events = 0x%04x\n", fd, revents);
                 if (revents & POLLHUP){
@@ -342,7 +371,8 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                 }
             }
 
-            if ((revents & POLLIN) == 0) {
+            /* If the curerent event isn't POLLERR / POLLHUP / POLLNVAL / POLLIN, discard the event. */
+            if ((revents & POLLIN) == 0) {/*
                 if (dsi_net_hndl->call_state == DSI_STATE_CALL_CONNECTING) {
                     ++count;
                     MSG_PRINTF(LOG_DBG, "call_count:%d\n",count);
@@ -351,13 +381,28 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                         dsi_net_hndl->call_state = DSI_STATE_CALL_DISCONNECTING;  // set disconnected state
                         return RT_ERROR;
                     }
-                }
+                }*/
+                MSG_PRINTF(LOG_DBG, "no pollin ...\r\n");
                 continue;
             }
 
+            /* Handle the POLLIN event. */
             if (fd == g_dsi_event_fd[1]) {
                 if (read(fd, &signo, sizeof(signo)) == sizeof(signo)) {
                     switch (signo) {
+                        /* Data call is disconnected */
+                        case DSI_EVT_NET_NO_NET:
+                            MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NO_NET\n");
+                            dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
+                            exit_flag = RT_TRUE;
+                            *state = LOCAL_DIAL_UP_NO_NET;
+                            if (dsi_get_call_end_reason(dsi_net_hndl->handle, &dsicallend, dsi_net_hndl->ip_type) == DSI_SUCCESS) {
+                                MSG_PRINTF(LOG_DBG, "dsi_get_call_end_reason handle reason type=%d, reason code=%d\n",
+                                    dsicallend.reason_type,dsicallend.reason_code);
+                            }
+                        break;
+
+                        /* WDS connected */
                         case DSI_EVT_WDS_CONNECTED:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
                                 MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V4\n");
@@ -367,44 +412,123 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                                 MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
                             }
                         break;
-                        
+
+                        /* Data call is connected */
                         case DSI_EVT_NET_IS_CONN:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
                                 if (RT_SUCCESS == get_ipv4_net_conf(dsi_net_hndl)) {
                                     MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_IS_CONN\n");
                                     count = 0;
                                     dsi_net_hndl->call_state = DSI_STATE_CALL_CONNECTED;
+                                    exit_flag = RT_TRUE;
+                                    *state = LOCAL_DIAL_UP_IS_CONN;
                                 }
                             } else if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V6) {
                                 MSG_PRINTF(LOG_DBG, "donot support DSI_IP_FAMILY_V6 by now!!!!\n");
                             }
                         break;
                         
-                        case DSI_EVT_NET_NO_NET:
-                            MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NO_NET\n");
-                            dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
-                            if (dsi_get_call_end_reason(dsi_net_hndl->handle, &dsicallend, dsi_net_hndl->ip_type) == DSI_SUCCESS) {
-                                MSG_PRINTF(LOG_DBG, "dsi_get_call_end_reason handle reason type=%d, reason code=%d\n",
-                                    dsicallend.reason_type,dsicallend.reason_code);
-                            }
-                        break;
+                        case DSI_EVT_NET_PARTIAL_CONN:                            
+                            MSG_PRINTF(LOG_DBG, "DSI_EVT_PARTIAL_CONN\n");
+                            break;
+
+                        // Net ip address is generated                        
+                        case DSI_EVT_NET_NEWADDR:                            
+                            MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NEWADDR\n");
+                            break;
                         
                         default:
-                        break;
+                            break;
                     }
                     
                     g_dial_state_func(dsi_net_hndl->call_state);
-
-                    if (DSI_EVT_NET_NO_NET == signo) {
-                        return RT_ERROR;
-                    }
                 }
             }
         }
+
+        if (exit_flag) {
+            break;
+        }
+        
     }
+    
     return RT_SUCCESS;
 }
 
+static int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
+{
+    int32_t rval;
+    
+    rval = dsi_stop_data_call(dsi_net_hndl->handle);
+    MSG_PRINTF(LOG_INFO, "dsi_stop_data_call rval = %d\n", rval);
+    rt_os_sleep(2);
+
+    return RT_SUCCESS;
+}
+
+#define dial_up_state_changed(handle, new_state)\
+    do {\
+        MSG_PRINTF(LOG_INFO, "DIAL-UP STATE: %d ==> %d (%s)\r\n", (handle)->call_state, new_state, #new_state);\
+        (handle)->call_state = new_state;\
+    } while (0)
+
+static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
+{
+    local_dial_up_e state;
+
+    while (1) {
+        switch (dsi_net_hndl->call_state) {
+            case DSI_STATE_CALL_IDLE:
+                MSG_PRINTF(LOG_WARN, "Start dial up\n");
+                if (dial_up_check_register_state(CHK_REG_STATE_INTERVAL, MAX_CHK_REG_STATE_CNT) == RT_SUCCESS) {
+                    dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTING);
+                } else {
+                    dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_DISCONNECTING);
+                }
+                break;
+
+            case DSI_STATE_CALL_CONNECTING:
+                if (dial_up_start(dsi_net_hndl, DIAL_UP_INTERVAL, MAX_CHK_DIAL_STATE_CNT) == RT_SUCCESS) {                    
+                    dial_up_check_connect_state(dsi_net_hndl, &state);
+                    if (state == LOCAL_DIAL_UP_NO_NET) {
+                        dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_DISCONNECTING);
+                    } else if (state == LOCAL_DIAL_UP_IS_CONN) {
+                        dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTED);
+                    }
+                } else {
+                    dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_DISCONNECTING);
+                }
+                break;
+
+            case DSI_STATE_CALL_CONNECTED:
+                dial_up_check_connect_state(dsi_net_hndl, &state);
+                if (state == LOCAL_DIAL_UP_NO_NET) {
+                    dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_DISCONNECTING);
+                } else if (state == LOCAL_DIAL_UP_IS_CONN) {
+                    dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTED);
+                }
+                break;
+
+            case DSI_STATE_CALL_DISCONNECTING:
+                dial_up_stop(dsi_net_hndl);
+                dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_IDLE);
+                break;
+
+            default:
+                MSG_PRINTF(LOG_ERR, "=======>unexpected mqtt state %d !!!", dsi_net_hndl->call_state);
+                dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_DISCONNECTING);
+                break;
+        }
+    }
+
+    return RT_SUCCESS;
+}
+
+int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
+{
+    return dial_up_state_mechine_start(dsi_net_hndl);  
+}
+    
 void dial_up_set_dial_callback(void* func)
 {
     g_dial_state_func = (dial_callback)func;
