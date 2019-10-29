@@ -488,7 +488,7 @@ thread_return_type WINAPI MQTTClient_run(void* n)
     FUNC_ENTRY;
     running = 1;
     run_id = Thread_getid();
-    Log(TRACE_MINIMUM, -1, "------------------------%s, %d, [pid=%p] entry ===>\r\n", __func__, __LINE__, Thread_getid());
+    Log(TRACE_MINIMUM, -1, "------------------------%s, %d, [pid=%p] entry ===>\r\n", __func__, __LINE__, run_id);
     Thread_lock_mutex(mqttclient_mutex);
     while (!tostop)
     {
@@ -789,6 +789,7 @@ int MQTTClient_connectURIVersion(MQTTClient handle, MQTTClient_connectOptions* o
     int sessionPresent = 0;
 
   FUNC_ENTRY;
+    Log(TRACE_MIN, -1, "mqtt client connect, millisecsTimeout=%ld ...\r\n", millisecsTimeout);
     if (m->ma && !running)
     {
         Thread_start(MQTTClient_run, handle);
@@ -948,6 +949,7 @@ exit:
     else
     {
         Thread_unlock_mutex(mqttclient_mutex);
+        Log(TRACE_MIN, -1, "mqtt client disconnect, millisecsTimeout=%ld ...\r\n", millisecsTimeout);
         MQTTClient_disconnect1(handle, 0, 0, (MQTTVersion == 3)); /* not "internal" because we don't want to call connection lost */
         Thread_lock_mutex(mqttclient_mutex);
     }
@@ -1085,7 +1087,9 @@ int MQTTClient_connect(MQTTClient handle, MQTTClient_connectOptions* options)
         rc = MQTTCLIENT_BAD_UTF8_STRING;
         goto exit;
     }
+    
     if (options->struct_version < 2 || options->serverURIcount == 0) {
+        Log(TRACE_MIN, -1, "mqtt client connect ...\r\n");
         rc = MQTTClient_connectURI(handle, options, m->serverURI);
     }
     else
@@ -1105,6 +1109,7 @@ int MQTTClient_connect(MQTTClient handle, MQTTClient_connectOptions* options)
                 m->ssl = 1;
             }
 #endif
+            Log(TRACE_MIN, -1, "mqtt client connect ...\r\n");
             if ((rc = MQTTClient_connectURI(handle, options, serverURI)) == MQTTCLIENT_SUCCESS)
             {
                 break;
@@ -1132,7 +1137,7 @@ int MQTTClient_disconnect1(MQTTClient handle, int timeout, int internal, int sto
     int was_connected = 0;
     FUNC_ENTRY;
     Thread_lock_mutex(mqttclient_mutex);
-
+    Log(TRACE_MIN, -1, "%s ...", __func__);
     if (m == NULL || m->c == NULL)
     {
         rc = MQTTCLIENT_FAILURE;
@@ -1261,7 +1266,9 @@ int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, i
         ListAppend(qoss, &qos[i], sizeof(int));
     }
 
+    Log(TRACE_MIN, -1, "subscribe before ...\r\n");
     rc = MQTTProtocol_subscribe(m->c, topics, qoss, msgid);
+    Log(TRACE_MIN, -1, "subscribe after ...\r\n");
     ListFreeNoContent(topics);
     ListFreeNoContent(qoss);
     if (rc == TCPSOCKET_COMPLETE)
@@ -1285,7 +1292,10 @@ int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, i
             m->pack = NULL;
         }
         else
+        {
             rc = SOCKET_ERROR;
+        }
+        Log(TRACE_MIN, -1, "subscribe ack ...\r\n");
     }
     if (rc == SOCKET_ERROR)
     {
@@ -1294,7 +1304,9 @@ int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, i
         Thread_lock_mutex(mqttclient_mutex);
     }
     else if (rc == TCPSOCKET_COMPLETE)
+    {
         rc = MQTTCLIENT_SUCCESS;
+    }
 
 exit:
     Thread_unlock_mutex(mqttclient_mutex);
@@ -1312,7 +1324,8 @@ int MQTTClient_subscribe_many(MQTTClient handle, int count, char** topic)
     memset(qos, DEFAULT_QOS, count);
     #else
     for (i = 0; i < count; i++) {
-        qos[i] = DEFAULT_QOS;       
+        qos[i] = DEFAULT_QOS; 
+        Log(TRACE_MIN, -1, "#%2d subscribe topic: %s, qos:%d", i, topic[i], qos[i]);
     }
     #endif
     
@@ -1340,18 +1353,18 @@ int MQTTClient_subscribe(MQTTClient handle, const char* topic, int qos)
 
 int MQTTClient_dosubscribe(MQTTClient handle, char* topic, int qos)
 {
-        int rc = 0;
+    int rc = 0;
 
-        FUNC_ENTRY;
-        rc = MQTTClient_subscribeMany(handle, 1, &topic, &qos);
-        FUNC_EXIT_RC(rc);
-        return rc;
+    FUNC_ENTRY;
+    rc = MQTTClient_subscribeMany(handle, 1, &topic, &qos);
+    FUNC_EXIT_RC(rc);
+    return rc;
 }
 
 int MQTTClient_presence(MQTTClient handle, char* topic)
 {
     char temp[100];
-    sprintf(temp, "%s/p", topic);
+    snprintf(temp, sizeof(temp), "%s/p", topic);
     return MQTTClient_subscribe(handle, temp, DEFAULT_QOS);
 }
 
@@ -1445,7 +1458,7 @@ int MQTTClient_unsubscribe(MQTTClient handle, const char* topic)
 int MQTTClient_unpresence(MQTTClient handle, char* topic)
 {
     char temp[100];
-    sprintf(temp, "%s/p", topic);
+    snprintf(temp, sizeof(temp), "%s/p", topic);
     return MQTTClient_unsubscribe(handle, temp);
 }
 
