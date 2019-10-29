@@ -40,14 +40,19 @@ static void network_start_timer(void)
 
 static void network_detection_task(void)
 {
+    int32_t ret;
     dsi_call_info_t dsi_net_hndl;
 
-    dial_up_init(&dsi_net_hndl);
+    ret = dial_up_init(&dsi_net_hndl);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "dial up init error !!!\r\n");
+    }
     
     while (1) {  
         dial_up_to_connect(&dsi_net_hndl);
-        dial_up_stop(&dsi_net_hndl);
     }
+
+    dial_up_deinit(&dsi_net_hndl);
 
     rt_exit_task(NULL);
 }
@@ -82,6 +87,7 @@ static void network_set_apn_handler(int32_t state)
     if ((g_network_state == DSI_STATE_CALL_IDLE || g_network_state == DSI_STATE_CALL_CONNECTING) && \
             state == DSI_STATE_CALL_CONNECTED) {
         MSG_PRINTF(LOG_WARN, "state changed: DSI_STATE_CALL_IDLE/DSI_STATE_CALL_CONNECTING ==> DSI_STATE_CALL_CONNECTED\r\n");
+        rt_os_sleep(1);
         /* update profiles info only */
         card_check_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP, using_iccid, NULL);
     }
@@ -96,7 +102,8 @@ static void network_set_apn_handler(int32_t state)
             MSG_PRINTF(LOG_WARN, "state changed: DSI_STATE_CALL_IDLE ==> DSI_STATE_CALL_IDLE\r\n");
             update_using_iccid = RT_TRUE;
         }
-        
+
+        rt_os_sleep(1);
         /* update profiles info only */
         card_check_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP, new_iccid, &type);
 
@@ -106,6 +113,7 @@ static void network_set_apn_handler(int32_t state)
                 /* set apn when detect a operational profile */
                 card_set_opr_profile_apn();
             } else if (PROFILE_TYPE_PROVISONING == type) {
+                rt_os_sleep(1);
                 /* start bootstrap when detect a provisioning profile */
                 card_check_profile_info(UPDATE_JUDGE_BOOTSTRAP, new_iccid, &type);
             }
