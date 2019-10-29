@@ -222,48 +222,6 @@ typedef enum TARGET_TYPE {
     TYPE_COMM_SO        = 3,
 } target_type_e;
 
-typedef enum AGENT_MONITOR_CMD {
-    CMD_SET_PARAM       = 0x00,
-    CMD_SIGN_CHK        = 0x01,
-    CMD_SELECT_PROFILE  = 0x02,
-    CMD_GET_MONITOR_VER = 0x03,
-    CMD_RFU             = 0x04,
-} agent_monitor_cmd_e;
-
-typedef struct MONITOR_VERSION {
-    char     name[64];           // example: linux-euicc-monitor-general
-    char     version[16];        // example: 0.0.0.1
-    char     chip_model[16];     // example: 9x07
-} monitor_version_t;
-
-static int32_t upload_get_monitor_all_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size)
-{
-    monitor_version_t m_version = {0};
-    atom_data_t c_data = {0};
-    uint8_t buf[sizeof(monitor_version_t)] = {0};
-    uint16_t len = sizeof(monitor_version_t);
-
-    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
-    c_data.cmd = CMD_GET_MONITOR_VER;
-    c_data.data_len = (uint8_t)len;
-    c_data.data = (uint8_t *)&m_version;
-    len = sizeof(atom_data_t) - 4;
-    rt_os_memcpy(&buf[0], &c_data, len);
-    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
-    len += c_data.data_len;
-
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len); 
-
-    rt_os_memcpy((uint8_t *)&m_version, (uint8_t *)buf, sizeof(monitor_version_t));
-    //MSG_HEXDUMP("version", &m_version, sizeof(monitor_version_t));
-
-    snprintf(name, n_size, "%s", m_version.name);    
-    snprintf(version, v_size, "%s", m_version.version);    
-    snprintf(chip_modle, c_size, "%s", m_version.chip_model);
-
-    return 0;
-}
-
 static cJSON *upload_event_software_version_info(void)
 {
     int32_t ret = 0;
@@ -322,7 +280,7 @@ static cJSON *upload_event_software_version_info(void)
     }
 
     /* add monitor version */
-    upload_get_monitor_all_version(name_str, sizeof(name_str), ver_str, sizeof(ver_str), chip_model_str, sizeof(chip_model_str));
+    agent_get_monitor_version(name_str, sizeof(name_str), ver_str, sizeof(ver_str), chip_model_str, sizeof(chip_model_str));
     monitor_version = cJSON_CreateObject();
     if (!monitor_version) {
         MSG_PRINTF(LOG_WARN, "The monitor_version is error\n");

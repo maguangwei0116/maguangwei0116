@@ -26,6 +26,7 @@
 #include "logm.h"
 #include "personalise.h"
 #include "upgrade.h"
+#include "agent2monitor.h"
 #include "libcomm.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
@@ -60,29 +61,7 @@ static int32_t init_system_signal(void *arg)
 
 static int32_t init_monitor(void *arg)
 {
-    info_vuicc_data_t info = {0};
-    atom_data_t c_data = {0};
-    uint8_t buf[256] = {0};
-    uint16_t len = sizeof(info_vuicc_data_t);
-
-    MSG_PRINTF(LOG_INFO, "atom len:%d\n", sizeof(atom_data_t));
-
-    info.vuicc_switch = ((public_value_list_t *)arg)->config_info->lpa_channel_type;
-    info.log_level = ((public_value_list_t *)arg)->config_info->monitor_log_level;
-    info.log_size = ((public_value_list_t *)arg)->config_info->log_max_size;
-
-    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
-    c_data.cmd = 0x00;
-    c_data.data_len = (uint8_t)len;
-    c_data.data = (uint8_t *)&info;
-    len = sizeof(atom_data_t) - 4;
-    rt_os_memcpy(&buf[0], &c_data, len);
-    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
-    len += c_data.data_len;
-
-    MSG_PRINTF(LOG_INFO, "len:%d, log_max_size:%d, %08x\n", len, info.log_size, info.log_level);
-
-    return ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len);
+    return agent_set_monitor_param(((public_value_list_t *)arg)->config_info);
 }
 
 static int32_t init_qmi(void *arg)

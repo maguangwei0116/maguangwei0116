@@ -118,6 +118,9 @@ SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota_upgrade.c
 # logger manager module
 SRC-y 			                        += ./core/logm/src/logm.c
 
+# agent 2 monitor
+SRC-y 			                        += ./core/agent2monitor/src/agent2monitor.c
+
 ############################################################################
 # Never adjustment order of these files
 SRC-y 			                        += ./core/upload/src/upload_null_end.c
@@ -140,6 +143,7 @@ INC-PATH-y 		                        += ./core/upload/
 INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
 INC-PATH-y 		                        += ./core/logm/
+INC-PATH-y 		                        += ./core/agent2monitor/
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)
