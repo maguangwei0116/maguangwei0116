@@ -15,6 +15,7 @@
 #include "parse_backup.h"
 #include "rt_timer.h"
 #include "dial_up.h"
+#include "download_file.h"
 
 #define MAX_WAIT_REGIST_TIME     180
 
@@ -48,8 +49,9 @@ static void network_state(int32_t state)
 
     g_network_state = state;
 
-    if (g_network_state == DSI_STATE_CALL_CONNECTED) {  // network connected
+    if (g_network_state == DSI_STATE_CALL_CONNECTED) {    // network connected
         MSG_PRINTF(LOG_INFO, "Network state:%d\n", state);
+        download_start();                                 // start download agent
     } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
         MSG_PRINTF(LOG_INFO, "Network state:%d\n", state);
         network_start_timer();

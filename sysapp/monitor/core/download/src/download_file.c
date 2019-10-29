@@ -12,3 +12,8 @@
  *******************************************************************************/
 
 #include "download_file.h"
+
+int32_t download_start(void)
+{
+    MSG_PRINTF(LOG_INFO, "Start download file\n");
+}

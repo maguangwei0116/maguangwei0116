@@ -95,7 +95,7 @@ int lpa_get_eid_list(uint8_t (*eid_list)[33])
         }
     }
 end:
-    ASN_STRUCT_FREE(asn_DEF_MoreEIDOperateResponse,rsp);
+    ASN_STRUCT_FREE(asn_DEF_MoreEIDOperateResponse, rsp);
     close_channel(channel);
     return ret;
 }

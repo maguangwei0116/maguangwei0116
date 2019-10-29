@@ -16,4 +16,6 @@
 
 #include "rt_type.h"
 
+int32_t download_start(void);
+
 #endif  // __DOWNLOAD_FILE_H__
