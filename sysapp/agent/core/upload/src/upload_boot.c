@@ -4,6 +4,9 @@
 #include "rt_os.h"
 #include "card_manager.h"
 #include "device_info.h"
+#include "bootstrap.h"
+#include "libcomm.h"
+#include "agent_main.h"
 
 #include "cJSON.h"
 
@@ -212,14 +215,71 @@ exit_entry:
     return !ret ? network : NULL;
 }
 
-static cJSON *upload_event_boot_version_info(void)
+typedef enum TARGET_TYPE {
+    TYPE_AGENT          = 0,
+    TYPE_SHARE_PROFILE  = 1,
+    TYPE_MONITOR        = 2,
+    TYPE_COMM_SO        = 3,
+} target_type_e;
+
+typedef enum AGENT_MONITOR_CMD {
+    CMD_SET_PARAM       = 0x00,
+    CMD_SIGN_CHK        = 0x01,
+    CMD_SELECT_PROFILE  = 0x02,
+    CMD_GET_MONITOR_VER = 0x03,
+    CMD_RFU             = 0x04,
+} agent_monitor_cmd_e;
+
+typedef struct MONITOR_VERSION {
+    char     name[64];           // example: linux-euicc-monitor-general
+    char     version[16];        // example: 0.0.0.1
+    char     chip_model[16];     // example: 9x07
+} monitor_version_t;
+
+static int32_t upload_get_monitor_all_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size)
+{
+    monitor_version_t m_version = {0};
+    atom_data_t c_data = {0};
+    uint8_t buf[sizeof(monitor_version_t)] = {0};
+    uint16_t len = sizeof(monitor_version_t);
+
+    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
+    c_data.cmd = CMD_GET_MONITOR_VER;
+    c_data.data_len = (uint8_t)len;
+    c_data.data = (uint8_t *)&m_version;
+    len = sizeof(atom_data_t) - 4;
+    rt_os_memcpy(&buf[0], &c_data, len);
+    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
+    len += c_data.data_len;
+
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len); 
+
+    rt_os_memcpy((uint8_t *)&m_version, (uint8_t *)buf, sizeof(monitor_version_t));
+    //MSG_HEXDUMP("version", &m_version, sizeof(monitor_version_t));
+
+    snprintf(name, n_size, "%s", m_version.name);    
+    snprintf(version, v_size, "%s", m_version.version);    
+    snprintf(chip_modle, c_size, "%s", m_version.chip_model);
+
+    return 0;
+}
+
+static cJSON *upload_event_software_version_info(void)
 {
     int32_t ret = 0;
     cJSON *software = NULL;
-    cJSON *app_version = NULL;
+    cJSON *agent_version = NULL;
+    cJSON *share_profile_version = NULL;
+    cJSON *monitor_version = NULL;
+    cJSON *comm_so_version = NULL;    
+    target_type_e type;
     const char *name = LOCAL_TARGET_NAME;
     const char *version = LOCAL_TARGET_VERSION;
     const char *chipModel = LOCAL_TARGET_PLATFORM_TYPE;
+    char share_profile_ver_str[64] = {0};
+    char name_str[64] = {0};
+    char ver_str[16] = {0};
+    char chip_model_str[16] = {0};
 
     software = cJSON_CreateArray();
     if (!software) {
@@ -228,17 +288,76 @@ static cJSON *upload_event_boot_version_info(void)
         goto exit_entry;
     }
 
-    app_version = cJSON_CreateObject();
-    if (!app_version) {
-        MSG_PRINTF(LOG_WARN, "The app_version is error\n");
+    /* add agent version */
+    agent_version = cJSON_CreateObject();
+    if (!agent_version) {
+        MSG_PRINTF(LOG_WARN, "The agent_version is error\n");
         ret = -2;
         goto exit_entry;
+    } else {
+        type = TYPE_AGENT;
+        CJSON_ADD_NEW_STR_OBJ(agent_version, name);
+        CJSON_ADD_NEW_STR_OBJ(agent_version, version);
+        CJSON_ADD_NEW_STR_OBJ(agent_version, chipModel);        
+        CJSON_ADD_NEW_INT_OBJ(agent_version, type);
+        cJSON_AddItemToArray(software, agent_version);
     }
 
-    CJSON_ADD_NEW_STR_OBJ(app_version, name);
-    CJSON_ADD_NEW_STR_OBJ(app_version, version);
-    CJSON_ADD_NEW_STR_OBJ(app_version, chipModel);
-    cJSON_AddItemToArray(software, app_version);
+    /* add share profile version */
+    get_share_profile_version((uint8_t *)share_profile_ver_str);
+    share_profile_version = cJSON_CreateObject();
+    if (!share_profile_version) {
+        MSG_PRINTF(LOG_WARN, "The share_profile_version is error\n");
+        ret = -3;
+        goto exit_entry;
+    } else {
+        name = "share-profile";
+        version = share_profile_ver_str;
+        type = TYPE_SHARE_PROFILE;
+        CJSON_ADD_NEW_STR_OBJ(share_profile_version, name);        
+        CJSON_ADD_NEW_STR_OBJ(share_profile_version, version);
+        CJSON_ADD_NEW_STR_OBJ(share_profile_version, chipModel);        
+        CJSON_ADD_NEW_INT_OBJ(share_profile_version, type);
+        cJSON_AddItemToArray(software, share_profile_version);
+    }
+
+    /* add monitor version */
+    upload_get_monitor_all_version(name_str, sizeof(name_str), ver_str, sizeof(ver_str), chip_model_str, sizeof(chip_model_str));
+    monitor_version = cJSON_CreateObject();
+    if (!monitor_version) {
+        MSG_PRINTF(LOG_WARN, "The monitor_version is error\n");
+        ret = -4;
+        goto exit_entry;
+    } else {
+        name = name_str;
+        version = ver_str;
+        chipModel = chip_model_str;
+        type = TYPE_MONITOR;
+        CJSON_ADD_NEW_STR_OBJ(monitor_version, name);
+        CJSON_ADD_NEW_STR_OBJ(monitor_version, version);
+        CJSON_ADD_NEW_STR_OBJ(monitor_version, chipModel);        
+        CJSON_ADD_NEW_INT_OBJ(monitor_version, type);
+        cJSON_AddItemToArray(software, monitor_version);
+    }
+
+    /* add comm so version */
+    libcomm_get_all_version(name_str, sizeof(name_str), ver_str, sizeof(ver_str), chip_model_str, sizeof(chip_model_str));
+    comm_so_version = cJSON_CreateObject();
+    if (!comm_so_version) {
+        MSG_PRINTF(LOG_WARN, "The comm_so_version is error\n");
+        ret = -5;
+        goto exit_entry;
+    } else {
+        name = name_str;
+        version = ver_str;
+        chipModel = chip_model_str;
+        type = TYPE_COMM_SO;
+        CJSON_ADD_NEW_STR_OBJ(comm_so_version, name);
+        CJSON_ADD_NEW_STR_OBJ(comm_so_version, version);
+        CJSON_ADD_NEW_STR_OBJ(comm_so_version, chipModel);        
+        CJSON_ADD_NEW_INT_OBJ(comm_so_version, type);
+        cJSON_AddItemToArray(software, comm_so_version);
+    }
     
     ret = 0;
     
@@ -306,7 +425,7 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
     CJSON_ADD_STR_OBJ(content, network);
     
     if (!only_profile_network) {
-        software = upload_event_boot_version_info();
+        software = upload_event_software_version_info();
         CJSON_ADD_STR_OBJ(content, software);
     }
 
