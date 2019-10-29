@@ -34,6 +34,26 @@ extern int vsim_get_ver(char *version);
 
 static log_mode_e g_def_mode = LOG_PRINTF_TERMINAL;
 
+typedef struct {
+    uint8_t             hash[64];                  // hash
+    uint8_t             signature[128];            // signature data
+} signature_data_t;
+
+/* All data should be a string which end with ‘\0’ */
+typedef struct {
+    uint8_t             name[64];                  // example: linux-euicc-monitor-general
+    uint8_t             version[8];                // example: 0.0.0.1
+    uint8_t             chip_model[16];            // example: 9x07
+} monitor_version_t;
+
+typedef struct {
+    uint8_t             vuicc_switch;              // lpa_channel_type_e, IPC used for vuicc
+    uint8_t             log_level;                 // log_level_e
+    uint8_t             reserve[2];                // reserve for keep 4 bytes aligned
+    uint32_t            log_size;                  // unit: bytes, little endian
+} info_vuicc_data_t;
+
+
 static void cfinish(int32_t sig)
 {
     MSG_PRINTF(LOG_DBG, "recv signal %d, process exit !\r\n", sig);
@@ -48,6 +68,49 @@ static int32_t init_system_signal(void *arg)
     return RT_SUCCESS;
 }
 
+static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
+{
+    if (cmd == 0x00) {  // config monitor
+        if (len < sizeof(info_vuicc_data_t)) {
+            goto end;
+        }
+        info_vuicc_data_t *info = (info_vuicc_data_t *)data;
+        MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (data[7] == 0x00) ? "vUICC" : "eUICC");
+        if (info->vuicc_switch == 0x00) {
+            trigegr_regist_reset(card_reset);
+            trigegr_regist_cmd(card_cmd);
+            trigger_swap_card(1);
+            *rsp_len = 0;
+        }
+        MSG_PRINTF(LOG_INFO, "set log_level=%d, log_max_size=%d\n", info->log_level, info->log_size);
+        log_set_param(g_def_mode, info->log_level, info->log_size);
+        *rsp = 0x01;
+        *rsp_len = 1;
+    } else if (cmd == 0x01) { // check signature
+        if (len < sizeof(signature_data_t)) {
+            goto end;
+        }
+        signature_data_t *info = (signature_data_t *)data;
+        *rsp = (uint8_t)inspect_abstract_content(info->hash, info->signature);
+        *rsp_len = 1;
+    } else if (cmd == 0x02) { // choose one profile from backup profile
+        backup_process();
+    } else if (cmd == 0x03) { // monitor version info
+        monitor_version_t info;
+        *rsp_len = sizeof(monitor_version_t);
+        rt_os_memset(&info, 0x00, *rsp_len);
+        rt_os_memcpy(info.name, LOCAL_TARGET_NAME, rt_os_strlen(LOCAL_TARGET_NAME));
+        rt_os_memcpy(info.version, LOCAL_TARGET_VERSION, rt_os_strlen(LOCAL_TARGET_VERSION));
+        rt_os_memcpy(info.chip_model, LOCAL_TARGET_PLATFORM_TYPE, rt_os_strlen(LOCAL_TARGET_PLATFORM_TYPE));
+        rt_os_memcpy(rsp, &info, *rsp_len);
+    }
+
+    return RT_SUCCESS;
+
+end:
+    return RT_ERROR;
+}
+
 uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
     uint16_t cmd = 0;
@@ -58,23 +121,7 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
 
     cmd = (data[5] << 8) + data[6];
     if (cmd == 0xFFFF) { // msg from agent
-        if (data[7] == 0x00) {  // config monitor
-            MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (data[7] == 0x00) ? "vUICC" : "eUICC");
-            if (data[12] == 0x00) {
-                trigegr_regist_reset(card_reset);
-                trigegr_regist_cmd(card_cmd);
-                trigger_swap_card(1);
-                *rsp_len = 0;
-            }
-            log_level = data[13];
-            rt_os_memcpy(&log_max_size, &data[16], sizeof(log_max_size));
-            MSG_PRINTF(LOG_WARN, "set log_level=%d, log_max_size=%d\n", log_level, log_max_size);
-            log_set_param(g_def_mode, log_level, log_max_size);
-        } else if (data[7] == 0x01) { // check signature
-
-        } else if (data[7] == 0x02) { // choose one profile from backup profile
-            backup_process();
-        }
+        return monitor_deal_agent_msg(data[7], &data[12], data[11], rsp, rsp_len);
     } else {
         MSG_INFO_ARRAY("E-APDU REQ:", data, len);
         sw = card_cmd((uint8_t *)data, len, rsp, rsp_len);
