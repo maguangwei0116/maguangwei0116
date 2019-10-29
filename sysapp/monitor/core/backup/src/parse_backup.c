@@ -39,7 +39,6 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
 
     rt_open_channel(&channel);
     ret = cmd_store_data((const uint8_t *)apdu_info, 3, rsp_buf, &rsp_len, channel);
-    MSG_INFO_ARRAY("profile_list", rsp_buf, rsp_len);
 
     dc = ber_decode(NULL, &asn_DEF_ProfileInfoListResponse, (void **)&rsp, rsp_buf, rsp_len);
     if (dc.code != RC_OK) {
