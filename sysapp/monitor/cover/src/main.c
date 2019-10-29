@@ -24,8 +24,8 @@
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"
-#define RT_AGENT_FILE               "/usr/bin/agent"
-#define RT_MONITOR_FILE             "/usr/bin/monitor"
+#define RT_AGENT_FILE               "/usr/bin/rt_agent"
+#define RT_MONITOR_FILE             "/usr/bin/rt_monitor"
 #define RT_MONITOR_LOG              "/data/redtea/rt_monitor_log"
 
 #ifdef CFG_SOFTWARE_TYPE_DEBUG
@@ -39,7 +39,7 @@
 extern int init_file_ops(void);
 extern int vsim_get_ver(char *version);
 
-static log_mode_e g_def_mode = LOG_PRINTF_TERMINAL;
+static log_mode_e g_def_mode = LOG_PRINTF_FILE;
 
 typedef struct {
     uint8_t             hash[64];                  // hash
