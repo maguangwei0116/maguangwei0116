@@ -18,10 +18,14 @@
 #include "trigger.h"
 #include "card.h"
 #include "ipc_socket_server.h"
+#include "parse_backup.h"
+#include "inspect_file.h"
+#include "libcomm.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"
-#define RT_AGENT_FILE               "/usr/bin/rt_agent"
+#define RT_AGENT_FILE               "/usr/bin/agent"
+#define RT_MONITOR_FILE             "/usr/bin/monitor"
 #define RT_MONITOR_LOG              "/data/redtea/rt_monitor_log"
 
 #ifdef CFG_SOFTWARE_TYPE_DEBUG
@@ -35,7 +39,27 @@
 extern int init_file_ops(void);
 extern int vsim_get_ver(char *version);
 
-static log_mode_e g_def_mode = LOG_PRINTF_FILE;
+static log_mode_e g_def_mode = LOG_PRINTF_TERMINAL;
+
+typedef struct {
+    uint8_t             hash[64];                  // hash
+    uint8_t             signature[128];            // signature data
+} signature_data_t;
+
+/* All data should be a string which end with ‘\0’ */
+typedef struct {
+    uint8_t             name[64];                  // example: linux-euicc-monitor-general
+    uint8_t             version[8];                // example: 0.0.0.1
+    uint8_t             chip_model[16];            // example: 9x07
+} monitor_version_t;
+
+typedef struct {
+    uint8_t             vuicc_switch;              // lpa_channel_type_e, IPC used for vuicc
+    uint8_t             log_level;                 // log_level_e
+    uint8_t             reserve[2];                // reserve for keep 4 bytes aligned
+    uint32_t            log_size;                  // unit: bytes, little endian
+} info_vuicc_data_t;
+
 
 static void cfinish(int32_t sig)
 {
@@ -51,35 +75,67 @@ static int32_t init_system_signal(void *arg)
     return RT_SUCCESS;
 }
 
-uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
+static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
-    uint16_t cmd = 0;
-    uint16_t sw = 0;
-    static rt_bool reset_flag = RT_FALSE;
-
-    cmd = (data[5] << 8) + data[6];
-    if (cmd == 0xFFFF) { // msg from agent
+    if (cmd == 0x00) {  // config monitor
+        if (len < sizeof(info_vuicc_data_t)) {
+            goto end;
+        }
+        info_vuicc_data_t *info = (info_vuicc_data_t *)data;
         MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (data[7] == 0x00) ? "vUICC" : "eUICC");
-        if (data[7] == 0x00) {  // used vuicc
+        if (info->vuicc_switch == 0x00) {
             trigegr_regist_reset(card_reset);
             trigegr_regist_cmd(card_cmd);
             trigger_swap_card(1);
             *rsp_len = 0;
         }
-        if (data[9] != 0x00) { //set monitor log level and max log size
-            int8_t log_level = data[9];
-            uint32_t log_max_size;
-            rt_os_memcpy(&log_max_size, &data[12], sizeof(log_max_size));
-            MSG_PRINTF(LOG_WARN, "set log_level=%d, log_max_size=%d\n", log_level, log_max_size);
-            log_set_param(g_def_mode, log_level, log_max_size);
+        MSG_PRINTF(LOG_INFO, "set log_level=%d, log_max_size=%d\n", info->log_level, info->log_size);
+        log_set_param(g_def_mode, info->log_level, info->log_size);
+        *rsp = 0x01;
+        *rsp_len = 1;
+    } else if (cmd == 0x01) { // check signature
+        if (len < sizeof(signature_data_t)) {
+            goto end;
         }
-    } else {
+        signature_data_t *info = (signature_data_t *)data;
+        *rsp = (uint8_t)inspect_abstract_content(info->hash, info->signature);
+        *rsp_len = 1;
+    } else if (cmd == 0x02) { // choose one profile from backup profile
+        backup_process();
+    } else if (cmd == 0x03) { // monitor version info
+        monitor_version_t info;
+        *rsp_len = sizeof(monitor_version_t);
+        rt_os_memset(&info, 0x00, *rsp_len);
+        rt_os_memcpy(info.name, LOCAL_TARGET_NAME, rt_os_strlen(LOCAL_TARGET_NAME));
+        rt_os_memcpy(info.version, LOCAL_TARGET_VERSION, rt_os_strlen(LOCAL_TARGET_VERSION));
+        rt_os_memcpy(info.chip_model, LOCAL_TARGET_PLATFORM_TYPE, rt_os_strlen(LOCAL_TARGET_PLATFORM_TYPE));
+        rt_os_memcpy(rsp, &info, *rsp_len);
+    }
+
+    return RT_SUCCESS;
+
+end:
+    return RT_ERROR;
+}
+
+uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
+{
+    uint16_t cmd = 0;
+    uint16_t sw = 0;
+    int8_t log_level;
+    uint32_t log_max_size;
+    static rt_bool reset_flag = RT_FALSE;
+
+    cmd = (data[5] << 8) + data[6];
+    if (cmd == 0xFFFF) { // msg from agent
+        return monitor_deal_agent_msg(data[7], &data[12], data[11], rsp, rsp_len);
+    } else { // msg for vuicc
         MSG_INFO_ARRAY("E-APDU REQ:", data, len);
         sw = card_cmd((uint8_t *)data, len, rsp, rsp_len);
         rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
         rsp[(*rsp_len)++] = sw & 0xFF;
         MSG_INFO_ARRAY("E-APDU RSP:", rsp, *rsp_len);
-		
+
         /* enable profile and load bootstrap profile, need to reset */
         if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
             cmd = (rsp[0] << 8) + rsp[1];
@@ -118,6 +174,21 @@ static int32_t ipc_socket_server_start(void)
     return ret;
 }
 
+// choose euicc or vuicc
+static int32_t choose_uicc_type(void)
+{
+    lpa_channel_type_e type = LPA_CHANNEL_BY_IPC;
+
+    if (type == LPA_CHANNEL_BY_IPC) {
+        trigegr_regist_reset(card_reset);
+        trigegr_regist_cmd(card_cmd);
+        trigger_swap_card(1);
+    }
+    init_apdu_channel(type);
+
+    return RT_SUCCESS;
+}
+
 static int32_t agent_task_check_start(void)
 {
     int32_t ret;
@@ -130,7 +201,12 @@ static int32_t agent_task_check_start(void)
     snprintf(cmd, sizeof(cmd), "killall -9 %s > /dev/null 2>&1", RT_AGENT_PTROCESS);
     system(cmd);
 
-    /* start up agent process by fork fucntion */
+    /* inspect agent, if inspect failed, go to backup process */
+    if (monitor_inspect_file(RT_AGENT_FILE) != RT_TRUE) {
+        choose_uicc_type();
+        network_detection_task();
+    }
+    /* start up agent process by fork function */
     child_pid = fork();
     if (child_pid < 0) {
         MSG_PRINTF(LOG_WARN, "error in fork, err(%d)=%s\r\n", errno, strerror(errno));
@@ -203,15 +279,24 @@ int32_t main(int32_t argc, const char *argv[])
     init_backtrace(monitor_printf);
     #endif
 
-    /* debug versions information */
-    init_app_version(NULL);
-
     /* install ops callbacks */
     init_callback_ops();
     init_card(log_print);
-
+	
+	/* debug versions information */
+    init_app_version(NULL);
+	
     /* install system signal handle */
     init_system_signal(NULL);
+
+    /*init lib interface*/
+    init_timer(NULL);
+    rt_qmi_init(NULL);
+
+    /* inspect monitor */
+    while (monitor_inspect_file(RT_MONITOR_FILE) != RT_TRUE) {
+        rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
+    }
 
     /* install ipc callbacks and start up ipc server */
     ipc_regist_callback(monitor_cmd);

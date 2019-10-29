@@ -11,7 +11,6 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#include <stdio.h>
 #include "bootstrap.h"
 #include "profile_parse.h"
 #include "tlv.h"

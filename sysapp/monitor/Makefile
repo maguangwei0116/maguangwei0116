@@ -60,10 +60,23 @@ INC-PATH	= ./inc
 SRC-y 		+= $(SRC-PATH)/vuicc_callback.c
 SRC-y 		+= $(SRC-PATH)/ipc_socket_server.c
 SRC-y 		+= $(SRC-PATH)/main.c
+SRC-y 		+= ./core/backup/src/parse_backup.c
+SRC-y 		+= ./core/backup/src/apdu.c
+SRC-y 		+= ./core/inspect/src/inspect_file.c
+SRC-y 		+= ./core/networkd/src/network_detection.c
+SRC-y 		+= ./core/download/src/download_file.c
 
 # Config your include file path by += xxx-inc
 INC-y 		+= ./ipc/
 INC-y 		+= ./ipc/$(INC-PATH)
+INC-y 		+= ./core/backup
+INC-y 		+= ./core/backup/$(INC-PATH)
+INC-y 		+= ./core/inspect
+INC-y 		+= ./core/inspect/$(INC-PATH)
+INC-y 		+= ./core/networkd
+INC-y 		+= ./core/networkd/$(INC-PATH)
+INC-y 		+= ./core/download
+INC-y 		+= ./core/download/$(INC-PATH)
 INC-y 		+= ./vuicc/
 INC-y 		+= ./vuicc/$(INC-PATH)
 
@@ -71,7 +84,7 @@ INC-y 		+= ./vuicc/$(INC-PATH)
 LIB-y 		+= $(patsubst %,-l%,$(COMM-LIB))
 LIB-y 		+= $(patsubst %,-l%,$(QMI-LIB))
 
-# Config comm library and vuicc library, keep libvuicc.a before libcomm.a 
+# Config comm library and vuicc library, keep libvuicc.a before libcomm.a
 # set LIBCOMM_STATIC to 'y'(YES) or 'n'(NO)
 LIBCOMM_STATIC  = n
 LIB-y           += -l$(shell pwd)/vuicc/lib/$(VUICC-LIB)

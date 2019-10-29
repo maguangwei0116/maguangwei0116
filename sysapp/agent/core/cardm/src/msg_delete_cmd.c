@@ -49,7 +49,7 @@ static int32_t delete_parser(const void *in, char *tranid, void **out)
     do {
         agent_msg = cJSON_Parse(in);
         if (!agent_msg) {
-            MSG_PRINTF(LOG_ERR, "message parse failed!!\n");
+            MSG_PRINTF(LOG_ERR, "Message parse failed!!\n");
             break;
         }
         tran_id = cJSON_GetObjectItem(agent_msg, "tranId");
@@ -148,7 +148,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 bootstrap_flag = UPDATE_JUDGE_BOOTSTRAP;
             }
             if (RT_ERR_APDU_SEND_FAIL == code) {
-                /* 
+                /*
                 Delete again when lpa-delete-profile return -204, but profile was deleteed actually.
                 Check the second delete operation, when it return code 1, it means profile isn't exist !
                 */

@@ -40,7 +40,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     }
     ret = get_file_version(fileVersion);
     if (ret != RT_SUCCESS){
-        MSG_PRINTF(LOG_WARN, "The fileVersion is error\n");
+        MSG_PRINTF(LOG_WARN, "The file version is error\n");
         goto exit_entry;
     }
 

@@ -7,6 +7,7 @@ output
 converter-example.mk 
 Makefile.am.asn1convert
 Makefile.am.libasncodec
-
+*.o
+crypto
 # not ignore
 !.gitignore

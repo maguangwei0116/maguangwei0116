@@ -21,10 +21,12 @@ int32_t rt_qmi_get_register_state(int32_t *register_state)
 {
     qmi_serving_system_info_t info;
     int32_t ret = 0;
+
     ret = qmi_get_serving_system(&info);
     if (ret == 0) {
         *register_state = info.serving_system.registration_state;
     }
+
     return ret;
 }
 
@@ -32,6 +34,7 @@ int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc)
 {
     qmi_serving_system_info_t info;
     int32_t ret = 0;
+
     ret = qmi_get_serving_system(&info);
     if (ret == 0) {
         if (mcc) {
@@ -41,24 +44,29 @@ int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc)
             *mnc = info.mnc_includes_pcs_digit.mnc;
         }
     }
+
     return ret;
 }
 
 int32_t rt_qmi_get_current_iccid(uint8_t *iccid)
 {
     int32_t ret = 0;
+
     if (iccid != NULL) {
         ret = qmi_get_elementary_iccid_file(iccid);
     }
+
     return ret;
 }
 
 int32_t rt_qmi_get_current_imsi(uint8_t *imsi)
 {
     int32_t ret = 0;
+
     if (imsi != NULL) {
         ret = qmi_get_elementary_imsi_file(imsi);
     }
+
     return ret;
 }
 
@@ -150,35 +158,35 @@ static rt_bool qmi_get_radio_interface(int8_t *type)
 
 // get network type
 int32_t rt_qmi_get_network_type(uint8_t *network_type)
-{    
+{
     int32_t ret = RT_ERROR;
     int8_t radio_index;
     int32_t type;
-   
+
     ret = qmi_get_radio_interface(&radio_index);
     if (RT_TRUE == ret) {
-        switch(radio_index) {        
-            case 8 :        
-            case 9 :            
-                type = 7;           
-                break; 
-                
-            case 4:        
-            case 5:            
-                type = 0;           
-                break;        
+        switch(radio_index) {
+            case 8 :
+            case 9 :
+                type = 7;
+                break;
 
-            default:            
-                type = 5;            
-                break;    
+            case 4:
+            case 5:
+                type = 0;
+                break;
+
+            default:
+                type = 5;
+                break;
         }
 
-        if(type == 7){            
-            rt_os_strcpy((char *)network_type, "4g");        
-        } else if ((type > 3) && (type < 7)) {            
-            rt_os_strcpy((char *)network_type, "3g");        
-        } else {            
-            rt_os_strcpy((char *)network_type, "2g");        
+        if(type == 7){
+            rt_os_strcpy((char *)network_type, "4g");
+        } else if ((type > 3) && (type < 7)) {
+            rt_os_strcpy((char *)network_type, "3g");
+        } else {
+            rt_os_strcpy((char *)network_type, "2g");
         }
         ret = RT_SUCCESS;
     } else {

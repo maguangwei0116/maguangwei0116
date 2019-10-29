@@ -61,15 +61,28 @@ static int32_t init_system_signal(void *arg)
 static int32_t init_monitor(void *arg)
 {
     info_vuicc_data_t info = {0};
-    uint16_t len = sizeof(info);
+    atom_data_t c_data = {0};
+    uint8_t buf[256] = {0};
+    uint16_t len = sizeof(info_vuicc_data_t);
 
-    rt_os_memset(info.start, 0xFF, sizeof(info.start));
+    MSG_PRINTF(LOG_INFO, "atom len:%d\n", sizeof(atom_data_t));
+
     info.vuicc_switch = ((public_value_list_t *)arg)->config_info->lpa_channel_type;
-    info.share_profile_state = 0;
     info.log_level = ((public_value_list_t *)arg)->config_info->monitor_log_level;
     info.log_size = ((public_value_list_t *)arg)->config_info->log_max_size;
-    MSG_PRINTF(LOG_INFO, "len:%d, log_max_size:%d, %08x\n", len, info.log_size, info.log_size);
-    return ipc_send_data((const uint8_t *)&info, len, (uint8_t *)&info, &len);
+
+    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
+    c_data.cmd = 0x00;
+    c_data.data_len = (uint8_t)len;
+    c_data.data = (uint8_t *)&info;
+    len = sizeof(atom_data_t) - 4;
+    rt_os_memcpy(&buf[0], &c_data, len);
+    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
+    len += c_data.data_len;
+
+    MSG_PRINTF(LOG_INFO, "len:%d, log_max_size:%d, %08x\n", len, info.log_size, info.log_level);
+
+    return ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len);
 }
 
 static int32_t init_qmi(void *arg)
@@ -109,7 +122,7 @@ static int32_t agent_printf(const char *fmt, ...)
     va_end(vl_list);
 
     MSG_PRINTF(LOG_ERR, "%s", msg);
-    
+
     return 0;
 }
 
@@ -166,7 +179,7 @@ static int32_t agent_init_call(void)
 int32_t main(int32_t argc, char **argv)
 {
     agent_init_call();
-    
+
     while (!toStop) {
         rt_os_sleep(3);
     }

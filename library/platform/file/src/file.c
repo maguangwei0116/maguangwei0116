@@ -199,6 +199,21 @@ int32_t linux_truncate(const char *filename, off_t offset)
     return truncate(filename, offset);
 }
 
+int32_t linux_file_size(const char *file)
+{
+    struct stat statbuf;
+    int32_t size;
+
+    if (rt_os_access(file, F_OK)) { /* log file isn't exist */
+        return 0;
+    }
+
+    stat(file, &statbuf);
+    size = statbuf.st_size;
+
+    return size;
+}
+
 size_t shell_cmd(const int8_t *cmd, uint8_t *buf, size_t size)
 {
     rt_fshandle_t fp;

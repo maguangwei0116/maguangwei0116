@@ -92,19 +92,19 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     buf[MD5_STRING_LENGTH] = '\0';
     http_set_header_record(&dw_struct, "md5sum", (const char *)buf);
 
-    while (1) {        
+    while (1) {
         /* There is file need to download in system */
         if (rt_os_access((const int8_t *)dw_struct.file_path, F_OK) == RT_SUCCESS){
-            uint32_t file_path_size = get_file_size(dw_struct.file_path);
+            uint32_t file_path_size = linux_file_size(dw_struct.file_path);
             snprintf(buf, sizeof(buf), "%d", file_path_size);
             http_set_header_record(&dw_struct, "Range", (const char *)buf);
             dw_struct.range = file_path_size;
         }
-        MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, get_file_size(dw_struct.file_path));
+        MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
 
         if (http_client_file_download(&dw_struct) == 0) {
             ret = RT_TRUE;
-            MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, get_file_size(dw_struct.file_path));
+            MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
             break;
         }
         cnt++;
@@ -112,11 +112,11 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         if (cnt >= d_info->retryAttempts) {
             MSG_PRINTF(LOG_WARN, "Download fail too many times !\r\n");
             break;
-        }        
+        }
         rt_os_sleep(d_info->retryInterval);
     }
-  
     cJSON_Delete(post_info);
+
     return ret;
 }
 
@@ -245,7 +245,7 @@ static void check_upgrade_process(void *args)
 {
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
     upgrade_result_e result;
-    
+
     if (GET_UPDATEMODE(d_info) == 1) { /* full upgrade */
         result = start_comman_upgrade_process(d_info);
     } else if (GET_UPDATEMODE(d_info) == 2) { /* TODO: FOTA upgrade mode */

@@ -18,7 +18,7 @@
 
 static https_ctx_t g_https_ctx = {-1,NULL,NULL};
 uint8_t *g_proxy_server_url = NULL;
-/*
+/**
 Get a piece of string from a line wihtout white space
 eg:
 char *p;

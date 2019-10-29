@@ -11,11 +11,6 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <stdint.h>
-#include <pthread.h>
-#include <sys/stat.h>
 #include "profile_parse.h"
 #include "file.h"
 #include "ProfileInfo1.h"
@@ -154,7 +149,7 @@ static uint16_t rt_init_file_info(rt_fshandle_t fp)
     g_data.file_version_offset = g_data.file_info_offset + get_length(buf, 1) + get_length(p, 0) + get_length(p, 1);
     p = get_value_buffer(p);
     g_data.operator_num = p[0];
-    
+
     MSG_PRINTF(LOG_INFO, "operator_num:%d\n", g_data.operator_num);
     MSG_PRINTF(LOG_INFO, "file_version_offset:%d\n", g_data.file_version_offset);
 }
@@ -194,7 +189,7 @@ static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     rt_fread(buf, 1, 8, fp);
     profile_off = get_length(buf,1);
     hash_off += profile_off;
-    
+
     rt_fseek(fp, profile_off, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 8, fp);
     hash_off += get_length(buf, 0) + get_length(buf, 1);
@@ -521,7 +516,8 @@ static int32_t get_specify_data(uint8_t *data, uint32_t offset){
     return RT_SUCCESS;
 }
 
-int32_t get_aes_key(uint8_t *data){
+int32_t get_aes_key(uint8_t *data)
+{
     return get_specify_data(data, g_data.aes_key_offset);
 }
 
@@ -529,7 +525,8 @@ int32_t get_root_sk(uint8_t *data){
     return get_specify_data(data, g_data.root_sk_offset);
 }
 
-int32_t get_file_version(uint8_t *data){
+int32_t get_file_version(uint8_t *data)
+{
     return get_specify_data(data, g_data.file_version_offset);
 }
 

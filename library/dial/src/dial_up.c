@@ -209,7 +209,12 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
     dsi_call_param_value_t param_info;
     int32_t rval = 0;
 
-    dsi_init(DSI_MODE_GENERAL);
+    rval = dsi_init(DSI_MODE_GENERAL);
+    if (rval != DSI_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "dsi init failed!!!\n");
+        return RT_ERROR;
+    }
+
     dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
     set_dsi_net_info(dsi_net_hndl);
     rt_os_memset(dsi_net_hndl, 0x00, sizeof(dsi_call_info_t));
@@ -249,20 +254,8 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
         param_info.num_val = dsi_net_hndl->auth_pref;
         dsi_set_data_call_param(dsi_net_hndl->handle, DSI_CALL_INFO_AUTH_PREF, &param_info);
     }
-    return RT_SUCCESS;
-}
 
-static rt_bool get_regist_state(void)
-{
-    int32_t regist_state = 0;
-    int32_t ret;
-    ret = rt_qmi_get_register_state(&regist_state);
-    if (regist_state == 1) {
-        MSG_PRINTF(LOG_INFO, "regist state:%d\n", regist_state);
-        return RT_TRUE;
-    }
-    MSG_PRINTF(LOG_INFO, "regist state:%d, ret=%d\n", regist_state, ret);
-    return RT_FALSE;
+    return RT_SUCCESS;
 }
 
 static int32_t g_dsi_start_data_call = 0;
@@ -283,6 +276,20 @@ int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
     close(g_dsi_event_fd[1]);
     
     return RT_SUCCESS;
+}
+
+static rt_bool get_regist_state(void)
+{
+    int32_t regist_state = 0;
+    int32_t ret;
+
+    ret = rt_qmi_get_register_state(&regist_state);
+    if (regist_state == 1) {
+        MSG_PRINTF(LOG_INFO, "regist state:%d\n", regist_state);
+        return RT_TRUE;
+    }
+    MSG_PRINTF(LOG_INFO, "regist state:%d, ret=%d\n", regist_state, ret);
+    return RT_FALSE;
 }
 
 int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
@@ -314,6 +321,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                     dsi_net_hndl->call_state = DSI_STATE_CALL_DISCONNECTING;  // set disconnected state
                     return RT_ERROR;
                 }
+                g_dial_state_func(dsi_net_hndl->call_state);
                 continue;
             }
             cgk_state_cnt = 0;            

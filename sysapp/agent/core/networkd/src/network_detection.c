@@ -19,7 +19,7 @@
 #define MAX_WAIT_REGIST_TIME     180
 
 static int32_t g_network_state = 0;
-static rt_bool g_network_timer_flag = RT_TRUE;
+static rt_bool g_network_timer_flag = RT_FALSE;
 
 static void network_timer_callback(void)
 {
@@ -124,7 +124,7 @@ static void network_state(int32_t state)
     if (state == g_network_state) {
         return;
     }
-    
+
     g_network_state = state;
 
     if (g_network_state == DSI_STATE_CALL_CONNECTED) {  // network connected
@@ -141,13 +141,13 @@ static void network_state_notify(void)
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
     } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
-    }   
+    }
 }
 
 /* get newest network state after timeout seconds */
 void network_state_update(int32_t timeout)
 {
-    register_timer(timeout, 0 , &network_state_notify);  
+    register_timer(timeout, 0 , &network_state_notify);
 }
 
 /* force to update network state when other module found network is inactive */
@@ -173,6 +173,7 @@ int32_t init_network_detection(void *arg)
         return RT_ERROR;
     }
     register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
+
     return RT_SUCCESS;
 }
 
@@ -193,7 +194,7 @@ int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
     if (ret == RT_ERROR) {
         return ret;
     }
-    
+
     // MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
     status = downstream_msg->handler(downstream_msg->private_arg,  downstream_msg->event, &downstream_msg->out_arg);
     upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
