@@ -73,6 +73,7 @@ rt_bool monitor_inspect_file(uint8_t *file_name)
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
 
     bytestring_to_charstring(hash_out, hash_result, MAX_FILE_HASH_BYTE_LEN);
+
     if (inspect_abstract_content(hash_result, signature_buffer) != RT_TRUE) {
         MSG_PRINTF(LOG_ERR, "file_name:%s, verify signature failed!!\n", file_name);
         goto end;
@@ -92,7 +93,7 @@ rt_bool inspect_abstract_content(uint8_t *hash, uint8_t *signature)
     rt_bool ret = RT_FALSE;
 
     ret = ecc_hash_verify_signature(hash, MAX_FILE_HASH_LEN, \
-        pk, MAX_PK_LEN, signature, PRIVATE_HASH_STR_LEN - 1);
+        pk, MAX_PK_LEN, signature, PRIVATE_HASH_STR_LEN);
 
     return ret;
 }

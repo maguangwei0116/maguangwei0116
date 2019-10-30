@@ -42,8 +42,8 @@ extern int vsim_get_ver(char *version);
 static log_mode_e g_def_mode = LOG_PRINTF_FILE;
 
 typedef struct {
-    uint8_t             hash[64];                  // hash
-    uint8_t             signature[128];            // signature data
+    uint8_t             hash[64+4];                  // hash, end with ‘\0’
+    uint8_t             signature[128+4];            // signature data, end with ‘\0’
 } signature_data_t;
 
 /* All data should be a string which end with ‘\0’ */
