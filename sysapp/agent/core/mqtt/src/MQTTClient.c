@@ -1137,7 +1137,7 @@ int MQTTClient_disconnect1(MQTTClient handle, int timeout, int internal, int sto
     int was_connected = 0;
     FUNC_ENTRY;
     Thread_lock_mutex(mqttclient_mutex);
-    Log(TRACE_MIN, -1, "%s ...", __func__);
+    //Log(TRACE_MIN, -1, "%s ...", __func__);
     if (m == NULL || m->c == NULL)
     {
         rc = MQTTCLIENT_FAILURE;
