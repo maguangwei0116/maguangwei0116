@@ -79,7 +79,7 @@ static rt_bool ugrade_check_dir_permission(upgrade_struct_t *d_info)
 static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 {
     rt_bool ret = RT_FALSE;
-    http_client_struct_t dw_struct;
+    http_client_struct_t dw_struct = {0};
     cJSON  *post_info = NULL;
     int8_t *out;
     int8_t  buf[100];
@@ -129,7 +129,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
             http_set_header_record(&dw_struct, "Range", (const char *)buf);
             dw_struct.range = file_path_size;
         }
-        MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
+        MSG_PRINTF(LOG_DBG, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
 
         if (http_client_file_download(&dw_struct) == 0) {
             ret = RT_TRUE;
@@ -137,7 +137,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
             break;
         }
         cnt++;
-        MSG_PRINTF(LOG_WARN, "Download fail cnt: %d\r\n", cnt);
+        MSG_PRINTF(LOG_DBG, "Download fail cnt: %d\r\n", cnt);
         if (cnt >= d_info->retryAttempts) {
             MSG_PRINTF(LOG_WARN, "Download fail too many times !\r\n");
             break;
