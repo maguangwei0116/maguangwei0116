@@ -61,7 +61,7 @@ static int32_t init_system_signal(void *arg)
 
 static int32_t init_monitor(void *arg)
 {
-    return agent_set_monitor_param(((public_value_list_t *)arg)->config_info);
+    return ipc_set_monitor_param(((public_value_list_t *)arg)->config_info);
 }
 
 static int32_t init_qmi(void *arg)

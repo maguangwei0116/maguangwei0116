@@ -280,7 +280,7 @@ static cJSON *upload_event_software_version_info(void)
     }
 
     /* add monitor version */
-    agent_get_monitor_version(name_str, sizeof(name_str), ver_str, sizeof(ver_str), chip_model_str, sizeof(chip_model_str));
+    ipc_get_monitor_version(name_str, sizeof(name_str), ver_str, sizeof(ver_str), chip_model_str, sizeof(chip_model_str));
     monitor_version = cJSON_CreateObject();
     if (!monitor_version) {
         MSG_PRINTF(LOG_WARN, "The monitor_version is error\n");

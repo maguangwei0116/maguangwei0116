@@ -423,6 +423,8 @@ exit_entry:
     return ret;
 }
 
+#if 0  
+/* only SHA256 check */
 static rt_bool ota_file_check(const void *arg)
 {
     const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
@@ -480,6 +482,19 @@ end:
     }
     return ret;
 }
+#else
+/* SHA256withECC check */
+static rt_bool ota_file_check(const void *arg)
+{
+    rt_bool ret = RT_FALSE;
+    const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
+    int32_t iret;
+
+    iret = ipc_file_verify_by_monitor((const char *)d_info->tmpFileName);
+    ret = !iret ? RT_TRUE : RT_FALSE; 
+    return ret;
+}
+#endif
 
 static rt_bool ota_file_install(const void *arg)
 {
