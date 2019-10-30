@@ -245,6 +245,7 @@ static int32_t upgrade_download_package(const void *in, const char *upload_event
     upgrade_info->install    = NULL;
     upgrade_info->cleanup    = NULL;
     upgrade_info->on_event   = on_issue_cert_upload_event;
+    upgrade_info->activate   = NULL;
 
     on_issue_cert_cleanup(upgrade_info);
     ret = upgrade_process_start(upgrade_info);
