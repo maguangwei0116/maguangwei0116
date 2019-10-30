@@ -225,9 +225,9 @@ static cJSON *upload_event_software_version_info(void)
     cJSON *single_version = NULL;
     int32_t i_type;
     target_type_e type;
-    const char *name = LOCAL_TARGET_NAME;
-    const char *version = LOCAL_TARGET_VERSION;
-    const char *chipModel = LOCAL_TARGET_PLATFORM_TYPE;
+    const char *name = "";
+    const char *version = "";
+    const char *chipModel = "";
 
     software = cJSON_CreateArray();
     if (!software) {
