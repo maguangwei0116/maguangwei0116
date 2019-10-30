@@ -4,7 +4,7 @@
 
 all: $(TARGET)
 
-$(TARGET): liba libso COPY_VERSION_FILE_OUT
+$(TARGET): liba libso generate_signature COPY_VERSION_FILE_OUT
 
 info:
 	@echo "COBJS=$(COBJS)"
@@ -87,12 +87,16 @@ GEN_VERSION_FILE:
 	$(Q)$(call GEN_LIBRARY_VERSION_C,$(VER_C_FILE))
 	$(Q)$(call GEN_LIBRARY_VERSION_H,$(VER_H_FILE_OUT))
 	$(Q)$(call INSTALL_LIBRARY_VERSION_H,$(VER_H_FILE_OUT))
+	
+# Add SHA256withECC signature to the tail of a file
+define SO_ADD_SHA256withECC
+	$(REDTEA_SUPPORT_SCRIPT_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPT_PATH)
+endef
 
-$(O)/$(LIB_SO_NAME): $(OBJS) $(ALL_TARGETS)
-	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
-	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
-	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
-	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib/$(LIBRARY_SHARED_TARGET_NAME)
+generate_signature: $(O)/$(LIB_SO_NAME)
+	$(call SO_ADD_SHA256withECC,$(O)/$(LIB_SO_NAME))
+	-$(Q)$(CP) -rf $(O)/$(LIB_SO_NAME) $(SDK_INSTALL_PATH)/lib
+	-$(Q)$(CP) -rf $(O)/$(LIB_SO_NAME) $(SDK_INSTALL_PATH)/lib/$(LIBRARY_SHARED_TARGET_NAME)
 	-$(Q)$(CD) $(SDK_INSTALL_PATH)/lib/; $(RM) -rf $(RELEASE_SHARED_TARGET); $(LN) -s $(LIB_SO_NAME) $(RELEASE_SHARED_TARGET)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
@@ -102,6 +106,10 @@ $(O)/$(LIB_SO_NAME): $(OBJS) $(ALL_TARGETS)
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
+$(O)/$(LIB_SO_NAME): $(OBJS) $(ALL_TARGETS)
+	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
+	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
+	
 $(O)/$(LIB_A_NAME): $(OBJS) $(ALL_TARGETS) 
 #	echo ALL_OBJ_TARGETS=$(ALL_OBJ_TARGETS)
 	$($(quiet)do_ar) cru "$@" $(ALL_OBJ_TARGETS)
@@ -117,7 +125,7 @@ $(O)/$(LIB_A_NAME): $(OBJS) $(ALL_TARGETS)
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
-.PHONY: all clean info $(TARGET) liba libso $(GEN_VERSION_FILE) $(COPY_VERSION_FILE_OUT)
+.PHONY: all clean info $(TARGET) liba libso generate_signature $(GEN_VERSION_FILE) $(COPY_VERSION_FILE_OUT)
 
 # Include the dependency files, should be the last of the makefile
 -include $(DEPS)

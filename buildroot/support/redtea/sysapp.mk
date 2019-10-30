@@ -37,13 +37,13 @@ clean:
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
 -include $(REDTEA_SUPPORT_SCRIPTS_PATH)/gen_conf.mk
 
-# Add SHA256 sum to the tail of a file
-define SYSAPP_ADD_SHA256SUM
+# Add SHA256withECC signature to the tail of a file
+define SYSAPP_ADD_SHA256withECC
 	$(REDTEA_SUPPORT_SCRIPT_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPT_PATH)
 endef
 
 generate_signature: $(O)/$(TARGET_FILE_NAME)
-	$(call SYSAPP_ADD_SHA256SUM,$(O)/$(TARGET_FILE_NAME))
+	$(call SYSAPP_ADD_SHA256withECC,$(O)/$(TARGET_FILE_NAME))
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(LOCAL_TARGET_RELEASE)
 	-$(Q)$(CP) -rf $(O)/$(LOCAL_TARGET_RELEASE) $(SYSAPP_INSTALL_PATH)/
 	@$(ECHO) ""
@@ -65,7 +65,7 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	$($(quiet)do_strip) --strip-all "$@"
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(ELF_FILE_NAME)
 
-.PHONY: all clean info $(TARGET) FORCE
+.PHONY: all clean info $(TARGET) generate_signature FORCE
 
 # Include the dependency files, should be the last of the makefile
 -include $(DEPS)
