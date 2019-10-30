@@ -25,13 +25,20 @@ typedef enum AGENT_MONITOR_CMD {
 } agent_monitor_cmd_e;
 
 typedef struct MONITOR_VERSION {
-    char     name[64];           // example: linux-euicc-monitor-general
-    char     version[16];        // example: 0.0.0.1
-    char     chip_model[16];     // example: 9x07
+    char        name[64];           // example: linux-euicc-monitor-general
+    char        version[16];        // example: 0.0.0.1
+    char        chip_model[16];     // example: 9x07
 } monitor_version_t;
 
-int32_t agent_set_monitor_param(config_info_t *config_info);
-int32_t agent_get_monitor_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size);
+typedef struct SIGNATURE_DATA {    
+    uint8_t     hash[64+4];         // hash, end with ¡®\0¡¯    
+    uint8_t     signature[128+4];   // signature data, end with ¡®\0¡¯
+} signature_data_t;
+
+int32_t ipc_set_monitor_param(config_info_t *config_info);
+int32_t ipc_get_monitor_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size);
+int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign);
+int32_t ipc_file_verify_by_monitor(const char *file);
 
 
 #endif // __AGENT_2_MONITOR_H__
