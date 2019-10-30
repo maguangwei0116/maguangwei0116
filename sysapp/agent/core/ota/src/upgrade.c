@@ -203,7 +203,7 @@ static upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
         if (d_info->cleanup) {
             d_info->cleanup(d_info);
         }
-        ret = UPGRADE_CHECK_PACKET_ERROR;
+        ret = UPGRADE_HASH_CHECK_ERROR;
         goto exit_entry;
     }
 
@@ -213,7 +213,7 @@ static upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
         if (d_info->cleanup) {
             d_info->cleanup(d_info);
         }
-        ret = UPGRADE_CHECK_PACKET_ERROR;
+        ret = UPGRADE_SIGN_CHECK_ERROR;
         goto exit_entry;
     }
 
