@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <error.h>
+#include <sys/vfs.h>
 
 #include "upgrade.h"
 #include "md5.h"
@@ -37,13 +38,42 @@ do {                 \
 
 static const char *g_upgrade_oti_addr   = NULL;
 
-static rt_bool upgrade_check_sys_memory()
+static int32_t get_system_tf_free(uint32_t *free_byte)
 {
-    return RT_TRUE;
+    struct statfs diskInfo;
+    unsigned long long totalBlocks;
+    unsigned long long freeDisk;
+    
+    if (statfs("/data/", &diskInfo) < 0) {
+        MSG_PRINTF(LOG_ERR, "get free byte fail\r\n");
+        return RT_ERROR;
+    }
+    
+    totalBlocks = diskInfo.f_bsize;
+    freeDisk = diskInfo.f_bfree * totalBlocks;
+    *free_byte = freeDisk;
+    
+    return RT_SUCCESS;
 }
 
-static rt_bool ugrade_check_dir_permission()
+static rt_bool upgrade_check_sys_memory(upgrade_struct_t *d_info)
 {
+    uint32_t free_byte = 0;
+    rt_bool ret = RT_FALSE;
+
+    if (get_system_tf_free(&free_byte) == RT_SUCCESS) {
+        MSG_PRINTF(LOG_INFO, "system freebyte: %d B (%d KB), file size: %d B\r\n", free_byte, free_byte/1024, d_info->size);
+        if (d_info->size < free_byte) {
+            ret = RT_TRUE;
+        }
+    }
+    
+    return ret;
+}
+
+static rt_bool ugrade_check_dir_permission(upgrade_struct_t *d_info)
+{
+    (void)d_info;
     return RT_TRUE;
 }
 
@@ -176,15 +206,16 @@ end:
 static upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
 {
     upgrade_result_e ret;
+    
     /* check FS space */
-    if (upgrade_check_sys_memory() != RT_TRUE) {
+    if (upgrade_check_sys_memory(d_info) != RT_TRUE) {
         ret = UPGRADE_FS_SPACE_NOT_ENOUGH_ERROR;
-        MSG_PRINTF(LOG_WARN, "upgrade_sys space not enough False\n");
+        MSG_PRINTF(LOG_WARN, "upgrade_sys space not enough\n");
         goto exit_entry;
     }
 
     /* check permission */
-    if (ugrade_check_dir_permission() != RT_TRUE) {
+    if (ugrade_check_dir_permission(d_info) != RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "upgrade_dir permission False\n");
         ret = UPGRADE_DIR_PERMISSION_ERROR;
         goto exit_entry;

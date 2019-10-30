@@ -91,6 +91,7 @@ typedef struct UPGRADE_STRUCT {
     char            fileHash[MAX_FILE_HASH_LEN + 1];        // hash code of the upgrade file
     char            ticket[MAX_TICKET_LEN + 1];
     uint8_t         type;
+    uint32_t        size;
     uint16_t        retryAttempts;
     uint16_t        retryInterval;
     int32_t         downloadResult;                         // the result of download process

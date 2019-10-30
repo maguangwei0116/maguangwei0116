@@ -591,6 +591,7 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
     snprintf(upgrade->ticket, sizeof(upgrade->ticket), "%s", param->target.ticket);
     snprintf(upgrade->event, sizeof(upgrade->event), "%s", upload_event);
     upgrade->type           = param->target.type;
+    upgrade->size           = param->target.size;
     upgrade->retryAttempts  = param->policy.retryAttempts;
     upgrade->retryInterval  = param->policy.retryInterval;    
     if (!tmp_file) {
