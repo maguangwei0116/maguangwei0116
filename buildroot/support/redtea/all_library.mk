@@ -23,9 +23,9 @@ clean:
 	rm -rf $(O)
 
 # Include sub comm makefiles
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/tool.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/flags.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/object.mk
 
 libso: $(O)/$(LIB_SO_NAME)
 liba: $(O)/$(LIB_A_NAME)
@@ -90,7 +90,7 @@ GEN_VERSION_FILE:
 	
 # Add SHA256withECC signature to the tail of a file
 define SO_ADD_SHA256withECC
-	$(REDTEA_SUPPORT_SCRIPT_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPT_PATH)
+	$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPTS_PATH)
 endef
 
 generate_signature: $(O)/$(LIB_SO_NAME)
