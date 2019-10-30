@@ -384,6 +384,12 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry; 
     }
 
+    if (param->target.type >= TARGET_TYPE_MAX) {
+        MSG_PRINTF(LOG_WARN, "unknow support target type %d\r\n", param->target.type);
+        ret = UPGRADE_TARGET_TYPE_ERROR;
+        goto exit_entry;
+    }
+
     if (rt_os_strcmp(param->target.chipModel, LOCAL_TARGET_PLATFORM_TYPE)) {
         MSG_PRINTF(LOG_WARN, "unmathed chip model [%s] => [%s]\r\n", LOCAL_TARGET_PLATFORM_TYPE, param->target.chipModel);
         ret = UPGRADE_CHIP_MODEL_ERROR;

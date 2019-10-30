@@ -25,6 +25,14 @@ typedef enum UPGRADE_PROFILE_TYPE {
     UPGRADE_PRO_TYPE_OPERATIONAL        = 1,
 } upgrade_profile_type_e;
 
+typedef enum TARGET_TYPE {
+    TARGET_TYPE_AGENT                   = 0,
+    TARGET_TYPE_SHARE_PROFILE           = 1,
+    TARGET_TYPE_MONITOR                 = 2,
+    TARGET_TYPE_COMM_SO                 = 3,
+    TARGET_TYPE_MAX,  
+} target_type_e;
+
 /* OTA upgrade error code list */
 typedef enum UPGRADE_RESULT {
     UPGRADE_NO_FAILURE                  = 0,
@@ -41,6 +49,7 @@ typedef enum UPGRADE_RESULT {
     UPGRADE_NULL_POINTER_ERROR          = -2011,    
     UPGRADE_EXECUTION_TYPE_ERROR        = -2012,
     UPGRADE_CHIP_MODEL_ERROR            = -2013,
+    UPGRADE_TARGET_TYPE_ERROR           = -2014,
     UPGRADE_OTHER                       = -2099,
 } upgrade_result_e;
 

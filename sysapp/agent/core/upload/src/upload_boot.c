@@ -7,6 +7,7 @@
 #include "bootstrap.h"
 #include "libcomm.h"
 #include "agent_main.h"
+#include "upgrade.h"
 
 #include "cJSON.h"
 
@@ -215,13 +216,6 @@ exit_entry:
     return !ret ? network : NULL;
 }
 
-typedef enum TARGET_TYPE {
-    TYPE_AGENT          = 0,
-    TYPE_SHARE_PROFILE  = 1,
-    TYPE_MONITOR        = 2,
-    TYPE_COMM_SO        = 3,
-} target_type_e;
-
 static cJSON *upload_event_software_version_info(void)
 {
     int32_t ret = 0;
@@ -253,7 +247,7 @@ static cJSON *upload_event_software_version_info(void)
         ret = -2;
         goto exit_entry;
     } else {
-        type = TYPE_AGENT;
+        type = TARGET_TYPE_AGENT;
         CJSON_ADD_NEW_STR_OBJ(agent_version, name);
         CJSON_ADD_NEW_STR_OBJ(agent_version, version);
         CJSON_ADD_NEW_STR_OBJ(agent_version, chipModel);        
@@ -271,7 +265,7 @@ static cJSON *upload_event_software_version_info(void)
     } else {
         name = "share-profile";
         version = share_profile_ver_str;
-        type = TYPE_SHARE_PROFILE;
+        type = TARGET_TYPE_SHARE_PROFILE;
         CJSON_ADD_NEW_STR_OBJ(share_profile_version, name);        
         CJSON_ADD_NEW_STR_OBJ(share_profile_version, version);
         CJSON_ADD_NEW_STR_OBJ(share_profile_version, chipModel);        
@@ -290,7 +284,7 @@ static cJSON *upload_event_software_version_info(void)
         name = name_str;
         version = ver_str;
         chipModel = chip_model_str;
-        type = TYPE_MONITOR;
+        type = TARGET_TYPE_MONITOR;
         CJSON_ADD_NEW_STR_OBJ(monitor_version, name);
         CJSON_ADD_NEW_STR_OBJ(monitor_version, version);
         CJSON_ADD_NEW_STR_OBJ(monitor_version, chipModel);        
@@ -309,7 +303,7 @@ static cJSON *upload_event_software_version_info(void)
         name = name_str;
         version = ver_str;
         chipModel = chip_model_str;
-        type = TYPE_COMM_SO;
+        type = TARGET_TYPE_COMM_SO;
         CJSON_ADD_NEW_STR_OBJ(comm_so_version, name);
         CJSON_ADD_NEW_STR_OBJ(comm_so_version, version);
         CJSON_ADD_NEW_STR_OBJ(comm_so_version, chipModel);        
