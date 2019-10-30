@@ -37,7 +37,9 @@ typedef struct OTA_UPGRADE_TARGET {
     char                    version[16];
     char                    chipModel[16];
     char                    ticket[64];
-    char                    fileHash[72];
+    uint8_t                 type;
+    uint32_t                size;
+    char                    fileHash[72];    
 } ota_upgrade_target_t;
 
 typedef struct OTA_UPGRADE_POLICY {
@@ -237,6 +239,8 @@ static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
     cJSON_GET_STR_DATA(target, version, param->target.version, sizeof(param->target.version), tmp);
     cJSON_GET_STR_DATA(target, chipModel, param->target.chipModel, sizeof(param->target.chipModel), tmp);
     cJSON_GET_STR_DATA(target, ticket, param->target.ticket, sizeof(param->target.ticket), tmp);
+    cJSON_GET_INT_DATA(target, type, param->target.type, tmp);
+    cJSON_GET_INT_DATA(target, size, param->target.size, tmp);
     cJSON_GET_STR_DATA(target, fileHash, param->target.fileHash, sizeof(param->target.fileHash), tmp);
 
     cJSON_GET_JSON_DATA(content, policy);
@@ -586,8 +590,9 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
     snprintf(upgrade->fileHash, sizeof(upgrade->fileHash), "%s", param->target.fileHash);
     snprintf(upgrade->ticket, sizeof(upgrade->ticket), "%s", param->target.ticket);
     snprintf(upgrade->event, sizeof(upgrade->event), "%s", upload_event);
-    upgrade->retryAttempts = param->policy.retryAttempts;
-    upgrade->retryInterval = param->policy.retryInterval;    
+    upgrade->type           = param->target.type;
+    upgrade->retryAttempts  = param->policy.retryAttempts;
+    upgrade->retryInterval  = param->policy.retryInterval;    
     if (!tmp_file) {
         ota_upgrade_get_tmp_file_name(param, upgrade->tmpFileName, sizeof(upgrade->tmpFileName));
     } else {
@@ -647,6 +652,8 @@ static int32_t ota_upgrade_handler(const void *in, const char *event, void **out
         MSG_PRINTF(LOG_INFO, "param->target.version         : %s\r\n", param->target.version);
         MSG_PRINTF(LOG_INFO, "param->target.chipModel       : %s\r\n", param->target.chipModel);
         MSG_PRINTF(LOG_INFO, "param->target.ticket          : %s\r\n", param->target.ticket);
+        MSG_PRINTF(LOG_INFO, "param->target.type            : %d\r\n", param->target.type);
+        MSG_PRINTF(LOG_INFO, "param->target.size            : %d\r\n", param->target.size);
         MSG_PRINTF(LOG_INFO, "param->target.fileHash        : %s\r\n", param->target.fileHash);
         MSG_PRINTF(LOG_INFO, "param->policy.forced          : %d\r\n", param->policy.forced);
         MSG_PRINTF(LOG_INFO, "param->policy.executionType   : %s\r\n", param->policy.executionType);
@@ -676,11 +683,13 @@ static cJSON *ota_upgrade_packer(void *arg)
     const char *name = LOCAL_TARGET_NAME;
     const char *version = LOCAL_TARGET_VERSION;
     const char *chipModel = LOCAL_TARGET_PLATFORM_TYPE;
+    int32_t type;
 
     if (upgrade) {
         name = upgrade->targetName;
         version = upgrade->targetVersion;
         chipModel = upgrade->targetChipModel;
+        type = upgrade->type;
     } else {
         MSG_PRINTF(LOG_WARN, "error param input !\n");
     }
@@ -695,6 +704,7 @@ static cJSON *ota_upgrade_packer(void *arg)
     CJSON_ADD_NEW_STR_OBJ(app_version, name);
     CJSON_ADD_NEW_STR_OBJ(app_version, version);
     CJSON_ADD_NEW_STR_OBJ(app_version, chipModel);
+    CJSON_ADD_NEW_INT_OBJ(app_version, type);
     
     ret = 0;
     

@@ -90,6 +90,7 @@ typedef struct UPGRADE_STRUCT {
     char            tmpFileName[MAX_FILE_NAME_LEN + 1];     // the full path in local file system  
     char            fileHash[MAX_FILE_HASH_LEN + 1];        // hash code of the upgrade file
     char            ticket[MAX_TICKET_LEN + 1];
+    uint8_t         type;
     uint16_t        retryAttempts;
     uint16_t        retryInterval;
     int32_t         downloadResult;                         // the result of download process
