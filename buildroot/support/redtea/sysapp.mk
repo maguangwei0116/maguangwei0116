@@ -39,11 +39,11 @@ clean:
 
 # Add SHA256withECC signature to the tail of a file
 define SYSAPP_ADD_SHA256withECC
-	$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPTS_PATH)
+	$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPTS_PATH) Q=$(Q)
 endef
 
 generate_signature: $(O)/$(TARGET_FILE_NAME)
-	$(call SYSAPP_ADD_SHA256withECC,$(O)/$(TARGET_FILE_NAME))
+	$(Q)$(call SYSAPP_ADD_SHA256withECC,$(O)/$(TARGET_FILE_NAME))
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(LOCAL_TARGET_RELEASE)
 	-$(Q)$(CP) -rf $(O)/$(LOCAL_TARGET_RELEASE) $(SYSAPP_INSTALL_PATH)/
 	@$(ECHO) ""

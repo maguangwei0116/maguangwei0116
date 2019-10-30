@@ -90,11 +90,11 @@ GEN_VERSION_FILE:
 	
 # Add SHA256withECC signature to the tail of a file
 define SO_ADD_SHA256withECC
-	$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPTS_PATH)
+	$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPTS_PATH) Q=$(Q)
 endef
 
 generate_signature: $(O)/$(LIB_SO_NAME)
-	$(call SO_ADD_SHA256withECC,$(O)/$(LIB_SO_NAME))
+	$(Q)$(call SO_ADD_SHA256withECC,$(O)/$(LIB_SO_NAME))
 	-$(Q)$(CP) -rf $(O)/$(LIB_SO_NAME) $(SDK_INSTALL_PATH)/lib
 	-$(Q)$(CP) -rf $(O)/$(LIB_SO_NAME) $(SDK_INSTALL_PATH)/lib/$(LIBRARY_SHARED_TARGET_NAME)
 	-$(Q)$(CD) $(SDK_INSTALL_PATH)/lib/; $(RM) -rf $(RELEASE_SHARED_TARGET); $(LN) -s $(LIB_SO_NAME) $(RELEASE_SHARED_TARGET)
