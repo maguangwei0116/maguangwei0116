@@ -89,7 +89,7 @@ static int32_t init_versions(void *arg)
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
 
     /* add share profile version */
-    get_share_profile_version((uint8_t *)share_profile_ver_str);MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
+    get_share_profile_version((uint8_t *)share_profile_ver_str);
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name, "share-profile");
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version, share_profile_ver_str);
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
@@ -109,7 +109,7 @@ static int32_t init_versions(void *arg)
                             sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].version), 
                             g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel, 
                             sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel));
-MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
+
     return RT_SUCCESS;
 }
 
