@@ -911,7 +911,7 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.showtopics            = 0;
     g_mqtt_param.opts.node_name             = NULL;
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
-    g_mqtt_param.opts.last_connect_status   = -1;//MQTT_CONNECT_SUCCESS;  // Initialize the last link push the state of the system
+    g_mqtt_param.opts.last_connect_status   = MQTT_CONNECT_SUCCESS;  // Initialize the last link push the state of the system
     rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_TRUE);
     MQTTClient_init();
 }
