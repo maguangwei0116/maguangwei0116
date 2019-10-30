@@ -75,6 +75,12 @@ static int32_t init_system_signal(void *arg)
     return RT_SUCCESS;
 }
 
+static void monitor_exit(void)
+{
+    MSG_PRINTF(LOG_ERR, "restart monitor now ...\r\n");
+    rt_os_exit(-1);
+}
+
 static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
     if (cmd == 0x00) {  // config monitor
@@ -110,8 +116,14 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         rt_os_memcpy(info.version, LOCAL_TARGET_VERSION, rt_os_strlen(LOCAL_TARGET_VERSION));
         rt_os_memcpy(info.chip_model, LOCAL_TARGET_PLATFORM_TYPE, rt_os_strlen(LOCAL_TARGET_PLATFORM_TYPE));
         rt_os_memcpy(rsp, &info, *rsp_len);
-    }
-
+    } else if (cmd == 0x04) { // reset monitor after some time
+		uint8_t delay = data[0];
+		MSG_PRINTF(LOG_ERR, "restart monitor in %d seconds ...\r\n", delay);
+		register_timer(delay, 0, &monitor_exit);
+        rsp[0] = RT_TRUE;
+        *rsp_len = 1;
+	}
+	
     return RT_SUCCESS;
 
 end:
