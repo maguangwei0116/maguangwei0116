@@ -61,7 +61,7 @@ typedef rt_bool (*upload_on_event)(const void *arg);
 typedef struct UPGRADE_STRUCT {
 #define MAX_TRANID_LEN                  128
 #define MAX_CHIP_MODEL_LEN              32
-#define MAX_VERSION_NAME_LEN            16
+#define MAX_VERSION_NAME_LEN            64
 #define MAX_FILE_NAME_LEN               128
 #define MAX_FILE_HASH_LEN               64
 #define MAX_FILE_HASH_BYTE_LEN          32

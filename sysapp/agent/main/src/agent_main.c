@@ -69,16 +69,47 @@ static int32_t init_qmi(void *arg)
     return rt_qmi_init(arg);
 }
 
+#define SET_STR_PARAM(param, value)  snprintf((param), sizeof(param), "%s", (value))
+
 static int32_t init_versions(void *arg)
 {
     char libcomm_ver[128] = {0};
-
-    (void)arg;
+    char share_profile_ver_str[128] = {0};
+    static target_versions_t g_target_versions = {0};
     
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
 
+    ((public_value_list_t *)arg)->version_info = &g_target_versions;
+
+    /* add agent version */
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].name, LOCAL_TARGET_NAME);
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].version, LOCAL_TARGET_VERSION);
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
+
+    /* add share profile version */
+    get_share_profile_version((uint8_t *)share_profile_ver_str);MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name, "share-profile");
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version, share_profile_ver_str);
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
+
+    /* add monitor version */
+    ipc_get_monitor_version(g_target_versions.versions[TARGET_TYPE_MONITOR].name, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].name), 
+                            g_target_versions.versions[TARGET_TYPE_MONITOR].version, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].version), 
+                            g_target_versions.versions[TARGET_TYPE_MONITOR].chipModel, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].chipModel));
+
+    /* add comm so version */
+    libcomm_get_all_version(g_target_versions.versions[TARGET_TYPE_COMM_SO].name, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].name), 
+                            g_target_versions.versions[TARGET_TYPE_COMM_SO].version, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].version), 
+                            g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel));
+MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
     return RT_SUCCESS;
 }
 
@@ -120,7 +151,8 @@ static const init_obj_t g_init_objs[] =
 #ifdef CFG_ENABLE_LIBUNWIND
     INIT_OBJ(init_backtrace,            agent_printf),
 #endif
-    
+
+    INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_versions,             (void *)&g_value_list),   
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
@@ -129,7 +161,6 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_queue,                (void *)&g_value_list),
-    INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    (void *)&g_value_list),

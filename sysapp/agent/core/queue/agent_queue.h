@@ -17,6 +17,7 @@
 #include "rt_type.h"
 #include "device_info.h"
 #include "card_manager.h"
+#include "upgrade.h"
 #include "config.h"
 
 typedef enum AGENT_MSG_ID {
@@ -49,11 +50,22 @@ typedef enum MSG_MODE {
     MSG_MQTT_DISCONNECTED,
 } msg_mode_e;
 
+typedef struct TARGET_VERSION {
+    char                name[MAX_FILE_NAME_LEN + 1];
+    char                version[MAX_VERSION_NAME_LEN + 1];
+    char                chipModel[MAX_CHIP_MODEL_LEN + 1];
+} target_version_t;
+
+typedef struct TARGET_VERSIONS {
+    target_version_t    versions[TARGET_TYPE_MAX];
+} target_versions_t;
+
 typedef struct PUBLIC_VALUE_LIST {
     config_info_t *     config_info;
     devicde_info_t *    device_info;
     card_info_t *       card_info;
     const char *        push_channel;
+    target_versions_t * version_info;
 } public_value_list_t;
 
 int32_t init_queue(void *arg);

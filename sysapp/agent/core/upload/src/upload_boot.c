@@ -8,11 +8,13 @@
 #include "libcomm.h"
 #include "agent_main.h"
 #include "upgrade.h"
+#include "agent_queue.h"
 
 #include "cJSON.h"
 
 extern const devicde_info_t *g_upload_device_info;
 extern const card_info_t *g_upload_card_info;
+extern const target_versions_t *g_upload_ver_info;
 
 static cJSON *upload_event_boot_device_info(void)
 {
@@ -220,18 +222,12 @@ static cJSON *upload_event_software_version_info(void)
 {
     int32_t ret = 0;
     cJSON *software = NULL;
-    cJSON *agent_version = NULL;
-    cJSON *share_profile_version = NULL;
-    cJSON *monitor_version = NULL;
-    cJSON *comm_so_version = NULL;    
+    cJSON *single_version = NULL;
+    int32_t i_type;
     target_type_e type;
     const char *name = LOCAL_TARGET_NAME;
     const char *version = LOCAL_TARGET_VERSION;
     const char *chipModel = LOCAL_TARGET_PLATFORM_TYPE;
-    char share_profile_ver_str[64] = {0};
-    char name_str[64] = {0};
-    char ver_str[16] = {0};
-    char chip_model_str[16] = {0};
 
     software = cJSON_CreateArray();
     if (!software) {
@@ -239,78 +235,26 @@ static cJSON *upload_event_software_version_info(void)
         ret = -1;
         goto exit_entry;
     }
-
-    /* add agent version */
-    agent_version = cJSON_CreateObject();
-    if (!agent_version) {
-        MSG_PRINTF(LOG_WARN, "The agent_version is error\n");
-        ret = -2;
-        goto exit_entry;
-    } else {
-        type = TARGET_TYPE_AGENT;
-        CJSON_ADD_NEW_STR_OBJ(agent_version, name);
-        CJSON_ADD_NEW_STR_OBJ(agent_version, version);
-        CJSON_ADD_NEW_STR_OBJ(agent_version, chipModel);        
-        CJSON_ADD_NEW_INT_OBJ(agent_version, type);
-        cJSON_AddItemToArray(software, agent_version);
-    }
-
-    /* add share profile version */
-    get_share_profile_version((uint8_t *)share_profile_ver_str);
-    share_profile_version = cJSON_CreateObject();
-    if (!share_profile_version) {
-        MSG_PRINTF(LOG_WARN, "The share_profile_version is error\n");
-        ret = -3;
-        goto exit_entry;
-    } else {
-        name = "share-profile";
-        version = share_profile_ver_str;
-        type = TARGET_TYPE_SHARE_PROFILE;
-        CJSON_ADD_NEW_STR_OBJ(share_profile_version, name);        
-        CJSON_ADD_NEW_STR_OBJ(share_profile_version, version);
-        CJSON_ADD_NEW_STR_OBJ(share_profile_version, chipModel);        
-        CJSON_ADD_NEW_INT_OBJ(share_profile_version, type);
-        cJSON_AddItemToArray(software, share_profile_version);
-    }
-
-    /* add monitor version */
-    ipc_get_monitor_version(name_str, sizeof(name_str), ver_str, sizeof(ver_str), chip_model_str, sizeof(chip_model_str));
-    monitor_version = cJSON_CreateObject();
-    if (!monitor_version) {
-        MSG_PRINTF(LOG_WARN, "The monitor_version is error\n");
-        ret = -4;
-        goto exit_entry;
-    } else {
-        name = name_str;
-        version = ver_str;
-        chipModel = chip_model_str;
-        type = TARGET_TYPE_MONITOR;
-        CJSON_ADD_NEW_STR_OBJ(monitor_version, name);
-        CJSON_ADD_NEW_STR_OBJ(monitor_version, version);
-        CJSON_ADD_NEW_STR_OBJ(monitor_version, chipModel);        
-        CJSON_ADD_NEW_INT_OBJ(monitor_version, type);
-        cJSON_AddItemToArray(software, monitor_version);
-    }
-
-    /* add comm so version */
-    libcomm_get_all_version(name_str, sizeof(name_str), ver_str, sizeof(ver_str), chip_model_str, sizeof(chip_model_str));
-    comm_so_version = cJSON_CreateObject();
-    if (!comm_so_version) {
-        MSG_PRINTF(LOG_WARN, "The comm_so_version is error\n");
-        ret = -5;
-        goto exit_entry;
-    } else {
-        name = name_str;
-        version = ver_str;
-        chipModel = chip_model_str;
-        type = TARGET_TYPE_COMM_SO;
-        CJSON_ADD_NEW_STR_OBJ(comm_so_version, name);
-        CJSON_ADD_NEW_STR_OBJ(comm_so_version, version);
-        CJSON_ADD_NEW_STR_OBJ(comm_so_version, chipModel);        
-        CJSON_ADD_NEW_INT_OBJ(comm_so_version, type);
-        cJSON_AddItemToArray(software, comm_so_version);
-    }
     
+    for (i_type = 0; i_type < TARGET_TYPE_MAX; i_type++) {
+        single_version = cJSON_CreateObject();
+        if (!single_version) {
+            MSG_PRINTF(LOG_WARN, "The single_version is error\n");
+            ret = -2;
+            goto exit_entry;
+        } else {
+            type = (target_type_e)i_type;
+            name = g_upload_ver_info->versions[i_type].name;
+            version = g_upload_ver_info->versions[i_type].version;
+            chipModel = g_upload_ver_info->versions[i_type].chipModel;
+            CJSON_ADD_NEW_STR_OBJ(single_version, name);
+            CJSON_ADD_NEW_STR_OBJ(single_version, version);
+            CJSON_ADD_NEW_STR_OBJ(single_version, chipModel);        
+            CJSON_ADD_NEW_INT_OBJ(single_version, type);
+            cJSON_AddItemToArray(software, single_version);
+        }
+    }
+
     ret = 0;
     
 exit_entry:

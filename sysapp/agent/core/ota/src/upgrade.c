@@ -18,7 +18,6 @@
 #include "http_client.h"
 #include "cJSON.h"
 #include "upload.h"
-#include "dial_up.h"
 #include "convert.h"
 #include "config.h"
 #include "agent_queue.h"
