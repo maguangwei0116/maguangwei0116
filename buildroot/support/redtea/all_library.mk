@@ -36,14 +36,14 @@ define GEN_LIBRARY_VERSION_C
     echo -e -n "#include <stdio.h>\n\n" >>$(1);\
     echo -e -n "int lib$(TARGET)_get_version(char *version, int size)\n" >>$(1);\
     echo -e -n "{\n" >>$(1);\
-    echo -e -n "    snprintf(version, size, \"lib$(TARGET) version: %s\", RELEASE_TARGET_VERSION);\n" >>$(1);\
+    echo -e -n "    snprintf(version, size, \"lib$(TARGET) version: %s\", LOCAL_TARGET_RELEASE_VERSION_NAME);\n" >>$(1);\
     echo -e -n "    return 0;\n" >>$(1);\
     echo -e -n "}\n" >>$(1);\
     echo -e -n "int lib$(TARGET)_get_all_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size)\n" >>$(1);\
     echo -e -n "{\n" >>$(1);\
-    echo -e -n "    snprintf(name, n_size, \"%s\", LIBRARY_SO_TARGET_NAME);\n" >>$(1);\
-    echo -e -n "    snprintf(version, v_size, \"%s\", COMM_LOCAL_VERSION);\n" >>$(1);\
-    echo -e -n "    snprintf(chip_modle, c_size, \"%s\", PLATFORM_TYPE);\n" >>$(1);\
+    echo -e -n "    snprintf(name, n_size, \"%s\", LOCAL_TARGET_NAME);\n" >>$(1);\
+    echo -e -n "    snprintf(version, v_size, \"%s\", LOCAL_TARGET_VERSION);\n" >>$(1);\
+    echo -e -n "    snprintf(chip_modle, c_size, \"%s\", LOCAL_TARGET_PLATFORM_TYPE);\n" >>$(1);\
     echo -e -n "    return 0;\n" >>$(1);\
     echo -e -n "}\n" >>$(1)
 endef
@@ -82,12 +82,6 @@ $(VER_C_FILE): GEN_VERSION_FILE
 
 COPY_VERSION_FILE_OUT: liba libso
 	$(Q)$(call INSTALL_LIBRARY_VERSION_C,$(VER_C_FILE),$(VER_C_FILE_OUT))
-
-# Config your own CFLAGS
-USER_CFLAGS  	+= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
-USER_CFLAGS  	+= -DLIBRARY_SO_TARGET_NAME=\"$(LIBRARY_SO_TARGET_NAME)\"
-USER_CFLAGS  	+= -DCOMM_LOCAL_VERSION=\"$(COMM_LOCAL_VERSION)\"
-USER_CFLAGS  	+= -DPLATFORM_TYPE=\"$(PLATFORM_TYPE)\"
 
 GEN_VERSION_FILE:
 	$(Q)$(call GEN_LIBRARY_VERSION_C,$(VER_C_FILE))
