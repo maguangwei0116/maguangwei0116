@@ -361,6 +361,7 @@ static rt_bool ota_policy_compare_version(const char *old_in, const char *new_in
 static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct_t *upgrade)
 {
     int32_t ret;
+    uint8_t policy_forced = 0;
 
     if (!rt_os_strcmp(param->policy.executionType, "NOW")) {
         upgrade->execute_app_now = RT_TRUE;
@@ -398,23 +399,30 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry;         
     }
 
-    if (param->policy.forced == UPGRADE_MODE_FORCED) {
+    if (param->target.type == TARGET_TYPE_SHARE_PROFILE) {
+        /* force to update share profile */
+        policy_forced == UPGRADE_MODE_FORCED; 
+    } else {
+        policy_forced = param->policy.forced;
+    }
+
+    if (policy_forced == UPGRADE_MODE_FORCED) {
         MSG_PRINTF(LOG_WARN, "forced to upgrade\r\n");   
     } else {
-        if (param->policy.forced == UPGRADE_MODE_CHK_FILE_NAME) {
+        if (policy_forced == UPGRADE_MODE_CHK_FILE_NAME) {
             if (rt_os_strcmp(param->target.name, g_upload_ver_info->versions[param->target.type].name)) {
                 MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", 
                         g_upload_ver_info->versions[param->target.type].name, param->target.name);
                 ret = UPGRADE_FILE_NAME_ERROR;
                 goto exit_entry;  
             }
-        } else if (param->policy.forced == UPGRADE_MODE_CHK_VERSION ) {
+        } else if (policy_forced == UPGRADE_MODE_CHK_VERSION ) {
             if (!ota_policy_compare_version(g_upload_ver_info->versions[param->target.type].version, param->target.version)) {
                 MSG_PRINTF(LOG_WARN, "unmathed version name\r\n");
                 ret = UPGRADE_CHECK_VERSION_ERROR;
                 goto exit_entry; 
             }
-        } else if (param->policy.forced == UPGRADE_MODE_NO_FORCED) {
+        } else if (policy_forced == UPGRADE_MODE_NO_FORCED) {
              if (rt_os_strcmp(param->target.name, g_upload_ver_info->versions[param->target.type].name)) {
                 MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", 
                         g_upload_ver_info->versions[param->target.type].name, param->target.name);
@@ -504,6 +512,11 @@ static rt_bool ota_file_check(const void *arg)
     const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
     int32_t iret;
 
+    if (d_info->type == TARGET_TYPE_SHARE_PROFILE) {
+        /* share profile needn't check signature */
+        return RT_TRUE;
+    }
+
     iret = ipc_file_verify_by_monitor((const char *)d_info->tmpFileName);
     ret = !iret ? RT_TRUE : RT_FALSE; 
     return ret;
@@ -559,12 +572,11 @@ static rt_bool ota_on_upload_event(const void *arg)
 
     ota_upgrade_task_cleanup();
 
-    /* restart app right now */
+    /* restart app right now ? */
     if (UPGRADE_NO_FAILURE == upgrade->downloadResult && upgrade->execute_app_now) {
-        MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);
-        rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
-        MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");
-        rt_os_exit(-1);
+        if (upgrade->activate) {
+            upgrade->activate(NULL);
+        }
     }
 
     /* release upgrade struct memory */
@@ -575,6 +587,35 @@ static rt_bool ota_on_upload_event(const void *arg)
 
     return RT_TRUE;
 }
+
+/* make ota downloaded file take active */
+static rt_bool ota_file_activate_agent_so(const void *arg)
+{
+    MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
+    rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
+    MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");        
+    rt_os_exit(-1); 
+
+    return RT_TRUE;
+}
+
+static rt_bool ota_file_activate_monitor(const void *arg)
+{
+    MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart monitor !\r\n", MAX_RESTART_WAIT_TIMEOUT);
+    ipc_restart_monitor(MAX_RESTART_WAIT_TIMEOUT);
+    rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT * 2);
+    MSG_PRINTF(LOG_WARN, "Current app restart to run new monitor ...\r\n");
+
+    return RT_TRUE;
+}
+
+static file_activate g_file_activate_list[] = 
+{
+    ota_file_activate_agent_so,
+    NULL,
+    ota_file_activate_monitor,
+    ota_file_activate_agent_so,
+};
 
 static int32_t ota_upgrade_start(const void *in, const char *upload_event, const char *tmp_file)
 {
@@ -619,6 +660,7 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
     upgrade->install    = ota_file_install;
     upgrade->cleanup    = ota_file_cleanup;
     upgrade->on_event   = ota_on_upload_event;
+    upgrade->activate   = g_file_activate_list[upgrade->type];
 
     ota_upgrade_task_record(param, sizeof(ota_upgrade_param_t), upgrade->tmpFileName, upload_event);
 

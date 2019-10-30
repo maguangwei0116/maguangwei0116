@@ -57,6 +57,7 @@ typedef rt_bool (*file_check)(const void *arg);
 typedef rt_bool (*file_install)(const void *arg);
 typedef rt_bool (*file_cleanup)(const void *arg);
 typedef rt_bool (*upload_on_event)(const void *arg);
+typedef rt_bool (*file_activate)(const void *arg);
 
 typedef struct UPGRADE_STRUCT {
 #define MAX_TRANID_LEN                  128
@@ -112,6 +113,7 @@ typedef struct UPGRADE_STRUCT {
     file_install    install;
     file_cleanup    cleanup;
     upload_on_event on_event;
+    file_activate   activate;
 } upgrade_struct_t;
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info);
