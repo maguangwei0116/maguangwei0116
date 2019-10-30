@@ -172,3 +172,27 @@ exit_entry:
     return ret;
 }
 
+int32_t ipc_restart_monitor(uint8_t delay)
+{
+    atom_data_t c_data = {0};
+    uint8_t buf[256] = {0};
+    uint16_t len = 1;
+
+    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
+    c_data.cmd = CMD_RESTART_MONITOR;    
+    c_data.data_len = (uint8_t)len;
+    c_data.data = (uint8_t *)&delay;
+    len = sizeof(atom_data_t) - sizeof(uint8_t *);
+    rt_os_memcpy(&buf[0], &c_data, len);
+    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
+    len += c_data.data_len;
+
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len); 
+
+    if (len == 1 && buf[0] == RT_TRUE) {
+        return RT_SUCCESS;
+    } else {
+        return RT_ERROR;
+    }    
+}
+

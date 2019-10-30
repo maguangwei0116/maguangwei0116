@@ -21,7 +21,8 @@ typedef enum AGENT_MONITOR_CMD {
     CMD_SIGN_CHK        = 0x01,
     CMD_SELECT_PROFILE  = 0x02,
     CMD_GET_MONITOR_VER = 0x03,
-    CMD_RFU             = 0x04,
+    CMD_RESTART_MONITOR = 0x04,
+    CMD_RFU             = 0x05,
 } agent_monitor_cmd_e;
 
 typedef struct MONITOR_VERSION {
@@ -39,6 +40,7 @@ int32_t ipc_set_monitor_param(config_info_t *config_info);
 int32_t ipc_get_monitor_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size);
 int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign);
 int32_t ipc_file_verify_by_monitor(const char *file);
+int32_t ipc_restart_monitor(uint8_t delay);
 
 
 #endif // __AGENT_2_MONITOR_H__
