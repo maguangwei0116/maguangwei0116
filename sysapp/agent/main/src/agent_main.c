@@ -89,9 +89,10 @@ static int32_t init_versions(void *arg)
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
 
     /* add share profile version */
-    get_share_profile_version((uint8_t *)share_profile_ver_str);
-    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name, "share-profile");
-    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version, share_profile_ver_str);
+    get_share_profile_version(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name, 
+                              sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name),
+                              g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version,
+                              sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version));
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
 
     /* add monitor version */

@@ -30,7 +30,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     const char *imei            = g_personalise_device_info->imei;
     const char *deviceId        = g_personalise_device_info->device_id;
     const char *model           = g_personalise_device_info->model;
-    uint8_t fileVersion[128]    = {0};
+    char fileVersion[128]       = {0};
 
     content = cJSON_CreateObject();
     if (!content) {
@@ -38,7 +38,7 @@ static cJSON *upload_no_cert_packer(void *arg)
         ret = RT_ERROR;
         goto exit_entry;
     }
-    ret = get_share_profile_version(fileVersion);
+    ret = get_share_profile_version(NULL, 0, fileVersion, sizeof(fileVersion));
     if (ret != RT_SUCCESS){
         MSG_PRINTF(LOG_WARN, "The file version is error\n");
         goto exit_entry;
