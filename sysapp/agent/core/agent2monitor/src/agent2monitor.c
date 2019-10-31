@@ -13,8 +13,9 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
     atom_data_t c_data = {0};
     uint8_t buf[256] = {0};
     uint16_t len = sizeof(info_vuicc_data_t);
+    uint16_t ret_len = 0;
 
-    MSG_PRINTF(LOG_INFO, "atom len:%d\n", sizeof(atom_data_t));
+    //MSG_PRINTF(LOG_INFO, "atom len:%d\n", sizeof(atom_data_t));
 
     info.vuicc_switch = config_info->lpa_channel_type;
     info.log_level = config_info->monitor_log_level;
@@ -31,7 +32,13 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
 
     MSG_PRINTF(LOG_INFO, "len:%d, log_max_size:%d, %08x\n", len, info.log_size, info.log_level);
 
-    return ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len);
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
+
+    if (ret_len == 1 && buf[0] == RT_TRUE) {
+        return RT_SUCCESS;
+    } else {
+        return RT_ERROR;
+    }
 }
 
 int32_t ipc_get_monitor_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size)
@@ -39,7 +46,8 @@ int32_t ipc_get_monitor_version(char *name, int n_size, char *version, int v_siz
     monitor_version_t m_version = {0};
     atom_data_t c_data = {0};
     uint8_t buf[256] = {0};
-    uint16_t len = sizeof(monitor_version_t);
+    uint16_t len = 0;
+    uint16_t ret_len = 0;
 
     rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
     c_data.cmd = CMD_GET_MONITOR_VER;
@@ -47,19 +55,22 @@ int32_t ipc_get_monitor_version(char *name, int n_size, char *version, int v_siz
     c_data.data = (uint8_t *)&m_version;
     len = sizeof(atom_data_t) - sizeof(uint8_t *);
     rt_os_memcpy(&buf[0], &c_data, len);
-    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
     len += c_data.data_len;
 
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len); 
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
 
-    rt_os_memcpy((uint8_t *)&m_version, (uint8_t *)buf, sizeof(monitor_version_t));
-    //MSG_HEXDUMP("version", &m_version, sizeof(monitor_version_t));
+    if (ret_len == sizeof(monitor_version_t)) {
+        rt_os_memcpy((uint8_t *)&m_version, (uint8_t *)buf, ret_len);
+        //MSG_HEXDUMP("version", &m_version, sizeof(monitor_version_t));
 
-    snprintf(name, n_size, "%s", m_version.name);    
-    snprintf(version, v_size, "%s", m_version.version);    
-    snprintf(chip_modle, c_size, "%s", m_version.chip_model);
+        snprintf(name, n_size, "%s", m_version.name);    
+        snprintf(version, v_size, "%s", m_version.version);    
+        snprintf(chip_modle, c_size, "%s", m_version.chip_model);
 
-    return 0;
+        return RT_SUCCESS;
+    } else {
+        return RT_ERROR;
+    }
 }
 
 int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign)
@@ -68,6 +79,7 @@ int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign)
     atom_data_t c_data = {0};
     uint8_t buf[256] = {0};
     uint16_t len = sizeof(signature_data_t);
+    uint16_t ret_len = 0;
 
     rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
     c_data.cmd = CMD_SIGN_CHK;    
@@ -81,10 +93,10 @@ int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign)
     len += c_data.data_len;
 
     //MSG_HEXDUMP("send-buf", buf, len);
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len); 
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
     //MSG_PRINTF(LOG_INFO, "len=%d, buf[0]=%02x\n", len, buf[0]);
 
-    if (len == 1 && buf[0] == RT_TRUE) {
+    if (ret_len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;
     } else {
         return RT_ERROR;
@@ -177,6 +189,7 @@ int32_t ipc_restart_monitor(uint8_t delay)
     atom_data_t c_data = {0};
     uint8_t buf[256] = {0};
     uint16_t len = 1;
+    uint16_t ret_len = 0;
 
     rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
     c_data.cmd = CMD_RESTART_MONITOR;    
@@ -187,12 +200,35 @@ int32_t ipc_restart_monitor(uint8_t delay)
     rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
     len += c_data.data_len;
 
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len); 
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
+
+    if (ret_len == 1 && buf[0] == RT_TRUE) {
+        return RT_SUCCESS;
+    } else {
+        return RT_ERROR;
+    }    
+}
+
+int32_t ipc_select_profile_by_monitor(void)
+{
+    atom_data_t c_data = {0};
+    uint8_t buf[256] = {0};
+    uint16_t len = 0;
+    uint16_t ret_len = 0;
+
+    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
+    c_data.cmd = CMD_SELECT_PROFILE;    
+    c_data.data_len = (uint8_t)len;
+    len = sizeof(atom_data_t) - sizeof(uint8_t *);
+    rt_os_memcpy(&buf[0], &c_data, len);
+    len += c_data.data_len;
+
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
 
     if (len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;
     } else {
         return RT_ERROR;
-    }    
+    }  
 }
 

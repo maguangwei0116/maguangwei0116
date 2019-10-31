@@ -41,6 +41,7 @@ int32_t ipc_get_monitor_version(char *name, int n_size, char *version, int v_siz
 int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign);
 int32_t ipc_file_verify_by_monitor(const char *file);
 int32_t ipc_restart_monitor(uint8_t delay);
+int32_t ipc_select_profile_by_monitor(void);
 
 
 #endif // __AGENT_2_MONITOR_H__
