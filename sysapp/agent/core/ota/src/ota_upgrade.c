@@ -299,7 +299,7 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
     char *p0;
     const char *fileName = param->target.name;
 
-    if (param->target.type == TARGET_TYPE_SHARE_PROFILE) {
+    if (param->target.type == TARGET_TYPE_SHARE_PROFILE || param->target.type == TARGET_TYPE_DEF_SHARE_PROFILE) {
         /* sample: B191031023631863078, B + YYMMDDHHMMSSxxxxxx */
         if (fileName[0] == 'B') {
             for (i = 1; i <= 18; i++) {
@@ -408,7 +408,7 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry; 
     }
 
-    if (param->target.type >= TARGET_TYPE_MAX) {
+    if (param->target.type >= TARGET_TYPE_MAX && param->target.type != TARGET_TYPE_DEF_SHARE_PROFILE) {
         MSG_PRINTF(LOG_WARN, "unknow support target type %d\r\n", param->target.type);
         ret = UPGRADE_TARGET_TYPE_ERROR;
         goto exit_entry;
@@ -536,10 +536,12 @@ static rt_bool ota_file_check(const void *arg)
     const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
     int32_t iret;
 
-    if (d_info->type == TARGET_TYPE_SHARE_PROFILE) {
+#if !(SHARE_PROFILE_ECC_VERIFY_ON)
+    if (d_info->type == TARGET_TYPE_SHARE_PROFILE || d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
         /* share profile needn't check signature */
         return RT_TRUE;
     }
+#endif
 
     iret = ipc_file_verify_by_monitor((const char *)d_info->tmpFileName);
     ret = !iret ? RT_TRUE : RT_FALSE; 
@@ -592,7 +594,9 @@ static rt_bool ota_on_upload_event(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
-    upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade);
+    if (upgrade->type != TARGET_TYPE_DEF_SHARE_PROFILE) {
+        upload_event_report(upgrade->event, (const char *)upgrade->tranId, upgrade->downloadResult, (void *)upgrade);
+    }
 
     ota_upgrade_task_cleanup();
 
@@ -640,6 +644,21 @@ static file_activate g_file_activate_list[] =
     ota_file_activate_monitor,
     ota_file_activate_agent_so_profile,
 };
+
+int32_t ota_download_default_share_profile(void)
+{
+    char new_msg[1024];
+    int32_t ret;
+
+    /* simulate to packet a UPGRADE data bag to start download default share profile */
+    snprintf(new_msg, sizeof(new_msg), 
+            "{\"tranId\":\"88888888888888888888888888888888\",\"payload\":\"{\\\"method\\\":\\\"UPGRADE\\\",\\\"content\\\":{\\\"policy\\\":{\\\"forced\\\":0,\\\"executionType\\\":\\\"NOW\\\",\\\"profileType\\\":0,\\\"retryAttempts\\\":2,\\\"retryInterval\\\":30},\\\"target\\\":{\\\"name\\\":\\\"B191031023631863078\\\",\\\"type\\\":%d}}}\"}", 
+            TARGET_TYPE_DEF_SHARE_PROFILE);
+
+    ret = downstream_msg_handle((const void *)new_msg, rt_os_strlen(new_msg));
+
+    return ret;
+}
 
 static int32_t ota_upgrade_start(const void *in, const char *upload_event, const char *tmp_file)
 {

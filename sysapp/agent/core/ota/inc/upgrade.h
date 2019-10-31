@@ -11,6 +11,9 @@
 #include "stdint.h"
 #include "rt_type.h"
 
+/* turn on verify with value 1, and turn off with value 0 */
+#define SHARE_PROFILE_ECC_VERIFY_ON     1
+
 #define MAX_DOWNLOAD_TIMEOUTS           120     // unit: second
 
 typedef enum UPGRADE_MODE {
@@ -30,8 +33,14 @@ typedef enum TARGET_TYPE {
     TARGET_TYPE_SHARE_PROFILE           = 1,
     TARGET_TYPE_MONITOR                 = 2,
     TARGET_TYPE_COMM_SO                 = 3,
-    TARGET_TYPE_MAX,  
+    TARGET_TYPE_MAX,
+    TARGET_TYPE_DEF_SHARE_PROFILE       = 168,  // default share profile
 } target_type_e;
+
+typedef enum DEF_TARGET_TYPE {
+    DEF_TARGET_TYPE_DEF_AGENT           = 0,
+    DEF_TARGET_TYPE_DEF_SHARE_PROFILE   = 1,
+} def_target_type_e;
 
 /* OTA upgrade error code list */
 typedef enum UPGRADE_RESULT {

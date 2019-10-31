@@ -36,6 +36,7 @@ do {                 \
 } while(0)
 
 static const char *g_upgrade_oti_addr   = NULL;
+static const char *g_upgrade_imei       = NULL;
 
 static int32_t get_system_tf_free(uint32_t *free_byte)
 {
@@ -90,18 +91,27 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.buf = NULL;
 
     /* build http body */
+    post_info = cJSON_CreateObject();
+    
+    /* check target type frsit */
+    if (d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
+        STRUCTURE_OTI_URL(buf, sizeof(buf), g_upgrade_oti_addr, DEFAULT_OTI_ENVIRONMENT_PORT, "/default/agent/download");  // Build the OTI address
+        cJSON_AddItemToObject(post_info, "swType", cJSON_CreateNumber(DEF_TARGET_TYPE_DEF_SHARE_PROFILE));
+        cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(g_upgrade_imei));  // must have a real "imei"
+    } else {
+        STRUCTURE_OTI_URL(buf, sizeof(buf), g_upgrade_oti_addr, DEFAULT_OTI_ENVIRONMENT_PORT, "/api/v1/download");  // Build the OTI address
+        cJSON_AddItemToObject(post_info, "ticket", cJSON_CreateString((char *)d_info->ticket));
+        cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(""));  // must have a empty "imei"
+    }
+    
     dw_struct.file_path = (const char *)d_info->tmpFileName;
     dw_struct.manager_type = 1;
     dw_struct.http_header.method = 0;  // POST
-    STRUCTURE_OTI_URL(buf, sizeof(buf), g_upgrade_oti_addr, DEFAULT_OTI_ENVIRONMENT_PORT, "/api/v1/download");  // Build the OTI address
     rt_os_memcpy(dw_struct.http_header.url, buf, rt_os_strlen(buf));
     dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
     dw_struct.http_header.version = 0;
     dw_struct.http_header.record_size = 0;
-
-    post_info = cJSON_CreateObject();
-    cJSON_AddItemToObject(post_info, "ticket", cJSON_CreateString((char *)d_info->ticket));
-    cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(""));  // must have a empty "imei"
+    
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
     rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
     dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
@@ -160,6 +170,11 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
     uint32_t check_size;
     int32_t partlen;
     struct  stat f_info;
+
+    /* default share profile ignore HASH check */
+    if (d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
+        return RT_TRUE;
+    }
 
     RT_CHECK_ERR(stat((char *)d_info->tmpFileName, &f_info), -1);
 
@@ -316,7 +331,8 @@ int32_t upgrade_process_start(upgrade_struct_t *d_info)
 int32_t init_upgrade(void *arg)
 {
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
-    g_upgrade_oti_addr = (const char *)public_value_list->config_info->oti_addr;
+    g_upgrade_oti_addr  = (const char *)public_value_list->config_info->oti_addr;
+    g_upgrade_imei      = (const char *)public_value_list->device_info->imei;
 
     return 0;
 }
