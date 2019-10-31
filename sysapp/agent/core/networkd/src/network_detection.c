@@ -18,7 +18,8 @@
 #include "rt_timer.h"
 
 #define MAX_WAIT_REGIST_TIME        180
-#define MAX_WAIT_BOOTSTRAP_TIME     15
+#define DELAY_100MS                 100
+#define MAX_WAIT_BOOTSTRAP_TIME     (150*(DELAY_100MS))  // 15000ms = 15S
 
 static int32_t g_network_state      = 0;
 static int32_t g_network_new_state  = 0;
@@ -43,16 +44,15 @@ static void network_start_timer(void)
 
 /*
 avoid this case:
-boot -> exist provisoning profile dial up 
+boot -> exist provisoning profile dial up -> bootstrap start -> switch provisoning profile -> NO-NET -> dial up again
 */
-static int32_t network_wait_bootstrap_start(int32_t max_delay)
+static int32_t network_wait_bootstrap_start(int32_t max_delay_100ms)
 {
-    while (max_delay-- > 0) {
+    while (max_delay_100ms-- > 0) {
         if (card_manager_install_profile_ok()) {
             return RT_SUCCESS;
         }
-        rt_os_sleep(1);
-        //MSG_PRINTF(LOG_INFO, "start with provisoning profile, wait bootstrap ok ...\r\n");
+        rt_os_msleep(DELAY_100MS);
     }
 
     return RT_ERROR;
@@ -76,7 +76,7 @@ static void network_detection_task(void *arg)
     }
     
     while (1) {  
-        dial_up_to_connect(&dsi_net_hndl);
+        dial_up_to_connect(&dsi_net_hndl);  // it will never exit !
     }
 
     dial_up_deinit(&dsi_net_hndl);
