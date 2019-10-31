@@ -109,7 +109,9 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         *rsp = (uint8_t)inspect_abstract_content(info->hash, info->signature);
         *rsp_len = 1;
     } else if (cmd == 0x02) { // choose one profile from backup profile
-        backup_process();
+        int32_t ret = backup_process();
+        *rsp = (ret == RT_SUCCESS) ? 0x01 : 0x00;
+        *rsp_len = 1;
     } else if (cmd == 0x03) { // monitor version info
         monitor_version_t info;
         *rsp_len = sizeof(monitor_version_t);
