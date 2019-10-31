@@ -494,7 +494,7 @@ end:
 static int32_t get_specify_data(uint8_t *data, uint32_t offset){
     rt_fshandle_t fp;
     int32_t length = 0;
-    uint8_t buf[100];
+    uint8_t buf[128];
     uint8_t *buffer = NULL;
 
     fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
@@ -503,7 +503,7 @@ static int32_t get_specify_data(uint8_t *data, uint32_t offset){
     }
 
     rt_fseek(fp, offset, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 50, fp);
+    rt_fread(buf, 1, sizeof(buf), fp);
 
     length = get_length(buf, 0);
     buffer = get_value_buffer(buf);
@@ -525,9 +525,30 @@ int32_t get_root_sk(uint8_t *data){
     return get_specify_data(data, g_data.root_sk_offset);
 }
 
-int32_t get_share_profile_version(uint8_t *data)
+int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size)
 {
-    return get_specify_data(data, g_data.file_version_offset);
+    int32_t ret;
+    char version_data[128] = {0}; /* sample: B191031023631863078:skb-beta-0.0.2:aes-beta-0.0.3 */
+    
+    ret = get_specify_data(version_data, g_data.file_version_offset);
+    if (!ret) {
+        char *p;
+        char *p0 = version_data;
+        char tmp[64] = {0};
+
+        p = rt_os_strchr(version_data, ':');
+        if (p) {
+            rt_os_memcpy(tmp, p0, p - p0);
+            if (batch_code) {
+                snprintf(batch_code, b_size, "%s", tmp);
+            }
+            if (version) {
+                snprintf(version, v_size, "%s", p+1);
+            }
+        }
+    }
+
+    return ret;
 }
 
 int32_t init_profile_file(int32_t *arg)
