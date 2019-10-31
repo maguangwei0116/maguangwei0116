@@ -214,7 +214,7 @@ exit_entry:
     return RT_TRUE;
 }
 
-static int32_t upgrade_download_package(const void *in, const char *upload_event)
+static int32_t upgrade_download_issue_cert_package(const void *in, const char *upload_event)
 {
     int32_t ret;
     rt_task id;
@@ -272,7 +272,7 @@ static int32_t downstream_issue_cert_handler(const void *in, const char *event, 
     int32_t ret = 0;
 
     const issue_cert_struct_t *param = (const issue_cert_struct_t *)in;
-    ret = upgrade_download_package(param, event);
+    ret = upgrade_download_issue_cert_package(param, event);
     return ret;
 }
 
