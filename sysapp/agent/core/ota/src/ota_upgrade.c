@@ -280,19 +280,41 @@ exit_entry:
 #define ARRAY_SIZE(a)           (sizeof((a)) / sizeof((a)[0]))
 #endif
 
+#ifndef IS_NUM_CHAR
+#define IS_NUM_CHAR(c)          ('0' <= (c) && (c) <= '9')
+#endif
+
 static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param, char *targetFileName, int32_t len)
 {
     const char *g_target_files[] = 
     {
         "/usr/bin/rt_agent",
         "/usr/bin/rt_monitor",
-        "/usr/lib/libcomm.so",        
+        "/usr/lib/libcomm.so",
+        "/data/redtea/profile_list.der",
     };
     int32_t i = 0;
     int32_t cnt = ARRAY_SIZE(g_target_files);
     char *p;
     char *p0;
     const char *fileName = param->target.name;
+
+    if (param->target.type == TARGET_TYPE_SHARE_PROFILE) {
+        /* sample: B191031023631863078, B + YYMMDDHHMMSSxxxxxx */
+        if (fileName[0] == 'B') {
+            for (i = 1; i <= 18; i++) {
+                if (!IS_NUM_CHAR(fileName[i])) {
+                    break;
+                }
+            }
+
+            if (i == 19) {
+                snprintf(targetFileName, len, g_target_files[cnt - 1]);
+                MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
+                return RT_TRUE;   
+            }
+        }
+    }
 
     for (i = 0; i < cnt; i++) {
         p = rt_os_strrchr(g_target_files[i], '/');
@@ -392,11 +414,13 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry;
     }
 
-    if (rt_os_strcmp(param->target.chipModel, g_upload_ver_info->versions[param->target.type].chipModel)) {
-        MSG_PRINTF(LOG_WARN, "unmathed chip model [%s] => [%s]\r\n", 
-                        g_upload_ver_info->versions[param->target.type].chipModel, param->target.chipModel);
-        ret = UPGRADE_CHIP_MODEL_ERROR;
-        goto exit_entry;         
+    if (param->target.type != TARGET_TYPE_SHARE_PROFILE) {
+        if (rt_os_strcmp(param->target.chipModel, g_upload_ver_info->versions[param->target.type].chipModel)) {
+            MSG_PRINTF(LOG_WARN, "unmathed chip model [%s] => [%s]\r\n", 
+                            g_upload_ver_info->versions[param->target.type].chipModel, param->target.chipModel);
+            ret = UPGRADE_CHIP_MODEL_ERROR;
+            goto exit_entry;         
+        }
     }
 
     if (param->target.type == TARGET_TYPE_SHARE_PROFILE) {
@@ -589,7 +613,7 @@ static rt_bool ota_on_upload_event(const void *arg)
 }
 
 /* make ota downloaded file take active */
-static rt_bool ota_file_activate_agent_so(const void *arg)
+static rt_bool ota_file_activate_agent_so_profile(const void *arg)
 {
     MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
     rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
@@ -611,10 +635,10 @@ static rt_bool ota_file_activate_monitor(const void *arg)
 
 static file_activate g_file_activate_list[] = 
 {
-    ota_file_activate_agent_so,
-    NULL,
+    ota_file_activate_agent_so_profile,
+    ota_file_activate_agent_so_profile,
     ota_file_activate_monitor,
-    ota_file_activate_agent_so,
+    ota_file_activate_agent_so_profile,
 };
 
 static int32_t ota_upgrade_start(const void *in, const char *upload_event, const char *tmp_file)
