@@ -699,11 +699,15 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
     }
 
     /* set callback functions */
-    upgrade->check      = ota_file_check;
-    upgrade->install    = ota_file_install;
-    upgrade->cleanup    = ota_file_cleanup;
-    upgrade->on_event   = ota_on_upload_event;
-    upgrade->activate   = g_file_activate_list[upgrade->type];
+    upgrade->check          = ota_file_check;
+    upgrade->install        = ota_file_install;
+    upgrade->cleanup        = ota_file_cleanup;
+    upgrade->on_event       = ota_on_upload_event;
+    if (upgrade->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
+        upgrade->activate   = ota_file_activate_agent_so_profile;
+    } else {
+        upgrade->activate   = g_file_activate_list[upgrade->type];
+    }
 
     ota_upgrade_task_record(param, sizeof(ota_upgrade_param_t), upgrade->tmpFileName, upload_event);
 

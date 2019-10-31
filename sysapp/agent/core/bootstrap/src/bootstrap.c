@@ -85,6 +85,7 @@ void bootstrap_monitor_event(const uint8_t *buf, int32_t len, int32_t mode)
 int32_t bootstrap_get_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size)
 {
     if (g_is_profile_damaged != RT_SUCCESS) {
+        /* set a temp batch code and version */
         snprintf(batch_code, b_size, "%s", "Bxxxxxxxxxxxxxxxxxx");
         snprintf(version, v_size, "%s", "0.0.0.0");
         return RT_ERROR;
