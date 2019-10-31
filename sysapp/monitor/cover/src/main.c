@@ -21,6 +21,8 @@
 #include "parse_backup.h"
 #include "inspect_file.h"
 #include "libcomm.h"
+#include "download_file.h"
+
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"
@@ -117,13 +119,13 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         rt_os_memcpy(info.chip_model, LOCAL_TARGET_PLATFORM_TYPE, rt_os_strlen(LOCAL_TARGET_PLATFORM_TYPE));
         rt_os_memcpy(rsp, &info, *rsp_len);
     } else if (cmd == 0x04) { // reset monitor after some time
-		uint8_t delay = data[0];
-		MSG_PRINTF(LOG_ERR, "restart monitor in %d seconds ...\r\n", delay);
-		register_timer(delay, 0, &monitor_exit);
+        uint8_t delay = data[0];
+        MSG_PRINTF(LOG_ERR, "restart monitor in %d seconds ...\r\n", delay);
+        register_timer(delay, 0, &monitor_exit);
         rsp[0] = RT_TRUE;
         *rsp_len = 1;
-	}
-	
+    }
+
     return RT_SUCCESS;
 
 end:
@@ -215,6 +217,7 @@ static int32_t agent_task_check_start(void)
 
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE) != RT_TRUE) {
+        init_download(RT_AGENT_FILE);
         choose_uicc_type();
         network_detection_task();
     }
@@ -267,7 +270,7 @@ static int32_t monitor_printf(const char *fmt, ...)
     va_end(vl_list);
 
     MSG_PRINTF(LOG_ERR, "%s", msg);
-    
+
     return 0;
 }
 
@@ -277,7 +280,7 @@ extern int32_t init_backtrace(void *arg);
 int32_t main(int32_t argc, const char *argv[])
 {
     rt_bool keep_agent_alive = RT_TRUE;
-	
+
     /* check input param to debug in terminal */
     if (argc > 1) {
         g_def_mode = LOG_PRINTF_TERMINAL;
@@ -286,7 +289,7 @@ int32_t main(int32_t argc, const char *argv[])
     /* init log param */
     init_log_file(RT_MONITOR_LOG);
     log_set_param(g_def_mode, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
-	
+
     #ifdef CFG_ENABLE_LIBUNWIND
     init_backtrace(monitor_printf);
     #endif
@@ -294,10 +297,10 @@ int32_t main(int32_t argc, const char *argv[])
     /* install ops callbacks */
     init_callback_ops();
     init_card(log_print);
-	
-	/* debug versions information */
+
+    /* debug versions information */
     init_app_version(NULL);
-	
+
     /* install system signal handle */
     init_system_signal(NULL);
 
@@ -313,7 +316,7 @@ int32_t main(int32_t argc, const char *argv[])
     /* install ipc callbacks and start up ipc server */
     ipc_regist_callback(monitor_cmd);
     ipc_socket_server_start();
-	
+
     #if 0 /* only for test */
     /* force to change to vUICC mode */
     trigegr_regist_reset(card_reset);
@@ -321,7 +324,7 @@ int32_t main(int32_t argc, const char *argv[])
     trigger_swap_card(1);
 
     while (1) {
-	    rt_os_sleep(1);
+        rt_os_sleep(1);
     }
     #endif
 
@@ -330,10 +333,10 @@ int32_t main(int32_t argc, const char *argv[])
         agent_task_check_start();
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
     } while(keep_agent_alive);
-	
+
     /* stop here */
     while (1) {
-	    rt_os_sleep(1);
+        rt_os_sleep(1);
     }
 
     return RT_SUCCESS;

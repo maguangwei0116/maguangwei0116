@@ -16,6 +16,13 @@
 
 #include "rt_type.h"
 
+#define MAX_FILE_NAME_LEN               128
+
+typedef struct {
+    uint8_t file_name[MAX_FILE_NAME_LEN + 1];
+} upgrade_struct_t;
+
 int32_t download_start(void);
+void init_download(void *args);
 
 #endif  // __DOWNLOAD_FILE_H__
