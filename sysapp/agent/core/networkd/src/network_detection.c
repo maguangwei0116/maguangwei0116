@@ -15,10 +15,13 @@
 #include "rt_timer.h"
 #include "downstream.h"
 #include "card_manager.h"
+#include "rt_timer.h"
 
-#define MAX_WAIT_REGIST_TIME     180
+#define MAX_WAIT_REGIST_TIME        180
+#define MAX_WAIT_BOOTSTRAP_TIME     15
 
-static int32_t g_network_state = 0;
+static int32_t g_network_state      = 0;
+static int32_t g_network_new_state  = 0;
 static rt_bool g_network_timer_flag = RT_TRUE;
 
 static void network_timer_callback(void)
@@ -38,10 +41,34 @@ static void network_start_timer(void)
     }
 }
 
-static void network_detection_task(void)
+/*
+avoid this case:
+boot -> exist provisoning profile dial up 
+*/
+static int32_t network_wait_bootstrap_start(int32_t max_delay)
+{
+    while (max_delay-- > 0) {
+        if (card_manager_install_profile_ok()) {
+            return RT_SUCCESS;
+        }
+        rt_os_sleep(1);
+        //MSG_PRINTF(LOG_INFO, "start with provisoning profile, wait bootstrap ok ...\r\n");
+    }
+
+    return RT_ERROR;
+}
+
+static void network_detection_task(void *arg)
 {
     int32_t ret;
     dsi_call_info_t dsi_net_hndl;
+    profile_type_e *type = (profile_type_e *)arg;
+
+    /* non-operational profile */
+    //MSG_PRINTF(LOG_INFO, "start with provisoning profile, wait bootstrap ok ... %d\r\n", *type);
+    if (*type != PROFILE_TYPE_OPERATIONAL) {
+        network_wait_bootstrap_start(MAX_WAIT_BOOTSTRAP_TIME);
+    }
 
     ret = dial_up_init(&dsi_net_hndl);
     if (ret != RT_SUCCESS) {
@@ -81,7 +108,9 @@ static void network_set_apn_handler(int32_t state)
     profile_type_e type;
     rt_bool update_using_iccid = RT_FALSE;
 
-    MSG_PRINTF(LOG_INFO, "state: %d ==> %d\r\n", g_network_state, state);
+    if (g_network_state != state) {
+        MSG_PRINTF(LOG_INFO, "state: %d ==> %d\r\n", g_network_state, state);
+    }
     
     /* (disconnected => connected) [record using iccid] */
     if ((g_network_state == DSI_STATE_CALL_IDLE || g_network_state == DSI_STATE_CALL_CONNECTING) && \
@@ -125,9 +154,35 @@ static void network_set_apn_handler(int32_t state)
     }
 }
 
+int32_t network_set_apn_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    if (mode == MSG_SET_APN) {
+        int32_t state = 0;
+        rt_os_memcpy(&state, buf, len);
+        network_set_apn_handler(state);
+    }
+
+    return RT_SUCCESS;
+}
+
+static void network_set_apn_timer_callback(void)
+{
+    msg_send_agent_queue(MSG_ID_SET_APN, MSG_SET_APN, (void *)&g_network_new_state, sizeof(g_network_new_state));
+}
+
+static int32_t network_set_apn_timer(int32_t state)
+{
+    g_network_new_state = state;
+    if (state == DSI_STATE_CALL_IDLE) {
+        register_timer(2, 0, &network_set_apn_timer_callback);
+    }
+
+    return RT_SUCCESS;
+}
+
 static void network_state(int32_t state)
 {
-    network_set_apn_handler(state);
+    network_set_apn_timer(state);
 
     if (state == g_network_state) {
         return;
@@ -172,10 +227,13 @@ int32_t init_network_detection(void *arg)
 {
     rt_task task_id = 0;
     int32_t ret = RT_ERROR;
+    profile_type_e *type;
+
+    type = &(((public_value_list_t *)arg)->card_info->type);
 
     dial_up_set_dial_callback((void *)network_state);
     
-    ret = rt_create_task(&task_id, (void *)network_detection_task, NULL);
+    ret = rt_create_task(&task_id, (void *)network_detection_task, type);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");
         return RT_ERROR;

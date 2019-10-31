@@ -83,6 +83,41 @@ static void issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
     status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
 }
 
+#if (AGENT_MSG_DEBUG)
+const char * g_msg_id_e[] = 
+{
+    "MSG_ID_CARD_MANAGER",
+    "MSG_ID_LOG_MANAGER",
+    "MSG_ID_BOOT_STRAP",
+    "MSG_ID_OTA_UPGRADE",
+    "MSG_ID_PERSONLLISE",
+    "MSG_ID_NETWORK_DECTION",  // 5
+    "MSG_ID_REMOTE_CONFIG",
+    "MSG_ID_BROAD_CAST_NETWORK",
+    "MSG_ID_MQTT",
+    "MSG_ID_IDLE",
+    "MSG_ID_DETECT_NETWORK",  // 10
+    "MSG_ID_SET_APN",
+};
+const char * g_msg_mode_e[] = 
+{
+    "MSG_FROM_MQTT",      // public for all module
+    "MSG_CARD_SETTING_KEY",
+    "MSG_CARD_SETTING_PROFILE",
+    "MSG_CARD_SETTING_CERTIFICATE",
+    "MSG_CARD_ENABLE_EXIST_CARD",
+    "MSG_ALL_SWITCH_CARD", // 5
+    "MSG_NETWORK_CONNECTED",
+    "MSG_NETWORK_DISCONNECTED",
+    "MSG_BOOTSTRAP_DISCONNECTED",
+    "MSG_MQTT_SUBSCRIBE_EID",
+    "MSG_BOOTSTRAP_SELECT_CARD",  // 10
+    "MSG_MQTT_CONNECTED",
+    "MSG_MQTT_DISCONNECTED",
+    "MSG_SET_APN",
+};
+#endif
+
 // agent queue, communication between modules
 static void agent_queue_task(void)
 {
@@ -92,7 +127,11 @@ static void agent_queue_task(void)
     while (1) {
         rt_os_memset(&que_t, 0, sizeof(agent_que_t));
         if (rt_receive_queue_msg(g_queue_id, (void *) &que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
+            #if (AGENT_MSG_DEBUG)
+            MSG_PRINTF(LOG_INFO, "<============recv agent queue: [%s], mode: [%s]\n", g_msg_id_e[que_t.msg_id], g_msg_mode_e[que_t.mode]);
+            #else
             MSG_PRINTF(LOG_INFO, "que_t.msg_id:%d, mode:%d\n", que_t.msg_id, que_t.mode);
+            #endif
             switch (que_t.msg_id) {
                 case MSG_ID_BOOT_STRAP:
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
@@ -143,6 +182,10 @@ static void agent_queue_task(void)
 
                 case MSG_ID_DETECT_NETWORK:
                     network_detect_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    break;
+
+                case MSG_ID_SET_APN:
+                    network_set_apn_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 default: {
@@ -230,7 +273,6 @@ static int32_t upload_queue_clear_msg(int32_t time_cnt)
     return RT_SUCCESS;
 }
 
-
 int32_t init_queue(void *arg)
 {
     rt_task task_id = 0;
@@ -268,7 +310,11 @@ int32_t init_queue(void *arg)
     return RT_SUCCESS;
 }
 
+#if (AGENT_MSG_DEBUG)
+int32_t _msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len)
+#else
 int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len)
+#endif
 {
     agent_que_t que_t;
 

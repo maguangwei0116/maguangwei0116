@@ -393,7 +393,6 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                         /* Data call is disconnected */
                         case DSI_EVT_NET_NO_NET:
                             MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NO_NET\n");
-                            dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
                             exit_flag = RT_TRUE;
                             *state = LOCAL_DIAL_UP_NO_NET;
                             if (dsi_get_call_end_reason(dsi_net_hndl->handle, &dsicallend, dsi_net_hndl->ip_type) == DSI_SUCCESS) {
@@ -419,9 +418,8 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                                 if (RT_SUCCESS == get_ipv4_net_conf(dsi_net_hndl)) {
                                     MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_IS_CONN\n");
                                     count = 0;
-                                    dsi_net_hndl->call_state = DSI_STATE_CALL_CONNECTED;
                                     exit_flag = RT_TRUE;
-                                    *state = LOCAL_DIAL_UP_IS_CONN;
+                                    *state = LOCAL_DIAL_UP_IS_CONN;                                    
                                 }
                             } else if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V6) {
                                 MSG_PRINTF(LOG_DBG, "donot support DSI_IP_FAMILY_V6 by now!!!!\n");
@@ -440,8 +438,6 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                         default:
                             break;
                     }
-                    
-                    g_dial_state_func(dsi_net_hndl->call_state);
                 }
             }
         }
@@ -470,6 +466,7 @@ static int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
     do {\
         MSG_PRINTF(LOG_INFO, "DIAL-UP STATE: %d ==> %d (%s)\r\n", (handle)->call_state, new_state, #new_state);\
         (handle)->call_state = new_state;\
+        g_dial_state_func((handle)->call_state);\
     } while (0)
 
 static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
