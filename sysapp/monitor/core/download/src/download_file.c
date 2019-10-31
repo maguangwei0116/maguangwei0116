@@ -18,6 +18,7 @@
 #include "http_client.h"
 #include "cJSON.h"
 #include "rt_qmi.h"
+#include "inspect_file.h"
 
 #define DEFAULT_OTI_ENVIRONMENT_PORT    7082
 
@@ -85,13 +86,13 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
 
         if (http_client_file_download(&dw_struct) == 0) {
             ret = RT_TRUE;
-            MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
+            MSG_PRINTF(LOG_ERR, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
             break;
         }
         cnt++;
         MSG_PRINTF(LOG_DBG, "Download fail cnt: %d\r\n", cnt);
         if (cnt >= 3) {  // retry 3 times
-            MSG_PRINTF(LOG_WARN, "Download fail too many times !\r\n");
+            MSG_PRINTF(LOG_ERR, "Download fail too many times !\r\n");
             break;
         }
     }
@@ -103,9 +104,12 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
 static void upgrade_process(void *args)
 {
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
-    if (download_file_process(d_info) == RT_TRUE) {
-        if (rt_os_chmod(d_info->file_name, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) == 0) {
-            rt_os_reboot();
+    if (download_file_process(d_info) == RT_TRUE) {    // download file
+        if (monitor_inspect_file(d_info->file_name) == RT_TRUE) {     // inspect file
+            if (rt_os_chmod(d_info->file_name, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) == 0) {      // chmod file
+                MSG_PRINTF(LOG_DBG, "Download agent success, reboot!\r\n");
+                rt_os_reboot();    // reboot device
+            }
         }
     }
 }
