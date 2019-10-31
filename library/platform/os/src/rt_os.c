@@ -435,6 +435,11 @@ void rt_os_sleep(int32_t time)
     sleep(time);
 }
 
+void rt_os_msleep(int32_t m_time)
+{
+    usleep(m_time * 1000);
+}
+
 void *rt_os_signal(int signum, void* handler)
 {
     signal(signum, handler);
