@@ -104,14 +104,20 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
 static void upgrade_process(void *args)
 {
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
-    if (download_file_process(d_info) == RT_TRUE) {    // download file
-        if (monitor_inspect_file(d_info->file_name) == RT_TRUE) {     // inspect file
-            if (rt_os_chmod(d_info->file_name, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) == 0) {      // chmod file
-                MSG_PRINTF(LOG_DBG, "Download agent success, reboot!\r\n");
-                rt_os_reboot();    // reboot device
-            }
-        }
+    if (download_file_process(d_info) != RT_TRUE) {               // download file
+        MSG_PRINTF(LOG_ERR, "Download file failed !\r\n");
+        goto end;
     }
+    if (monitor_inspect_file(d_info->file_name) != RT_TRUE) {     // inspect file
+        MSG_PRINTF(LOG_ERR, "Inspect file failed !\r\n");
+        goto end;
+    }
+    if (rt_os_chmod(d_info->file_name, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) == 0) {      // chmod file
+        MSG_PRINTF(LOG_DBG, "Download agent success, reboot!\r\n");
+        rt_os_reboot();    // reboot device
+    }
+end:
+    return;
 }
 
 void init_download(void *args)
