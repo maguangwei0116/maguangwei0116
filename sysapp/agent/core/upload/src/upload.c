@@ -34,67 +34,10 @@ static rt_bool g_upload_network             = RT_FALSE;
 static rt_bool g_upload_mqtt                = RT_FALSE;
 
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
-#if 0
-{
-    int32_t socket_fd = -1;
-    int8_t *recv_buf = NULL;
-    int32_t offset = 0;
-    http_result_e ret = HTTP_SUCCESS;
-
-    do {
-        socket_fd = http_tcpclient_create(host_addr, port);       // connect network
-        //MSG_PRINTF(LOG_INFO, "http_tcpclient_create (%s:%d) fd=%d\n", host_addr, port, socket_fd);
-        if (socket_fd < 0) {
-            ret = HTTP_SOCKET_CONNECT_ERROR;
-            MSG_PRINTF(LOG_WARN, "http_tcpclient_create failed\n");
-            break;
-        }
-
-        //MSG_HEXDUMP("http-send", buffer, len);
-        MSG_PRINTF(LOG_INFO, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
-        if (http_tcpclient_send(socket_fd, buffer, len) < 0) {      // send data
-            ret = HTTP_SOCKET_SEND_ERROR;
-            MSG_PRINTF(LOG_WARN, "http_tcpclient_send failed..\n");
-            break;
-        }
-
-        recv_buf = (int8_t *) rt_os_malloc(BUFFER_SIZE * 4);
-        if (!recv_buf) {
-            ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_PRINTF(LOG_WARN, "lpbuf memory alloc error\n");
-            break;
-        }
-
-        /*it's time to recv from server*/
-        rt_os_memset(recv_buf, 0, BUFFER_SIZE * 4);
-        if (http_tcpclient_recv(socket_fd, recv_buf, BUFFER_SIZE * 4) <= 0) {     // recv data
-            ret = HTTP_SOCKET_RECV_ERROR;
-            MSG_PRINTF(LOG_WARN, "http_tcpclient_recv failed\n");
-            break;
-        } else {
-            //MSG_PRINTF(LOG_INFO, "recv_buf: %s\n", recv_buf);
-            offset = http_parse_result(recv_buf);
-            MSG_PRINTF(LOG_WARN, "http post recv: %s\n", recv_buf + offset);
-            if (cb(recv_buf + offset) != 0) {
-                ret = HTTP_RESPOND_ERROR;
-            }
-        }
-    } while (0);
-
-    if (recv_buf) {
-        rt_os_free(recv_buf);
-    }
-
-    http_tcpclient_close(socket_fd);
-
-    return ret;
-}
-#else
 {
     MSG_PRINTF(LOG_DBG, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
     return http_post_raw(host_addr, port, buffer, len, cb);
 }
-#endif
 
 static int32_t upload_deal_rsp_msg(const char *msg)
 {
@@ -165,13 +108,13 @@ exit_entry:
     return ret;
 }
 
-static int32_t upload_wait_all_connected(void)
+static int32_t upload_wait_network_connected(void)
 {
     while (1) {
-        if (g_upload_network == RT_TRUE/* && g_upload_mqtt == RT_TRUE*/) {
+        if (g_upload_network == RT_TRUE) {
             break;
         }
-        rt_os_sleep(1);
+        rt_os_msleep(100);
     }
 
     return 0;
@@ -184,10 +127,14 @@ static int32_t upload_send_mqtt_request(const char *data, int32_t data_len)
 
 static int32_t upload_send_final_request(const char *data, int32_t data_len)
 {
-    int32_t ret = RT_FALSE;
+    int32_t ret = RT_ERROR;
+
+    /* send with MQTT frist */
+    if (g_upload_mqtt == RT_TRUE) {
+        ret = upload_send_mqtt_request(data, data_len);
+    }
     
-    /* send with http when MQTT upload fail */
-    ret = upload_send_mqtt_request(data, data_len);
+    /* send with http when MQTT upload fail, or MQTT disconnected */
     if (ret != RT_SUCCESS) {
         ret = upload_send_http_request(data, data_len);
     }
@@ -201,7 +148,7 @@ int32_t upload_event_final_report(void *buffer, int32_t len)
     int32_t i = 0;
 
     for (i = 0; i < MAX_UPLOAD_TIMES; i++) {
-        upload_wait_all_connected();
+        upload_wait_network_connected();
         MSG_PRINTF(LOG_INFO, "begin to send final report ...\r\n");
         ret = upload_send_final_request(buffer, len);
         if (HTTP_SOCKET_CONNECT_ERROR == ret || \
