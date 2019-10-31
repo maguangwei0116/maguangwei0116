@@ -23,9 +23,9 @@
 #define DEFAULT_OTI_ENVIRONMENT_PORT    7082
 
 #if (CFG_ENV_TYPE_PROD)
-#define DOWNLOAD_OTA_ADDR               "54.222.248.186"
-#else
 #define DOWNLOAD_OTA_ADDR               "52.220.34.227"
+#else
+#define DOWNLOAD_OTA_ADDR               "54.222.248.186"
 #endif
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
