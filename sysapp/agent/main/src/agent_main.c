@@ -89,7 +89,7 @@ static int32_t init_versions(void *arg)
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
 
     /* add share profile version */
-    get_share_profile_version(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name, 
+    bootstrap_get_profile_version(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name, 
                               sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name),
                               g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version,
                               sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version));
@@ -153,7 +153,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_backtrace,            agent_printf),
 #endif
 
-    INIT_OBJ(init_bootstrap,            NULL),
+    INIT_OBJ(init_bootstrap,            (void *)&g_value_list),
     INIT_OBJ(init_versions,             (void *)&g_value_list),   
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),

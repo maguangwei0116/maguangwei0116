@@ -11,9 +11,6 @@
 #include "stdint.h"
 #include "rt_type.h"
 
-/* turn on verify with value 1, and turn off with value 0 */
-#define SHARE_PROFILE_ECC_VERIFY_ON     1
-
 #define MAX_DOWNLOAD_TIMEOUTS           120     // unit: second
 
 typedef enum UPGRADE_MODE {

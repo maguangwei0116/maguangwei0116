@@ -557,6 +557,14 @@ int32_t init_profile_file(int32_t *arg)
     uint32_t len = 0;
     rt_fshandle_t fp;
 
+#ifdef CFG_SHARE_PROFILE_ECC_VERIFY
+    ret = ipc_file_verify_by_monitor(SHARE_PROFILE);
+    if (ret == RT_ERROR) {
+        MSG_PRINTF(LOG_ERR, "share profile verify fail !\n");
+        return ret;
+    }
+#endif
+
     fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
     if (fp == NULL) {
         return RT_ERROR;

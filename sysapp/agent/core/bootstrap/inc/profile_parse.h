@@ -48,5 +48,6 @@ typedef struct PROFILE_DATA {
 
 int32_t init_profile_file(int32_t *arg);
 int32_t selected_profile(uint32_t random);
+int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size);
 
 #endif // __PROFILE_PARSE_H__

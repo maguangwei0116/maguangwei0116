@@ -536,7 +536,7 @@ static rt_bool ota_file_check(const void *arg)
     const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
     int32_t iret;
 
-#if !(SHARE_PROFILE_ECC_VERIFY_ON)
+#ifndef CFG_SHARE_PROFILE_ECC_VERIFY
     if (d_info->type == TARGET_TYPE_SHARE_PROFILE || d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
         /* share profile needn't check signature */
         return RT_TRUE;

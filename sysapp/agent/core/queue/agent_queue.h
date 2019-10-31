@@ -66,6 +66,7 @@ typedef struct PUBLIC_VALUE_LIST {
     card_info_t *       card_info;
     const char *        push_channel;
     target_versions_t * version_info;
+    int32_t *           profile_damaged;
 } public_value_list_t;
 
 int32_t init_queue(void *arg);
