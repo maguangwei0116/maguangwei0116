@@ -12,8 +12,127 @@
  *******************************************************************************/
 
 #include "download_file.h"
+#include "rt_os.h"
+#include "md5.h"
+#include "hash.h"
+#include "http_client.h"
+#include "cJSON.h"
+#include "rt_qmi.h"
+#include "inspect_file.h"
+
+#define DEFAULT_OTI_ENVIRONMENT_PORT    7082
+
+#if (CFG_ENV_TYPE_PROD)
+#define DOWNLOAD_OTA_ADDR               "52.220.34.227"
+#else
+#define DOWNLOAD_OTA_ADDR               "54.222.248.186"
+#endif
+
+#define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
+do {                 \
+   snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
+} while(0)
+
+static upgrade_struct_t g_d_info;
+
+static rt_bool download_file_process(upgrade_struct_t *d_info)
+{
+    rt_bool ret = RT_FALSE;
+    http_client_struct_t dw_struct = {0};
+    cJSON  *post_info = NULL;
+    int8_t *out;
+    int8_t  buf[100];
+    uint8_t  imei[16];
+    int32_t cnt = -1;  // used to count the number of download
+
+    dw_struct.if_continue = 1;
+    dw_struct.buf = NULL;
+    /* build http body */
+    dw_struct.file_path = (const char *)d_info->file_name;
+    dw_struct.manager_type = 1;
+    dw_struct.http_header.method = 0;  // POST
+    STRUCTURE_OTI_URL(buf, sizeof(buf), DOWNLOAD_OTA_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT, "/default/agent/download");  // Build the OTI address
+    rt_os_memcpy(dw_struct.http_header.url, buf, rt_os_strlen(buf));
+    dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
+    dw_struct.http_header.version = 0;
+    dw_struct.http_header.record_size = 0;
+
+    post_info = cJSON_CreateObject();
+    rt_qmi_get_imei(imei);
+    cJSON_AddItemToObject(post_info, "swType", cJSON_CreateNumber(0)); // 0 for agent
+    cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(imei));  // must have a empty "imei"
+    out = (int8_t *)cJSON_PrintUnformatted(post_info);
+    rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
+    dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
+    cJSON_free(out);
+
+    snprintf((char *)buf, sizeof(buf), "%s:%d", DOWNLOAD_OTA_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
+    http_set_header_record(&dw_struct, "HOST", buf);
+
+    http_set_header_record(&dw_struct, "Content-Type", "application/json");
+    http_set_header_record(&dw_struct, "Accept", "application/octet-stream");
+
+    snprintf((char *)buf, sizeof(buf), "%d", rt_os_strlen(dw_struct.http_header.buf));
+    http_set_header_record(&dw_struct, "Content-Length", (const char *)buf);
+
+    /* build body with md5sum */
+    get_md5_string((int8_t *)dw_struct.http_header.buf, buf);
+    buf[MD5_STRING_LENGTH] = '\0';
+    http_set_header_record(&dw_struct, "md5sum", (const char *)buf);
+
+    while (1) {
+        dw_struct.range = 0;
+        MSG_PRINTF(LOG_DBG, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
+
+        if (http_client_file_download(&dw_struct) == 0) {
+            ret = RT_TRUE;
+            MSG_PRINTF(LOG_ERR, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
+            break;
+        }
+        cnt++;
+        MSG_PRINTF(LOG_DBG, "Download fail cnt: %d\r\n", cnt);
+        if (cnt >= 3) {  // retry 3 times
+            MSG_PRINTF(LOG_ERR, "Download fail too many times !\r\n");
+            break;
+        }
+    }
+    cJSON_Delete(post_info);
+
+    return ret;
+}
+
+static void upgrade_process(void *args)
+{
+    upgrade_struct_t *d_info = (upgrade_struct_t *)args;
+    if (download_file_process(d_info) != RT_TRUE) {               // download file
+        MSG_PRINTF(LOG_ERR, "Download file failed !\r\n");
+        goto end;
+    }
+    if (monitor_inspect_file(d_info->file_name) != RT_TRUE) {     // inspect file
+        MSG_PRINTF(LOG_ERR, "Inspect file failed !\r\n");
+        goto end;
+    }
+    if (rt_os_chmod(d_info->file_name, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) == 0) {      // chmod file
+        MSG_PRINTF(LOG_DBG, "Download agent success, reboot!\r\n");
+        rt_os_reboot();    // reboot device
+    }
+end:
+    return;
+}
+
+void init_download(void *args)
+{
+    rt_os_memcpy(g_d_info.file_name, (uint8_t *)args, rt_os_strlen((int8_t *)args));
+}
 
 int32_t download_start(void)
 {
-    MSG_PRINTF(LOG_INFO, "Start download file\n");
+    rt_task id;
+
+    if (rt_create_task(&id, (void *)upgrade_process, (void *)&g_d_info) != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
+        return -1;
+    }
+
+    return 0;
 }
