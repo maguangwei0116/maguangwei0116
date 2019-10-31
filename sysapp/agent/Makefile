@@ -2,7 +2,7 @@
 ############################################################################################
 # Never modify from this line
 ############################################################################################
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/br2_conf.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/br2_conf.mk
 ############################################################################################
 # Never modify end this line
 ############################################################################################
@@ -14,7 +14,7 @@ TARGET                              = $(shell pwd | sed 's/^\(.*\)[/]//')
 ENV_TYPE                            = $(SYSAPP_ENV_TYPE)
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
-LOCAL_TARGET_VERSION                = 0.0.0.4
+LOCAL_TARGET_VERSION                = 0.0.0.5
 
 # Check input tag version
 ifdef AGENT_VERSION
@@ -118,6 +118,9 @@ SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota_upgrade.c
 # logger manager module
 SRC-y 			                        += ./core/logm/src/logm.c
 
+# agent 2 monitor
+SRC-y 			                        += ./core/agent2monitor/src/agent2monitor.c
+
 ############################################################################
 # Never adjustment order of these files
 SRC-y 			                        += ./core/upload/src/upload_null_end.c
@@ -140,6 +143,7 @@ INC-PATH-y 		                        += ./core/upload/
 INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
 INC-PATH-y 		                        += ./core/logm/
+INC-PATH-y 		                        += ./core/agent2monitor/
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)
@@ -153,7 +157,7 @@ LIB-y 			                        += $(patsubst %,-l%,$(QMI-LIB))
 ############################################################################################
 # Never modify from this line
 ############################################################################################
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/sysapp.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/sysapp.mk
 ############################################################################################
 # Never modify end this line
 ############################################################################################

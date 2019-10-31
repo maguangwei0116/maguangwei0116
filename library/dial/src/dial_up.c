@@ -15,14 +15,17 @@
 #include "rt_os.h"
 #include "rt_qmi.h"
 
-#define DAIL_UP_WAIT      5
-#define has_more_argv() ((opt < argc) && (argv[opt][0] != '-'))
+#define DAIL_UP_WAIT                5           // timers
+#define CHK_DIAL_STATE_INTERVAL     2           // seconds
+#define MAX_CHK_DIAL_STATE          (5 * 60)    // for total 5 mins
+#define MAX_CHK_DIAL_STATE_CNT      (MAX_CHK_DIAL_STATE / CHK_DIAL_STATE_INTERVAL) 
+#define has_more_argv()             ((opt < argc) && (argv[opt][0] != '-'))
 
 typedef void (*dial_callback)(int32_t state);
-static dial_callback dial_state;
+static dial_callback g_dial_state_func;
 
-static int signal_event_fd[2];
-static int dsi_event_fd[2];
+static int g_signal_event_fd[2];
+static int g_dsi_event_fd[2];
 
 static void dsi_net_init_cb_func(void *user_data)
 {
@@ -37,18 +40,18 @@ static void dsi_net_cb_fcn( dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt
     if (evt == DSI_EVT_WDS_CONNECTED) {
         phndl->ip_type = payload_ptr->ip_type;
     }
-    write(dsi_event_fd[0], &signo, sizeof(signo));
+    write(g_dsi_event_fd[0], &signo, sizeof(signo));
 }
 
 static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 {
-    int8_t iface[DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 2];
-    int32_t rval;
-    int32_t num_entries = 1;
-    int8_t ip_str[20];
-    int8_t command[200];
+    char iface[DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 2];  
+    char ip_str[20];
+    char command[200];
     struct in_addr public_ip, gw_addr, pri_dns_addr, sec_dns_addr;
     dsi_addr_info_t addr_info;
+    int32_t rval;
+    int32_t num_entries = 1;
 
     public_ip.s_addr = gw_addr.s_addr = pri_dns_addr.s_addr = sec_dns_addr.s_addr = 0;
     memset(iface, 0, DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 2);
@@ -57,7 +60,7 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
     rval = dsi_get_device_name(phndl->handle, iface, DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 1);
     if (rval != DSI_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "Couldn't get ipv4 rmnet name. rval %d\n", rval);
-        rt_os_strncpy((int8_t *)iface, "rmnet0", DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 1);
+        snprintf(iface, sizeof(iface), "%s", "rmnet0");
         //return RT_ERROR;
     }
 
@@ -69,26 +72,26 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 
     if (addr_info.iface_addr_s.valid_addr) {
         if (SASTORAGE_FAMILY(addr_info.iface_addr_s.addr) == AF_INET) {
-            memset(ip_str, 0, 20);
+            memset(ip_str, 0, sizeof(ip_str));
             snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.iface_addr_s.addr)[0], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[1], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[2], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[3]);
             public_ip.s_addr = inet_addr(ip_str);
         }
     }
 
     if (addr_info.gtwy_addr_s.valid_addr) {
-        memset(ip_str, 0, 20);
+        memset(ip_str, 0, sizeof(ip_str));
         snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[0], SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[1], SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[2], SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[3]);
         gw_addr.s_addr = inet_addr(ip_str);
     }
 
     if (addr_info.dnsp_addr_s.valid_addr) {
-        memset(ip_str, 0, 20);
+        memset(ip_str, 0, sizeof(ip_str));
         snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[0], SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[1], SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[2], SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[3]);
         pri_dns_addr.s_addr = inet_addr(ip_str);
     }
 
     if (addr_info.dnss_addr_s.valid_addr) {
-        memset(ip_str, 0, 20);
+        memset(ip_str, 0, sizeof(ip_str));
         snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[0], SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[1], SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[2], SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[3]);
         sec_dns_addr.s_addr = inet_addr(ip_str);
     }
@@ -223,7 +226,7 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
     rt_os_sleep(1);
     dsi_net_hndl->handle = dsi_get_data_srvc_hndl(dsi_net_cb_fcn, (void*) dsi_net_hndl);
     if (dsi_net_hndl->handle == NULL){
-        MSG_PRINTF(LOG_ERR, "dsi_get_data_srvc_hndl fail!!!\n");
+        MSG_PRINTF(LOG_ERR, "dsi_get_data_srvc hndl fail!!!\n");
         return RT_ERROR;
     }
 
@@ -255,16 +258,23 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
     return RT_SUCCESS;
 }
 
+static int32_t g_dsi_start_data_call = 0;
+
 int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
 {
+    int32_t rval;
+    
     if (dsi_net_hndl->call_state != DSI_STATE_CALL_IDLE) {
-        dsi_stop_data_call(dsi_net_hndl->handle);
+        rval = dsi_stop_data_call(dsi_net_hndl->handle);
         dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
+        MSG_PRINTF(LOG_INFO, "dsi_stop_data_call rval = %d, ------ (%d)\n", rval, --g_dsi_start_data_call);
     }
-    // dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);
-    close(dsi_event_fd[0]);
-    close(dsi_event_fd[1]);
-
+    
+    //dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);  // it will release all handle, and you should reinit again !!!
+    
+    close(g_dsi_event_fd[0]);
+    close(g_dsi_event_fd[1]);
+    
     return RT_SUCCESS;
 }
 
@@ -279,7 +289,6 @@ static rt_bool get_regist_state(void)
         return RT_TRUE;
     }
     MSG_PRINTF(LOG_INFO, "regist state:%d, ret=%d\n", regist_state, ret);
-
     return RT_FALSE;
 }
 
@@ -294,26 +303,33 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     int32_t nevents = 0;
     int32_t fd = 0;
     int16_t revents = 0;
+    int32_t cgk_state_cnt = 0;
 
-    socketpair( AF_LOCAL, SOCK_STREAM, 0, dsi_event_fd);
+    socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
 
-    pollfds[0].fd = dsi_event_fd[1];
+    pollfds[0].fd = g_dsi_event_fd[1];
     pollfds[0].events = POLLIN;
     pollfds[0].revents = 0;
     nevents = sizeof(pollfds)/sizeof(pollfds[0]);
-    MSG_PRINTF(LOG_INFO, "Start dial up\n");
+    MSG_PRINTF(LOG_WARN, "Start dial up\n");
 
     while (1) {
         if (dsi_net_hndl->call_state == DSI_STATE_CALL_IDLE) {
             if (get_regist_state() != RT_TRUE) {
-                rt_os_sleep(3);
-                dial_state(dsi_net_hndl->call_state);
+                rt_os_sleep(2);
+                if (++cgk_state_cnt >= MAX_CHK_DIAL_STATE_CNT) {
+                    dsi_net_hndl->call_state = DSI_STATE_CALL_DISCONNECTING;  // set disconnected state
+                    return RT_ERROR;
+                }
+                g_dial_state_func(dsi_net_hndl->call_state);
                 continue;
             }
+            cgk_state_cnt = 0;            
             rval = dsi_start_data_call(dsi_net_hndl->handle);
             if (DSI_SUCCESS != rval) {
                 MSG_PRINTF(LOG_WARN, "dsi_start_data_call rval = %d\n", rval);
             } else {
+                MSG_PRINTF(LOG_INFO, "dsi_start_data_call ++++++ (%d)\n", ++g_dsi_start_data_call);
                 dsi_net_hndl->call_state = DSI_STATE_CALL_CONNECTING;
             }
         }
@@ -340,13 +356,14 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                     MSG_PRINTF(LOG_DBG, "call_count:%d\n",count);
                     if (count >= DAIL_UP_WAIT) {
                         count = 0;
+                        dsi_net_hndl->call_state = DSI_STATE_CALL_DISCONNECTING;  // set disconnected state
                         return RT_ERROR;
                     }
                 }
                 continue;
             }
 
-            if (fd == dsi_event_fd[1]) {
+            if (fd == g_dsi_event_fd[1]) {
                 if (read(fd, &signo, sizeof(signo)) == sizeof(signo)) {
                     switch (signo) {
                         case DSI_EVT_WDS_CONNECTED:
@@ -358,6 +375,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                                 MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
                             }
                         break;
+                        
                         case DSI_EVT_NET_IS_CONN:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
                                 if (RT_SUCCESS == get_ipv4_net_conf(dsi_net_hndl)) {
@@ -369,6 +387,7 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                                 MSG_PRINTF(LOG_DBG, "donot support DSI_IP_FAMILY_V6 by now!!!!\n");
                             }
                         break;
+                        
                         case DSI_EVT_NET_NO_NET:
                             MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NO_NET\n");
                             dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
@@ -377,10 +396,16 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
                                     dsicallend.reason_type,dsicallend.reason_code);
                             }
                         break;
+                        
                         default:
                         break;
                     }
-                    dial_state(dsi_net_hndl->call_state);
+                    
+                    g_dial_state_func(dsi_net_hndl->call_state);
+
+                    if (DSI_EVT_NET_NO_NET == signo) {
+                        return RT_ERROR;
+                    }
                 }
             }
         }
@@ -388,7 +413,8 @@ int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl)
     return RT_SUCCESS;
 }
 
-void regist_dial_callback(void* fun)
+void dial_up_set_dial_callback(void* func)
 {
-    dial_state = (dial_callback)fun;
+    g_dial_state_func = (dial_callback)func;
 }
+

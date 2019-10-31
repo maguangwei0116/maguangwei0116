@@ -4,11 +4,17 @@
 #include "rt_os.h"
 #include "card_manager.h"
 #include "device_info.h"
+#include "bootstrap.h"
+#include "libcomm.h"
+#include "agent_main.h"
+#include "upgrade.h"
+#include "agent_queue.h"
 
 #include "cJSON.h"
 
 extern const devicde_info_t *g_upload_device_info;
 extern const card_info_t *g_upload_card_info;
+extern const target_versions_t *g_upload_ver_info;
 
 static cJSON *upload_event_boot_device_info(void)
 {
@@ -212,14 +218,16 @@ exit_entry:
     return !ret ? network : NULL;
 }
 
-static cJSON *upload_event_boot_version_info(void)
+static cJSON *upload_event_software_version_info(void)
 {
     int32_t ret = 0;
     cJSON *software = NULL;
-    cJSON *app_version = NULL;
-    const char *name = LOCAL_TARGET_NAME;
-    const char *version = LOCAL_TARGET_VERSION;
-    const char *chipModel = LOCAL_TARGET_PLATFORM_TYPE;
+    cJSON *single_version = NULL;
+    int32_t i_type;
+    target_type_e type;
+    const char *name = "";
+    const char *version = "";
+    const char *chipModel = "";
 
     software = cJSON_CreateArray();
     if (!software) {
@@ -227,19 +235,26 @@ static cJSON *upload_event_boot_version_info(void)
         ret = -1;
         goto exit_entry;
     }
-
-    app_version = cJSON_CreateObject();
-    if (!app_version) {
-        MSG_PRINTF(LOG_WARN, "The app_version is error\n");
-        ret = -2;
-        goto exit_entry;
+    
+    for (i_type = 0; i_type < TARGET_TYPE_MAX; i_type++) {
+        single_version = cJSON_CreateObject();
+        if (!single_version) {
+            MSG_PRINTF(LOG_WARN, "The single_version is error\n");
+            ret = -2;
+            goto exit_entry;
+        } else {
+            type = (target_type_e)i_type;
+            name = g_upload_ver_info->versions[i_type].name;
+            version = g_upload_ver_info->versions[i_type].version;
+            chipModel = g_upload_ver_info->versions[i_type].chipModel;
+            CJSON_ADD_NEW_STR_OBJ(single_version, name);
+            CJSON_ADD_NEW_STR_OBJ(single_version, version);
+            CJSON_ADD_NEW_STR_OBJ(single_version, chipModel);        
+            CJSON_ADD_NEW_INT_OBJ(single_version, type);
+            cJSON_AddItemToArray(software, single_version);
+        }
     }
 
-    CJSON_ADD_NEW_STR_OBJ(app_version, name);
-    CJSON_ADD_NEW_STR_OBJ(app_version, version);
-    CJSON_ADD_NEW_STR_OBJ(app_version, chipModel);
-    cJSON_AddItemToArray(software, app_version);
-    
     ret = 0;
     
 exit_entry:
@@ -306,7 +321,7 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
     CJSON_ADD_STR_OBJ(content, network);
     
     if (!only_profile_network) {
-        software = upload_event_boot_version_info();
+        software = upload_event_software_version_info();
         CJSON_ADD_STR_OBJ(content, software);
     }
 

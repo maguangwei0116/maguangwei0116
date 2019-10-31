@@ -25,7 +25,7 @@
 #define DATA_REDTEA_PATH        "/data/redtea"
 #define LOG_NAME                "/data/redtea/rt_log"
 #define LOG_FILE_SIZE           1024 * 1024  // 1MB
-#define LOG_BUF_SIZE            1024
+#define LOG_BUF_SIZE            2048
 #define LOG_MAX_LINE_SIZE       2 * 1024
 #define LOG_LEVEL_LEN           6
 #define LOG_FILE_NAME_LEN       64
@@ -203,7 +203,7 @@ int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *ms
     }
 
     va_start(vl_list, msg);
-    vsnprintf((char *)&content[len], sizeof(content) - len, (const char *)msg, vl_list);
+    vsnprintf((char *)&content[len], sizeof(content) - len - 1, (const char *)msg, vl_list);
     va_end(vl_list);
 
     log_local_print(content, rt_os_strlen(content));

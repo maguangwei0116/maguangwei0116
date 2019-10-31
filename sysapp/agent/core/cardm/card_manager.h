@@ -16,11 +16,13 @@
 
 #include "rt_type.h"
 #include "lpa.h"
+#include "msg_process.h"
 
 #define THE_MAX_CARD_NUM            20
 #define THE_ICCID_LENGTH            20
 #define MAX_EID_LEN                 32
 #define MAX_EID_HEX_LEN             16
+#define MAX_APN_LEN                 32
 
 typedef enum PROFILE_TYPE {
     PROFILE_TYPE_TEST               = 0,
@@ -38,5 +40,9 @@ typedef struct CARD_INFO {
 
 int32_t init_card_manager(void *arg);
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode);
+int32_t card_update_profile_info(judge_term_e bootstrap_flag);
+int32_t card_check_profile_info(judge_term_e bootstrap_flag, char *cur_iccid, profile_type_e *type);
+int32_t card_set_opr_profile_apn(void);
+int32_t card_force_enable_provisoning_profile(void);
 
 #endif // __CARD_MANAGER_H__

@@ -47,6 +47,7 @@
 #endif
 
 thread_type Thread_start(thread_fn, void*);
+thread_type Thread_stop(void);
 
 mutex_type Thread_create_mutex();
 int Thread_lock_mutex(mutex_type);

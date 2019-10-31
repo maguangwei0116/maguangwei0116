@@ -92,7 +92,7 @@ int MQTTProtocol_connect(const char* ip_address, Clients* aClient, int MQTTVersi
 
     FUNC_ENTRY;
     aClient->good = 1;
-
+    Log(TRACE_MIN, -1, "mqtt client protocol connect ...\r\n");
     addr = MQTTProtocol_addressPort(ip_address, &port);
     rc = Socket_new(addr, port, &(aClient->net.socket));
     if (rc == EINPROGRESS || rc == EWOULDBLOCK) {

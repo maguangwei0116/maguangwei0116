@@ -112,6 +112,7 @@ void* MQTTPacket_Factory(networkHandles* net, int* error)
 #else
     *error = Socket_getch(net->socket, &header.byte);
 #endif
+    Log(TRACE_MINIMUM, -1, "%s, error=%d\r\n", __func__, *error);
     if (*error != TCPSOCKET_COMPLETE)   /* first byte is the header byte */
         goto exit; /* packet not read, *error indicates whether SOCKET_ERROR occurred */
 
@@ -330,8 +331,9 @@ int rt_MQTTPacket_decode(networkHandles* net, int* value)
 #else
         rc = Socket_getch(net->socket, &c);
 #endif
+        Log(TRACE_MINIMUM, -1, "%s, rc=%d\r\n", __func__, rc);
         if (rc != TCPSOCKET_COMPLETE)
-                goto exit;
+            goto exit;
         *value += (c & 127) * multiplier;
         multiplier *= 128;
     } while ((c & 128) != 0);

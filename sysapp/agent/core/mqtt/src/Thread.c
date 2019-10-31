@@ -26,9 +26,12 @@
 
 
 #include "Thread.h"
+
 #if defined(THREAD_UNIT_TESTS)
 #define NOSTACKTRACE
 #endif
+
+#include "Log.h"
 #include "StackTrace.h"
 
 #undef malloc
@@ -47,6 +50,12 @@
 #include <memory.h>
 #include <stdlib.h>
 
+#ifdef CFG_ENABLE_LIBUNWIND
+#include "rt_os.h"
+#define pthread_create(id, attr, fn, param) rt_create_task(id, fn, param)
+#define pthread_exit(param)                 rt_exit_task(param)
+#endif
+
 /**
  * Start a new thread
  * @param fn the function to run, must be of the correct signature
@@ -61,14 +70,14 @@ thread_type Thread_start(thread_fn fn, void* parameter)
     thread_type thread = 0;
     pthread_attr_t attr;
 #endif
-
+    
     FUNC_ENTRY;
 #if defined(WIN32) || defined(WIN64)
     thread = CreateThread(NULL, 0, fn, parameter, 0, NULL);
 #else
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if (pthread_create(&thread, &attr, fn, parameter) != 0)
+    if (pthread_create((&thread), &attr, fn, parameter) != 0)
         thread = 0;
     pthread_attr_destroy(&attr);
 #endif
@@ -76,6 +85,11 @@ thread_type Thread_start(thread_fn fn, void* parameter)
     return thread;
 }
 
+thread_type Thread_stop(void)
+{
+    pthread_exit(NULL);
+    return 0;
+}
 
 /**
  * Create a new mutex
@@ -460,6 +474,8 @@ thread_return_type secondary(void* n)
     printf("Secondary thread returned from wait %d\n", rc);
     printf("Secondary check sem %d\n", Thread_check_sem(sem));
 
+    Thread_stop();
+    
     return 0;
 }
 

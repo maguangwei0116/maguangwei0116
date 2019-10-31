@@ -42,19 +42,31 @@ extern int32_t log_file_copy_out(const char* file_in, const char* file_out, log_
 extern log_level_e log_get_level(const char *level_string);
 
 #define __FILENAME__            (strrchr("/"__FILE__, '/') + 1)
-#define ARRAY_PRINTF(tag, array, len)                                            \
-    do {                                                                         \
-        uint8_t *_p_ = (uint8_t *)array;                                         \
-        uint16_t i;                                                              \
-        log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF,"%s", tag);                   \
-        for (i = 0; i < len; i++) {                                              \
-            log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF, "%02X", _p_[i]);         \
-        }                                                                        \
-        log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF, "\n");                       \
+#define ARRAY_PRINTF(tag, array, len)                                           \
+    do {                                                                        \
+        uint8_t *_p_ = (uint8_t *)array;                                        \
+        uint16_t i;                                                             \
+        log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF,"%s", tag);                      \
+        for (i = 0; i < len; i++) {                                             \
+            log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF, "%02X", _p_[i]);            \
+        }                                                                       \
+        log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF, "\n");                          \
     } while(0)
 
 #define MSG_INFO_ARRAY(tag, array, len)         ARRAY_PRINTF(tag, array, len)
-#define MSG_PRINTF(LOG_LEVEL, format,...)       log_print(LOG_LEVEL, LOG_HAVE_LEVEL_PRINTF,"[ %d %s ] "format, __LINE__, __FILENAME__, ##__VA_ARGS__)
+#if 0
+#define MSG_PRINTF(LOG_LEVEL, format, ...)      log_print(LOG_LEVEL, LOG_HAVE_LEVEL_PRINTF, "[%d %s ] "format, __LINE__, __FILENAME__, ##__VA_ARGS__)
+#else  // add print out pid info
+#include "pthread.h"
+#define MSG_PRINTF(LOG_LEVEL, format, ...)\
+do {\
+    unsigned long pid = pthread_self();\
+    char pid_str[16];\
+    snprintf(pid_str, sizeof(pid_str), "%p", (void *)pid);\
+    log_print(LOG_LEVEL, LOG_HAVE_LEVEL_PRINTF, "[%s][ %d %s ] "format, pid_str, __LINE__, __FILENAME__, ##__VA_ARGS__);\
+} while (0)
+#endif
 #define MSG_HEXDUMP(title, data, len)           log_hexdump(__FILE__, __LINE__, title, data, len)
 
 #endif // __LOG_H__
+

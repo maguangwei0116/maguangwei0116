@@ -30,14 +30,35 @@ int32_t _rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
 int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
 #endif
 {
-    int32_t ret = RT_ERROR;
+    int32_t ret = RT_SUCCESS;
+    pthread_attr_t attr;
 
-    ret = pthread_create(task_id, NULL, task_fun, args);
+    pthread_attr_init(&attr);
+    /* see doc: https://blog.csdn.net/fivedoumi/article/details/45060005 */
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+    ret = pthread_create(task_id, &attr, task_fun, args);
     if (ret != 0) {
-        return RT_ERROR;
+        ret = RT_ERROR;
     }
 
-    return RT_SUCCESS;
+    pthread_attr_destroy(&attr);
+
+    return ret;
+}
+
+#ifdef CFG_ENABLE_LIBUNWIND
+void _rt_exit_task(void * args)
+#else
+void rt_exit_task(void * args)
+#endif
+{
+    return pthread_exit(args);  
+}
+
+rt_task rt_get_pid(void)
+{
+    return pthread_self();
 }
 
 int32_t rt_mutex_init(pthread_mutex_t *mutex)
@@ -127,6 +148,7 @@ int32_t linux_mutex_release(pthread_mutex_t *mutex)
     }
     rt_mutex_destroy(mutex);
     rt_os_free(mutex);
+    return RT_SUCCESS;
 }
 
 //message queue
@@ -149,6 +171,7 @@ int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id)
 int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg)
 {
     if (msgrcv(msgid, buffer, len, msgtyp, msgflg) == -1) {
+        MSG_PRINTF(LOG_ERR, "recv queue error, err(%d)=%s!!\n", errno, strerror(errno));
         return RT_ERROR;
     }
 
@@ -415,4 +438,5 @@ void rt_os_sleep(int32_t time)
 void *rt_os_signal(int signum, void* handler)
 {
     signal(signum, handler);
+    return handler;
 }

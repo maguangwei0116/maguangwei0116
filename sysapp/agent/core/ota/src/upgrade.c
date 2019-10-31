@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <error.h>
+#include <sys/vfs.h>
 
 #include "upgrade.h"
 #include "md5.h"
@@ -17,7 +18,6 @@
 #include "http_client.h"
 #include "cJSON.h"
 #include "upload.h"
-#include "dial_up.h"
 #include "convert.h"
 #include "config.h"
 #include "agent_queue.h"
@@ -37,20 +37,49 @@ do {                 \
 
 static const char *g_upgrade_oti_addr   = NULL;
 
-static rt_bool upgrade_check_sys_memory()
+static int32_t get_system_tf_free(uint32_t *free_byte)
 {
-    return RT_TRUE;
+    struct statfs diskInfo;
+    unsigned long long totalBlocks;
+    unsigned long long freeDisk;
+    
+    if (statfs("/data/", &diskInfo) < 0) {
+        MSG_PRINTF(LOG_ERR, "get free byte fail\r\n");
+        return RT_ERROR;
+    }
+    
+    totalBlocks = diskInfo.f_bsize;
+    freeDisk = diskInfo.f_bfree * totalBlocks;
+    *free_byte = freeDisk;
+    
+    return RT_SUCCESS;
 }
 
-static rt_bool ugrade_check_dir_permission()
+static rt_bool upgrade_check_sys_memory(upgrade_struct_t *d_info)
 {
+    uint32_t free_byte = 0;
+    rt_bool ret = RT_FALSE;
+
+    if (get_system_tf_free(&free_byte) == RT_SUCCESS) {
+        MSG_PRINTF(LOG_INFO, "system freebyte: %d B (%d KB), file size: %d B\r\n", free_byte, free_byte/1024, d_info->size);
+        if (d_info->size < free_byte) {
+            ret = RT_TRUE;
+        }
+    }
+    
+    return ret;
+}
+
+static rt_bool ugrade_check_dir_permission(upgrade_struct_t *d_info)
+{
+    (void)d_info;
     return RT_TRUE;
 }
 
 static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 {
     rt_bool ret = RT_FALSE;
-    http_client_struct_t dw_struct;
+    http_client_struct_t dw_struct = {0};
     cJSON  *post_info = NULL;
     int8_t *out;
     int8_t  buf[100];
@@ -100,7 +129,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
             http_set_header_record(&dw_struct, "Range", (const char *)buf);
             dw_struct.range = file_path_size;
         }
-        MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
+        MSG_PRINTF(LOG_DBG, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
 
         if (http_client_file_download(&dw_struct) == 0) {
             ret = RT_TRUE;
@@ -108,7 +137,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
             break;
         }
         cnt++;
-        MSG_PRINTF(LOG_WARN, "Download fail cnt: %d\r\n", cnt);
+        MSG_PRINTF(LOG_DBG, "Download fail cnt: %d\r\n", cnt);
         if (cnt >= d_info->retryAttempts) {
             MSG_PRINTF(LOG_WARN, "Download fail too many times !\r\n");
             break;
@@ -176,15 +205,16 @@ end:
 static upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
 {
     upgrade_result_e ret;
+    
     /* check FS space */
-    if (upgrade_check_sys_memory() != RT_TRUE) {
+    if (upgrade_check_sys_memory(d_info) != RT_TRUE) {
         ret = UPGRADE_FS_SPACE_NOT_ENOUGH_ERROR;
-        MSG_PRINTF(LOG_WARN, "upgrade_sys space not enough False\n");
+        MSG_PRINTF(LOG_WARN, "upgrade_sys space not enough\n");
         goto exit_entry;
     }
 
     /* check permission */
-    if (ugrade_check_dir_permission() != RT_TRUE) {
+    if (ugrade_check_dir_permission(d_info) != RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "upgrade_dir permission False\n");
         ret = UPGRADE_DIR_PERMISSION_ERROR;
         goto exit_entry;
@@ -203,7 +233,7 @@ static upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
         if (d_info->cleanup) {
             d_info->cleanup(d_info);
         }
-        ret = UPGRADE_CHECK_PACKET_ERROR;
+        ret = UPGRADE_HASH_CHECK_ERROR;
         goto exit_entry;
     }
 
@@ -213,7 +243,7 @@ static upgrade_result_e start_comman_upgrade_process(upgrade_struct_t *d_info)
         if (d_info->cleanup) {
             d_info->cleanup(d_info);
         }
-        ret = UPGRADE_CHECK_PACKET_ERROR;
+        ret = UPGRADE_SIGN_CHECK_ERROR;
         goto exit_entry;
     }
 
@@ -241,12 +271,10 @@ static upgrade_result_e start_fota_upgrade_process(upgrade_struct_t *d_info)
     return RT_TRUE;
 }
 
-static void * check_upgrade_process(void *args)
+static void check_upgrade_process(void *args)
 {
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
     upgrade_result_e result;
-
-    //MSG_PRINTF(LOG_INFO, "111111 = %d\n", GET_UPDATEMODE(d_info));
 
     if (GET_UPDATEMODE(d_info) == 1) { /* full upgrade */
         result = start_comman_upgrade_process(d_info);
@@ -259,6 +287,8 @@ static void * check_upgrade_process(void *args)
     if (d_info->on_event) {
         d_info->on_event(d_info);
     }
+
+    rt_exit_task(NULL);
 }
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info)
@@ -274,7 +304,8 @@ int32_t upgrade_process_create(upgrade_struct_t **d_info)
 int32_t upgrade_process_start(upgrade_struct_t *d_info)
 {
     rt_task id;
-    if (rt_create_task(&id, check_upgrade_process, (void *)d_info) != RT_SUCCESS) {
+    
+    if (rt_create_task(&id, (void *)check_upgrade_process, (void *)d_info) != RT_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
         return -1;
     }

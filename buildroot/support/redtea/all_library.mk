@@ -4,7 +4,7 @@
 
 all: $(TARGET)
 
-$(TARGET): liba libso COPY_VERSION_FILE_OUT
+$(TARGET): liba libso generate_signature COPY_VERSION_FILE_OUT
 
 info:
 	@echo "COBJS=$(COBJS)"
@@ -23,9 +23,9 @@ clean:
 	rm -rf $(O)
 
 # Include sub comm makefiles
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/tool.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/flags.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/object.mk
 
 libso: $(O)/$(LIB_SO_NAME)
 liba: $(O)/$(LIB_A_NAME)
@@ -36,7 +36,15 @@ define GEN_LIBRARY_VERSION_C
     echo -e -n "#include <stdio.h>\n\n" >>$(1);\
     echo -e -n "int lib$(TARGET)_get_version(char *version, int size)\n" >>$(1);\
     echo -e -n "{\n" >>$(1);\
-    echo -e -n "    snprintf(version, size, \"lib$(TARGET) version: %s\", RELEASE_TARGET_VERSION);\n" >>$(1);\
+    echo -e -n "    snprintf(version, size, \"lib$(TARGET) version: %s\", LOCAL_TARGET_RELEASE_VERSION_NAME);\n" >>$(1);\
+    echo -e -n "    return 0;\n" >>$(1);\
+    echo -e -n "}\n" >>$(1);\
+    echo -e -n "int lib$(TARGET)_get_all_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size)\n" >>$(1);\
+    echo -e -n "{\n" >>$(1);\
+    echo -e -n "    snprintf(name, n_size, \"%s\", LOCAL_TARGET_NAME);\n" >>$(1);\
+    echo -e -n "    snprintf(version, v_size, \"%s\", LOCAL_TARGET_VERSION);\n" >>$(1);\
+    echo -e -n "    snprintf(chip_modle, c_size, \"%s\", LOCAL_TARGET_PLATFORM_TYPE);\n" >>$(1);\
+    echo -e -n "    return 0;\n" >>$(1);\
     echo -e -n "}\n" >>$(1)
 endef
 
@@ -44,8 +52,9 @@ endef
 define GEN_LIBRARY_VERSION_H
     echo "/* Auto-generated configuration version file, never modify it ! */" >$(1);\
     echo -e -n "\n#ifndef __LIB_$(TARGET)_H__\n" >>$(1);\
-	echo -e -n "#define __LIB_$(TARGET)_H__\n\n" >>$(1);\
+    echo -e -n "#define __LIB_$(TARGET)_H__\n\n" >>$(1);\
     echo -e -n "extern int lib$(TARGET)_get_version(char *version, int size);\n" >>$(1);\
+    echo -e -n "extern int lib$(TARGET)_get_all_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size);\n" >>$(1);\
     echo -e -n "\n" >>$(1);\
     echo -e -n "#endif\n" >>$(1);\
     echo -e -n "\n" >>$(1)
@@ -74,19 +83,20 @@ $(VER_C_FILE): GEN_VERSION_FILE
 COPY_VERSION_FILE_OUT: liba libso
 	$(Q)$(call INSTALL_LIBRARY_VERSION_C,$(VER_C_FILE),$(VER_C_FILE_OUT))
 
-# Config your own CFLAGS
-USER_CFLAGS  	= -DRELEASE_TARGET_VERSION=\"$(RELEASE_TARGET_VERSION)\"
-
 GEN_VERSION_FILE:
 	$(Q)$(call GEN_LIBRARY_VERSION_C,$(VER_C_FILE))
 	$(Q)$(call GEN_LIBRARY_VERSION_H,$(VER_H_FILE_OUT))
 	$(Q)$(call INSTALL_LIBRARY_VERSION_H,$(VER_H_FILE_OUT))
+	
+# Add SHA256withECC signature to the tail of a file
+define SO_ADD_SHA256withECC
+	$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPTS_PATH) Q=$(Q)
+endef
 
-$(O)/$(LIB_SO_NAME): $(OBJS) $(ALL_TARGETS)
-	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
-	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
-	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
-	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib/$(LIBRARY_SHARED_TARGET_NAME)
+generate_signature: $(O)/$(LIB_SO_NAME)
+	$(Q)$(call SO_ADD_SHA256withECC,$(O)/$(LIB_SO_NAME))
+	-$(Q)$(CP) -rf $(O)/$(LIB_SO_NAME) $(SDK_INSTALL_PATH)/lib
+	-$(Q)$(CP) -rf $(O)/$(LIB_SO_NAME) $(SDK_INSTALL_PATH)/lib/$(LIBRARY_SHARED_TARGET_NAME)
 	-$(Q)$(CD) $(SDK_INSTALL_PATH)/lib/; $(RM) -rf $(RELEASE_SHARED_TARGET); $(LN) -s $(LIB_SO_NAME) $(RELEASE_SHARED_TARGET)
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"
@@ -96,6 +106,10 @@ $(O)/$(LIB_SO_NAME): $(OBJS) $(ALL_TARGETS)
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
+$(O)/$(LIB_SO_NAME): $(OBJS) $(ALL_TARGETS)
+	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
+	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
+	
 $(O)/$(LIB_A_NAME): $(OBJS) $(ALL_TARGETS) 
 #	echo ALL_OBJ_TARGETS=$(ALL_OBJ_TARGETS)
 	$($(quiet)do_ar) cru "$@" $(ALL_OBJ_TARGETS)
@@ -111,7 +125,7 @@ $(O)/$(LIB_A_NAME): $(OBJS) $(ALL_TARGETS)
 	@$(ECHO) "+---------------------------------------------------"
 	@$(ECHO) ""
 
-.PHONY: all clean info $(TARGET) liba libso $(GEN_VERSION_FILE) $(COPY_VERSION_FILE_OUT)
+.PHONY: all clean info $(TARGET) liba libso generate_signature $(GEN_VERSION_FILE) $(COPY_VERSION_FILE_OUT)
 
 # Include the dependency files, should be the last of the makefile
 -include $(DEPS)

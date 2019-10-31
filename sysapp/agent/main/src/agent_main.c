@@ -26,6 +26,7 @@
 #include "logm.h"
 #include "personalise.h"
 #include "upgrade.h"
+#include "agent2monitor.h"
 #include "libcomm.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
@@ -60,29 +61,7 @@ static int32_t init_system_signal(void *arg)
 
 static int32_t init_monitor(void *arg)
 {
-    info_vuicc_data_t info = {0};
-    atom_data_t c_data = {0};
-    uint8_t buf[256] = {0};
-    uint16_t len = sizeof(info_vuicc_data_t);
-
-    MSG_PRINTF(LOG_INFO, "atom len:%d\n", sizeof(atom_data_t));
-
-    info.vuicc_switch = ((public_value_list_t *)arg)->config_info->lpa_channel_type;
-    info.log_level = ((public_value_list_t *)arg)->config_info->monitor_log_level;
-    info.log_size = ((public_value_list_t *)arg)->config_info->log_max_size;
-
-    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
-    c_data.cmd = 0x00;
-    c_data.data_len = (uint8_t)len;
-    c_data.data = (uint8_t *)&info;
-    len = sizeof(atom_data_t) - 4;
-    rt_os_memcpy(&buf[0], &c_data, len);
-    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
-    len += c_data.data_len;
-
-    MSG_PRINTF(LOG_INFO, "len:%d, log_max_size:%d, %08x\n", len, info.log_size, info.log_level);
-
-    return ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &len);
+    return ipc_set_monitor_param(((public_value_list_t *)arg)->config_info);
 }
 
 static int32_t init_qmi(void *arg)
@@ -90,17 +69,46 @@ static int32_t init_qmi(void *arg)
     return rt_qmi_init(arg);
 }
 
+#define SET_STR_PARAM(param, value)  snprintf((param), sizeof(param), "%s", (value))
+
 static int32_t init_versions(void *arg)
 {
     char libcomm_ver[128] = {0};
-    public_value_list_t *public_value_list = (public_value_list_t *)arg;
-
-    if (public_value_list) {
-        log_set_param(LOG_PRINTF_FILE, public_value_list->config_info->agent_log_level, public_value_list->config_info->log_max_size);
-    }
+    char share_profile_ver_str[128] = {0};
+    static target_versions_t g_target_versions = {0};
+    
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
+
+    ((public_value_list_t *)arg)->version_info = &g_target_versions;
+
+    /* add agent version */
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].name, LOCAL_TARGET_NAME);
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].version, LOCAL_TARGET_VERSION);
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
+
+    /* add share profile version */
+    get_share_profile_version((uint8_t *)share_profile_ver_str);
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name, "share-profile");
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version, share_profile_ver_str);
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
+
+    /* add monitor version */
+    ipc_get_monitor_version(g_target_versions.versions[TARGET_TYPE_MONITOR].name, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].name), 
+                            g_target_versions.versions[TARGET_TYPE_MONITOR].version, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].version), 
+                            g_target_versions.versions[TARGET_TYPE_MONITOR].chipModel, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].chipModel));
+
+    /* add comm so version */
+    libcomm_get_all_version(g_target_versions.versions[TARGET_TYPE_COMM_SO].name, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].name), 
+                            g_target_versions.versions[TARGET_TYPE_COMM_SO].version, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].version), 
+                            g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel, 
+                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel));
 
     return RT_SUCCESS;
 }
@@ -139,7 +147,13 @@ static const init_obj_t g_init_objs[] =
 {
     INIT_OBJ(init_log_file,             NULL),
     INIT_OBJ(init_config,               (void *)&g_value_list),
-    INIT_OBJ(init_versions,             (void *)&g_value_list),
+
+#ifdef CFG_ENABLE_LIBUNWIND
+    INIT_OBJ(init_backtrace,            agent_printf),
+#endif
+
+    INIT_OBJ(init_bootstrap,            NULL),
+    INIT_OBJ(init_versions,             (void *)&g_value_list),   
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa_channel,          (void *)&g_value_list),
@@ -147,7 +161,6 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_queue,                (void *)&g_value_list),
-    INIT_OBJ(init_bootstrap,            NULL),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    (void *)&g_value_list),
@@ -156,10 +169,6 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_upgrade,              (void *)&g_value_list),
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
     INIT_OBJ(init_logm,                 (void *)&g_value_list),
-
-#ifdef CFG_ENABLE_LIBUNWIND
-    INIT_OBJ(init_backtrace,            agent_printf),
-#endif
 };
 
 static int32_t agent_init_call(void)
@@ -177,7 +186,7 @@ static int32_t agent_init_call(void)
     return RT_SUCCESS;
 }
 
-int32_t main(int32_t argc, int8_t **argv)
+int32_t main(int32_t argc, char **argv)
 {
     agent_init_call();
 

@@ -2,7 +2,7 @@
 ############################################################################################
 # Never modify from this line
 ############################################################################################
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/br2_conf.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/br2_conf.mk
 ############################################################################################
 # Never modify end this line
 ############################################################################################
@@ -14,7 +14,7 @@ TARGET                              = $(shell pwd | sed 's/^\(.*\)[/]//')
 ENV_TYPE                            = $(SYSAPP_ENV_TYPE)
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
-LOCAL_TARGET_VERSION                = 0.0.0.4
+LOCAL_TARGET_VERSION                = 0.0.0.5
 
 # Check input tag version
 ifdef MONITOR_VERSION
@@ -97,7 +97,7 @@ endif
 ############################################################################################
 # Never modify from this line
 ############################################################################################
--include ../../buildroot/support/redtea/sysapp.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/sysapp.mk
 ############################################################################################
 # Never modify end this line
 ############################################################################################

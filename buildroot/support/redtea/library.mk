@@ -24,10 +24,10 @@ clean:
 	rm -rf $(O)
 
 # Include sub comm makefiles
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/tool.mk
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/flags.mk
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/object.mk
--include $(REDTEA_SUPPORT_SCRIPTS_PATH)/gen_conf.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/tool.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/flags.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/object.mk
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/gen_conf.mk
 
 libso: $(O)/$(LIB_SO_NAME)
 liba: $(O)/$(LIB_A_NAME)

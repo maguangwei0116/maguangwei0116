@@ -24,25 +24,32 @@
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"
-#define RT_AGENT_FILE               "/data/agent1"
-#define RT_MONITOR_FILE             "/data/monitor"
+#define RT_AGENT_FILE               "/usr/bin/rt_agent"
+#define RT_MONITOR_FILE             "/usr/bin/rt_monitor"
 #define RT_MONITOR_LOG              "/data/redtea/rt_monitor_log"
+
+#ifdef CFG_SOFTWARE_TYPE_DEBUG
+#define RT_MONITOR_LOG_MAX_SIZE     (30 * 1024 * 1024)
+#endif
+
+#ifdef CFG_SOFTWARE_TYPE_RELEASE
 #define RT_MONITOR_LOG_MAX_SIZE     (1 * 1024 * 1024)
+#endif
 
 extern int init_file_ops(void);
 extern int vsim_get_ver(char *version);
 
-static log_mode_e g_def_mode = LOG_PRINTF_TERMINAL;
+static log_mode_e g_def_mode = LOG_PRINTF_FILE;
 
 typedef struct {
-    uint8_t             hash[64];                  // hash
-    uint8_t             signature[128];            // signature data
+    uint8_t             hash[64+4];                  // hash, end with ‘\0’
+    uint8_t             signature[128+4];            // signature data, end with ‘\0’
 } signature_data_t;
 
 /* All data should be a string which end with ‘\0’ */
 typedef struct {
     uint8_t             name[64];                  // example: linux-euicc-monitor-general
-    uint8_t             version[8];                // example: 0.0.0.1
+    uint8_t             version[16];                // example: 0.0.0.1
     uint8_t             chip_model[16];            // example: 9x07
 } monitor_version_t;
 
@@ -66,6 +73,12 @@ static int32_t init_system_signal(void *arg)
     rt_os_signal(RT_SIGINT, cfinish);
 
     return RT_SUCCESS;
+}
+
+static void monitor_exit(void)
+{
+    MSG_PRINTF(LOG_ERR, "restart monitor now ...\r\n");
+    rt_os_exit(-1);
 }
 
 static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
@@ -103,8 +116,14 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         rt_os_memcpy(info.version, LOCAL_TARGET_VERSION, rt_os_strlen(LOCAL_TARGET_VERSION));
         rt_os_memcpy(info.chip_model, LOCAL_TARGET_PLATFORM_TYPE, rt_os_strlen(LOCAL_TARGET_PLATFORM_TYPE));
         rt_os_memcpy(rsp, &info, *rsp_len);
-    }
-
+    } else if (cmd == 0x04) { // reset monitor after some time
+		uint8_t delay = data[0];
+		MSG_PRINTF(LOG_ERR, "restart monitor in %d seconds ...\r\n", delay);
+		register_timer(delay, 0, &monitor_exit);
+        rsp[0] = RT_TRUE;
+        *rsp_len = 1;
+	}
+	
     return RT_SUCCESS;
 
 end:
@@ -236,8 +255,29 @@ static void init_app_version(void *arg)
     MSG_PRINTF(LOG_WARN, "vUICC version: %s\n", version);
 }
 
+#ifdef CFG_ENABLE_LIBUNWIND
+#include <stdarg.h>
+static int32_t monitor_printf(const char *fmt, ...)
+{
+    char msg[1024] = {0};
+    va_list vl_list;
+
+    va_start(vl_list, fmt);
+    vsnprintf((char *)&msg[0], sizeof(msg), (const char *)fmt, vl_list);
+    va_end(vl_list);
+
+    MSG_PRINTF(LOG_ERR, "%s", msg);
+    
+    return 0;
+}
+
+extern int32_t init_backtrace(void *arg);
+#endif
+
 int32_t main(int32_t argc, const char *argv[])
 {
+    rt_bool keep_agent_alive = RT_TRUE;
+	
     /* check input param to debug in terminal */
     if (argc > 1) {
         g_def_mode = LOG_PRINTF_TERMINAL;
@@ -246,12 +286,18 @@ int32_t main(int32_t argc, const char *argv[])
     /* init log param */
     init_log_file(RT_MONITOR_LOG);
     log_set_param(g_def_mode, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
-    /* debug versions information */
+	
+    #ifdef CFG_ENABLE_LIBUNWIND
+    init_backtrace(monitor_printf);
+    #endif
 
     /* install ops callbacks */
     init_callback_ops();
     init_card(log_print);
+	
+	/* debug versions information */
     init_app_version(NULL);
+	
     /* install system signal handle */
     init_system_signal(NULL);
 
@@ -267,11 +313,27 @@ int32_t main(int32_t argc, const char *argv[])
     /* install ipc callbacks and start up ipc server */
     ipc_regist_callback(monitor_cmd);
     ipc_socket_server_start();
+	
+    #if 0 /* only for test */
+    /* force to change to vUICC mode */
+    trigegr_regist_reset(card_reset);
+    trigegr_regist_cmd(card_cmd);
+    trigger_swap_card(1);
+
+    while (1) {
+	    rt_os_sleep(1);
+    }
+    #endif
 
     /* start up agent */
-    while (1) {
+    do {
         agent_task_check_start();
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
+    } while(keep_agent_alive);
+	
+    /* stop here */
+    while (1) {
+	    rt_os_sleep(1);
     }
 
     return RT_SUCCESS;

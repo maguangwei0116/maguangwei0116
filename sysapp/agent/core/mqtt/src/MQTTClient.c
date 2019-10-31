@@ -473,8 +473,9 @@ int clientSockCompare(void* a, void* b)
 thread_return_type WINAPI connectionLost_call(void* context)
 {
     MQTTClients* m = (MQTTClients*)context;
-
+    Log(TRACE_MINIMUM, -1, "------------------------%s, %d, [pid=%p] entry ===>\r\n", __func__, __LINE__, Thread_getid());
     (*(m->cl))(m->context, NULL);
+    Thread_stop();
     return 0;
 }
 
@@ -487,7 +488,7 @@ thread_return_type WINAPI MQTTClient_run(void* n)
     FUNC_ENTRY;
     running = 1;
     run_id = Thread_getid();
-
+    Log(TRACE_MINIMUM, -1, "------------------------%s, %d, [pid=%p] entry ===>\r\n", __func__, __LINE__, run_id);
     Thread_lock_mutex(mqttclient_mutex);
     while (!tostop)
     {
@@ -615,6 +616,7 @@ thread_return_type WINAPI MQTTClient_run(void* n)
     running = tostop = 0;
     Thread_unlock_mutex(mqttclient_mutex);
     FUNC_EXIT;
+    Thread_stop();
     return 0;
 }
 
@@ -787,6 +789,7 @@ int MQTTClient_connectURIVersion(MQTTClient handle, MQTTClient_connectOptions* o
     int sessionPresent = 0;
 
   FUNC_ENTRY;
+    Log(TRACE_MIN, -1, "mqtt client connect, millisecsTimeout=%ld ...\r\n", millisecsTimeout);
     if (m->ma && !running)
     {
         Thread_start(MQTTClient_run, handle);
@@ -946,6 +949,7 @@ exit:
     else
     {
         Thread_unlock_mutex(mqttclient_mutex);
+        Log(TRACE_MIN, -1, "mqtt client disconnect, millisecsTimeout=%ld ...\r\n", millisecsTimeout);
         MQTTClient_disconnect1(handle, 0, 0, (MQTTVersion == 3)); /* not "internal" because we don't want to call connection lost */
         Thread_lock_mutex(mqttclient_mutex);
     }
@@ -1083,7 +1087,9 @@ int MQTTClient_connect(MQTTClient handle, MQTTClient_connectOptions* options)
         rc = MQTTCLIENT_BAD_UTF8_STRING;
         goto exit;
     }
+    
     if (options->struct_version < 2 || options->serverURIcount == 0) {
+        Log(TRACE_MIN, -1, "mqtt client connect ...\r\n");
         rc = MQTTClient_connectURI(handle, options, m->serverURI);
     }
     else
@@ -1103,6 +1109,7 @@ int MQTTClient_connect(MQTTClient handle, MQTTClient_connectOptions* options)
                 m->ssl = 1;
             }
 #endif
+            Log(TRACE_MIN, -1, "mqtt client connect ...\r\n");
             if ((rc = MQTTClient_connectURI(handle, options, serverURI)) == MQTTCLIENT_SUCCESS)
             {
                 break;
@@ -1130,7 +1137,7 @@ int MQTTClient_disconnect1(MQTTClient handle, int timeout, int internal, int sto
     int was_connected = 0;
     FUNC_ENTRY;
     Thread_lock_mutex(mqttclient_mutex);
-
+    Log(TRACE_MIN, -1, "%s ...", __func__);
     if (m == NULL || m->c == NULL)
     {
         rc = MQTTCLIENT_FAILURE;
@@ -1212,7 +1219,6 @@ int MQTTClient_isConnected(MQTTClient handle)
     return rc;
 }
 
-
 int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, int* qos)
 {
     MQTTClients* m = handle;
@@ -1242,7 +1248,6 @@ int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, i
             rc = MQTTCLIENT_BAD_UTF8_STRING;
             goto exit;
         }
-
         if(qos[i] < 0 || qos[i] > 2)
         {
             rc = MQTTCLIENT_BAD_QOS;
@@ -1305,8 +1310,17 @@ exit:
 int MQTTClient_subscribe_many(MQTTClient handle, int count, char** topic)
 {
     int rc = 0;
+    int i;
     int *qos = malloc(count * sizeof(int));
+    
+    #if 0 //bug on memset usage
     memset(qos, DEFAULT_QOS, count);
+    #else
+    for (i = 0; i < count; i++) {
+        qos[i] = DEFAULT_QOS;       
+    }
+    #endif
+    
     FUNC_ENTRY;
     rc = MQTTClient_subscribeMany(handle, count, topic, qos);
     FUNC_EXIT_RC(rc);

@@ -61,7 +61,7 @@ static void network_state(int32_t state)
 void network_detection_task(void)
 {
     dsi_call_info_t dsi_net_hndl;
-    regist_dial_callback((void *)network_state);
+    dial_up_set_dial_callback((void *)network_state);
     rt_os_sleep(3);
     dial_up_init(&dsi_net_hndl);
     while (1) {

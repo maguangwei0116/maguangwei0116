@@ -38,7 +38,7 @@ static cJSON *upload_no_cert_packer(void *arg)
         ret = RT_ERROR;
         goto exit_entry;
     }
-    ret = get_file_version(fileVersion);
+    ret = get_share_profile_version(fileVersion);
     if (ret != RT_SUCCESS){
         MSG_PRINTF(LOG_WARN, "The file version is error\n");
         goto exit_entry;

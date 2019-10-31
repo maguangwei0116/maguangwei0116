@@ -37,7 +37,9 @@ typedef struct OTA_UPGRADE_TARGET {
     char                    version[16];
     char                    chipModel[16];
     char                    ticket[64];
-    char                    fileHash[72];
+    uint8_t                 type;
+    uint32_t                size;
+    char                    fileHash[72];    
 } ota_upgrade_target_t;
 
 typedef struct OTA_UPGRADE_POLICY {
@@ -106,6 +108,7 @@ typedef struct OTA_UPGRADE_PARAM {
 #define OTA_UPGRADE_TMP_TASK        "/data/redtea/ota.task.tmp"
 
 static const card_info_t *g_ota_card_info = NULL;
+extern const target_versions_t *g_upload_ver_info;
 
 typedef struct OTA_TASK_INFO {
     uint32_t            param_len;
@@ -237,6 +240,8 @@ static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
     cJSON_GET_STR_DATA(target, version, param->target.version, sizeof(param->target.version), tmp);
     cJSON_GET_STR_DATA(target, chipModel, param->target.chipModel, sizeof(param->target.chipModel), tmp);
     cJSON_GET_STR_DATA(target, ticket, param->target.ticket, sizeof(param->target.ticket), tmp);
+    cJSON_GET_INT_DATA(target, type, param->target.type, tmp);
+    cJSON_GET_INT_DATA(target, size, param->target.size, tmp);
     cJSON_GET_STR_DATA(target, fileHash, param->target.fileHash, sizeof(param->target.fileHash), tmp);
 
     cJSON_GET_JSON_DATA(content, policy);
@@ -356,6 +361,7 @@ static rt_bool ota_policy_compare_version(const char *old_in, const char *new_in
 static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct_t *upgrade)
 {
     int32_t ret;
+    uint8_t policy_forced = 0;
 
     if (!rt_os_strcmp(param->policy.executionType, "NOW")) {
         upgrade->execute_app_now = RT_TRUE;
@@ -380,35 +386,51 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry; 
     }
 
-    if (rt_os_strcmp(param->target.chipModel, LOCAL_TARGET_PLATFORM_TYPE)) {
-        MSG_PRINTF(LOG_WARN, "unmathed chip model [%s] => [%s]\r\n", LOCAL_TARGET_PLATFORM_TYPE, param->target.chipModel);
+    if (param->target.type >= TARGET_TYPE_MAX) {
+        MSG_PRINTF(LOG_WARN, "unknow support target type %d\r\n", param->target.type);
+        ret = UPGRADE_TARGET_TYPE_ERROR;
+        goto exit_entry;
+    }
+
+    if (rt_os_strcmp(param->target.chipModel, g_upload_ver_info->versions[param->target.type].chipModel)) {
+        MSG_PRINTF(LOG_WARN, "unmathed chip model [%s] => [%s]\r\n", 
+                        g_upload_ver_info->versions[param->target.type].chipModel, param->target.chipModel);
         ret = UPGRADE_CHIP_MODEL_ERROR;
         goto exit_entry;         
     }
 
-    if (param->policy.forced == UPGRADE_MODE_FORCED) {
+    if (param->target.type == TARGET_TYPE_SHARE_PROFILE) {
+        /* force to update share profile */
+        policy_forced == UPGRADE_MODE_FORCED; 
+    } else {
+        policy_forced = param->policy.forced;
+    }
+
+    if (policy_forced == UPGRADE_MODE_FORCED) {
         MSG_PRINTF(LOG_WARN, "forced to upgrade\r\n");   
     } else {
-        if (param->policy.forced == UPGRADE_MODE_CHK_FILE_NAME) {
-            if (rt_os_strcmp(param->target.name, LOCAL_TARGET_NAME)) {
-                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", LOCAL_TARGET_NAME, param->target.name);
+        if (policy_forced == UPGRADE_MODE_CHK_FILE_NAME) {
+            if (rt_os_strcmp(param->target.name, g_upload_ver_info->versions[param->target.type].name)) {
+                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", 
+                        g_upload_ver_info->versions[param->target.type].name, param->target.name);
                 ret = UPGRADE_FILE_NAME_ERROR;
                 goto exit_entry;  
             }
-        } else if (param->policy.forced == UPGRADE_MODE_CHK_VERSION ) {
-            if (!ota_policy_compare_version(LOCAL_TARGET_VERSION, param->target.version)) {
+        } else if (policy_forced == UPGRADE_MODE_CHK_VERSION ) {
+            if (!ota_policy_compare_version(g_upload_ver_info->versions[param->target.type].version, param->target.version)) {
                 MSG_PRINTF(LOG_WARN, "unmathed version name\r\n");
                 ret = UPGRADE_CHECK_VERSION_ERROR;
                 goto exit_entry; 
             }
-        } else if (param->policy.forced == UPGRADE_MODE_NO_FORCED) {
-             if (rt_os_strcmp(param->target.name, LOCAL_TARGET_NAME)) {
-                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", LOCAL_TARGET_NAME, param->target.name);
+        } else if (policy_forced == UPGRADE_MODE_NO_FORCED) {
+             if (rt_os_strcmp(param->target.name, g_upload_ver_info->versions[param->target.type].name)) {
+                MSG_PRINTF(LOG_WARN, "unmathed file name [%s] => [%s]\r\n", 
+                        g_upload_ver_info->versions[param->target.type].name, param->target.name);
                 ret = UPGRADE_FILE_NAME_ERROR;
                 goto exit_entry; 
              }
 
-             if (!ota_policy_compare_version(LOCAL_TARGET_VERSION, param->target.version)) {
+             if (!ota_policy_compare_version(g_upload_ver_info->versions[param->target.type].version, param->target.version)) {
                 MSG_PRINTF(LOG_WARN, "unmathed version name\r\n");
                 ret = UPGRADE_CHECK_VERSION_ERROR;
                 goto exit_entry; 
@@ -423,6 +445,8 @@ exit_entry:
     return ret;
 }
 
+#if 0  
+/* only SHA256 check */
 static rt_bool ota_file_check(const void *arg)
 {
     const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
@@ -480,6 +504,24 @@ end:
     }
     return ret;
 }
+#else
+/* SHA256withECC check */
+static rt_bool ota_file_check(const void *arg)
+{
+    rt_bool ret = RT_FALSE;
+    const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
+    int32_t iret;
+
+    if (d_info->type == TARGET_TYPE_SHARE_PROFILE) {
+        /* share profile needn't check signature */
+        return RT_TRUE;
+    }
+
+    iret = ipc_file_verify_by_monitor((const char *)d_info->tmpFileName);
+    ret = !iret ? RT_TRUE : RT_FALSE; 
+    return ret;
+}
+#endif
 
 static rt_bool ota_file_install(const void *arg)
 {
@@ -530,12 +572,11 @@ static rt_bool ota_on_upload_event(const void *arg)
 
     ota_upgrade_task_cleanup();
 
-    /* restart app right now */
+    /* restart app right now ? */
     if (UPGRADE_NO_FAILURE == upgrade->downloadResult && upgrade->execute_app_now) {
-        MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);
-        rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
-        MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");
-        rt_os_exit(-1);
+        if (upgrade->activate) {
+            upgrade->activate(NULL);
+        }
     }
 
     /* release upgrade struct memory */
@@ -546,6 +587,35 @@ static rt_bool ota_on_upload_event(const void *arg)
 
     return RT_TRUE;
 }
+
+/* make ota downloaded file take active */
+static rt_bool ota_file_activate_agent_so(const void *arg)
+{
+    MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
+    rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
+    MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");        
+    rt_os_exit(-1); 
+
+    return RT_TRUE;
+}
+
+static rt_bool ota_file_activate_monitor(const void *arg)
+{
+    MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart monitor !\r\n", MAX_RESTART_WAIT_TIMEOUT);
+    ipc_restart_monitor(MAX_RESTART_WAIT_TIMEOUT);
+    rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT * 2);
+    MSG_PRINTF(LOG_WARN, "Current app restart to run new monitor ...\r\n");
+
+    return RT_TRUE;
+}
+
+static file_activate g_file_activate_list[] = 
+{
+    ota_file_activate_agent_so,
+    NULL,
+    ota_file_activate_monitor,
+    ota_file_activate_agent_so,
+};
 
 static int32_t ota_upgrade_start(const void *in, const char *upload_event, const char *tmp_file)
 {
@@ -571,8 +641,10 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
     snprintf(upgrade->fileHash, sizeof(upgrade->fileHash), "%s", param->target.fileHash);
     snprintf(upgrade->ticket, sizeof(upgrade->ticket), "%s", param->target.ticket);
     snprintf(upgrade->event, sizeof(upgrade->event), "%s", upload_event);
-    upgrade->retryAttempts = param->policy.retryAttempts;
-    upgrade->retryInterval = param->policy.retryInterval;    
+    upgrade->type           = param->target.type;
+    upgrade->size           = param->target.size;
+    upgrade->retryAttempts  = param->policy.retryAttempts;
+    upgrade->retryInterval  = param->policy.retryInterval;    
     if (!tmp_file) {
         ota_upgrade_get_tmp_file_name(param, upgrade->tmpFileName, sizeof(upgrade->tmpFileName));
     } else {
@@ -588,6 +660,7 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
     upgrade->install    = ota_file_install;
     upgrade->cleanup    = ota_file_cleanup;
     upgrade->on_event   = ota_on_upload_event;
+    upgrade->activate   = g_file_activate_list[upgrade->type];
 
     ota_upgrade_task_record(param, sizeof(ota_upgrade_param_t), upgrade->tmpFileName, upload_event);
 
@@ -632,6 +705,8 @@ static int32_t ota_upgrade_handler(const void *in, const char *event, void **out
         MSG_PRINTF(LOG_INFO, "param->target.version         : %s\r\n", param->target.version);
         MSG_PRINTF(LOG_INFO, "param->target.chipModel       : %s\r\n", param->target.chipModel);
         MSG_PRINTF(LOG_INFO, "param->target.ticket          : %s\r\n", param->target.ticket);
+        MSG_PRINTF(LOG_INFO, "param->target.type            : %d\r\n", param->target.type);
+        MSG_PRINTF(LOG_INFO, "param->target.size            : %d\r\n", param->target.size);
         MSG_PRINTF(LOG_INFO, "param->target.fileHash        : %s\r\n", param->target.fileHash);
         MSG_PRINTF(LOG_INFO, "param->policy.forced          : %d\r\n", param->policy.forced);
         MSG_PRINTF(LOG_INFO, "param->policy.executionType   : %s\r\n", param->policy.executionType);
@@ -658,14 +733,16 @@ static cJSON *ota_upgrade_packer(void *arg)
     int32_t ret = 0;
     cJSON *app_version = NULL;
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
-    const char *name = LOCAL_TARGET_NAME;
-    const char *version = LOCAL_TARGET_VERSION;
-    const char *chipModel = LOCAL_TARGET_PLATFORM_TYPE;
+    const char *name = "";
+    const char *version = "";
+    const char *chipModel = "";
+    int32_t type;
 
     if (upgrade) {
         name = upgrade->targetName;
         version = upgrade->targetVersion;
         chipModel = upgrade->targetChipModel;
+        type = upgrade->type;
     } else {
         MSG_PRINTF(LOG_WARN, "error param input !\n");
     }
@@ -680,6 +757,7 @@ static cJSON *ota_upgrade_packer(void *arg)
     CJSON_ADD_NEW_STR_OBJ(app_version, name);
     CJSON_ADD_NEW_STR_OBJ(app_version, version);
     CJSON_ADD_NEW_STR_OBJ(app_version, chipModel);
+    CJSON_ADD_NEW_INT_OBJ(app_version, type);
     
     ret = 0;
     

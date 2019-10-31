@@ -25,14 +25,22 @@ typedef enum UPGRADE_PROFILE_TYPE {
     UPGRADE_PRO_TYPE_OPERATIONAL        = 1,
 } upgrade_profile_type_e;
 
+typedef enum TARGET_TYPE {
+    TARGET_TYPE_AGENT                   = 0,
+    TARGET_TYPE_SHARE_PROFILE           = 1,
+    TARGET_TYPE_MONITOR                 = 2,
+    TARGET_TYPE_COMM_SO                 = 3,
+    TARGET_TYPE_MAX,  
+} target_type_e;
+
 /* OTA upgrade error code list */
 typedef enum UPGRADE_RESULT {
     UPGRADE_NO_FAILURE                  = 0,
     UPGRADE_CHECK_VERSION_ERROR         = -2001,
     UPGRADE_DOWNLOAD_PACKET_ERROR       = -2002,
-    UPGRADE_CHECK_PACKET_ERROR          = -2003,
-    UPGRADE_INSTALL_APP_ERROR           = -2004,
-    UPGRADE_SAVE_INFO_ERROR             = -2005,
+    UPGRADE_HASH_CHECK_ERROR            = -2003,
+    UPGRADE_SIGN_CHECK_ERROR            = -2004,
+    UPGRADE_INSTALL_APP_ERROR           = -2005,
     UPGRADE_FS_SPACE_NOT_ENOUGH_ERROR   = -2006,
     UPGRADE_DIR_PERMISSION_ERROR        = -2007,
     UPGRADE_START_UPGRADE_ERROR         = -2008,
@@ -41,6 +49,7 @@ typedef enum UPGRADE_RESULT {
     UPGRADE_NULL_POINTER_ERROR          = -2011,    
     UPGRADE_EXECUTION_TYPE_ERROR        = -2012,
     UPGRADE_CHIP_MODEL_ERROR            = -2013,
+    UPGRADE_TARGET_TYPE_ERROR           = -2014,
     UPGRADE_OTHER                       = -2099,
 } upgrade_result_e;
 
@@ -48,11 +57,12 @@ typedef rt_bool (*file_check)(const void *arg);
 typedef rt_bool (*file_install)(const void *arg);
 typedef rt_bool (*file_cleanup)(const void *arg);
 typedef rt_bool (*upload_on_event)(const void *arg);
+typedef rt_bool (*file_activate)(const void *arg);
 
 typedef struct UPGRADE_STRUCT {
 #define MAX_TRANID_LEN                  128
 #define MAX_CHIP_MODEL_LEN              32
-#define MAX_VERSION_NAME_LEN            16
+#define MAX_VERSION_NAME_LEN            64
 #define MAX_FILE_NAME_LEN               128
 #define MAX_FILE_HASH_LEN               64
 #define MAX_FILE_HASH_BYTE_LEN          32
@@ -90,6 +100,8 @@ typedef struct UPGRADE_STRUCT {
     char            tmpFileName[MAX_FILE_NAME_LEN + 1];     // the full path in local file system  
     char            fileHash[MAX_FILE_HASH_LEN + 1];        // hash code of the upgrade file
     char            ticket[MAX_TICKET_LEN + 1];
+    uint8_t         type;
+    uint32_t        size;
     uint16_t        retryAttempts;
     uint16_t        retryInterval;
     int32_t         downloadResult;                         // the result of download process
@@ -101,6 +113,7 @@ typedef struct UPGRADE_STRUCT {
     file_install    install;
     file_cleanup    cleanup;
     upload_on_event on_event;
+    file_activate   activate;
 } upgrade_struct_t;
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info);

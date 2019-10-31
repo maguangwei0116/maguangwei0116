@@ -99,8 +99,9 @@ int Socket_error(char* aString, int sock)
 #endif
     if (errno != EINTR && errno != EAGAIN && errno != EINPROGRESS && errno != EWOULDBLOCK)
     {
-        if (strcmp(aString, "shutdown") != 0 || (errno != ENOTCONN && errno != ECONNRESET))
-            Log(TRACE_MINIMUM, -1, "Socket error %s in %s for socket %d", strerror(errno), aString, sock);
+        if (strcmp(aString, "shutdown") != 0 || (errno != ENOTCONN && errno != ECONNRESET)) {
+            Log(TRACE_MINIMUM, -1, "Socket error(%d) %s in %s for socket %d", errno, strerror(errno), aString, sock);
+        }
     }
     FUNC_EXIT_RC(errno);
     return errno;
@@ -302,7 +303,18 @@ int Socket_getch(int socket, char* c)
 
     if ((rc = recv(socket, c, (size_t)1, 0)) == SOCKET_ERROR)
     {
-        int err = Socket_error("recv - getch", socket);
+        int err;
+        #if 0
+        #define ENOTCONN 107 /* Transport endpoint is not connected */
+        #endif
+        
+        err = Socket_error("recv - getch", socket);        
+        Log(TRACE_MINIMUM, -1, "%s, err=%d\r\n", __func__, err);
+        if (err == ENOTCONN) { /* dealy some time is in need */
+            Log(TRACE_MINIMUM, -1, "maybe socket isn't connected\r\n");
+            rt_os_sleep(1);
+            rc = SOCKET_ERROR;
+        }
         if (err == EWOULDBLOCK || err == EAGAIN)
         {
             rc = TCPSOCKET_INTERRUPTED;
