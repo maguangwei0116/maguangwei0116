@@ -21,6 +21,7 @@
 
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
+static rt_bool                      g_frist_bootstrap_ok = RT_FALSE;
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -227,15 +228,21 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
         MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
     }
 
-    rt_os_sleep(3); // must have
+    if (ret != RT_PROFILE_STATE_ENABLED) {
+        rt_os_sleep(3); // must have
+    }
 
     if ((ret == RT_SUCCESS) || (ret == RT_PROFILE_STATE_ENABLED)) {
         ret = lpa_load_profile(buf, len);
         if (ret) {
             MSG_PRINTF(LOG_WARN, "lpa load porfile fail, ret=%d\r\n", ret);
+        } else {
+            /* set frist bootstrap flag */
+            if (!g_frist_bootstrap_ok) {
+                g_frist_bootstrap_ok = RT_TRUE;
+            }
+            rt_os_sleep(3); // must have
         }
-
-        rt_os_sleep(3); // must have
     }
 
     ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
@@ -313,6 +320,11 @@ int32_t init_card_manager(void *arg)
     return ret;
 }
 
+int32_t card_manager_install_profile_ok(void)
+{
+    return g_frist_bootstrap_ok;   
+}
+
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t ret = RT_ERROR;
@@ -334,6 +346,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             break;
             
         case MSG_NETWORK_DISCONNECTED:
+            rt_os_sleep(1);  // must have
             ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
             break;
 
