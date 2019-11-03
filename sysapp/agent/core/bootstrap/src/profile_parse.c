@@ -491,7 +491,7 @@ end:
     return ret;
 }
 
-static int32_t get_specify_data(uint8_t *data, uint32_t offset){
+static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offset){
     rt_fshandle_t fp;
     int32_t length = 0;
     uint8_t buf[128];
@@ -507,8 +507,11 @@ static int32_t get_specify_data(uint8_t *data, uint32_t offset){
 
     length = get_length(buf, 0);
     buffer = get_value_buffer(buf);
-    if (data != NULL){
+    if (data){
         rt_os_memcpy(data, buffer, length);
+    }
+    if (data_len) {
+        *data_len = length;
     }
     if (fp != NULL) {
         rt_fclose(fp);
@@ -516,21 +519,22 @@ static int32_t get_specify_data(uint8_t *data, uint32_t offset){
     return RT_SUCCESS;
 }
 
-int32_t get_aes_key(uint8_t *data)
+int32_t bootstrap_get_profile_aes_key(uint8_t *data, int32_t *data_len)
 {
-    return get_specify_data(data, g_data.aes_key_offset);
+    return get_specify_data(data, data_len, g_data.aes_key_offset);
 }
 
-int32_t get_root_sk(uint8_t *data){
-    return get_specify_data(data, g_data.root_sk_offset);
+int32_t bootstrap_get_profile_root_sk(uint8_t *data, int32_t *data_len){
+    return get_specify_data(data, data_len, g_data.root_sk_offset);
 }
 
 int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size)
 {
     int32_t ret;
+    int32_t data_len = 0;
     char version_data[128] = {0}; /* sample: B191031023631863078:skb-beta-0.0.2:aes-beta-0.0.3 */
     
-    ret = get_specify_data(version_data, g_data.file_version_offset);
+    ret = get_specify_data(version_data, &data_len, g_data.file_version_offset);
     if (!ret) {
         char *p;
         char *p0 = version_data;
@@ -556,9 +560,10 @@ int32_t init_profile_file(int32_t *arg)
     int32_t ret = RT_ERROR;
     uint32_t len = 0;
     rt_fshandle_t fp;
+    char real_file_name[32] = {0};
 
 #ifdef CFG_SHARE_PROFILE_ECC_VERIFY
-    ret = ipc_file_verify_by_monitor(SHARE_PROFILE);
+    ret = ipc_file_verify_by_monitor(SHARE_PROFILE, real_file_name);
     if (ret == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "share profile verify fail !\n");
         return ret;
