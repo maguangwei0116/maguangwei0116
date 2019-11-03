@@ -33,6 +33,7 @@ static void network_timer_callback(void)
 static void network_start_timer(void)
 {
     if (g_network_timer_flag == RT_FALSE) {
+        MSG_PRINTF(LOG_INFO, "start new timer event state:%d\n", g_network_state);
         register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
         g_network_timer_flag = RT_TRUE;
     }
@@ -54,7 +55,7 @@ static void network_detection_task(void)
 
 int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
-    if (mode == MSG_ALL_SWITCH_CARD) {
+    if (mode == MSG_ALL_SWITCH_CARD || mode == MSG_BOOTSTRAP_START_TIMER) {
         network_start_timer();
         #if 0 // only for debug
         {

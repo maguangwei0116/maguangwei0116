@@ -48,6 +48,7 @@ typedef enum MSG_MODE {
     MSG_BOOTSTRAP_SELECT_CARD,  // 10
     MSG_MQTT_CONNECTED,
     MSG_MQTT_DISCONNECTED,
+    MSG_BOOTSTRAP_START_TIMER,
 } msg_mode_e;
 
 typedef struct TARGET_VERSION {
