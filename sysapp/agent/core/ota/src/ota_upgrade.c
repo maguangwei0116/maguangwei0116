@@ -102,6 +102,7 @@ typedef struct OTA_UPGRADE_PARAM {
         }\
     } while(0)
 
+#define MAX_BATCH_CODE_LEN          18
 #define MAX_RESTART_WAIT_TIMEOUT    10
 #define PRIVATE_HASH_STR_LEN        64
 #define HASH_CHECK_BLOCK            1024    /* block size for HASH check */
@@ -304,14 +305,14 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
     if (param->target.type == TARGET_TYPE_SHARE_PROFILE || param->target.type == TARGET_TYPE_DEF_SHARE_PROFILE) {
         /* sample: B191031023631863078, B + YYMMDDHHMMSSxxxxxx */
         if (fileName[0] == 'B') {
-            for (i = 1; i <= 18; i++) {
+            for (i = 1; i <= MAX_BATCH_CODE_LEN; i++) {
                 if (!IS_NUM_CHAR(fileName[i])) {
                     break;
                 }
             }
 
-            if (i == 19) {
-                snprintf(targetFileName, len, g_target_files[cnt - 1]);
+            if (i == (MAX_BATCH_CODE_LEN + 1)) {
+                snprintf(targetFileName, len, g_target_files[TARGET_TYPE_SHARE_PROFILE]);
                 *type_matched = RT_TRUE;
                 MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);                
                 return RT_TRUE;   
