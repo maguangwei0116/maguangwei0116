@@ -222,6 +222,7 @@ static int32_t agent_task_check_start(void)
 
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE) != RT_TRUE) {
+        linux_delete_file(RT_AGENT_FILE);
         init_download(RT_AGENT_FILE);
         choose_uicc_type(LPA_CHANNEL_BY_IPC);
         network_detection_task();
