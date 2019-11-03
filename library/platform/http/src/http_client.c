@@ -350,7 +350,6 @@ static int http_client_recv_data(http_client_struct_t *obj)
             RT_CHECK_NEQ(rt_fwrite(obj->buf, obj->process_set, 1, obj->fp), 1);
             display_progress(obj);
         }
-
     }
 
     ret = 0;
@@ -402,7 +401,6 @@ static int http_client_error_prase(http_client_struct_t *obj)
 
     if (obj->manager_type == 0) {
     } else {
-
         rt_os_memset(length,0,sizeof(length));
         RT_CHECK_ERR(pos = rt_os_strstr(obj->buf, (const int8_t *)"Content-Length"), NULL);
         RT_CHECK_ERR(end = rt_os_strstr(pos, (const int8_t *)"\r\n"), NULL);
