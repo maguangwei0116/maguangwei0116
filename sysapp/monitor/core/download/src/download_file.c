@@ -79,9 +79,9 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
     get_md5_string((int8_t *)dw_struct.http_header.buf, buf);
     buf[MD5_STRING_LENGTH] = '\0';
     http_set_header_record(&dw_struct, "md5sum", (const char *)buf);
-
+    dw_struct.range = 0;
+	
     while (1) {
-        dw_struct.range = 0;
         MSG_PRINTF(LOG_DBG, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
 
         if (http_client_file_download(&dw_struct) == 0) {
@@ -95,6 +95,10 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
             MSG_PRINTF(LOG_ERR, "Download fail too many times !\r\n");
             break;
         }
+		
+        /* default agent download don't support [Breakpoint-renewal] now */
+        dw_struct.range = 0;
+        linux_delete_file((const int8_t *)dw_struct.file_path);
     }
     cJSON_Delete(post_info);
 
@@ -113,8 +117,15 @@ static void upgrade_process(void *args)
         goto end;
     }
     if (rt_os_chmod(d_info->file_name, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) == 0) {      // chmod file
-        MSG_PRINTF(LOG_DBG, "Download agent success, reboot!\r\n");
+#if 0
+        MSG_PRINTF(LOG_DBG, "Download agent success, reboot device after 10 seconds !\r\n");
+        rt_os_sleep(10);
         rt_os_reboot();    // reboot device
+#else
+        MSG_PRINTF(LOG_DBG, "Download agent success, monitor exit to restart again after 10 seconds !\r\n");
+        rt_os_sleep(10);
+        rt_os_exit(-1);
+#endif
     }
 end:
     return;
