@@ -284,14 +284,16 @@ exit_entry:
 #define IS_NUM_CHAR(c)          ('0' <= (c) && (c) <= '9')
 #endif
 
-static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param, char *targetFileName, int32_t len)
+static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param, 
+                                            char *targetFileName, int32_t len, rt_bool *type_matched)
 {
+    /* type index see @ref target_type_e */
     const char *g_target_files[] = 
     {
         "/usr/bin/rt_agent",
-        "/usr/bin/rt_monitor",
-        "/usr/lib/libcomm.so",
         "/data/redtea/profile_list.der",
+        "/usr/bin/rt_monitor",
+        "/usr/lib/libcomm.so", 
     };
     int32_t i = 0;
     int32_t cnt = ARRAY_SIZE(g_target_files);
@@ -310,7 +312,8 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
 
             if (i == 19) {
                 snprintf(targetFileName, len, g_target_files[cnt - 1]);
-                MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
+                *type_matched = RT_TRUE;
+                MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);                
                 return RT_TRUE;   
             }
         }
@@ -330,6 +333,12 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
             if (rt_os_strstr(fileName, p)) {
                 snprintf(targetFileName, len, g_target_files[i]);
                 MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
+                if (i != param->target.type) {
+                    MSG_PRINTF(LOG_WARN, "type unmatched: [%d] => [%d]\r\n", i, param->target.type);
+                    *type_matched = RT_FALSE;
+                } else {
+                    *type_matched = RT_TRUE;
+                }
                 return RT_TRUE;
             }
         }
@@ -666,6 +675,7 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
     rt_task id;
     uint8_t update_mode = 1;
     uint8_t force_update = 0;
+    rt_bool type_matched = RT_FALSE;
     const ota_upgrade_param_t *param = (const ota_upgrade_param_t *)in;
     upgrade_struct_t *upgrade = NULL;  
 
@@ -687,14 +697,22 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
     upgrade->type           = param->target.type;
     upgrade->size           = param->target.size;
     upgrade->retryAttempts  = param->policy.retryAttempts;
-    upgrade->retryInterval  = param->policy.retryInterval;    
+    upgrade->retryInterval  = param->policy.retryInterval;  
+    
     if (!tmp_file) {
         ota_upgrade_get_tmp_file_name(param, upgrade->tmpFileName, sizeof(upgrade->tmpFileName));
     } else {
         snprintf(upgrade->tmpFileName, sizeof(upgrade->tmpFileName), "%s", tmp_file);
     }
-    if (ota_upgrade_get_target_file_name(param, upgrade->targetFileName, sizeof(upgrade->targetFileName)) != RT_TRUE) {
+    
+    if (ota_upgrade_get_target_file_name(param, upgrade->targetFileName, 
+                                    sizeof(upgrade->targetFileName), &type_matched) != RT_TRUE) {
         ret = UPGRADE_FILE_NAME_ERROR;
+        goto exit_entry;
+    }
+
+    if (!type_matched) {
+        ret = UPGRADE_TARGET_TYPE_MATCH_ERROR;
         goto exit_entry;
     }
 

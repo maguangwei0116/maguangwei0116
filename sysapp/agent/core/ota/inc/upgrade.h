@@ -56,6 +56,7 @@ typedef enum UPGRADE_RESULT {
     UPGRADE_EXECUTION_TYPE_ERROR        = -2012,
     UPGRADE_CHIP_MODEL_ERROR            = -2013,
     UPGRADE_TARGET_TYPE_ERROR           = -2014,
+    UPGRADE_TARGET_TYPE_MATCH_ERROR     = -2015,
     UPGRADE_OTHER                       = -2099,
 } upgrade_result_e;
 
