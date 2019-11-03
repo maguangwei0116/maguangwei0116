@@ -107,16 +107,37 @@ int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign)
 #define MAX_FILE_HASH_LEN               64
 #define MAX_FILE_HASH_BYTE_LEN          32
 #define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
+#define MAX_NAME_BLOCK_SIZE             20
 
-int32_t ipc_file_verify_by_monitor(const char *file)
+static int32_t get_real_file_name(char *name, int32_t len)
 {
-    rt_bool ret = RT_FALSE;
+    int32_t i = 0;
+
+    for (i = 0; i < len; i++) {
+        if (name[i] == 'F') {
+            rt_os_memset(&name[i], 0, len - i);
+            break;
+        }
+    }
+
+    return RT_SUCCESS;
+}
+
+/*
+file tail data as follow:
+agentFFFFFFFFFFFFFFFB37F3BAD94DFCC1FBDB0FBF608802FA72D38FAEE3AB8CBBF63BF6C99DA9E31FA91B42B6134E73BC8914B84BF2521FD6291F
+5C51670300A3FD13E8EB9966D8FDC
+*/
+int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
+{
+    int32_t ret = RT_ERROR;
     sha256_ctx_t sha_ctx;
     rt_fshandle_t fp = NULL;
     int8_t hash_result[MAX_FILE_HASH_LEN + 1];
     int8_t hash_out[MAX_FILE_HASH_BYTE_LEN + 1];
     int8_t hash_buffer[HASH_CHECK_BLOCK];
     int8_t last_sign_buffer[PRIVATE_ECC_HASH_STR_LEN + 1] = {0};
+    int8_t real_name[MAX_NAME_BLOCK_SIZE + 1] = {0};
     uint32_t check_size;
     int32_t partlen;
     struct  stat f_info;
@@ -164,6 +185,13 @@ int32_t ipc_file_verify_by_monitor(const char *file)
             MSG_PRINTF(LOG_ERR, "error read file\n");
             goto exit_entry;
         }
+
+        rt_fseek(fp, -(PRIVATE_ECC_HASH_STR_LEN + MAX_NAME_BLOCK_SIZE), SEEK_CUR);
+        if (rt_fread(real_name, MAX_NAME_BLOCK_SIZE, 1, fp) != 1){
+            MSG_PRINTF(LOG_ERR, "error read file\n");
+            goto exit_entry;
+        }
+        
     }
 
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
@@ -173,14 +201,21 @@ int32_t ipc_file_verify_by_monitor(const char *file)
     MSG_PRINTF(LOG_WARN, "tail sign_buffer: %s\r\n", last_sign_buffer);
     
     ret = ipc_sign_verify_by_monitor(hash_result, last_sign_buffer);
-    MSG_PRINTF(LOG_INFO, "private file sign verify %s !\r\n", !ret ? "ok" : "fail"); 
+    if (!ret) {
+        get_real_file_name(real_name, MAX_NAME_BLOCK_SIZE);
+        rt_os_strcpy(real_file_name, real_name);
+        MSG_PRINTF(LOG_INFO, "real_file_name: %s\r\n", real_file_name);    
+    } else {
+        rt_os_memset(real_name, 0, sizeof(real_name));
+    }
 
 exit_entry:
 
     if (fp != NULL) {
         rt_fclose(fp);
     }
-    
+
+    MSG_PRINTF(LOG_INFO, "private file sign verify %s !\r\n", !ret ? "ok" : "fail"); 
     return ret;
 }
 

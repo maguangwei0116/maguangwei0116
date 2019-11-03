@@ -544,6 +544,7 @@ static rt_bool ota_file_check(const void *arg)
     rt_bool ret = RT_FALSE;
     const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
     int32_t iret;
+    char real_file_name[32] = {0};
 
 #ifndef CFG_SHARE_PROFILE_ECC_VERIFY
     if (d_info->type == TARGET_TYPE_SHARE_PROFILE || d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
@@ -552,8 +553,15 @@ static rt_bool ota_file_check(const void *arg)
     }
 #endif
 
-    iret = ipc_file_verify_by_monitor((const char *)d_info->tmpFileName);
-    ret = !iret ? RT_TRUE : RT_FALSE; 
+    iret = ipc_file_verify_by_monitor((const char *)d_info->tmpFileName, real_file_name);
+    if (!iret) {
+        if (rt_os_strstr((const char *)d_info->targetName, real_file_name)) {
+            ret = RT_TRUE;
+        } else {
+            MSG_PRINTF(LOG_WARN, "real_file_name unmatched, targetName:%s, real_file_name:%s\r\n", 
+                            (const char *)d_info->targetName, real_file_name);
+        }
+    }
     return ret;
 }
 #endif
