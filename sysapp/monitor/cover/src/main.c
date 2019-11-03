@@ -83,15 +83,31 @@ static void monitor_exit(void)
     rt_os_exit(-1);
 }
 
+// choose euicc or vuicc
+static int32_t choose_uicc_type(lpa_channel_type_e type)
+{
+    if (type == LPA_CHANNEL_BY_IPC) {
+        trigegr_regist_reset(card_reset);
+        trigegr_regist_cmd(card_cmd);
+        trigger_swap_card(1);
+    }
+    init_apdu_channel(type);
+
+    return RT_SUCCESS;
+}
+
 static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
+    static lpa_channel_type_e type;
+	
     if (cmd == 0x00) {  // config monitor
         if (len < sizeof(info_vuicc_data_t)) {
             goto end;
         }
         info_vuicc_data_t *info = (info_vuicc_data_t *)data;
-        MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (data[7] == 0x00) ? "vUICC" : "eUICC");
-        if (info->vuicc_switch == 0x00) {
+        MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (info->vuicc_switch == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
+        type = info->vuicc_switch;
+        if (info->vuicc_switch == LPA_CHANNEL_BY_IPC) {
             trigegr_regist_reset(card_reset);
             trigegr_regist_cmd(card_cmd);
             trigger_swap_card(1);
@@ -109,7 +125,9 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         *rsp = (uint8_t)inspect_abstract_content(info->hash, info->signature);
         *rsp_len = 1;
     } else if (cmd == 0x02) { // choose one profile from backup profile
-        int32_t ret = backup_process();
+        int32_t ret;
+        choose_uicc_type(type);
+        ret = backup_process(type);
         *rsp = (ret == RT_SUCCESS) ? 0x01 : 0x00;
         *rsp_len = 1;
     } else if (cmd == 0x03) { // monitor version info
@@ -190,21 +208,6 @@ static int32_t ipc_socket_server_start(void)
     return ret;
 }
 
-// choose euicc or vuicc
-static int32_t choose_uicc_type(void)
-{
-    lpa_channel_type_e type = LPA_CHANNEL_BY_IPC;
-
-    if (type == LPA_CHANNEL_BY_IPC) {
-        trigegr_regist_reset(card_reset);
-        trigegr_regist_cmd(card_cmd);
-        trigger_swap_card(1);
-    }
-    init_apdu_channel(type);
-
-    return RT_SUCCESS;
-}
-
 static int32_t agent_task_check_start(void)
 {
     int32_t ret;
@@ -220,7 +223,7 @@ static int32_t agent_task_check_start(void)
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE) != RT_TRUE) {
         init_download(RT_AGENT_FILE);
-        choose_uicc_type();
+        choose_uicc_type(LPA_CHANNEL_BY_IPC);
         network_detection_task();
     }
     /* start up agent process by fork function */

@@ -73,8 +73,6 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     ret = cmd_store_data((const uint8_t *)buf, len, rsp_buf, &rsp_len, channel);
     rt_close_channel(channel);
 
-    trigger_swap_card(1);  // reset card
-
 end:
     ASN_STRUCT_FREE(asn_DEF_ProfileInfoListResponse, rsp);
     return ret;
@@ -129,7 +127,15 @@ end:
     return ret;
 }
 
-int32_t backup_process(void)
+int32_t backup_process(lpa_channel_type_e channel_mode)
 {
-    return parse_profile((uint32_t)rt_get_random_num());
+    int32_t ret;
+
+    ret = parse_profile((uint32_t)rt_get_random_num());
+	
+    if (channel_mode == LPA_CHANNEL_BY_IPC) {	
+	    trigger_swap_card(1);  // reset card
+    }
+
+    return ret;
 }

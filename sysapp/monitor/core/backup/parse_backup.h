@@ -22,6 +22,6 @@ typedef enum LPA_CHANNEL_TYPE {
 } lpa_channel_type_e;
 
 void init_apdu_channel(lpa_channel_type_e channel_mode);
-int32_t backup_process(void);
+int32_t backup_process(lpa_channel_type_e channel_mode);
 
 #endif // __PARSE_BACKUP_H__

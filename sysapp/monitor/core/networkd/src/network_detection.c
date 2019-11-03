@@ -25,7 +25,7 @@ static rt_bool g_network_timer_flag = RT_FALSE;
 static void network_timer_callback(void)
 {
     if (g_network_state != DSI_STATE_CALL_CONNECTED) {  // network disconnected
-        backup_process();
+        backup_process(LPA_CHANNEL_BY_IPC);
         g_network_state = -1;
         MSG_PRINTF(LOG_INFO, "timer out g_network_state:%d\n", g_network_state);
     }
