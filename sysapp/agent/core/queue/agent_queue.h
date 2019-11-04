@@ -69,7 +69,7 @@ extern const char * g_msg_mode_e[];
 int32_t _msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len);
 #define msg_send_agent_queue(id, mode, buffer, len)\
     ({\
-        MSG_PRINTF(LOG_WARN, "============>send agent queue: [%s] , [%s]\r\n", g_msg_id_e[(id)], g_msg_mode_e[(mode)]);\
+        MSG_PRINTF(LOG_WARN, "============>send agent queue: [%s], mode: [%s]\r\n", g_msg_id_e[(id)], g_msg_mode_e[(mode)]);\
         int32_t i_ret = _msg_send_agent_queue(id, mode, buffer, len);\
         i_ret;\
     })
@@ -80,3 +80,4 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
 int32_t msg_send_upload_queue(void *buffer, int32_t len);
 
 #endif // __AGENT_QUEUE_H__
+
