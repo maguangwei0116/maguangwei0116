@@ -86,16 +86,16 @@ typedef enum MQTT_STATE {
 } mqtt_state_info_e;
 
 typedef enum MQTT_EVENT {
-    MQTT_IDLE_EVENT = 0,
-    MQTT_NETWORK_CONNECTED,
-    MQTT_NETWORK_DISCONNECTED,
-    MQTT_CONNECTED_LOST,
-    MQTT_SUBSCRIBE_EID,
+    MQTT_IDLE_EVENT = 0,        // mqtt idle
+    MQTT_NETWORK_CONNECTED,     // mqtt network connected
+    MQTT_NETWORK_DISCONNECTED,  // mqtt network disconnected
+    MQTT_CONNECTED_LOST,        // mqtt connected lost
+    MQTT_SUBSCRIBE_EID,         // mqtt subscribe topic (eid)
 } mqtt_event_e;
 
 typedef struct MQTT_PARAM {
     MQTTClient_connectOptions   conn_opts;
-    mqtt_info_t                 opts;
+    mqtt_opts_t                 opts;
     MQTTClient                  client;
     network_state_info_e        network_state;
     mqtt_state_info_e           mqtt_state;
@@ -114,13 +114,17 @@ typedef struct MQTT_SUBCRIBE_INFO {
     const char *                topic[MQTT_SUBCRIBE_TOPIC_MAX_CNT];
 } mqtt_subcribe_info_t;
 
-static mqtt_param_t g_mqtt_param            = {MQTTClient_connectOptions_initializer, 0};
-static const char *g_mqtt_eid               = NULL;
-static const char *g_mqtt_device_id         = NULL;
-static const char *g_mqtt_imei              = NULL;
-static const char *g_mqtt_emq_addr          = NULL;
-static const char *g_mqtt_oti_addr          = NULL;
-static mqtt_subcribe_info_t g_mqtt_sub_info = {0};
+typedef struct MQTT_INFO {
+    const char *                eid;
+    const char *                imei;
+    const char *                device_id;
+    const char *                emq_addr;
+    const char *                oti_addr;
+    mqtt_subcribe_info_t        sub_info;
+} mqtt_info_t;
+
+static mqtt_param_t g_mqtt_param = {MQTTClient_connectOptions_initializer, 0};
+static mqtt_info_t g_mqtt_info;
 
 static rt_bool mqtt_eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -136,7 +140,7 @@ static rt_bool mqtt_eid_check_memory(const void *buf, int32_t len, int32_t value
 }
 
 /* save cache ticket server which got from adapter into cache file */
-static rt_bool mqtt_save_ticket_server(const mqtt_info_t *opts)
+static rt_bool mqtt_save_ticket_server(const mqtt_opts_t *opts)
 {
     cJSON   *obj = NULL;
     uint8_t  *save_info = NULL;
@@ -151,7 +155,7 @@ static rt_bool mqtt_save_ticket_server(const mqtt_info_t *opts)
 
     cJSON_AddItemToObject(obj, "channel", cJSON_CreateString(opts->channel));
     cJSON_AddItemToObject(obj, "ticketServer", cJSON_CreateString(opts->ticket_server));
-    save_info = (int8_t *)cJSON_PrintUnformatted(obj);
+    save_info = (uint8_t *)cJSON_PrintUnformatted(obj);
     if (!save_info) {
         MSG_PRINTF(LOG_WARN, "save_info is NULL\n");
         goto exit_entry;
@@ -191,7 +195,7 @@ exit_entry:
 }
 
 /* get cache ticket server which got from adapter from cache file */
-static rt_bool mqtt_get_ticket_server(mqtt_info_t *opts)
+static rt_bool mqtt_get_ticket_server(mqtt_opts_t *opts)
 {
     uint8_t  *save_info = NULL;
     uint8_t  data_len[2] = {0};  // frist 2 byte store length !!!
@@ -208,7 +212,7 @@ static rt_bool mqtt_get_ticket_server(mqtt_info_t *opts)
 
     length = (data_len[0] << 8) | data_len[1];
 
-    if ((save_info = (int8_t *)rt_os_malloc(length)) == NULL) {
+    if ((save_info = (uint8_t *)rt_os_malloc(length)) == NULL) {
         MSG_PRINTF(LOG_ERR, "rt_os_malloc error\n");
         goto exit_entry;
     }
@@ -269,16 +273,16 @@ static rt_bool mqtt_connect_adapter(mqtt_param_t *param)
 {
     uint8_t num = 0;
     MQTTClient *c = &param->client;
-    mqtt_info_t *opts = &param->opts;
+    mqtt_opts_t *opts = &param->opts;
     const char *alias = param->alias;
     const char *eid = "";
 
-    if (!mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, 'F') && !mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
-        eid = g_mqtt_eid;
+    if (!mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, 'F') && !mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
+        eid = g_mqtt_info.eid;
     }
 
-    mqtt_set_reg_url(g_mqtt_oti_addr, ADAPTER_PORT);
-    MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", g_mqtt_oti_addr, ADAPTER_PORT);
+    mqtt_set_reg_url(g_mqtt_info.oti_addr, ADAPTER_PORT);
+    MSG_PRINTF(LOG_INFO, "OTI server addr:%s, port:%d\r\n", g_mqtt_info.oti_addr, ADAPTER_PORT);
 
     /* connect redtea adpater server with max 3 times to get ticket server addr and port */
     do {
@@ -300,7 +304,7 @@ static rt_bool mqtt_connect_adapter(mqtt_param_t *param)
     }
 
     /* save ticket server into cache file */
-    mqtt_save_ticket_server((const mqtt_info_t *)opts);
+    mqtt_save_ticket_server((const mqtt_opts_t *)opts);
 
     return RT_TRUE;
 }
@@ -311,7 +315,7 @@ static rt_bool mqtt_connect_yunba(mqtt_param_t *param, const char *ticket_server
     uint8_t num = 0;
     int32_t ret;
     MQTTClient *c = &param->client;
-    mqtt_info_t *opts = &param->opts;
+    mqtt_opts_t *opts = &param->opts;
     const char *alias = param->alias;
 
     if (ticket_server == NULL) {
@@ -353,11 +357,11 @@ static rt_bool mqtt_connect_emq(mqtt_param_t *param, const char *ticket_server)
 {
     uint8_t num = 0;
     MQTTClient *c = &param->client;
-    mqtt_info_t *opts = &param->opts;
+    mqtt_opts_t *opts = &param->opts;
     const char *alias = param->alias;
 
     if (ticket_server == NULL) {
-        mqtt_set_reg_url(g_mqtt_emq_addr, EMQ_SERVER_PORT);
+        mqtt_set_reg_url(g_mqtt_info.emq_addr, EMQ_SERVER_PORT);
     } else {
         int8_t addr[20];
         int32_t port;
@@ -494,7 +498,7 @@ static int32_t mqtt_client_pulish_msg(MQTTClient handle, int32_t qos, const char
         rc1 = MQTTClient_publishMessage(handle, topic, &pubmsg, &token);
         MSG_PRINTF(LOG_INFO, "Waiting for up to %dS to publish (%d bytes): \r\n%s\r\n", 
                 (int32_t)(MQTT_PUBLISH_TIMEOUT/1000), data_len, (const char *)data);
-        MSG_PRINTF(LOG_INFO, "on topic [%s] ClientID: [%s] rc1=%d, token=%lld\r\n", topic, g_mqtt_device_id, rc1, token);
+        MSG_PRINTF(LOG_INFO, "on topic [%s] ClientID: [%s] rc1=%d, token=%lld\r\n", topic, g_mqtt_info.device_id, rc1, token);
         rc2 = MQTTClient_waitForCompletion(handle, token, MQTT_PUBLISH_TIMEOUT);
         MSG_PRINTF(LOG_INFO, "Message with delivery token %lld delivered, rc2=%d\n", token, rc2);
         if (rc1 != 0 || rc2 != 0) {
@@ -553,43 +557,43 @@ static int32_t mqtt_subscribe_all(void)
     rt_bool need_subcribe = RT_FALSE;
     char topic_list[256] = {0};
 
-    g_mqtt_sub_info.cnt = 0;  // clear counter
+    g_mqtt_info.sub_info.cnt = 0;  // clear counter
     
     /* subscribe [cid/eid] */
     if ((GET_EID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE) && \
         (rt_os_strlen(g_mqtt_param.alias)) && \
-        (rt_os_strcmp((const char *)g_mqtt_param.alias, g_mqtt_device_id))) {
-        g_mqtt_sub_info.topic[g_mqtt_sub_info.cnt] = (const char *)g_mqtt_param.alias;  
+        (rt_os_strcmp((const char *)g_mqtt_param.alias, g_mqtt_info.device_id))) {
+        g_mqtt_info.sub_info.topic[g_mqtt_info.sub_info.cnt] = (const char *)g_mqtt_param.alias;  
         offset = offset + cnt;
-        cnt = snprintf(&topic_list[offset], sizeof(topic_list) - offset, "[%s] ", g_mqtt_sub_info.topic[g_mqtt_sub_info.cnt]);
-        g_mqtt_sub_info.cnt++;
+        cnt = snprintf(&topic_list[offset], sizeof(topic_list) - offset, "[%s] ", g_mqtt_info.sub_info.topic[g_mqtt_info.sub_info.cnt]);
+        g_mqtt_info.sub_info.cnt++;
         need_subcribe = RT_TRUE;
     }
 
     /* subscribe device-id */
     if ((GET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-        g_mqtt_sub_info.topic[g_mqtt_sub_info.cnt] = (const char *)g_mqtt_device_id;
+        g_mqtt_info.sub_info.topic[g_mqtt_info.sub_info.cnt] = (const char *)g_mqtt_info.device_id;
         offset = offset + cnt;
-        cnt = snprintf(&topic_list[offset], sizeof(topic_list) - offset, "[%s] ", g_mqtt_sub_info.topic[g_mqtt_sub_info.cnt]);
-        g_mqtt_sub_info.cnt++;
+        cnt = snprintf(&topic_list[offset], sizeof(topic_list) - offset, "[%s] ", g_mqtt_info.sub_info.topic[g_mqtt_info.sub_info.cnt]);
+        g_mqtt_info.sub_info.cnt++;
         need_subcribe = RT_TRUE;
     }
 
     /* subscribe imei */
     if ((GET_IMEI_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-        g_mqtt_sub_info.topic[g_mqtt_sub_info.cnt] = (const char *)g_mqtt_imei;
+        g_mqtt_info.sub_info.topic[g_mqtt_info.sub_info.cnt] = (const char *)g_mqtt_info.imei;
         offset = offset + cnt;
-        cnt = snprintf(&topic_list[offset], sizeof(topic_list) - offset, "[%s] ", g_mqtt_sub_info.topic[g_mqtt_sub_info.cnt]);
-        g_mqtt_sub_info.cnt++; 
+        cnt = snprintf(&topic_list[offset], sizeof(topic_list) - offset, "[%s] ", g_mqtt_info.sub_info.topic[g_mqtt_info.sub_info.cnt]);
+        g_mqtt_info.sub_info.cnt++; 
         need_subcribe = RT_TRUE;
     }
 
     /* subscribe agent  */
     if ((GET_AGENT_FLAG(g_mqtt_param.subscribe_flag) != RT_TRUE)) {
-        g_mqtt_sub_info.topic[g_mqtt_sub_info.cnt] = (const char *)AGENT_ALIAS;
+        g_mqtt_info.sub_info.topic[g_mqtt_info.sub_info.cnt] = (const char *)AGENT_ALIAS;
         offset = offset + cnt;
-        cnt = snprintf(&topic_list[offset], sizeof(topic_list) - offset, "[%s] ", g_mqtt_sub_info.topic[g_mqtt_sub_info.cnt]);
-        g_mqtt_sub_info.cnt++;
+        cnt = snprintf(&topic_list[offset], sizeof(topic_list) - offset, "[%s] ", g_mqtt_info.sub_info.topic[g_mqtt_info.sub_info.cnt]);
+        g_mqtt_info.sub_info.cnt++;
         need_subcribe = RT_TRUE;
     }
 
@@ -597,7 +601,7 @@ static int32_t mqtt_subscribe_all(void)
         return RT_SUCCESS;
     }
 
-    ret = mqtt_subcribe_many_with_default_qos(g_mqtt_param.client, g_mqtt_sub_info.cnt, g_mqtt_sub_info.topic);
+    ret = mqtt_subcribe_many_with_default_qos(g_mqtt_param.client, g_mqtt_info.sub_info.cnt, g_mqtt_info.sub_info.topic);
     if (ret == RT_SUCCESS) {
         SET_EID_FLAG(g_mqtt_param.subscribe_flag);
         SET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag);
@@ -609,7 +613,7 @@ static int32_t mqtt_subscribe_all(void)
         CLR_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag);
         CLR_IMEI_FLAG(g_mqtt_param.subscribe_flag);
         CLR_AGENT_FLAG(g_mqtt_param.subscribe_flag);
-        g_mqtt_sub_info.cnt = 0;  // clear counter
+        g_mqtt_info.sub_info.cnt = 0;  // clear counter
         MSG_PRINTF(LOG_WARN, "mqtt subcribe %s fail, ret=%d !\r\n", topic_list, ret);
         if (ret == MQTTCLIENT_DISCONNECTED) {
             MSG_PRINTF(LOG_WARN, "mqtt disconnected now !\r\n");
@@ -625,19 +629,19 @@ static rt_bool mqtt_check_topic(const char *topic)
     int32_t i;
 
 #if 0
-    MSG_PRINTF(LOG_INFO, "g_mqtt_sub_info.cnt=%d\r\n", g_mqtt_sub_info.cnt);
-    for (i = 0; i < g_mqtt_sub_info.cnt; i++) {
-        MSG_PRINTF(LOG_INFO, "%d: %s\r\n", i, g_mqtt_sub_info.topic[i]);
+    MSG_PRINTF(LOG_INFO, "g_mqtt_info.sub_info.cnt=%d\r\n", g_mqtt_info.sub_info.cnt);
+    for (i = 0; i < g_mqtt_info.sub_info.cnt; i++) {
+        MSG_PRINTF(LOG_INFO, "%d: %s\r\n", i, g_mqtt_info.sub_info.topic[i]);
     }
 #endif
 
     /* never deal with EID topic */
-    if (!rt_os_strcmp(g_mqtt_eid, topic)) {
+    if (!rt_os_strcmp(g_mqtt_info.eid, topic)) {
         return RT_TRUE;
     }
 
-    for (i = 0; i < g_mqtt_sub_info.cnt; i++) {
-        if (!rt_os_strcmp(g_mqtt_sub_info.topic[i], topic)) {
+    for (i = 0; i < g_mqtt_info.sub_info.cnt; i++) {
+        if (!rt_os_strcmp(g_mqtt_info.sub_info.topic[i], topic)) {
             return RT_TRUE;
         }
     }
@@ -723,30 +727,12 @@ static rt_bool mqtt_disconnect(MQTTClient* client, int32_t *wait_cnt)
 static void mqtt_connection_lost(void *context, char *cause)
 {
     MSG_PRINTF(LOG_WARN, "connection lost: %s, %s\r\n",(char *)context, cause);
-    #if 0
-    if (mqtt_connect(&g_mqtt_param.client, &g_mqtt_param.conn_opts) != RT_TRUE) {
-        MSG_PRINTF(LOG_WARN, "connect again fail after connection lost !!!\r\n");
-        if (!rt_os_strncmp(g_mqtt_param.opts.channel, "EMQ", 3)) {
-            g_mqtt_param.opts.last_connect_status = MQTT_CONNECT_EMQ_ERROR;
-        } else {
-            g_mqtt_param.opts.last_connect_status = MQTT_CONNECT_YUNBA_ERROR;
-        }
-
-        //if (g_mqtt_param.network_state == NETWORK_USING) {
-        //    g_mqtt_param.network_state = NETWORK_DISCONNECTED;
-        //}
-        g_mqtt_param.lost_flag = RT_TRUE;
-    } else {
-        MSG_PRINTF(LOG_WARN, "connect again ok after connection lost !!!\r\n");
-    }
-    #else
     g_mqtt_param.lost_flag = RT_TRUE;
-    #endif
 }
 
 static rt_bool mqtt_eid_check_upload(void)
 {
-    if (mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
+    if (mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
         upload_event_report("NO_CERT", NULL, 0, NULL);
         return RT_TRUE;
     }  
@@ -760,11 +746,11 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     int32_t ret = 0;
     MQTTClient *c = &param->client;    
     MQTTClient_connectOptions *pconn_opts = &param->conn_opts;
-    mqtt_info_t *opts = &param->opts;
+    mqtt_opts_t *opts = &param->opts;
 
-    /* force to connect EMQ mqtt server with [client_id = g_mqtt_device_id] */
+    /* force to connect EMQ mqtt server with [client_id = g_mqtt_info.device_id] */
     if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
-        snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_device_id);
+        snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_info.device_id);
     }
 
     MSG_PRINTF(LOG_DBG, "MQTT broker: addr [%s] id [%s] user [%s] passwd [%s]\n",
@@ -788,7 +774,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     pconn_opts->password = (const char *)opts->password;
     if (!rt_os_strncmp(opts->channel, "YUNBA", 5)) {
         MSG_PRINTF(LOG_WARN, "connecting yunba mqtt server ...\n");
-        pconn_opts->MQTTVersion = 0x13;
+        pconn_opts->MQTTVersion = MQTTVERSION_YUNBA_3_1;
     } else if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
         MSG_PRINTF(LOG_WARN, "connecting emq mqtt server ...\n");
         pconn_opts->MQTTVersion = MQTTVERSION_3_1;
@@ -824,17 +810,18 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     return RT_TRUE;
 }
 
-static void rt_mqtt_set_alias(const char *eid, const char *device_id, rt_bool init_flag)
+static void rt_mqtt_config_alias(const char *eid, const char *device_id, rt_bool init_flag)
 {
-    rt_os_memset(g_mqtt_param.alias, 0, sizeof(g_mqtt_param.alias));
-    if (mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, 'F') || mqtt_eid_check_memory(g_mqtt_eid, MAX_EID_LEN, '0')) {
-        rt_os_memcpy(g_mqtt_param.alias, device_id, rt_os_strlen(device_id));
+    const char *alias = NULL;
+
+    if (mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, 'F') || mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
+        alias = device_id;
     } else {
-        rt_os_memcpy(g_mqtt_param.alias, eid, rt_os_strlen(eid));
+        alias = eid;
     }
-    
-    rt_os_memset(g_mqtt_param.opts.device_id, 0, sizeof(g_mqtt_param.opts.device_id));
-    rt_os_memcpy(g_mqtt_param.opts.device_id, device_id, rt_os_strlen(device_id));
+
+    snprintf(g_mqtt_param.alias, sizeof(g_mqtt_param.alias), "%s", alias);
+    snprintf(g_mqtt_param.opts.device_id, sizeof(g_mqtt_param.opts.device_id), "%s", device_id);
     
     if (init_flag) {
         rt_os_memset(g_mqtt_param.opts.client_id, 0, sizeof(g_mqtt_param.opts.client_id));
@@ -843,89 +830,6 @@ static void rt_mqtt_set_alias(const char *eid, const char *device_id, rt_bool in
     }
 }
 
-#if 0
-static void mqtt_process_task(void)
-{
-    int32_t rc;
-    int32_t wait_cnt = 0;
-    int32_t connect_cnt = 0;
-    
-    while(1) {        
-        if (g_mqtt_param.network_state == NETWORK_STATE_INIT) {
-            /* check network state every 60 seconds after mqtt connect lost */
-            if (g_mqtt_param.lost_flag == RT_TRUE && ++wait_cnt > MQTT_NETWORK_STATE_TIMEOUT) {
-                wait_cnt = 0;
-                network_state_update(1);  // update newest network state after 1 seconds
-                rt_os_sleep(1);
-            }
-        } else if (g_mqtt_param.network_state == NETWORK_CONNECTING) {
-            /* check mqtt connect state, maybe need to reset connect state */
-            if (g_mqtt_param.mqtt_flag == RT_TRUE && g_mqtt_param.mqtt_conn_state == RT_FALSE) {               
-                mqtt_disconnect(&g_mqtt_param.client, &wait_cnt);
-                g_mqtt_param.mqtt_flag = RT_FALSE;
-            }
-            
-            if(g_mqtt_param.mqtt_flag == RT_FALSE) {
-                if (++connect_cnt > MQTT_RECONNECT_MAX_CNT) {
-                    MSG_PRINTF(LOG_DBG, "force to set network disconnected !\n");
-                    network_state_force_update(MSG_NETWORK_DISCONNECTED);
-                    g_mqtt_param.state = NETWORK_STATE_INIT;  // reset network state
-                    connect_cnt = 0;
-                    continue;
-                }
-                
-                /* If cache mqtt server addr ok, and then needn't to conenct ticket server to get mqtt server */
-                if (g_mqtt_param.mqtt_get_addr == RT_FALSE) {
-                    /* re-subcribe when re-connect mqtt server */
-                    if (mqtt_get_server_addr(&g_mqtt_param) == RT_FALSE) {
-                        continue;
-                    }
-                }
-
-                /* set mqtt global alias */
-                rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_FALSE);
-
-                /* conenct mqtt server which has been got from cache ticket server or from adapter server */
-                if (mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
-                    /* set network using */
-                    g_mqtt_param.state = NETWORK_USING;
-                    connect_cnt = 0;
-                    msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_CONNECTED, NULL, 0);
-                    continue;
-                } else {
-                    /* If cache mqtt server and hardcode mqtt server all fail, and then connect ticket server to get mqtt server */
-                    g_mqtt_param.mqtt_get_addr = RT_FALSE;
-                }
-            }
-        } else if (g_mqtt_param.network_state == NETWORK_DIS_CONNECTED) {
-            if (g_mqtt_param.mqtt_flag == RT_TRUE || g_mqtt_param.mqtt_conn_state == RT_FALSE) {               
-                mqtt_disconnect(&g_mqtt_param.client, &wait_cnt);
-            }
-        } else if (g_mqtt_param.network_state == NETWORK_USING) {
-            //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.channel);
-            if (!rt_os_strncmp(g_mqtt_param.opts.channel, "YUNBA", 5)) {
-                if (rt_os_strlen(g_mqtt_param.alias) && (g_mqtt_param.alias_rc == RT_TRUE)) {
-                    g_mqtt_param.alias_rc = MQTTClient_set_alias(g_mqtt_param.client, (char *)g_mqtt_param.alias);
-                    MSG_PRINTF(LOG_DBG, "MQTTClient set alias : %s\n", g_mqtt_param.alias);
-                    if (g_mqtt_param.alias_rc != 0) {
-                        MSG_PRINTF(LOG_WARN, "MQTTSetAlias error, g_mqtt_param.alias_rc=%d\r\n", g_mqtt_param.alias_rc);
-                    }
-                }
-            }
-
-            mqtt_subscribe_all();
-            
-            rt_os_sleep(5); //delay more time is ok
-        }
-
-        rt_os_sleep(1);
-    }
-
-    MSG_PRINTF(LOG_DBG, "exit mqtt task\n");
-    MQTTClient_destroy(&g_mqtt_param.client);
-    rt_exit_task(NULL);
-}
-#endif
 static int32_t mqtt_state_connecting(void)
 {
     int32_t ret = RT_SUCCESS;
@@ -940,7 +844,7 @@ static int32_t mqtt_state_connecting(void)
     }
 
     /* set mqtt global alias */
-    rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_FALSE);
+    rt_mqtt_config_alias(g_mqtt_info.eid, g_mqtt_info.device_id, RT_FALSE);
 
     /* conenct mqtt server which has been got from cache ticket server or from adapter server */
     if (mqtt_connect_server(&g_mqtt_param) == RT_TRUE) {
@@ -1020,6 +924,7 @@ static mqtt_event_e mqtt_state_wait_events(void)
 static void mqtt_client_state_mechine(void)
 {
     int32_t delay_s = 1;
+    int32_t reconnect_cnt = 0;
     mqtt_event_e event;
     
     while (1) {
@@ -1042,7 +947,11 @@ static void mqtt_client_state_mechine(void)
                 if (mqtt_state_connecting() == RT_SUCCESS) {
                     mqtt_client_state_changed(MQTT_CONNECTED);
                     delay_s = 0;
-                } else {
+                    reconnect_cnt = 0;  // clear counter
+                } else {                    
+                    if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
+                        mqtt_client_state_changed(MQTT_DISCONNECTED);
+                    }
                     delay_s = 3;
                 }
                 break;
@@ -1137,7 +1046,7 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.node_name             = NULL;
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
     g_mqtt_param.opts.last_connect_status   = MQTT_CONNECT_SUCCESS;  // Initialize the last link push the state of the system
-    rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_TRUE);
+    rt_mqtt_config_alias(g_mqtt_info.eid, g_mqtt_info.device_id, RT_TRUE);
     MQTTClient_init();
 }
 
@@ -1156,7 +1065,7 @@ int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
     } else if (MSG_MQTT_SUBSCRIBE_EID == mode) {
         MSG_PRINTF(LOG_INFO, "mqtt module recv subcsribe eid request\r\n");
         /* set mqtt global alias */
-        rt_mqtt_set_alias(g_mqtt_eid, g_mqtt_device_id, RT_FALSE);
+        rt_mqtt_config_alias(g_mqtt_info.eid, g_mqtt_info.device_id, RT_FALSE);
         CLR_SUBSCRIBE_FLAG(g_mqtt_param.subscribe_flag);
         g_mqtt_param.subscribe_eid = RT_TRUE;
     }
@@ -1169,12 +1078,13 @@ int32_t init_mqtt(void *arg)
     int32_t ret = RT_ERROR;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
+    rt_os_memset(&g_mqtt_info, 0, sizeof(g_mqtt_info));
     public_value_list->push_channel = (const char *)g_mqtt_param.opts.channel;
-    g_mqtt_eid = (const char *)public_value_list->card_info->eid;
-    g_mqtt_device_id = (const char *)public_value_list->device_info->device_id;
-    g_mqtt_imei = (const char *)public_value_list->device_info->imei;
-    g_mqtt_emq_addr = (const char *)public_value_list->config_info->emq_addr;
-    g_mqtt_oti_addr = (const char *)public_value_list->config_info->oti_addr;
+    g_mqtt_info.eid                 = (const char *)public_value_list->card_info->eid;
+    g_mqtt_info.device_id           = (const char *)public_value_list->device_info->device_id;
+    g_mqtt_info.imei                = (const char *)public_value_list->device_info->imei;
+    g_mqtt_info.emq_addr            = (const char *)public_value_list->config_info->emq_addr;
+    g_mqtt_info.oti_addr            = (const char *)public_value_list->config_info->oti_addr;
 
     mqtt_init_param();
 

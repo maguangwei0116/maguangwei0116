@@ -109,7 +109,7 @@ typedef struct REG_INFO {
     char        ticket_server[200];
  } mqtt_reg_info_t;
 
-typedef struct MQTT_INFO {
+typedef struct MQTT_OPTS {
     int32_t     nodelimiter;
     int32_t     qos;
     int32_t     port;
@@ -124,19 +124,19 @@ typedef struct MQTT_INFO {
     char        url[100];               // the address of MQTT server
     char        channel[10];            // the data channel of OTI upload
     char        ticket_server[200];     // the ticket server addr
-} mqtt_info_t;
+} mqtt_opts_t;
 
 DLLExport int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, char *path, PCALLBACK cb);
 
-DLLExport int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_info_t *info);
+DLLExport int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_opts_t *opts);
 
 DLLExport int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey);
 
-DLLExport int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_info_t *info);
+DLLExport int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_opts_t *opts);
 
 DLLExport void    mqtt_set_reg_url(const char url[20], int port);
 
-DLLExport int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_info_t *info, const char *eid);
+DLLExport int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, const char *eid);
 
 #endif /* __RT_MQTT_COMMON_H__ */
 

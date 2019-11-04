@@ -352,7 +352,7 @@ static int32_t mqtt_redtea_ticket_server_cb(const char *json_data)
 }
 
 /* get YUNBA MQTT connect param API */
-int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_info_t *info)
+int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_opts_t *opts)
 {
     int32_t ret;
     char json_data[1024];
@@ -375,10 +375,10 @@ int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char
         goto exit_entry;
     }
 
-    snprintf(info->client_id, sizeof(info->client_id), "%s", g_mqtt_reg_info.client_id);
-    snprintf(info->username, sizeof(info->username), "%s", g_mqtt_reg_info.username);
-    snprintf(info->password, sizeof(info->password), "%s", g_mqtt_reg_info.password);
-    snprintf(info->device_id, sizeof(info->device_id), "%s", g_mqtt_reg_info.device_id);
+    snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_reg_info.client_id);
+    snprintf(opts->username, sizeof(opts->username), "%s", g_mqtt_reg_info.username);
+    snprintf(opts->password, sizeof(opts->password), "%s", g_mqtt_reg_info.password);
+    snprintf(opts->device_id, sizeof(opts->device_id), "%s", g_mqtt_reg_info.device_id);
 
     ret = RT_SUCCESS;
     
@@ -388,7 +388,7 @@ exit_entry:
 }
 
 /* get EMQ MQTT connect param API */
-int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_info_t *info)
+int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_opts_t *opts)
 {
     int32_t ret;
     char json_data[1024];
@@ -405,15 +405,15 @@ int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_info_t *info)
         return RT_ERROR;
     }
 
-    snprintf(info->client_id, sizeof(info->client_id), "%s", g_mqtt_reg_info.client_id);
-    snprintf(info->username, sizeof(info->username), "%s", g_mqtt_reg_info.username);
-    snprintf(info->password, sizeof(info->password), "%s", g_mqtt_reg_info.password);
+    snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_reg_info.client_id);
+    snprintf(opts->username, sizeof(opts->username), "%s", g_mqtt_reg_info.username);
+    snprintf(opts->password, sizeof(opts->password), "%s", g_mqtt_reg_info.password);
     
     return RT_SUCCESS;
 }
 
 /* get connect param with REDTEA adapter API */
-int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_info_t *info, const char *eid)
+int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, const char *eid)
 {
     char json_data[1024];
     int32_t ret;
@@ -423,11 +423,11 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_info_t *info, co
         return RT_ERROR;
     }
 
-    if (!info->device_id) {
+    if (!opts->device_id) {
         snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\"}", appkey);
     } else {
         snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", \
-            appkey, info->device_id, eid, info->last_connect_status);
+            appkey, opts->device_id, eid, opts->last_connect_status);
     }
 
     MSG_PRINTF(LOG_INFO, "reg_url:%s, reg_port:%d\r\n", g_mqtt_reg_url, g_mqtt_reg_port);
@@ -437,12 +437,12 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_info_t *info, co
         MSG_PRINTF(LOG_ERR, "http_post_json error, ret=%d\r\n", ret);
         return RT_ERROR;
     }
-    snprintf(info->client_id, sizeof(info->client_id), "%s", g_mqtt_reg_info.client_id);
-    snprintf(info->username, sizeof(info->username), "%s", g_mqtt_reg_info.username);
-    snprintf(info->password, sizeof(info->password), "%s", g_mqtt_reg_info.password);
-    snprintf(info->channel, sizeof(info->channel), "%s", g_mqtt_reg_info.channel);
-    snprintf(info->ticket_server, sizeof(info->ticket_server), "%s", g_mqtt_reg_info.ticket_server);
-    snprintf(info->url, sizeof(info->url), "%s", g_mqtt_reg_info.url);
+    snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_reg_info.client_id);
+    snprintf(opts->username, sizeof(opts->username), "%s", g_mqtt_reg_info.username);
+    snprintf(opts->password, sizeof(opts->password), "%s", g_mqtt_reg_info.password);
+    snprintf(opts->channel, sizeof(opts->channel), "%s", g_mqtt_reg_info.channel);
+    snprintf(opts->ticket_server, sizeof(opts->ticket_server), "%s", g_mqtt_reg_info.ticket_server);
+    snprintf(opts->url, sizeof(opts->url), "%s", g_mqtt_reg_info.url);
 
 #if 0
     MSG_PRINTF(LOG_DBG, "client_id     : %s\r\n", info->client_id);

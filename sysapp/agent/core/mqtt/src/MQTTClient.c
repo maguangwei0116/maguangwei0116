@@ -1028,8 +1028,8 @@ int MQTTClient_connectURI(MQTTClient handle, MQTTClient_connectOptions* options,
     m->c->MQTTVersion = options->MQTTVersion;
     if(options->MQTTVersion == 0)
     {
-        m->c->MQTTVersion = 0x13;
-        options->MQTTVersion = 0x13;
+        m->c->MQTTVersion = MQTTVERSION_YUNBA_3_1;
+        options->MQTTVersion = MQTTVERSION_YUNBA_3_1;
     }
 
     if ((rc = MQTTClient_connectURIVersion(handle, options, serverURI, options->MQTTVersion, start, millisecsTimeout)) != MQTTCLIENT_SUCCESS)
