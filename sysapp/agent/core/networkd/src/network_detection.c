@@ -17,6 +17,7 @@
 #include "card_manager.h"
 #include "rt_timer.h"
 
+#define MAX_RETRY_CNT               3
 #define MAX_WAIT_REGIST_TIME        180
 #define DELAY_100MS                 100
 #define MAX_WAIT_BOOTSTRAP_TIME     (150*(DELAY_100MS))  // 15000ms = 15S
@@ -61,6 +62,7 @@ static int32_t network_wait_bootstrap_start(int32_t max_delay_100ms)
 static void network_detection_task(void *arg)
 {
     int32_t ret;
+    int32_t cnt = 0;
     dsi_call_info_t dsi_net_hndl;
     profile_type_e *type = (profile_type_e *)arg;
 
@@ -70,14 +72,26 @@ static void network_detection_task(void *arg)
         network_wait_bootstrap_start(MAX_WAIT_BOOTSTRAP_TIME);
     }
 
-    ret = dial_up_init(&dsi_net_hndl);
-    if (ret != RT_SUCCESS) {
-        MSG_PRINTF(LOG_ERR, "dial up init error !!!\r\n");
+    /* add retry more times */
+    while (1) {
+        ret = dial_up_init(&dsi_net_hndl);
+        if (ret != RT_SUCCESS) {            
+            if (++cnt <= MAX_RETRY_CNT) {
+                MSG_PRINTF(LOG_ERR, "dial up init error (%d) !!!\r\n", cnt);
+                rt_os_sleep(3);
+                continue;
+            }
+            MSG_PRINTF(LOG_ERR, "dial up init final error !!!\r\n");
+            goto  exit_entry;
+        }
+        break;
     }
     
     while (1) {  
         dial_up_to_connect(&dsi_net_hndl);  // it will never exit !
     }
+
+exit_entry:
 
     dial_up_deinit(&dsi_net_hndl);
 
