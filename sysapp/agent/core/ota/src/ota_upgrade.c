@@ -193,6 +193,8 @@ int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mo
 
 exit_entry:
 
+    g_task_check = 1;  // make sure remain OTA task only deal once !!!
+
     return ret;
 }
 
@@ -438,7 +440,7 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         }
     }
 
-    if (param->target.type == TARGET_TYPE_SHARE_PROFILE) {
+    if (param->target.type == TARGET_TYPE_SHARE_PROFILE || param->target.type == TARGET_TYPE_DEF_SHARE_PROFILE) {
         /* force to update share profile */
         policy_forced == UPGRADE_MODE_FORCED; 
     } else {
