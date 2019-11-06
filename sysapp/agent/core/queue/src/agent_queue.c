@@ -97,7 +97,6 @@ const char * g_msg_id_e[] =
     "MSG_ID_MQTT",
     "MSG_ID_IDLE",
     "MSG_ID_DETECT_NETWORK",  // 10
-    "MSG_ID_SET_APN",
 };
 const char * g_msg_mode_e[] = 
 {
@@ -106,7 +105,7 @@ const char * g_msg_mode_e[] =
     "MSG_CARD_SETTING_PROFILE",
     "MSG_CARD_SETTING_CERTIFICATE",
     "MSG_CARD_ENABLE_EXIST_CARD",
-    "MSG_ALL_SWITCH_CARD", // 5
+    "MSG_START_NETWORK_DETECTION", // 5
     "MSG_NETWORK_CONNECTED",
     "MSG_NETWORK_DISCONNECTED",
     "MSG_BOOTSTRAP_DISCONNECTED",
@@ -114,7 +113,7 @@ const char * g_msg_mode_e[] =
     "MSG_BOOTSTRAP_SELECT_CARD",  // 10
     "MSG_MQTT_CONNECTED",
     "MSG_MQTT_DISCONNECTED",
-    "MSG_SET_APN",
+    "MSG_CARD_UPDATE",
 };
 #endif
 
@@ -182,10 +181,6 @@ static void agent_queue_task(void)
 
                 case MSG_ID_DETECT_NETWORK:
                     network_detect_event(que_t.data_buf, que_t.data_len, que_t.mode);
-                    break;
-
-                case MSG_ID_SET_APN:
-                    network_set_apn_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 default: {
