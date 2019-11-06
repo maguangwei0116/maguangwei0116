@@ -79,6 +79,7 @@ SRC-y 		                            += src/config.c
 SRC-y 			                        += src/agent_main.c
 SRC-y 			                        += src/agent_queue.c
 SRC-y 			                        += src/card_manager.c
+SRC-y 			                        += src/card_detection.c
 SRC-y 			                        += src/msg_process.c
 SRC-y 			                        += src/ipc_socket_client.c
 SRC-y 			                        += src/network_detection.c
