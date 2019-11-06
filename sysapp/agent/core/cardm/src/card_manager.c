@@ -123,41 +123,6 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     return ret;
 }
 
-int32_t card_check_profile_info(judge_term_e bootstrap_flag, char *cur_iccid, profile_type_e *type)
-{
-    int32_t ret = RT_SUCCESS;
-    int32_t i;
-
-    if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
-        if (g_p_info.type == PROFILE_TYPE_PROVISONING) {
-            msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
-            rt_os_sleep(3);  // delay some time to update profiles info
-        }
-    }
-    
-    ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
-    if (ret == RT_SUCCESS) {
-        /* get current profile type */
-        for (i = 0; i < g_p_info.num; i++) {
-            if (g_p_info.info[i].state == 1) {
-                g_p_info.type = g_p_info.info[i].class;
-                rt_os_memcpy(g_p_info.iccid, g_p_info.info[i].iccid, THE_MAX_CARD_NUM);
-                g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';
-                if (cur_iccid) {
-                    rt_os_memcpy(cur_iccid, g_p_info.iccid, THE_MAX_CARD_NUM);
-                }
-                if (type) {
-                    *type = g_p_info.type; 
-                }
-                MSG_PRINTF(LOG_WARN, "cur using iccid: %s, type: %d\n", g_p_info.iccid, g_p_info.type);
-                break;
-            }
-        }
-    }
-
-    return ret;
-}
-
 static int32_t card_enable_profile(const uint8_t *iccid)
 {
     int32_t ret = RT_ERROR;
@@ -183,7 +148,6 @@ static int32_t card_enable_profile(const uint8_t *iccid)
             }
         }
     }
-    msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_ALL_SWITCH_CARD, NULL, 0);
 
     return ret;
 }
@@ -352,6 +316,10 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 
         case MSG_CARD_ENABLE_EXIST_CARD:
             ret = card_enable_profile(buf);
+            break;
+
+        case MSG_CARD_UPDATE:
+            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             break;
             
         case MSG_NETWORK_CONNECTED:
