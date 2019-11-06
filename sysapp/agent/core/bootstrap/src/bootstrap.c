@@ -21,9 +21,16 @@
 #include "rt_type.h"
 #include "random.h"
 
-#define DEFAULT_SINGLE_INTERVAL_TIME    10                              // default interval time (seconds)
-static uint32_t g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME; // single interval time for activating fail
-static uint32_t g_max_retry_times       = 7;                            // max retry counter
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a)                   (sizeof((a)) / sizeof((a)[0]))
+#endif
+#define DEFAULT_SINGLE_INTERVAL_TIME    10                                      // default interval time (seconds)
+
+/* define your interval time table, unit: seconds */
+static const uint32_t g_time_table[]    = {10, 30, 90, 270, 840, 2520, 7560};
+
+static uint32_t g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME;         // single interval time for activating fail
+static uint32_t g_max_retry_times       = ARRAY_SIZE(g_time_table);             // max retry counter
 static uint32_t g_is_profile_damaged    = RT_ERROR;
 static uint32_t g_retry_times           = 0;
 
@@ -35,7 +42,7 @@ static void bootstrap_select_profile(void)
     } else {
         selected_profile((uint32_t)rt_get_random_num());
         g_retry_times++;
-        g_single_interval_time *= g_retry_times;
+        g_single_interval_time = g_time_table[g_retry_times-1];
         MSG_PRINTF(LOG_INFO, "g_single_interval_time(%d)=%d\n", g_retry_times, g_single_interval_time);
     }
 }
