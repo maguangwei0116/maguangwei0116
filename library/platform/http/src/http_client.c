@@ -321,8 +321,6 @@ static int http_client_get_resp_header(http_client_struct_t *obj)
     return -1;
 }
 
-
-
 static int http_client_recv_data(http_client_struct_t *obj)
 {
     int ret = -1;
@@ -348,6 +346,9 @@ static int http_client_recv_data(http_client_struct_t *obj)
         //MSG_PRINTF(LOG_WARN, "obj->process_length=%d, obj->range=%d\r\n", obj->process_length, obj->range);
         if (obj->process_length > obj->range) {
             RT_CHECK_NEQ(rt_fwrite(obj->buf, obj->process_set, 1, obj->fp), 1);
+            rt_fflush(obj->fp);
+            rt_os_sync();
+            rt_os_sync();
             display_progress(obj);
         }
     }

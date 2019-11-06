@@ -134,8 +134,11 @@ static int32_t ota_upgrade_task_record(const void *param, uint32_t param_len, co
     snprintf(task.tmp_file, sizeof(task.tmp_file), "%s", tmp_file);
     snprintf(task.event, sizeof(task.event), "%s", event);
     rt_fwrite(&task, 1, sizeof(task), fp);
-    
+    rt_fflush(fp);
     rt_fclose(fp);
+    rt_os_sync();
+    rt_os_sync();
+    rt_os_sleep(3);  // delay 3 seconds for task file really save into FS
 
     ret = 0;
 
@@ -170,6 +173,8 @@ int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mo
         MSG_PRINTF(LOG_INFO, "param->target.version         : %s\r\n", task.param.target.version);
         MSG_PRINTF(LOG_INFO, "param->target.chipModel       : %s\r\n", task.param.target.chipModel);
         MSG_PRINTF(LOG_INFO, "param->target.ticket          : %s\r\n", task.param.target.ticket);
+        MSG_PRINTF(LOG_INFO, "param->target.type            : %d\r\n", task.param.target.type);
+        MSG_PRINTF(LOG_INFO, "param->target.size            : %d\r\n", task.param.target.size);
         MSG_PRINTF(LOG_INFO, "param->target.fileHash        : %s\r\n", task.param.target.fileHash);
         MSG_PRINTF(LOG_INFO, "param->policy.forced          : %d\r\n", task.param.policy.forced);
         MSG_PRINTF(LOG_INFO, "param->policy.executionType   : %s\r\n", task.param.policy.executionType);
