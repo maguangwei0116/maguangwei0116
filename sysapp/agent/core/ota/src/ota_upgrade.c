@@ -12,6 +12,7 @@
 #include "http_client.h"
 #include "file.h"
 #include "cJSON.h"
+#include "md5.h"
 
 #if 0
 {
@@ -217,6 +218,16 @@ static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
     cJSON *policy = NULL;
     cJSON *tmp = NULL;
     ota_upgrade_param_t *param = NULL;
+    static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];
+    int8_t md5_out_now[MD5_STRING_LENGTH + 1];
+
+    get_md5_string((int8_t *)in, md5_out_now);
+    md5_out_now[MD5_STRING_LENGTH] = '\0';
+    if (rt_os_strcmp(md5_out_pro, md5_out_now) == 0) {
+        MSG_PRINTF(LOG_ERR, "The data are the same!!\n");
+        return ret;
+    }
+    rt_os_strcpy(md5_out_pro, md5_out_now);
 
     msg =  cJSON_Parse((const char *)in);
     OTA_CHK_PINTER_NULL(msg, -1);

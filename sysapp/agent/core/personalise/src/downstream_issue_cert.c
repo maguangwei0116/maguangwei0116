@@ -66,6 +66,16 @@ static int32_t downstream_issue_cert_parser(const void *in, char *tran_id, void 
     cJSON *target = NULL;
     cJSON *tmp = NULL;
     issue_cert_struct_t *param = NULL;
+    static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];
+    int8_t md5_out_now[MD5_STRING_LENGTH + 1];
+
+    get_md5_string((int8_t *)in, md5_out_now);
+    md5_out_now[MD5_STRING_LENGTH] = '\0';
+    if (rt_os_strcmp(md5_out_pro, md5_out_now) == 0) {
+        MSG_PRINTF(LOG_ERR, "The data are the same!!\n");
+        return ret;
+    }
+    rt_os_strcpy(md5_out_pro, md5_out_now);
 
     if (!upload_check_eid_empty()) {
         MSG_PRINTF(LOG_WARN, "eid exist, ignore issue cert download !\r\n");

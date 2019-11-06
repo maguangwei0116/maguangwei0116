@@ -3,7 +3,7 @@
 #include "rt_type.h"
 #include "rt_os.h"
 #include "log.h"
-
+#include "md5.h"
 #include "cJSON.h"
 
 static int32_t downstream_inpsect_parser(const void *in, char *tranId, void **out)
@@ -11,8 +11,16 @@ static int32_t downstream_inpsect_parser(const void *in, char *tranId, void **ou
     int32_t ret;
     cJSON *msg = NULL;
     cJSON *tran_id = NULL;
+    static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];
+    int8_t md5_out_now[MD5_STRING_LENGTH + 1];
 
-    MSG_PRINTF(LOG_WARN, "\n");
+    get_md5_string((int8_t *)in, md5_out_now);
+    md5_out_now[MD5_STRING_LENGTH] = '\0';
+    if (rt_os_strcmp(md5_out_pro, md5_out_now) == 0) {
+        MSG_PRINTF(LOG_ERR, "The data are the same!!\n");
+        return ret;
+    }
+    rt_os_strcpy(md5_out_pro, md5_out_now);
 
     msg =  cJSON_Parse((const char *)in);
     if (!msg) {
