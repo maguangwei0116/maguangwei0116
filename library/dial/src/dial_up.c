@@ -31,6 +31,7 @@ typedef enum LOCAL_DIAL_UP_STATE {
 } local_dial_up_e;
 
 typedef void (*dial_callback)(int32_t state);
+
 static dial_callback g_dial_state_func;
 static int32_t g_dsi_event_fd[2];
 
@@ -259,18 +260,12 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
         param_info.num_val = dsi_net_hndl->auth_pref;
         dsi_set_data_call_param(dsi_net_hndl->handle, DSI_CALL_INFO_AUTH_PREF, &param_info);
     }
-
-    socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
-    MSG_PRINTF(LOG_INFO, "< create two new sockets --- g_dsi_event_fd(%d,%d) >\n", g_dsi_event_fd[0], g_dsi_event_fd[1]);
     
     return RT_SUCCESS;
 }
 
 int32_t dial_up_deinit(dsi_call_info_t *dsi_net_hndl)
 {
-    close(g_dsi_event_fd[0]);
-    close(g_dsi_event_fd[1]);
-    
     dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);  // it will release all handle, and you should reinit again !!! 
 
     return RT_SUCCESS;
@@ -310,6 +305,9 @@ static int32_t dial_up_start(dsi_call_info_t *dsi_net_hndl, int32_t interval, in
     int32_t rval;
     int32_t dsi_start_cnt = 0;
 
+    socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
+    MSG_PRINTF(LOG_INFO, "< create two new sockets --- g_dsi_event_fd(%d,%d) >\n", g_dsi_event_fd[0], g_dsi_event_fd[1]);
+
     while (1) {
         rval = dsi_start_data_call(dsi_net_hndl->handle);        
         if (rval == RT_SUCCESS) {
@@ -322,6 +320,26 @@ static int32_t dial_up_start(dsi_call_info_t *dsi_net_hndl, int32_t interval, in
             return RT_ERROR;
         }
     }
+
+    return RT_SUCCESS;
+}
+
+static int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
+{
+    int32_t rval;
+
+    if (g_dsi_event_fd[0] > 0) {
+        close(g_dsi_event_fd[0]);
+        g_dsi_event_fd[0] = -1;
+    }
+    if (g_dsi_event_fd[1] > 0) {
+        close(g_dsi_event_fd[1]);
+        g_dsi_event_fd[1] = -1;
+    }
+    
+    rval = dsi_stop_data_call(dsi_net_hndl->handle);
+    MSG_PRINTF(LOG_INFO, "dsi_stop_data_call rval = %d\r\n", rval);
+    rt_os_sleep(2);
 
     return RT_SUCCESS;
 }
@@ -451,17 +469,6 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
     return RT_SUCCESS;
 }
 
-static int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
-{
-    int32_t rval;
-    
-    rval = dsi_stop_data_call(dsi_net_hndl->handle);
-    MSG_PRINTF(LOG_INFO, "dsi_stop_data_call rval = %d\n", rval);
-    rt_os_sleep(2);
-
-    return RT_SUCCESS;
-}
-
 #define dial_up_state_changed(handle, new_state)\
     do {\
         MSG_PRINTF(LOG_INFO, "DIAL-UP STATE: %d ==> %d (%s)\r\n", (handle)->call_state, new_state, #new_state);\
@@ -476,11 +483,20 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
     while (1) {
         switch (dsi_net_hndl->call_state) {
             case DSI_STATE_CALL_IDLE:
-                MSG_PRINTF(LOG_WARN, "Start dial up\n");
+                MSG_PRINTF(LOG_WARN, "Start dial up\r\n");
                 if (dial_up_check_register_state(CHK_REG_STATE_INTERVAL, MAX_CHK_REG_STATE_CNT) == RT_SUCCESS) {
                     dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTING);
                 } else {
+                    #if 0
                     dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_DISCONNECTING);
+                    #else
+                    /* 
+                    call stop-data-call directly to avoid network state change,  
+                    lead to a network-state changed in card detection,  
+                    lead to a new select card when it's using provisoning profile. 
+                    */
+                    dial_up_stop(dsi_net_hndl);
+                    #endif
                 }
                 break;
 
@@ -512,7 +528,7 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
                 break;
 
             default:
-                MSG_PRINTF(LOG_ERR, "=======>unexpected mqtt state %d !!!", dsi_net_hndl->call_state);
+                MSG_PRINTF(LOG_ERR, "==>unexpected dial-up state %d !!!\r\n", dsi_net_hndl->call_state);
                 dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_DISCONNECTING);
                 break;
         }
