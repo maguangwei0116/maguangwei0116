@@ -30,7 +30,7 @@ enum LOG_LEVELS {
 
 
 /* config mqtt module log */
-#define MQTT_ALL_LOG_OFF                0       /* MQTT module all log off */
+#define MQTT_ALL_LOG_OFF                1       /* MQTT module all log off */
 #define REDTEA_MQTT_LOG_ON              1       /* MQTT module all log on with redtea log methord */
 #define REDTEA_MQTT_DEF_LOG_LEVEL       TRACE_MINIMUM
 

@@ -1081,7 +1081,7 @@ static int32_t mqtt_create_task(void)
 
     ret = rt_create_task(&id_connect, (void *)mqtt_client_state_mechine, NULL);
     if (ret == RT_ERROR) {
-        MSG_PRINTF(LOG_ERR, "creat mqtt pthread error, err(%d)=%s\r\n", errno, strerror(errno));
+        MSG_PRINTF(LOG_ERR, "create mqtt pthread error, err(%d)=%s\r\n", errno, strerror(errno));
     }
     return ret;
 }
