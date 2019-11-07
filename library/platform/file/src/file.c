@@ -87,7 +87,7 @@ bool rt_file_exist(const char *file)
 
 int rt_create_dir(const char *dir)
 {
-    return mkdir(dir, S_IRWXU | S_IROTH | S_IXOTH);
+    return mkdir(dir, RT_S_IRWXU | RT_S_IROTH | RT_S_IXOTH);
 }
 
 int rt_delete_dir(const char *dir)
@@ -189,7 +189,7 @@ bool linux_file_exist(const char *file)
 
 int linux_create_dir(const char *dir)
 {
-    return mkdir(dir, S_IRWXU | S_IROTH | S_IXOTH);
+    return mkdir(dir, RT_S_IRWXU | RT_S_IROTH | RT_S_IXOTH);
 }
 
 int linux_delete_dir(const char *dir)

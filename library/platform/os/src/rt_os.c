@@ -410,7 +410,7 @@ int32_t rt_os_mkdir(const char *pathname)
         return RT_ERROR;
     }
 
-    return mkdir(pathname,  S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    return mkdir(pathname,  RT_S_IRWXU | RT_S_IRWXG | RT_S_IROTH | RT_S_IXOTH);
 }
 
 void rt_os_reboot(void)
