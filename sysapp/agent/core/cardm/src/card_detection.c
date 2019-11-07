@@ -45,7 +45,7 @@ static int32_t card_changed_handle(const char *iccid, profile_type_e type)
     MSG_PRINTF(LOG_INFO, "card changed iccid: %s, type: %d\r\n", iccid, type);
     if (PROFILE_TYPE_OPERATIONAL == type) {
         card_set_opr_profile_apn();
-    } else if (PROFILE_TYPE_PROVISONING == type) {
+    } else if (PROFILE_TYPE_PROVISONING == type || PROFILE_TYPE_TEST == type) {
         msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
         card_detection_disable();
     } else { 
