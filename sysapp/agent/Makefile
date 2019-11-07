@@ -106,14 +106,14 @@ SRC-y 			                        += ./core/cardm/src/msg_enable_cmd.c
 SRC-y 			                        += ./core/networkd/src/upload_network.c
 
 # Personalise module
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/personalise.c
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/device_info.c
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/upload_no_cert.c
-SRC-$(CFG_AGENT_PERSONALISE_ON) 		+= src/downstream_issue_cert.c
+SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/personalise.c
+SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/device_info.c
+SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/upload_no_cert.c
+SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/downstream_issue_cert.c
 
 # OTA module
-SRC-$(CFG_AGENT_OTA_ON) 				+= src/upgrade.c
-SRC-$(CFG_AGENT_OTA_ON) 				+= src/ota_upgrade.c
+SRC-$(CFG_AGENT_OTA_ON)                 += ./core/ota/src/upgrade.c
+SRC-$(CFG_AGENT_OTA_ON)                 += ./core/ota/src/ota_upgrade.c
 
 # logger manager module
 SRC-y 			                        += ./core/logm/src/logm.c
