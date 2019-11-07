@@ -16,19 +16,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "rt_manage_data.h"
+#include "file.h"
 
 int32_t rt_create_file(uint8_t *file_name)
 {
     int8_t status = RT_ERROR;
-    FILE *fp = NULL;
+    rt_fshandle_t fp = NULL;
 
-    if ((fp = fopen(file_name, "w+")) == NULL) {
+    if ((fp = linux_fopen(file_name, "w+")) == NULL) {
         MSG_PRINTF(LOG_WARN, "open failed \n");
     } else {
         status = RT_SUCCESS;
     }
     if (fp != NULL) {
-        fclose(fp);
+        linux_fclose(fp);
     }
 
     return status;
@@ -36,41 +37,41 @@ int32_t rt_create_file(uint8_t *file_name)
 
 int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer, uint32_t len)
 {
-    FILE *fp = NULL;
+    rt_fshandle_t fp = NULL;
     int32_t status = RT_ERROR;
 
-    fp = fopen(addr, "rb+");
+    fp = linux_fopen(addr, "rb+");
     if (fp == NULL) {
         MSG_PRINTF(LOG_WARN, "open file failed\n");
     } else {
-        fseek(fp,offset,SEEK_SET);
-        if (fwrite(data_buffer,len, 1, fp) != 1) {
+        linux_fseek(fp,offset, RT_FS_SEEK_SET);
+        if (linux_fwrite(data_buffer,len, 1, fp) != 1) {
             MSG_PRINTF(LOG_WARN, "write failed\n");
         } else {
             status = 0;
         }
-        fclose(fp);
+        linux_fclose(fp);
+        rt_os_sync();
     }
-    rt_os_sync();
-
+    
     return status;
 }
 
 int32_t rt_read_data(uint8_t *addr, uint32_t offset, uint8_t *data_buffer, uint32_t len)
 {
-    FILE *fp = NULL;
+    rt_fshandle_t fp = NULL;
     int32_t status = RT_ERROR;
 
-    fp = fopen(addr, "r");
+    fp = linux_fopen(addr, "r");
     if (NULL == fp) {
         MSG_PRINTF(LOG_WARN, "open file failed\n");
     } else {
-        fseek(fp, offset, SEEK_SET);
-        if (fread(data_buffer, len, 1, fp) != 1) {
+        linux_fseek(fp, offset, RT_FS_SEEK_SET);
+        if (linux_fread(data_buffer, len, 1, fp) != 1) {
         } else {
             status = RT_SUCCESS;
         }
-        fclose(fp);
+        linux_fclose(fp);
     }
 
     return status;
@@ -80,27 +81,27 @@ int32_t rt_truncate_data(uint8_t *filename, int32_t offset)
     if (filename == NULL) {
         return RT_ERROR;
     }
-    return truncate(filename, offset);
+    return linux_truncate(filename, offset);
 }
 
 int32_t rm_dir(const int8_t *dirpath)
 {
-    int8_t sub_path[100];
-    DIR* dirp = NULL;
-    struct dirent *dir;
+    char sub_path[128];
+    rt_dir_t dirp = NULL;
+    rt_dirent_t dir;
     struct stat st;
 
-    opendir(dirpath);
+    linux_opendir(dirpath);
     if (!dirp) {
         return RT_ERROR;
     }
 
-    while ((dir = readdir(dirp)) != NULL) {
-        if (strcmp(dir->d_name,".") == 0 || strcmp(dir->d_name,"..") == 0) {
+    while ((dir = linux_readdir(dirp)) != NULL) {
+        if (rt_os_strncmp(dir->d_name, ".", 1) == 0 || rt_os_strncmp(dir->d_name, "..", 2) == 0) {
             continue;
         }
 
-        snprintf(sub_path, 100, "%s/%s", dirpath, dir->d_name);
+        snprintf(sub_path, sizeof(sub_path), "%s/%s", dirpath, dir->d_name);
 
         if (lstat(sub_path, &st) == -1) {
             MSG_PRINTF(LOG_WARN, "rm_dir:lstat %s error\n", sub_path);
@@ -109,7 +110,7 @@ int32_t rm_dir(const int8_t *dirpath)
 
         if (S_ISDIR(st.st_mode)) {
             if (rm_dir(sub_path) == -1) {  // 如果是目录文件，递归删除
-                closedir(dirp);
+                linux_closedir(dirp);
                 return -1;
             }
             rt_os_rmdir(sub_path);
@@ -121,10 +122,10 @@ int32_t rm_dir(const int8_t *dirpath)
         }
     }
     if (rt_os_rmdir(dirpath) == -1) { // delete dir itself.
-        closedir(dirp);
+        linux_closedir(dirp);
         return -1;
     }
-    closedir(dirp);
+    linux_closedir(dirp);
 
     return RT_SUCCESS;
 }
@@ -142,7 +143,7 @@ int32_t rm(const int8_t *file_name)
             return RT_ERROR;
         }
     } else if (S_ISDIR(st.st_mode)) {
-        if (!strcmp(file_name, ".") || !strcmp(file_name, "..")) {
+        if (!rt_os_strncmp(file_name, ".", 1) || !rt_os_strncmp(file_name, "..", 2)) {
             return RT_ERROR;
         }
 
