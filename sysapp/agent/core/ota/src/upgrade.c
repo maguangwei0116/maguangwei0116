@@ -133,7 +133,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 
     while (1) {
         /* There is file need to download in system */
-        if (rt_os_access((const int8_t *)dw_struct.file_path, F_OK) == RT_SUCCESS){
+        if (rt_os_access((const int8_t *)dw_struct.file_path, RT_FS_F_OK) == RT_SUCCESS){
             uint32_t file_path_size = linux_file_size(dw_struct.file_path);
             snprintf(buf, sizeof(buf), "%d", file_path_size);
             http_set_header_record(&dw_struct, "Range", (const char *)buf);

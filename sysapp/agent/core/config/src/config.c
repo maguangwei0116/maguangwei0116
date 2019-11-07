@@ -280,7 +280,7 @@ int32_t init_config(void *arg)
     uint32_t size;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
-    if (rt_os_access(CONFIG_FILE_PATH, F_OK) == RT_ERROR) {
+    if (rt_os_access(CONFIG_FILE_PATH, RT_FS_F_OK) == RT_ERROR) {
         config_create_default_file();
     }
 

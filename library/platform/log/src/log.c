@@ -71,7 +71,7 @@ static log_param_t g_log_param =
 
 static int32_t init_data_redtea_path(void *arg)
 {
-    if (rt_os_access(DATA_REDTEA_PATH, F_OK)) {
+    if (rt_os_access(DATA_REDTEA_PATH, RT_FS_F_OK)) {
         rt_os_mkdir(DATA_REDTEA_PATH);
     }
 
@@ -94,7 +94,7 @@ static int32_t log_file_size(const char *file)
     struct stat statbuf;
     int32_t size;
 
-    if (rt_os_access(file, F_OK)) { /* log file isn't exist */
+    if (rt_os_access(file, RT_FS_F_OK)) { /* log file isn't exist */
         return 0;
     }
 
