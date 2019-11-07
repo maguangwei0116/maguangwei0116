@@ -17,7 +17,6 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <linux/reboot.h>
 #include <stdlib.h>
 #include <string.h>

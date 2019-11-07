@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/types.h>
-#include <sys/stat.h>
+
 #include "rt_manage_data.h"
 #include "file.h"
 
@@ -89,7 +89,7 @@ int32_t rm_dir(const int8_t *dirpath)
     char sub_path[128];
     rt_dir_t dirp = NULL;
     rt_dirent_t dir;
-    struct stat st;
+    rt_stat_t st;
 
     linux_opendir(dirpath);
     if (!dirp) {
@@ -103,8 +103,8 @@ int32_t rm_dir(const int8_t *dirpath)
 
         snprintf(sub_path, sizeof(sub_path), "%s/%s", dirpath, dir->d_name);
 
-        if (lstat(sub_path, &st) == -1) {
-            MSG_PRINTF(LOG_WARN, "rm_dir:lstat %s error\n", sub_path);
+        if (linux_lstat(sub_path, &st) == -1) {
+            MSG_PRINTF(LOG_WARN, "rm_dir:l-stat %s error\n", sub_path);
             continue;
         }
 
@@ -117,7 +117,7 @@ int32_t rm_dir(const int8_t *dirpath)
         } else if (S_ISREG(st.st_mode)) {  // 普通文件
             rt_os_unlink(sub_path);
         } else {
-            MSG_PRINTF(LOG_WARN, "rm_dir:lstat %s error\n", sub_path);
+            MSG_PRINTF(LOG_WARN, "rm_dir:l-stat %s error\n", sub_path);
             continue;
         }
     }
@@ -132,9 +132,9 @@ int32_t rm_dir(const int8_t *dirpath)
 
 int32_t rm(const int8_t *file_name)
 {
-    struct stat st;
+    rt_stat_t st;
 
-    if (lstat(file_name, &st) == -1) {
+    if (linux_lstat(file_name, &st) == -1) {
         return RT_ERROR;
     }
 

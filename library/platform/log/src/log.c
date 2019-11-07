@@ -91,16 +91,7 @@ int32_t log_set_param(log_mode_e mode, log_level_e level, unsigned int max_size)
 
 static int32_t log_file_size(const char *file)
 {
-    struct stat statbuf;
-    int32_t size;
-
-    if (rt_os_access(file, RT_FS_F_OK)) { /* log file isn't exist */
-        return 0;
-    }
-
-    stat(file, &statbuf);
-    size = statbuf.st_size;
-    return size;
+    return linux_file_size(file);
 }
 
 static void log_file_open(void)

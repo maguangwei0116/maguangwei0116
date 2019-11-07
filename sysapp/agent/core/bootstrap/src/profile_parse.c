@@ -181,10 +181,9 @@ static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     uint32_t profile_off = 0;
     uint32_t index = 0;
     sha256_ctx_t hash_code;
-    struct stat statbuf;
+    int32_t file_size;
 
-    stat(SHARE_PROFILE, &statbuf);
-
+    file_size = linux_file_size(SHARE_PROFILE);
     linux_fseek(fp, 0, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 8, fp);
     profile_off = get_length(buf,1);
@@ -200,7 +199,7 @@ static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
         return RT_ERROR;
     }
     rt_os_memcpy(original_hash, get_value_buffer(buf), 32);
-    if (statbuf.st_size != hash_off + get_length(buf, 0) + get_length(buf, 1)){
+    if (file_size != hash_off + get_length(buf, 0) + get_length(buf, 1)){
         MSG_PRINTF(LOG_ERR, "The share profile is damaged.\n");
         return RT_ERROR;
     }

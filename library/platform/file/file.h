@@ -17,12 +17,15 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <dirent.h>
+#include <sys/stat.h>
+
 #include "rt_type.h"
 
 typedef FILE *                      rt_fshandle_t;
 typedef const char *                rt_fsmode_t;
 typedef DIR *                       rt_dir_t;
 typedef struct dirent *             rt_dirent_t;
+typedef struct stat                 rt_stat_t;
 
 #define RT_FS_CREATE                "w+"
 #define RT_FS_READ                  "r"
@@ -54,8 +57,11 @@ bool linux_file_exist(const char *file);
 int linux_create_dir(const char *dir);
 int linux_delete_dir(const char *dir);
 int linux_delete_file(const char *file);
-int32_t linux_truncate(const char *filename, off_t offset);
-int32_t linux_file_size(const char *file);
+int linux_truncate(const char *filename, off_t offset);
+int linux_file_size(const char *file);
+int linux_stat(const char *pathname, rt_stat_t *buf);
+int linux_fstat(int fd, rt_stat_t *buf);
+int linux_lstat(const char *pathname, rt_stat_t *buf);
 size_t shell_cmd(const int8_t *cmd, uint8_t *buf, size_t size);
 
 #endif // __FILE_H__

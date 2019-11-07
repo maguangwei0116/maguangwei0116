@@ -140,29 +140,25 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
     int8_t real_name[MAX_NAME_BLOCK_SIZE + 1] = {0};
     uint32_t check_size;
     int32_t partlen;
-    struct  stat f_info;
-
-    if (stat(file, &f_info) < 0) {
-        MSG_PRINTF(LOG_ERR, "error file info\n");
-        goto exit_entry;
-    }
+    int32_t file_size;
 
     if ((fp = linux_fopen(file, "r")) == NULL) {
         MSG_PRINTF(LOG_ERR, "error open file\n");
         goto exit_entry;
     }
 
+    file_size = linux_file_size(file);
     sha256_init(&sha_ctx);
-    f_info.st_size -= PRIVATE_ECC_HASH_STR_LEN;
-    if (f_info.st_size < HASH_CHECK_BLOCK) {
+    file_size -= PRIVATE_ECC_HASH_STR_LEN;
+    if (file_size < HASH_CHECK_BLOCK) {
         rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
-        if (linux_fread(hash_buffer, f_info.st_size, 1, fp) != 1) {
+        if (linux_fread(hash_buffer, file_size, 1, fp) != 1) {
             MSG_PRINTF(LOG_ERR, "error read file\n");
             goto exit_entry;
         }
-        sha256_update(&sha_ctx, (uint8_t *)hash_buffer, f_info.st_size);
+        sha256_update(&sha_ctx, (uint8_t *)hash_buffer, file_size);
     } else {
-        for (check_size = HASH_CHECK_BLOCK; check_size < f_info.st_size; check_size += HASH_CHECK_BLOCK) {
+        for (check_size = HASH_CHECK_BLOCK; check_size < file_size; check_size += HASH_CHECK_BLOCK) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             if (linux_fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp) != 1) {
                 MSG_PRINTF(LOG_ERR, "error read file\n");
@@ -171,7 +167,7 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
             sha256_update(&sha_ctx, (uint8_t *)hash_buffer, HASH_CHECK_BLOCK);
         }
 
-        partlen = f_info.st_size + HASH_CHECK_BLOCK - check_size;
+        partlen = file_size + HASH_CHECK_BLOCK - check_size;
         if (partlen > 0) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             if (linux_fread(hash_buffer, partlen, 1, fp) != 1){

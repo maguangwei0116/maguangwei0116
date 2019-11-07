@@ -119,7 +119,7 @@ int linux_delete_file(const char *file)
     return remove(file);
 }
 
-int32_t linux_truncate(const char *filename, off_t offset)
+int linux_truncate(const char *filename, off_t offset)
 {
     if (filename == NULL) {
         return RT_ERROR;
@@ -127,12 +127,12 @@ int32_t linux_truncate(const char *filename, off_t offset)
     return truncate(filename, offset);
 }
 
-int32_t linux_file_size(const char *file)
+int linux_file_size(const char *file)
 {
     struct stat statbuf;
     int32_t size;
 
-    if (rt_os_access(file, RT_FS_F_OK)) { /* log file isn't exist */
+    if (rt_os_access(file, RT_FS_F_OK)) { /* file isn't exist */
         return 0;
     }
 
@@ -140,6 +140,21 @@ int32_t linux_file_size(const char *file)
     size = statbuf.st_size;
 
     return size;
+}
+
+int linux_stat(const char *pathname, rt_stat_t *buf)
+{
+    return stat(pathname, buf);
+}
+
+int linux_fstat(int fd, rt_stat_t *buf)
+{
+    return fstat(fd, buf);
+}
+
+int linux_lstat(const char *pathname, rt_stat_t *buf)
+{
+    return lstat(pathname, buf);
 }
 
 size_t shell_cmd(const int8_t *cmd, uint8_t *buf, size_t size)

@@ -6,7 +6,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <error.h>
 #include <sys/vfs.h>
@@ -176,30 +175,29 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
     int8_t hash_buffer[HASH_CHECK_BLOCK];
     uint32_t check_size;
     int32_t partlen;
-    struct  stat f_info;
+    int32_t file_size;
 
     /* default share profile ignore HASH check */
     if (d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
         return RT_TRUE;
     }
 
-    RT_CHECK_ERR(stat((char *)d_info->tmpFileName, &f_info), -1);
-
     RT_CHECK_ERR(fp = linux_fopen((char *)d_info->tmpFileName, "r") , NULL);
 
+    file_size = linux_file_size((const char *)d_info->tmpFileName);
     sha256_init(&sha_ctx);
-    if (f_info.st_size < HASH_CHECK_BLOCK) {
+    if (file_size < HASH_CHECK_BLOCK) {
         rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
-        RT_CHECK_ERR(linux_fread(hash_buffer, f_info.st_size, 1, fp), 0);
-        sha256_update(&sha_ctx, (uint8_t *)hash_buffer, f_info.st_size);
+        RT_CHECK_ERR(linux_fread(hash_buffer, file_size, 1, fp), 0);
+        sha256_update(&sha_ctx, (uint8_t *)hash_buffer, file_size);
     } else {
-        for (check_size = HASH_CHECK_BLOCK; check_size < f_info.st_size; check_size += HASH_CHECK_BLOCK) {
+        for (check_size = HASH_CHECK_BLOCK; check_size < file_size; check_size += HASH_CHECK_BLOCK) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             RT_CHECK_ERR(linux_fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp), 0);
             sha256_update(&sha_ctx, (uint8_t *)hash_buffer, HASH_CHECK_BLOCK);
         }
 
-        partlen = f_info.st_size + HASH_CHECK_BLOCK - check_size;
+        partlen = file_size + HASH_CHECK_BLOCK - check_size;
         if (partlen > 0) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             RT_CHECK_ERR(linux_fread(hash_buffer, partlen, 1, fp), 0);
