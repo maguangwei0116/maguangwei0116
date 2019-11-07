@@ -16,10 +16,13 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <dirent.h>
 #include "rt_type.h"
 
 typedef FILE *                      rt_fshandle_t;
 typedef const char *                rt_fsmode_t;
+typedef DIR *                       rt_dir_t;
+typedef struct dirent *             rt_dirent_t;
 
 #define RT_FS_CREATE                "w+"
 #define RT_FS_READ                  "r"
@@ -29,6 +32,10 @@ typedef const char *                rt_fsmode_t;
 #define RT_FS_SEEK_SET              SEEK_SET
 #define RT_FS_SEEK_CUR              SEEK_CUR
 #define RT_FS_SEEK_END              SEEK_END
+
+#ifndef RT_FS_F_OK
+#define RT_FS_F_OK                  0
+#endif
 
 rt_fshandle_t rt_fopen(const char *filename, rt_fsmode_t mode);
 int rt_fclose(rt_fshandle_t fp);
@@ -44,6 +51,9 @@ bool rt_file_exist(const char *file);
 int rt_create_dir(const char *dir);
 int rt_delete_dir(const char *dir);
 int rt_delete_file(const char *file);
+rt_dir_t rt_opendir(const char *name);
+int rt_closedir(rt_dir_t dir);
+rt_dirent_t rt_readdir(rt_dir_t dir);
 
 rt_fshandle_t linux_fopen(const char *filename, rt_fsmode_t mode);
 int linux_fclose(rt_fshandle_t fp);
@@ -62,4 +72,6 @@ int linux_delete_file(const char *file);
 int32_t linux_truncate(const char *filename, off_t offset);
 int32_t linux_file_size(const char *file);
 size_t shell_cmd(const int8_t *cmd, uint8_t *buf, size_t size);
+
 #endif // __FILE_H__
+

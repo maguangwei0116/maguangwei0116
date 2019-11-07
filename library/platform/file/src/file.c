@@ -71,7 +71,7 @@ size_t rt_fwrite(const void *ptr, size_t size, size_t count, rt_fshandle_t fp)
 
 bool rt_dir_exist(const char *dir)
 {
-    if(access(dir, F_OK) == 0)
+    if(access(dir, RT_FS_F_OK) == 0)
         return true;
 
     return false;
@@ -79,7 +79,7 @@ bool rt_dir_exist(const char *dir)
 
 bool rt_file_exist(const char *file)
 {
-    if(access(file, F_OK) == 0)
+    if(access(file, RT_FS_F_OK) == 0)
         return true;
 
     return false;
@@ -92,9 +92,9 @@ int rt_create_dir(const char *dir)
 
 int rt_delete_dir(const char *dir)
 {
-    char tmp[64] = "rm -rf ";
+    char tmp[64];
 
-    strcat(tmp, dir);
+    snprintf(tmp, sizeof(tmp), "rm -rf %s", dir);
 
     return system(tmp);
 }
@@ -102,6 +102,21 @@ int rt_delete_dir(const char *dir)
 int rt_delete_file(const char *file)
 {
     return remove(file);
+}
+
+rt_dir_t rt_opendir(const char *name)
+{
+    return opendir(name);
+}
+
+int rt_closedir(rt_dir_t dir)
+{
+    return closedir(dir);
+}
+
+rt_dirent_t rt_readdir(rt_dir_t dir)
+{
+    return readdir(dir);
 }
 
 rt_fshandle_t linux_fopen(const char *filename, rt_fsmode_t mode)
@@ -158,7 +173,7 @@ size_t linux_fwrite(const void *ptr, size_t size, size_t count, rt_fshandle_t fp
 
 bool linux_dir_exist(const char *dir)
 {
-    if(access(dir, F_OK) == 0)
+    if(access(dir, RT_FS_F_OK) == 0)
         return true;
 
     return false;
@@ -166,7 +181,7 @@ bool linux_dir_exist(const char *dir)
 
 bool linux_file_exist(const char *file)
 {
-    if(access(file, F_OK) == 0)
+    if(access(file, RT_FS_F_OK) == 0)
         return true;
 
     return false;
@@ -179,9 +194,9 @@ int linux_create_dir(const char *dir)
 
 int linux_delete_dir(const char *dir)
 {
-    char tmp[64] = "rm -rf ";
+    char tmp[64];
 
-    strcat(tmp, dir);
+    snprintf(tmp, sizeof(tmp), "rm -rf %s", dir);
 
     return system(tmp);
 }
@@ -204,7 +219,7 @@ int32_t linux_file_size(const char *file)
     struct stat statbuf;
     int32_t size;
 
-    if (rt_os_access(file, F_OK)) { /* log file isn't exist */
+    if (rt_os_access(file, RT_FS_F_OK)) { /* log file isn't exist */
         return 0;
     }
 
