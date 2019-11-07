@@ -147,7 +147,7 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
         goto exit_entry;
     }
 
-    if ((fp = rt_fopen(file, "r")) == NULL) {
+    if ((fp = linux_fopen(file, "r")) == NULL) {
         MSG_PRINTF(LOG_ERR, "error open file\n");
         goto exit_entry;
     }
@@ -156,7 +156,7 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
     f_info.st_size -= PRIVATE_ECC_HASH_STR_LEN;
     if (f_info.st_size < HASH_CHECK_BLOCK) {
         rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
-        if (rt_fread(hash_buffer, f_info.st_size, 1, fp) != 1) {
+        if (linux_fread(hash_buffer, f_info.st_size, 1, fp) != 1) {
             MSG_PRINTF(LOG_ERR, "error read file\n");
             goto exit_entry;
         }
@@ -164,7 +164,7 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
     } else {
         for (check_size = HASH_CHECK_BLOCK; check_size < f_info.st_size; check_size += HASH_CHECK_BLOCK) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
-            if (rt_fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp) != 1) {
+            if (linux_fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp) != 1) {
                 MSG_PRINTF(LOG_ERR, "error read file\n");
                 goto exit_entry;
             }
@@ -174,20 +174,20 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
         partlen = f_info.st_size + HASH_CHECK_BLOCK - check_size;
         if (partlen > 0) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
-            if (rt_fread(hash_buffer, partlen, 1, fp) != 1){
+            if (linux_fread(hash_buffer, partlen, 1, fp) != 1){
                 MSG_PRINTF(LOG_ERR, "error read file\n");
                 goto exit_entry;
             }
             sha256_update(&sha_ctx, (uint8_t *)hash_buffer, partlen);
         }
 
-        if (rt_fread(last_sign_buffer, PRIVATE_ECC_HASH_STR_LEN, 1, fp) != 1){
+        if (linux_fread(last_sign_buffer, PRIVATE_ECC_HASH_STR_LEN, 1, fp) != 1){
             MSG_PRINTF(LOG_ERR, "error read file\n");
             goto exit_entry;
         }
 
-        rt_fseek(fp, -(PRIVATE_ECC_HASH_STR_LEN + MAX_NAME_BLOCK_SIZE), SEEK_CUR);
-        if (rt_fread(real_name, MAX_NAME_BLOCK_SIZE, 1, fp) != 1){
+        linux_fseek(fp, -(PRIVATE_ECC_HASH_STR_LEN + MAX_NAME_BLOCK_SIZE), SEEK_CUR);
+        if (linux_fread(real_name, MAX_NAME_BLOCK_SIZE, 1, fp) != 1){
             MSG_PRINTF(LOG_ERR, "error read file\n");
             goto exit_entry;
         }
@@ -212,7 +212,7 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
 exit_entry:
 
     if (fp != NULL) {
-        rt_fclose(fp);
+        linux_fclose(fp);
     }
 
     MSG_PRINTF(LOG_INFO, "private file sign verify %s !\r\n", !ret ? "ok" : "fail"); 

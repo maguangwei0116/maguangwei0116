@@ -57,7 +57,7 @@ static int http_client_upload_init(http_client_struct_t *obj)
     obj->process_length = 0;
     MSG_PRINTF(LOG_WARN, "upload file_name:%s,file_size:%d\n", obj->file_path, obj->file_length);
 
-    RT_CHECK_ERR(obj->fp = rt_fopen(obj->file_path, "r"), NULL);  // 打开文件
+    RT_CHECK_ERR(obj->fp = linux_fopen(obj->file_path, "r"), NULL);  // 打开文件
     RT_CHECK_ERR(obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN), NULL);
 
     /* 连接服务器 */
@@ -94,7 +94,7 @@ static int http_client_download_init(http_client_struct_t *obj)
 
     RT_CHECK_ERR(obj, NULL);
 
-    RT_CHECK_ERR(obj->fp = rt_fopen(obj->file_path, "a"), NULL);  // 打开文件
+    RT_CHECK_ERR(obj->fp = linux_fopen(obj->file_path, "a"), NULL);  // 打开文件
     obj->process_length = 0;
     obj->process_set = 0;
     obj->remain_length = 0;
@@ -131,7 +131,7 @@ static void http_client_release(http_client_struct_t *obj)
     }
 
     if (obj->fp != NULL) {
-        rt_fclose(obj->fp);
+        linux_fclose(obj->fp);
     }
 
     if (obj->socket > 0) {
@@ -249,7 +249,7 @@ static int http_client_send_body(http_client_struct_t *obj)
               obj->process_set = obj->remain_length;
             }
 
-            ret = rt_fread(obj->buf, obj->process_set , 1, obj->fp);
+            ret = linux_fread(obj->buf, obj->process_set , 1, obj->fp);
             if (ret == 0) {
                 MSG_PRINTF(LOG_WARN, "Read Block Data Error,result:%s\n", strerror(errno));
                 break;
@@ -272,7 +272,7 @@ static int http_client_send_body(http_client_struct_t *obj)
                 }
                 MSG_PRINTF(LOG_WARN, "http_client send error,continue\n");
                 rt_os_sleep(1);
-                rt_fseek(obj->fp, SEEK_SET, obj->process_length);
+                linux_fseek(obj->fp, SEEK_SET, obj->process_length);
             } else {
                 obj->remain_length -= obj->process_set;
                 obj->process_length += obj->process_set;
@@ -345,8 +345,8 @@ static int http_client_recv_data(http_client_struct_t *obj)
 
         //MSG_PRINTF(LOG_WARN, "obj->process_length=%d, obj->range=%d\r\n", obj->process_length, obj->range);
         if (obj->process_length > obj->range) {
-            RT_CHECK_NEQ(rt_fwrite(obj->buf, obj->process_set, 1, obj->fp), 1);
-            rt_fflush(obj->fp);
+            RT_CHECK_NEQ(linux_fwrite(obj->buf, obj->process_set, 1, obj->fp), 1);
+            linux_fflush(obj->fp);
             rt_os_sync();
             rt_os_sync();
             display_progress(obj);

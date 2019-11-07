@@ -184,7 +184,7 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
     if (upgrade->downloadResult == RT_SUCCESS) {
-        fp = rt_fopen(RT_CERTIFICATE, RT_FS_READ);
+        fp = linux_fopen(RT_CERTIFICATE, RT_FS_READ);
         if (!fp) {
             MSG_PRINTF(LOG_ERR, "open cert file failed!\n");
             goto exit_entry;
@@ -195,7 +195,7 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
             MSG_PRINTF(LOG_ERR, "malloc failed!\n");
             goto exit_entry;
         }
-        rt_fread(buf, 1, length, fp);
+        linux_fread(buf, 1, length, fp);
 
         ret = card_manager_event((const uint8_t *)buf, length, MSG_CARD_SETTING_CERTIFICATE);
         if (ret) {
@@ -204,7 +204,7 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
 
         rt_os_free(buf);
         if (fp) {
-            rt_fclose(fp);
+            linux_fclose(fp);
         }
         rt_os_unlink(RT_CERTIFICATE);
     }else {

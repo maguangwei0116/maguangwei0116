@@ -43,7 +43,7 @@ rt_bool monitor_inspect_file(uint8_t *file_name)
     file_size = linux_file_size(file_name);
     MSG_PRINTF(LOG_INFO, "file_size:%d\n", file_size);
 
-    RT_CHECK_ERR(fp = rt_fopen((char *)file_name, "r"), NULL);
+    RT_CHECK_ERR(fp = linux_fopen((char *)file_name, "r"), NULL);
     sha256_init(&sha_ctx);
     file_size -= PRIVATE_HASH_STR_LEN;
     if (file_size < HASH_CHECK_BLOCK) {
@@ -82,7 +82,7 @@ rt_bool monitor_inspect_file(uint8_t *file_name)
 
 end:
     if (fp != NULL) {
-        rt_fclose(fp);
+        linux_fclose(fp);
     }
 
     return ret;

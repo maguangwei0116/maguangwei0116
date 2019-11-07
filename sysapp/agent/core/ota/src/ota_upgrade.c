@@ -137,16 +137,16 @@ static int32_t ota_upgrade_task_record(const void *param, uint32_t param_len, co
     char ota_task_file[128];
 
     ota_upgrade_get_task_file_name(ota_task_file, sizeof(ota_task_file), tmp_file);
-    fp = rt_fopen(ota_task_file, "w+");
+    fp = linux_fopen(ota_task_file, "w+");
     OTA_CHK_PINTER_NULL(fp, -1);
 
     task.param_len = param_len;
     rt_os_memcpy(&task.param, param, param_len);
     snprintf(task.tmp_file, sizeof(task.tmp_file), "%s", tmp_file);
     snprintf(task.event, sizeof(task.event), "%s", event);
-    rt_fwrite(&task, 1, sizeof(task), fp);
-    rt_fflush(fp);
-    rt_fclose(fp);
+    linux_fwrite(&task, 1, sizeof(task), fp);
+    linux_fflush(fp);
+    linux_fclose(fp);
     rt_os_sync();
     rt_os_sync();
     rt_os_sleep(3);  // delay 3 seconds for task file really save into FS
@@ -165,10 +165,10 @@ static int32_t ota_upgrade_task_deal(const char *ota_task_file)
     ota_task_info_t task = {0};
     ota_upgrade_param_t *param = NULL;
 
-    fp = rt_fopen(ota_task_file, "r"); 
+    fp = linux_fopen(ota_task_file, "r"); 
     OTA_CHK_PINTER_NULL(fp, -1);
-    rt_fread(&task, 1, sizeof(task), fp);
-    rt_fclose(fp);
+    linux_fread(&task, 1, sizeof(task), fp);
+    linux_fclose(fp);
     OTA_CHK_PINTER_NULL(task.param_len, -2);
 
     MSG_PRINTF(LOG_INFO, "OTA remain task list          : \r\n");       
@@ -199,8 +199,8 @@ int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mo
         const char *path = OTA_UPGRADE_TASK_PATH;
         int32_t len;
         
-        if((dir = rt_opendir(path))) {
-            while((dp = rt_readdir(dir)) != NULL) {
+        if((dir = linux_opendir(path))) {
+            while((dp = linux_readdir(dir)) != NULL) {
                 /* ignore "." ".." and ".xxxx"(hidden file) */
                 if((!rt_os_strncmp(dp->d_name, ".", 1)) || (!rt_os_strncmp(dp->d_name, "..", 2)))
                     continue;
@@ -213,7 +213,7 @@ int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mo
                 }
             }
             
-            rt_closedir(dir);
+            linux_closedir(dir);
     
             ret = RT_SUCCESS;
         } 
@@ -567,29 +567,29 @@ static rt_bool ota_file_check(const void *arg)
 
     RT_CHECK_ERR(stat((char *)d_info->tmpFileName, &f_info), -1);
 
-    RT_CHECK_ERR(fp = rt_fopen((char *)d_info->tmpFileName, "r") , NULL);
+    RT_CHECK_ERR(fp = linux_fopen((char *)d_info->tmpFileName, "r") , NULL);
 
     sha256_init(&sha_ctx);
     f_info.st_size -= PRIVATE_HASH_STR_LEN;
     if (f_info.st_size < HASH_CHECK_BLOCK) {
         rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
-        RT_CHECK_ERR(rt_fread(hash_buffer, f_info.st_size, 1, fp), 0);
+        RT_CHECK_ERR(linux_fread(hash_buffer, f_info.st_size, 1, fp), 0);
         sha256_update(&sha_ctx, (uint8_t *)hash_buffer, f_info.st_size);
     } else {
         for (check_size = HASH_CHECK_BLOCK; check_size < f_info.st_size; check_size += HASH_CHECK_BLOCK) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
-            RT_CHECK_ERR(rt_fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp), 0);
+            RT_CHECK_ERR(linux_fread(hash_buffer, HASH_CHECK_BLOCK, 1, fp), 0);
             sha256_update(&sha_ctx, (uint8_t *)hash_buffer, HASH_CHECK_BLOCK);
         }
 
         partlen = f_info.st_size + HASH_CHECK_BLOCK - check_size;
         if (partlen > 0) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
-            RT_CHECK_ERR(rt_fread(hash_buffer, partlen, 1, fp), 0);
+            RT_CHECK_ERR(linux_fread(hash_buffer, partlen, 1, fp), 0);
             sha256_update(&sha_ctx, (uint8_t *)hash_buffer, partlen);
         }
 
-        RT_CHECK_ERR(rt_fread(last_hash_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
+        RT_CHECK_ERR(linux_fread(last_hash_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
     }
 
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
@@ -604,7 +604,7 @@ static rt_bool ota_file_check(const void *arg)
 end:
 
     if (fp != NULL) {
-        rt_fclose(fp);
+        linux_fclose(fp);
     }
     return ret;
 }

@@ -114,24 +114,24 @@ static uint32_t get_offset(rt_fshandle_t fp, uint8_t type, uint32_t *size)
     uint8_t buf[9];
     uint32_t offset = 0;
 
-    rt_fseek(fp, offset, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
+    linux_fseek(fp, offset, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
     if ((buf[0] != SHARED_PROFILE)) {
         return RT_ERROR;
     }
     offset += get_length(buf, 1);
-    rt_fseek(fp, offset, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
+    linux_fseek(fp, offset, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
     if ((buf[0] != SHARED_PROFILE)) {
         return RT_ERROR;
     }
     offset += get_length(buf, 1);
-    rt_fseek(fp, offset, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
+    linux_fseek(fp, offset, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
     while (buf[0] != type) {
         offset += get_length(buf, 1) + get_length(buf, 0);
-        rt_fseek(fp, offset, RT_FS_SEEK_SET);
-        if (rt_fread(buf, 1, 8, fp) != 8) {
+        linux_fseek(fp, offset, RT_FS_SEEK_SET);
+        if (linux_fread(buf, 1, 8, fp) != 8) {
             return RT_ERROR;
         }
     }
@@ -143,8 +143,8 @@ static uint16_t rt_init_file_info(rt_fshandle_t fp)
     uint8_t *p = NULL;
     uint8_t buf[100];
 
-    rt_fseek(fp, g_data.file_info_offset, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 100, fp);
+    linux_fseek(fp, g_data.file_info_offset, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 100, fp);
     p = get_value_buffer(buf);
     g_data.file_version_offset = g_data.file_info_offset + get_length(buf, 1) + get_length(p, 0) + get_length(p, 1);
     p = get_value_buffer(p);
@@ -185,17 +185,17 @@ static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
 
     stat(SHARE_PROFILE, &statbuf);
 
-    rt_fseek(fp, 0, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
+    linux_fseek(fp, 0, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
     profile_off = get_length(buf,1);
     hash_off += profile_off;
 
-    rt_fseek(fp, profile_off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
+    linux_fseek(fp, profile_off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
     hash_off += get_length(buf, 0) + get_length(buf, 1);
 
-    rt_fseek(fp, hash_off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 50, fp);
+    linux_fseek(fp, hash_off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 50, fp);
     if (buf[0] != HASH_CODE || buf[1] != HASH_CODE_LENGTH) {
         return RT_ERROR;
     }
@@ -205,10 +205,10 @@ static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
         return RT_ERROR;
     }
 
-    rt_fseek(fp, profile_off, RT_FS_SEEK_SET);
+    linux_fseek(fp, profile_off, RT_FS_SEEK_SET);
     sha256_init(&hash_code);
     for (profile_off; profile_off < hash_off; profile_off += index){
-        index = rt_fread(p, 1, (hash_off - profile_off > 512) ? 512 : hash_off - profile_off, fp);
+        index = linux_fread(p, 1, (hash_off - profile_off > 512) ? 512 : hash_off - profile_off, fp);
         sha256_update(&hash_code, p, index);
     }
     sha256_final(&hash_code, hash_code_buf);
@@ -227,8 +227,8 @@ static int32_t decode_file_info(rt_fshandle_t fp)
     asn_dec_rval_t dc;
     FileInfo_t *request = NULL;
 
-    rt_fseek(fp, g_data.file_info_offset, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 100, fp);
+    linux_fseek(fp, g_data.file_info_offset, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 100, fp);
     size = get_length(buf, 0) + get_length(buf, 1);
     buf[0] = 0x30;
     dc = ber_decode(NULL, &asn_DEF_FileInfo, (void **) &request, buf, size);
@@ -254,8 +254,8 @@ static int32_t decode_profile(rt_fshandle_t fp, uint16_t off, int length)
         MSG_PRINTF(LOG_ERR, "malloc failed!\n");
         return RT_ERROR;
     }
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, length, fp);
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, length, fp);
     dc = ber_decode(NULL, &asn_DEF_BootstrapRequest, (void **) &request, buf, length);
     if (dc.code != RC_OK) {
         MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
@@ -395,12 +395,12 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t rand
     asn_dec_rval_t dc;
     int32_t ret = RT_ERROR;
 
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 100, fp);
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 100, fp);
     off += get_length(buf, 1);
 
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 100, fp);
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 100, fp);
     size = get_length(buf, 0) + get_length(buf, 1);
 
     // 如果tag为A0则与子项tag重名导致无法解析
@@ -414,8 +414,8 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t rand
         goto end;
     }
     off += size;
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
     off += get_length(buf, 1);
 
     MSG_PRINTF(LOG_INFO, "apn:%s\n", request->apn.list.array[0]->apnName.buf);
@@ -431,8 +431,8 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t rand
         off += selected_profile_index * profile_len;
     }
     profile_buffer = (uint8_t *) rt_os_malloc(profile_len);
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(profile_buffer, 1, profile_len, fp);
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(profile_buffer, 1, profile_len, fp);
 
     build_profile(profile_buffer, profile_len, selected_profile_index, request->sequential);
     rt_os_free(profile_buffer);
@@ -453,21 +453,21 @@ int32_t selected_profile(uint32_t random)
     int32_t ret = RT_ERROR;
     int32_t i = 0;
 
-    fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
+    fp = linux_fopen(SHARE_PROFILE, RT_FS_READ);
     if (fp == NULL) {
         MSG_PRINTF(LOG_ERR, "Open file failed\n");
         return RT_ERROR;
     }
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
     if (buf[0] != OPT_PROFILES) {
         MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
         goto end;
     }
     off += get_length(buf, 1);
 
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
     if (buf[0] != SHARED_PROFILE) {
         MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
         goto end;
@@ -477,8 +477,8 @@ int32_t selected_profile(uint32_t random)
     }
     for (i = 0; i < g_data.priority; i++) {
         off += get_length(buf, 1) + get_length(buf, 0);
-        rt_fseek(fp, off, RT_FS_SEEK_SET);
-        rt_fread(buf, 1, 8, fp);
+        linux_fseek(fp, off, RT_FS_SEEK_SET);
+        linux_fread(buf, 1, 8, fp);
     }
     decode_profile_info(fp, off, random);
 
@@ -486,7 +486,7 @@ int32_t selected_profile(uint32_t random)
     ret = RT_SUCCESS;
 end:
     if (fp != NULL) {
-        rt_fclose(fp);
+        linux_fclose(fp);
     }
     return ret;
 }
@@ -497,13 +497,13 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
     uint8_t buf[128];
     uint8_t *buffer = NULL;
 
-    fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
+    fp = linux_fopen(SHARE_PROFILE, RT_FS_READ);
     if (fp == NULL) {
         return RT_ERROR;
     }
 
-    rt_fseek(fp, offset, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, sizeof(buf), fp);
+    linux_fseek(fp, offset, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, sizeof(buf), fp);
 
     length = get_length(buf, 0);
     buffer = get_value_buffer(buf);
@@ -514,7 +514,7 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
         *data_len = length;
     }
     if (fp != NULL) {
-        rt_fclose(fp);
+        linux_fclose(fp);
     }
     return RT_SUCCESS;
 }
@@ -570,7 +570,7 @@ int32_t init_profile_file(int32_t *arg)
     }
 #endif
 
-    fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
+    fp = linux_fopen(SHARE_PROFILE, RT_FS_READ);
     if (fp == NULL) {
         return RT_ERROR;
     }
@@ -583,7 +583,7 @@ int32_t init_profile_file(int32_t *arg)
         g_data.operator_info_offset = rt_get_operator_profile_offset(fp, &len);
     }
     if (fp != NULL) {
-        rt_fclose(fp);
+        linux_fclose(fp);
     }
 
     g_data.priority = 0;
