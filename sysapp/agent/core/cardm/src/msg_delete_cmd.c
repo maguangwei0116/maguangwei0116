@@ -153,7 +153,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 Check the second delete operation, when it return code 1, it means profile isn't exist !
                 */
                 MSG_PRINTF(LOG_WARN, "delete profile with unkown result, delete again ...\n");
-                rt_os_sleep(1);
+                rt_os_sleep(3);
                 code = msg_delete_profile(iccid->valuestring, &opr_iccid_using);
                 if (code == 1) {
                     code = RT_SUCCESS;

@@ -289,7 +289,7 @@ int32_t msg_delete_profile(const char *iccid, rt_bool *opr_iccid_using)
 
             /* only disable profile when it's a operational profile */
             lpa_disable_profile(iccid);
-            rt_os_sleep(1);
+            rt_os_sleep(3);
         }        
     }
     ret = lpa_delete_profile(iccid);
