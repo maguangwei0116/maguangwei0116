@@ -15,16 +15,19 @@ if __name__=='__main__':
         all = f.read()
 
         with open(sys.argv[2], 'w') as f:
-            f.write("static char card_buf[]={")
-            f.write('\n')
+            f.write("static const unsigned char card_buf[] = \n{\n    ")
             for d in all:
-                e = "0x%s," % binascii.b2a_hex(d)
+                e = "0x%s, " % binascii.b2a_hex(d)
                 f.write(e)
                 i = i + 1
-                h = i % 50
+                h = i % 16
                 if h == 0:
-                    f.write('\n')
-            f.seek(-1, 2)
-            f.write("};")
-            f.write('\n')
+                    f.write("\n    ")
+            
+            if (i % 16) == 0:
+                f.seek(-4, 2)
+                f.write("};\n")
+            else:
+                f.seek(-1, 2)
+                f.write("\n};\n")
             f.close()
