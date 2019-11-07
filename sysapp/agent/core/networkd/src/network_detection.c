@@ -15,24 +15,26 @@
 #include "rt_timer.h"
 #include "downstream.h"
 #include "card_manager.h"
+#include "card_detection.h"
 #include "rt_timer.h"
 
-#define MAX_RETRY_CNT               3
-#define MAX_WAIT_REGIST_TIME        180
-#define DELAY_100MS                 100
-#define MAX_WAIT_BOOTSTRAP_TIME     (150*(DELAY_100MS))  // 15000ms = 15S
+#define MAX_INIT_RETRY_CNT              3
+#define MAX_WAIT_REGIST_TIME            180
+#define DELAY_100MS                     100
+#define MAX_WAIT_BOOTSTRAP_TIME         (150*(DELAY_100MS))  // 15000ms = 15S
+#define NETWORK_STATE_NOT_READY         -1
 
-static int32_t g_network_state      = 0;
-static int32_t g_network_new_state  = 0;
-static rt_bool g_network_timer_flag = RT_TRUE;
+static int32_t g_network_state          = NETWORK_STATE_NOT_READY;
+static int32_t g_network_new_state      = 0;
+static rt_bool g_network_timer_flag     = RT_FALSE;
 
 static void network_timer_callback(void)
 {
-    if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
+    if (g_network_state == DSI_STATE_CALL_IDLE || g_network_state == NETWORK_STATE_NOT_READY) {  // network disconnected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_BOOTSTRAP_DISCONNECTED, NULL, 0);
     }
     g_network_timer_flag = RT_FALSE;
-    MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
+    MSG_PRINTF(LOG_INFO, "%s, netwrok state: %d\r\n", __func__, g_network_state);
 }
 
 static void network_start_timer(void)
@@ -76,7 +78,7 @@ static void network_detection_task(void *arg)
     while (1) {
         ret = dial_up_init(&dsi_net_hndl);
         if (ret != RT_SUCCESS) {            
-            if (++cnt <= MAX_RETRY_CNT) {
+            if (++cnt <= MAX_INIT_RETRY_CNT) {
                 MSG_PRINTF(LOG_ERR, "dial up init error (%d) !!!\r\n", cnt);
                 rt_os_sleep(3);
                 continue;
@@ -100,7 +102,7 @@ exit_entry:
 
 int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
-    if (mode == MSG_ALL_SWITCH_CARD) {
+    if (mode == MSG_START_NETWORK_DETECTION) {
         network_start_timer();
         #if 0 // only for debug
         {
@@ -115,89 +117,8 @@ int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
     return RT_SUCCESS;
 }
 
-static void network_set_apn_handler(int32_t state)
-{
-    static char using_iccid[THE_ICCID_LENGTH + 1] = {0};
-    char new_iccid[THE_ICCID_LENGTH + 1] = {0};
-    profile_type_e type;
-    rt_bool update_using_iccid = RT_FALSE;
-
-    if (g_network_state != state) {
-        MSG_PRINTF(LOG_INFO, "state: %d ==> %d\r\n", g_network_state, state);
-    }
-    
-    /* (disconnected => connected) [record using iccid] */
-    if ((g_network_state == DSI_STATE_CALL_IDLE || g_network_state == DSI_STATE_CALL_CONNECTING) && \
-            state == DSI_STATE_CALL_CONNECTED) {
-        MSG_PRINTF(LOG_WARN, "state changed: DSI_STATE_CALL_IDLE/DSI_STATE_CALL_CONNECTING ==> DSI_STATE_CALL_CONNECTED\r\n");
-        rt_os_sleep(1);
-        /* update profiles info only */
-        card_check_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP, using_iccid, NULL);
-    }
-
-    /* (connected => disconnected) or (disconnected => disconnected) [check using iccid] */
-    if ((g_network_state == DSI_STATE_CALL_CONNECTED && \
-            (state == DSI_STATE_CALL_IDLE || state == DSI_STATE_CALL_CONNECTING)) ||\
-            (g_network_state == DSI_STATE_CALL_IDLE && state == DSI_STATE_CALL_IDLE)) {
-        if (g_network_state == DSI_STATE_CALL_CONNECTED) {
-            MSG_PRINTF(LOG_WARN, "state changed: DSI_STATE_CALL_CONNECTED ==> DSI_STATE_CALL_IDLE/DSI_STATE_CALL_CONNECTING\r\n");
-        } else if (g_network_state == DSI_STATE_CALL_IDLE) {
-            MSG_PRINTF(LOG_WARN, "state changed: DSI_STATE_CALL_IDLE ==> DSI_STATE_CALL_IDLE\r\n");
-            update_using_iccid = RT_TRUE;
-        }
-
-        rt_os_sleep(1);
-        /* update profiles info only */
-        card_check_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP, new_iccid, &type);
-
-        if (rt_os_strncmp(using_iccid, new_iccid, THE_MAX_CARD_NUM)) {
-            MSG_PRINTF(LOG_WARN, "iccid changed: %s ==> %s\r\n", using_iccid, new_iccid);
-            if (PROFILE_TYPE_OPERATIONAL == type) {
-                /* set apn when detect a operational profile */
-                card_set_opr_profile_apn();
-            } else if (PROFILE_TYPE_PROVISONING == type) {
-                rt_os_sleep(1);
-                /* start bootstrap when detect a provisioning profile */
-                card_check_profile_info(UPDATE_JUDGE_BOOTSTRAP, new_iccid, &type);
-            }
-        }
-    }
-
-    if (update_using_iccid) {
-        rt_os_memcpy(using_iccid, new_iccid, THE_MAX_CARD_NUM);   
-    }
-}
-
-int32_t network_set_apn_event(const uint8_t *buf, int32_t len, int32_t mode)
-{
-    if (mode == MSG_SET_APN) {
-        int32_t state = 0;
-        rt_os_memcpy(&state, buf, len);
-        network_set_apn_handler(state);
-    }
-
-    return RT_SUCCESS;
-}
-
-static void network_set_apn_timer_callback(void)
-{
-    msg_send_agent_queue(MSG_ID_SET_APN, MSG_SET_APN, (void *)&g_network_new_state, sizeof(g_network_new_state));
-}
-
-static int32_t network_set_apn_timer(int32_t state)
-{
-    g_network_new_state = state;
-    if (state == DSI_STATE_CALL_IDLE) {
-        register_timer(2, 0, &network_set_apn_timer_callback);
-    }
-
-    return RT_SUCCESS;
-}
-
 static void network_state(int32_t state)
 {
-    network_set_apn_timer(state);
-
     if (state == g_network_state) {
         return;
     }
@@ -206,34 +127,11 @@ static void network_state(int32_t state)
 
     if (g_network_state == DSI_STATE_CALL_CONNECTED) {  // network connected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
-    } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
-        network_start_timer();
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
-    }
-}
-
-static void network_state_notify(void)
-{
-    if (g_network_state == DSI_STATE_CALL_CONNECTED) {  // network connected
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
+        card_detection_disable();
     } else if (g_network_state == DSI_STATE_CALL_IDLE) {  // network disconnected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
-    }   
-}
-
-/* get newest network state after timeout seconds */
-void network_state_update(int32_t timeout)
-{
-    register_timer(timeout, 0 , &network_state_notify);  
-}
-
-/* force to update network state when other module found network is inactive */
-void network_state_force_update(int32_t new_state)
-{
-    if (MSG_NETWORK_DISCONNECTED == new_state) {
-        network_state(DSI_STATE_CALL_IDLE);
-    } else if (MSG_NETWORK_CONNECTED == new_state) {
-        network_state(DSI_STATE_CALL_CONNECTED);
+        card_detection_enable();
+        g_network_state = NETWORK_STATE_NOT_READY;
     }
 }
 
@@ -252,7 +150,7 @@ int32_t init_network_detection(void *arg)
         MSG_PRINTF(LOG_ERR, "create task fail\n");
         return RT_ERROR;
     }
-    register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
+
     return RT_SUCCESS;
 }
 
