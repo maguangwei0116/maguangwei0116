@@ -37,24 +37,9 @@ typedef struct dirent *             rt_dirent_t;
 #define RT_FS_F_OK                  0
 #endif
 
-rt_fshandle_t rt_fopen(const char *filename, rt_fsmode_t mode);
-int rt_fclose(rt_fshandle_t fp);
-int rt_fseek(rt_fshandle_t fp, long int offset, int whence);
-int rt_feof(rt_fshandle_t fp);
-char *rt_fgets(char *s, int size, rt_fshandle_t fp);
-long int rt_ftell(rt_fshandle_t fp);
-long int rt_fflush(rt_fshandle_t fp);
-size_t rt_fread(void *ptr, size_t size, size_t count, rt_fshandle_t fp);
-size_t rt_fwrite(const void *ptr, size_t size, size_t count, rt_fshandle_t fp);
-bool rt_dir_exist(const char *dir);
-bool rt_file_exist(const char *file);
-int rt_create_dir(const char *dir);
-int rt_delete_dir(const char *dir);
-int rt_delete_file(const char *file);
-rt_dir_t rt_opendir(const char *name);
-int rt_closedir(rt_dir_t dir);
-rt_dirent_t rt_readdir(rt_dir_t dir);
-
+rt_dir_t linux_opendir(const char *name);
+int linux_closedir(rt_dir_t dir);
+rt_dirent_t linux_readdir(rt_dir_t dir);
 rt_fshandle_t linux_fopen(const char *filename, rt_fsmode_t mode);
 int linux_fclose(rt_fshandle_t fp);
 int linux_fseek(rt_fshandle_t fp, long int offset, int whence);
