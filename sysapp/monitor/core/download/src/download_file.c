@@ -112,7 +112,7 @@ static void upgrade_process(void *args)
         MSG_PRINTF(LOG_ERR, "Download file failed !\r\n");
         goto end;
     }
-    if (monitor_inspect_file(d_info->file_name) != RT_TRUE) {     // inspect file
+    if (monitor_inspect_file(d_info->file_name, d_info->real_file_name) != RT_TRUE) {     // inspect file
         MSG_PRINTF(LOG_ERR, "Inspect file failed !\r\n");
         goto end;
     }
@@ -133,7 +133,7 @@ end:
 
 void init_download(void *args)
 {
-    rt_os_memcpy(g_d_info.file_name, (uint8_t *)args, rt_os_strlen((int8_t *)args));
+    rt_os_memcpy(&g_d_info, (upgrade_struct_t *)args, sizeof(upgrade_struct_t));
 }
 
 int32_t download_start(void)

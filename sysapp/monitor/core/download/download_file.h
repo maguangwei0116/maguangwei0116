@@ -18,8 +18,9 @@
 
 #define MAX_FILE_NAME_LEN               128
 
-typedef struct {
+typedef struct UPGRADE_STRUCT {
     uint8_t file_name[MAX_FILE_NAME_LEN + 1];
+    uint8_t real_file_name[MAX_FILE_NAME_LEN + 1];
 } upgrade_struct_t;
 
 int32_t download_start(void);
