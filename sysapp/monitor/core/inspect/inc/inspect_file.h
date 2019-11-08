@@ -16,7 +16,7 @@
 
 #include "rt_type.h"
 
-rt_bool monitor_inspect_file(uint8_t *file_name);
+rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_name);
 rt_bool inspect_abstract_content(uint8_t *hash, uint8_t *signature);
 
 #endif // __INSPECT_FILE_H__

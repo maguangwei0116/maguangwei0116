@@ -26,7 +26,21 @@
 static uint8_t *pk = "B37F3BAD94DFCC1FBDB0FBF608802FA72D38FAEE3AB8CBBF63BF6C99DA9E31FAE1465F1BCFCAF85A6626B938D1BD12D6901833047C50FE8ED67B84CFCFECCFEA";
 extern int ecc_hash_verify_signature(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_len, uint8_t *sigBuff, int sig_len);  // in vuicc lib
 
-rt_bool monitor_inspect_file(uint8_t *file_name)
+static int32_t get_real_file_name(char *name, int32_t len)
+{
+    int32_t i = 0;
+
+    for (i = 0; i < len; i++) {
+        if (name[i] == 'F') {
+            rt_os_memset(&name[i], 0, len - i);
+            break;
+        }
+    }
+
+    return RT_SUCCESS;
+}
+
+rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_name)
 {
     rt_fshandle_t fp = NULL;
     sha256_ctx_t sha_ctx;
@@ -78,6 +92,13 @@ rt_bool monitor_inspect_file(uint8_t *file_name)
         MSG_PRINTF(LOG_ERR, "file_name:%s, verify signature failed!!\n", file_name);
         goto end;
     }
+	
+    get_real_file_name(file_info, MAX_FILE_INFO_LEN);
+    if (rt_os_strcmp(file_info, exp_real_file_name)) {
+        MSG_PRINTF(LOG_ERR, "file info unmatched, [%s] != [%s]\n", file_info, exp_real_file_name);
+        goto end;
+    }
+	
     ret = RT_TRUE;
 
 end:
