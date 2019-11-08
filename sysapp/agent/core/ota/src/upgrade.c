@@ -141,7 +141,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         MSG_PRINTF(LOG_DBG, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
 
         /* If you force to send http download with range==file_size, it will response http status 406 */
-        if (dw_struct.range == d_info->size) {
+        if (dw_struct.range == d_info->size && d_info->size != 0) {
             MSG_PRINTF(LOG_DBG, "ota task has downloaded over before !\r\n");
             ret = RT_SUCCESS;
             break;
