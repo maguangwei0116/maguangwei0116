@@ -92,12 +92,12 @@ static int32_t parse_profile(uint32_t rand_num)
 
     dc = ber_decode(NULL, &asn_DEF_ProfileFile, (void **) &profile_file, card_buf, sizeof(card_buf));
     if (dc.code != RC_OK) {
-        MSG_PRINTF(LOG_ERR, "Consumed:%ld\n", dc.consumed);
+        MSG_PRINTF(LOG_ERR, "Consumed : %ld\n", dc.consumed);
         goto end;
     }
 
     operator_num = profile_file->sharedProfile.fileInfo.operatorNum;
-    MSG_PRINTF(LOG_INFO, "Operator num:%d!!\n", operator_num);
+    MSG_PRINTF(LOG_INFO, "Operator num : %d!!\n", operator_num);
     if (g_operator_num >= operator_num) {
         g_operator_num = 0;
     }
@@ -108,14 +108,17 @@ static int32_t parse_profile(uint32_t rand_num)
     size = size / profile_info->totalNum;  // one profile size
     profile_seq = rand_num % profile_info->totalNum;
 
-    MSG_PRINTF(LOG_INFO, "Profiles size:%d!!\n", size);
-    MSG_PRINTF(LOG_INFO, "profile_seq:%d!!\n", profile_seq);
+    MSG_INFO_ARRAY("insert profile buffer:", profiles + (profile_seq * size), size);
+    MSG_PRINTF(LOG_INFO, "select/total  : %d/%d\n", profile_seq, profile_info->totalNum);
 
-    insert_profile(profiles + (profile_seq * size), size);
-    MSG_PRINTF(LOG_INFO, "apn:%s\n", profile_info->apn.list.array[g_operator_num]->apnName.buf);
+    ret = insert_profile(profiles + (profile_seq * size), size);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "insert profile fail, ret:%d !!\n", ret);
+        goto end;		
+    }
+	
     rt_qmi_modify_profile(1, 0, profile_info->apn.list.array[g_operator_num]->apnName.buf, 0);
-    MSG_PRINTF(LOG_INFO, "Apn name:%s!!\n", profile_info->apn.list.array[g_operator_num]->apnName.buf);
-    MSG_PRINTF(LOG_INFO, "Totle number:%d!!\n", profile_info->totalNum);
+    MSG_PRINTF(LOG_INFO, "set apn name  : %s\n", profile_info->apn.list.array[g_operator_num]->apnName.buf);
     ret = RT_SUCCESS;
 
 end:
