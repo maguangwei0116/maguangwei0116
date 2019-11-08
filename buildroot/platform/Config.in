@@ -1,37 +1,43 @@
 menu "Product Options"
 
-config BR2_SYSTEM_NAME
+config BR2_CFG_SYSTEM_NAME
 	string "System Name"
 	default "linux"
 
-config BR2_PRODUCT_NAME
+config BR2_CFG_PRODUCT_NAME
 	string "Product Name"
 	default "euicc"	
 	
-config BR2_SOFTWARE_NAME
+config BR2_CFG_SOFTWARE_NAME
 	string "Software Name"
 	default "general"
 	
 choice
 	prompt "Build for Platform"
-	default BR2_PLATFORM_9X07
+	default BR2_CFG_PLATFORM_9X07
 
-config BR2_PLATFORM_X86
+config BR2_CFG_PLATFORM_X86
 	bool "x86"
 	help
 	  Build for X86 platform.
 
-config BR2_PLATFORM_9X07
+config BR2_CFG_PLATFORM_9X07
 	bool "9x07"
 	help
 	  Build for 9x07 platform
 
+config BR2_CFG_PLATFORM_ANDROID
+	bool "android"
+	help
+	  Build for android platform
+
 endchoice
 
-config BR2_PLATFORM_TYPE
+config BR2_CFG_PLATFORM_TYPE
 	string
-	default "x86" 	if BR2_PLATFORM_X86
-	default "9x07"  if BR2_PLATFORM_9X07
+	default "x86" 		if BR2_CFG_PLATFORM_X86
+	default "9x07"  	if BR2_CFG_PLATFORM_9X07
+	default "android"  	if BR2_CFG_PLATFORM_ANDROID
 
 choice
 	prompt "Software Type"
@@ -53,7 +59,7 @@ config BR2_CFG_SOFTWARE_TYPE_DEBUG
 
 endchoice
 
-config BR2_SOFTWARE_TYPE
+config BR2_CFG_SOFTWARE_TYPE
 	string
 	default "debug"		if BR2_CFG_SOFTWARE_TYPE_DEBUG
 	default "release"	if BR2_CFG_SOFTWARE_TYPE_RELEASE
@@ -83,11 +89,11 @@ config BR2_CFG_ENV_TYPE
 
 config BR2_OUTPUT_PATH
 	string "Output Path"
-	default "$(BR2_SOFTWARE_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
+	default "$(BR2_CFG_SOFTWARE_NAME)-$(BR2_CFG_PLATFORM_TYPE)-$(BR2_CFG_SOFTWARE_TYPE)"
 
 config BR2_IMAGE_NAME
 	string "Image Name"
-	default "$(BR2_SOFTWARE_NAME)-$(BR2_PLATFORM_TYPE)-$(BR2_SOFTWARE_TYPE)"
+	default "$(BR2_CFG_SOFTWARE_NAME)-$(BR2_CFG_PLATFORM_TYPE)-$(BR2_CFG_SOFTWARE_TYPE)"
 
 endmenu
 
