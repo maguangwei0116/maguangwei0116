@@ -26,7 +26,9 @@
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"
+#define RT_AGENT_NAME               "agent"
 #define RT_AGENT_FILE               "/usr/bin/rt_agent"
+#define RT_MONITOR_NAME             "monitor"
 #define RT_MONITOR_FILE             "/usr/bin/rt_monitor"
 #define RT_MONITOR_LOG              "/data/redtea/rt_monitor_log"
 
@@ -127,6 +129,7 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
     } else if (cmd == 0x02) { // choose one profile from backup profile
         int32_t ret;
         choose_uicc_type(type);
+        rt_os_sleep(3);  // must have, delay some for card reset !!!
         ret = backup_process(type);
         *rsp = (ret == RT_SUCCESS) ? 0x01 : 0x00;
         *rsp_len = 1;
@@ -162,7 +165,10 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
 
     cmd = (data[5] << 8) + data[6];
     if (cmd == 0xFFFF) { // msg from agent
-        return monitor_deal_agent_msg(data[7], &data[12], data[11], rsp, rsp_len);
+        MSG_INFO_ARRAY("A-APDU REQ:", data, len);
+        sw = monitor_deal_agent_msg(data[7], &data[12], data[11], rsp, rsp_len);
+        MSG_INFO_ARRAY("A-APDU RSP:", rsp, *rsp_len);
+        return sw;
     } else { // msg for vuicc
         MSG_INFO_ARRAY("E-APDU REQ:", data, len);
         sw = card_cmd((uint8_t *)data, len, rsp, rsp_len);
@@ -221,9 +227,13 @@ static int32_t agent_task_check_start(void)
     system(cmd);
 
     /* inspect agent, if inspect failed, go to backup process */
-    if (monitor_inspect_file(RT_AGENT_FILE) != RT_TRUE) {
+    if (monitor_inspect_file(RT_AGENT_FILE, RT_AGENT_NAME) != RT_TRUE) {
+		upgrade_struct_t upgrade = {0};
+		
         linux_delete_file(RT_AGENT_FILE);
-        init_download(RT_AGENT_FILE);
+		snprintf(upgrade.file_name, sizeof(upgrade.file_name), "%s", RT_AGENT_FILE);
+		snprintf(upgrade.real_file_name, sizeof(upgrade.real_file_name), "%s", RT_AGENT_NAME);
+        init_download(&upgrade);
         choose_uicc_type(LPA_CHANNEL_BY_IPC);
         network_detection_task();
     }
@@ -315,7 +325,7 @@ int32_t main(int32_t argc, const char *argv[])
     rt_qmi_init(NULL);
 
     /* inspect monitor */
-    while (monitor_inspect_file(RT_MONITOR_FILE) != RT_TRUE) {
+    while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
     }
 
