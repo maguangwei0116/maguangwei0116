@@ -904,7 +904,7 @@ char* MQTTStrncpy(char *dest, const char *src, size_t dest_size)
 char* MQTTStrdup(const char* src)
 {
     if(src==NULL)
-        return;
+        return NULL;
     size_t mlen = strlen(src) + 1;
     char* temp = malloc(mlen);
     MQTTStrncpy(temp, src, mlen);

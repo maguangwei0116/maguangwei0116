@@ -20,6 +20,7 @@
 #include "rt_type.h"
 #include "random.h"
 #include "agent2monitor.h"
+#include "ota.h"
 
 #define DEFAULT_SINGLE_INTERVAL_TIME            10                              // default interval time (seconds)
 #define DEFAULT_PROFILE_DETECT_TIME             60                              // detect default share profile download time (seconds)
@@ -87,7 +88,7 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
 
             /* ignore frist bootstrap msg when it's using provsioning profile */
             if (g_public_value->card_info->type == PROFILE_TYPE_PROVISONING && frist_bootstrap_msg == 1) {
-                frist_bootstrap_msg - 0;   
+                frist_bootstrap_msg = 0;   
             } else {
                 ipc_select_profile_by_monitor();
             }         

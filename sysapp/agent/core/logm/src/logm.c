@@ -7,6 +7,7 @@
 #include "config.h"
 #include "cJSON.h"
 #include "md5.h"
+#include "rt_manage_data.h"
 
 typedef struct LOG_PARAM {
     char            tranId[64];

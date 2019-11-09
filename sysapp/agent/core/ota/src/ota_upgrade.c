@@ -505,7 +505,7 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
 
     if (param->target.type == TARGET_TYPE_SHARE_PROFILE || param->target.type == TARGET_TYPE_DEF_SHARE_PROFILE) {
         /* force to update share profile */
-        policy_forced == UPGRADE_MODE_FORCED; 
+        policy_forced = UPGRADE_MODE_FORCED; 
     } else {
         policy_forced = param->policy.forced;
     }

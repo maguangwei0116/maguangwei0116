@@ -9,6 +9,7 @@
 #include "agent_main.h"
 #include "upgrade.h"
 #include "agent_queue.h"
+#include "rt_qmi.h"
 
 #include "cJSON.h"
 
