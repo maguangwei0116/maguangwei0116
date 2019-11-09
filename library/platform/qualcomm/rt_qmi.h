@@ -14,16 +14,12 @@
 #ifndef __RT_QMI_H__
 #define __RT_QMI_H__
 
-#include <qmi-framework/qmi_client.h>
 #include "rt_os.h"
 #include "rt_type.h"
 
-#define RT_DMS_V01_IDL_MINOR_VERS  0x39
-
-#define rt_qmi_send_apdu(data, data_len, rsp, rsp_len, channel)    qmi_send_apdu(data, data_len, rsp, rsp_len, channel)
-#define rt_qmi_close_channel(channel)    qmi_close_channel(channel)
-#define rt_qmi_open_channel(aid, aid_len, channel)     qmi_open_channel(aid, aid_len, channel)
-
+int32_t rt_qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel);
+int32_t rt_qmi_close_channel(uint8_t channel);
+int32_t rt_qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *channel);
 int32_t rt_qmi_get_register_state(int32_t *register_state);
 int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc);
 int32_t rt_qmi_get_current_iccid(uint8_t *iccid);

@@ -16,6 +16,8 @@
 #include "qmi_dms.h"
 #include "qmi_control_point.h"
 
+#define RT_DMS_V01_IDL_MINOR_VERS  0x39
+
 static qmi_client_error_type dms_get_mfr_req(qmi_client_type dms_client, qmi_device_info_t *devinfo)
 {
     qmi_client_error_type err;

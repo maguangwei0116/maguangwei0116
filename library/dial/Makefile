@@ -9,7 +9,9 @@ SRC-PATH	= ./src
 INC-PATH	= ./inc
 
 # Config your resource file list by += xxx.c
+ifeq ($(LIBRARY_PLATFORM_9X07), y)
 SRC-y 		+= $(SRC-PATH)/dial_up.c
+endif
 
 # Config your include file path by += xxx-inc
 INC-y 		+= ./

@@ -15,7 +15,22 @@
 #include "qmi_uim.h"
 #include "qmi_dms.h"
 #include "qmi_nas.h"
-#include "qmi_wds.h"
+#include "qmi_wds.h" 
+
+int32_t rt_qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
+{
+    return qmi_send_apdu(data, data_len, rsp, rsp_len, channel);
+}
+
+int32_t rt_qmi_close_channel(uint8_t channel)
+{
+    return qmi_close_channel(channel);  
+}
+
+int32_t rt_qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *channel)
+{
+    return qmi_open_channel(aid, aid_len, channel);   
+}
 
 int32_t rt_qmi_get_register_state(int32_t *register_state)
 {

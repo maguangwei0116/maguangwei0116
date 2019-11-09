@@ -25,12 +25,17 @@ SRC-y 		+= src/http_client.c
 SRC-y 		+= src/log.c
 SRC-y 		+= src/rt_os.c
 SRC-y 		+= src/rt_timer.c
+ifeq ($(LIBRARY_PLATFORM_9X07), y)
 SRC-y 		+= src/qmi_control_point.c
 SRC-y 		+= src/qmi_dms.c
 SRC-y 		+= src/qmi_nas.c
 SRC-y 		+= src/qmi_uim.c
 SRC-y 		+= src/qmi_wds.c
 SRC-y 		+= src/rt_qmi.c
+endif
+ifeq ($(LIBRARY_PLATFORM_ANDROID), y)
+SRC-y 		+= src/rt_qmi_android.c
+endif
 SRC-y 		+= src/socket.c
 SRC-y 		+= src/random.c
 
@@ -39,7 +44,9 @@ INC-PATH 	+= ./file/
 INC-PATH 	+= ./http/
 INC-PATH 	+= ./os/
 INC-PATH 	+= ./log/
+#ifeq ($(LIBRARY_PLATFORM_9X07), y)
 INC-PATH 	+= ./qualcomm/
+#endif
 INC-PATH 	+= ./socket/
 INC-PATH 	+= ./random/
 
