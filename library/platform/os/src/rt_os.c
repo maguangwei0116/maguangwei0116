@@ -151,6 +151,12 @@ int32_t linux_mutex_release(pthread_mutex_t *mutex)
 }
 
 //message queue
+int32_t rt_init_msg_queue(void *args)
+{
+    (void)args;
+    return RT_SUCCESS;
+}
+
 int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id)
 {
     int32_t msgid = -1;
@@ -167,7 +173,7 @@ int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id)
     return msgid;
 }
 
-int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg)
+int32_t rt_receive_msg_queue(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg)
 {
     if (msgrcv(msgid, buffer, len, msgtyp, msgflg) == -1) {
         MSG_PRINTF(LOG_ERR, "recv queue error, err(%d)=%s!!\n", errno, strerror(errno));
@@ -177,7 +183,7 @@ int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t m
     return RT_SUCCESS;
 }
 
-int32_t rt_send_queue_msg(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg)
+int32_t rt_send_msg_queue(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg)
 {
     if (msgsnd(msgid, buffer, len, msgflg) == -1) {
         MSG_PRINTF(LOG_ERR, "send queue error, err(%d)=%s!!\n", errno, strerror(errno));

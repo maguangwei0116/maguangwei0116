@@ -91,7 +91,7 @@ static void agent_queue_task(void)
 
     while (1) {
         rt_os_memset(&que_t, 0, sizeof(agent_que_t));
-        if (rt_receive_queue_msg(g_queue_id, (void *) &que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
+        if (rt_receive_msg_queue(g_queue_id, (void *) &que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
             MSG_PRINTF(LOG_INFO, "que_t.msg_id:%d, mode:%d\n", que_t.msg_id, que_t.mode);
             switch (que_t.msg_id) {
                 case MSG_ID_BOOT_STRAP:
@@ -167,7 +167,7 @@ static void upload_queue_task(void)
 
     while (1) {
         rt_os_memset(&que_t, 0, sizeof(upload_que_t));
-        if (rt_receive_queue_msg(g_upload_queue_id, &que_t, len, UPLOAD_QUEUE_MSG_TYPE, 0) == 0) {
+        if (rt_receive_msg_queue(g_upload_queue_id, &que_t, len, UPLOAD_QUEUE_MSG_TYPE, 0) == 0) {
             //MSG_PRINTF(LOG_INFO, "upload queue dealing ... que_t.data_buf: %p\r\n", que_t.data_buf);
             ret = upload_event_final_report(que_t.data_buf, que_t.data_len);
             if (ret) {
@@ -195,7 +195,7 @@ static int32_t agent_queue_clear_msg(int32_t time_cnt)
 
     for (i = 0; i < time_cnt; i++) {
         rt_os_memset(&agent_queue, 0, sizeof(agent_queue));
-        ret = rt_receive_queue_msg(g_queue_id, &agent_queue, agent_queue_len, AGENT_QUEUE_MSG_TYPE, RT_IPC_NOWAIT);
+        ret = rt_receive_msg_queue(g_queue_id, &agent_queue, agent_queue_len, AGENT_QUEUE_MSG_TYPE, RT_IPC_NOWAIT);
         if (ret == RT_ERROR && !agent_queue.data_buf) {
             break;
         }
@@ -218,7 +218,7 @@ static int32_t upload_queue_clear_msg(int32_t time_cnt)
 
     for (i = 0; i < time_cnt; i++) {
         rt_os_memset(&upload_queue, 0, sizeof(upload_queue));
-        ret = rt_receive_queue_msg(g_upload_queue_id, &upload_queue, upload_queue_len, UPLOAD_QUEUE_MSG_TYPE, RT_IPC_NOWAIT); 
+        ret = rt_receive_msg_queue(g_upload_queue_id, &upload_queue, upload_queue_len, UPLOAD_QUEUE_MSG_TYPE, RT_IPC_NOWAIT); 
         if (ret == RT_ERROR && !upload_queue.data_buf) {
             break;
         }
@@ -234,6 +234,8 @@ int32_t init_queue(void *arg)
     rt_task task_id = 0;
     rt_task upload_task_id = 0;
     int32_t ret = RT_ERROR;
+
+    rt_init_msg_queue(NULL);
 
     g_card_info = &(((public_value_list_t *)arg)->card_info);
     g_queue_id = rt_creat_msg_queue("./", 168);
@@ -282,7 +284,7 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
     }
     que_t.data_len = len;
     len = sizeof(agent_que_t) - sizeof(long);
-    return rt_send_queue_msg(g_queue_id, (const void *) &que_t, len, 0);
+    return rt_send_msg_queue(g_queue_id, (const void *) &que_t, len, 0);
 }
 
 int32_t msg_send_upload_queue(void *buffer, int32_t len)
@@ -296,7 +298,7 @@ int32_t msg_send_upload_queue(void *buffer, int32_t len)
     rt_os_memcpy(que_t.data_buf, buffer, len);
     *(((uint8_t *)que_t.data_buf) + len) = '\0';
     len = sizeof(upload_que_t) - sizeof(long);
-    ret = rt_send_queue_msg(g_upload_queue_id, (const void *)&que_t, len, 0);
+    ret = rt_send_msg_queue(g_upload_queue_id, (const void *)&que_t, len, 0);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "send upload msg queue fail, ret=%d, err(%d)=%s\n", ret, errno, strerror(errno));
     }

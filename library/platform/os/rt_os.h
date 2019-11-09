@@ -72,9 +72,10 @@ int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
 void    rt_exit_task(void * args);
 #endif
 rt_task rt_get_pid(void);
+int32_t rt_init_msg_queue(void *args);
 int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id);
-int32_t rt_receive_queue_msg(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg);
-int32_t rt_send_queue_msg(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg);
+int32_t rt_receive_msg_queue(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg);
+int32_t rt_send_msg_queue(int32_t msgid, const void *buffer, int32_t len, int32_t msgflg);
 
 int32_t rt_os_memcmp(const void *mem_des, const void *mem_src, uint32_t len);
 int32_t rt_os_strcmp(const char *mem_des, const char *mem_src);
