@@ -202,6 +202,11 @@ int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *ms
     return 0;
 }
 
+int32_t log_print_string(log_level_e level, const char *msg)
+{
+    return log_print(level, LOG_HAVE_LEVEL_PRINTF, "%s", msg);
+}
+
 int32_t log_hexdump(const char *file, int32_t line, const char *title, const void *data, unsigned int len)
 {
     char str[160], octet[10];
