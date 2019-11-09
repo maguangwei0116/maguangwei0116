@@ -9,8 +9,13 @@ endif
 CFLAGS			+= $(patsubst %,-I%,$(INC-y))
 CFLAGS			+= -I$(SDK_INSTALL_PATH)/include
 CFLAGS			+= $(patsubst %,-I%,$(addprefix $(SYSROOT),$(SYSINC)))
+
+# Config user CFLAGS
 CFLAGS			+= $(USER_CFLAGS)
-CFLAGS			+= -g
+
+# Config common useful CFLAGS
+CFLAGS			+= -g 
+CFLAGS			+= -fdiagnostics-color=auto
 
 # Config link flags
 LDFLAGS			+= $(LIB-y)
