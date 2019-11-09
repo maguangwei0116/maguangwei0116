@@ -10,6 +10,7 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Sublime text
  *******************************************************************************/
+#ifdef CFG_PLATFORM_9X07
 
 #include "dial_up.h"
 #include "rt_timer.h"
@@ -202,4 +203,32 @@ int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     return RT_SUCCESS;
 }
+
+#endif
+
+#ifdef CFG_PLATFORM_ANDROID
+
+#include "network_detection.h"
+
+int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+}
+
+int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+}
+
+int32_t init_network_detection(void *arg)
+{
+}
+
+void    network_state_update(int32_t timeout)
+{
+}
+
+void    network_state_force_update(int32_t new_state)
+{
+}
+
+#endif
 

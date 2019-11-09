@@ -904,7 +904,11 @@ static int32_t mqtt_create_task(void)
 //init parameter
 static void mqtt_init_param(void)
 {
+#ifdef CFG_PLATFORM_ANDROID
+    g_mqtt_param.state                      = NETWORK_CONNECTING;
+#else
     g_mqtt_param.state                      = NETWORK_STATE_INIT;
+#endif
     g_mqtt_param.opts.nodelimiter           = 0;
     g_mqtt_param.opts.qos                   = MQTT_QOS_1;
     g_mqtt_param.opts.port                  = 0;

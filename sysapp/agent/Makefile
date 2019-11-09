@@ -44,8 +44,14 @@ USER_LDFLAGS                        += -lunwind -ldl
 endif
 
 # Config your own libraries
+ifeq ($(SYSAPP_PLATFORM_9X07), y)
 QMI-LIB                             = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
-COMM-LIB                            = comm crypto ssl pthread
+COMM-LIB                            = comm ssl crypto pthread
+endif
+ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
+COMM-LIB                            = comm z ssl crypto
+PTHREAD-LIB                         = pthread
+endif
 
 ############################################################################
 ### path
@@ -153,6 +159,9 @@ INC-y 			                        += $(addsuffix inc, $(wildcard $(INC-PATH-y)))
 LIB-y 			                        += -lm
 LIB-y 			                        += $(patsubst %,-l%,$(COMM-LIB))
 LIB-y 			                        += $(patsubst %,-l%,$(QMI-LIB))
+ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
+LIB-y 			                        += $(patsubst %,-%,$(PTHREAD-LIB))
+endif
 
 ############################################################################################
 # Never modify from this line
