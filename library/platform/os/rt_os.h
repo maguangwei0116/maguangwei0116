@@ -113,9 +113,10 @@ int32_t rt_os_rename(const char *oldname, const char *newname);
 int32_t rt_os_chmod(const char *pathname, RT_MODE mode);
 
 void  rt_os_reboot(void);
-void rt_os_exit(int status);
+void  rt_os_exit(int status);
 void  rt_os_sync(void);
 void  rt_os_sleep(int32_t time);
+void  rt_os_msleep(int32_t m_time)
 
 void *rt_os_signal(int32_t signum, void *handler);
 

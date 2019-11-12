@@ -150,6 +150,7 @@ int32_t linux_mutex_release(pthread_mutex_t *mutex)
     return RT_SUCCESS;
 }
 
+#ifndef CFG_PLATFORM_ANDROID
 //message queue
 int32_t rt_init_msg_queue(void *args)
 {
@@ -192,6 +193,7 @@ int32_t rt_send_msg_queue(int32_t msgid, const void *buffer, int32_t len, int32_
 
     return RT_SUCCESS;
 }
+#endif
 
 #ifndef RT_OS_MEM_DEBUG
 void *rt_os_malloc(uint32_t size)
@@ -438,6 +440,11 @@ void rt_os_sync(void)
 void rt_os_sleep(int32_t time)
 {
     sleep(time);
+}
+
+void rt_os_msleep(int32_t m_time)
+{
+    usleep(m_time * 1000);
 }
 
 void *rt_os_signal(int signum, void* handler)
