@@ -28,7 +28,7 @@ typedef struct UPLOAD_EVENT {
 
 #define UPLOAD_EVENT_OBJ_INIT(event, topic, packer)\
     static const upload_event_t upload_event_##event##_obj \
-    __attribute__((section(".upload.event.init.obj"))) = \
+    __attribute__((section(".upload.event.init.obj"))) __attribute__((__used__)) = \
     {#event, topic, packer}
 
 #define UPLOAD_EVENT_OBJ_EXTERN(event) \

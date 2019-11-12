@@ -37,7 +37,7 @@ typedef struct DOWNSTREAM_MSG {
 
 #define DOWNSTREAM_METHOD_OBJ_INIT(method, msg_id, event, parser, handler)\
     static const downstream_method_t downstream_method_##method##_obj \
-    __attribute__((section(".downstream.method.init.obj"))) = \
+    __attribute__((section(".downstream.method.init.obj"))) __attribute__((__used__)) = \
     {#method, #event, msg_id, parser, handler}
 
 #define DOWNSTREAM_METHOD_OBJ_EXTERN(method) \
