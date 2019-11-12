@@ -12,6 +12,7 @@
  *******************************************************************************/
 
 #include "rt_qmi.h"
+#include "rt_os.h"
 
 int32_t rt_qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
@@ -47,6 +48,7 @@ int32_t rt_qmi_get_signal(int32_t *strength)
 
 int32_t rt_qmi_get_imei(uint8_t *imei)
 {
+    rt_os_strcpy((char *)imei, "867184037730144");  // only for test
 }
 
 int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int8_t pdp_type)
@@ -55,6 +57,7 @@ int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int
 
 int32_t rt_qmi_get_model(uint8_t *model)
 {
+    rt_os_strcpy((char *)model, "QUECTEL");  // only for test 
 }
 
 int32_t rt_qmi_get_network_type(uint8_t *network_type)
