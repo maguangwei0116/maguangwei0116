@@ -51,7 +51,7 @@ endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 COMM-LIB                            = comm z ssl crypto
 PTHREAD-LIB                         = pthread
-USER_CFLAGS                         += -fdata-sections -ffunction-sections -v
+USER_CFLAGS                         += -fdata-sections -ffunction-sections
 USER_LDFLAGS                        += -Wl,-T gcc_android_arm64_ld.script
 endif
 
@@ -75,43 +75,49 @@ vpath %.c ./core/personalise
 
 ############################################################################
 # Never adjustment order of these files
-SRC-y 			                        += ./core/upload/src/upload_null_start.c
-SRC-y 			                        += ./core/downstream/src/downstream_null_start.c
+SRC-y                                   += ./core/upload/src/upload_null_start.c
+SRC-y                                   += ./core/downstream/src/downstream_null_start.c
 ############################################################################
 
 # Config your resource file list by += xxx.c
-SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/bootstrap.c
-SRC-$(CFG_AGENT_BOOTSRRAP_ON) 			+= src/profile_parse.c
-SRC-y 		                            += $(wildcard ./core/mqtt/src/*.c)
-SRC-y 		                            += src/config.c
-SRC-y 			                        += src/agent_main.c
-SRC-y 			                        += src/agent_queue.c
-SRC-y 			                        += src/card_manager.c
-SRC-y 			                        += src/msg_process.c
-SRC-y 			                        += src/ipc_socket_client.c
-SRC-y 			                        += src/network_detection.c
-SRC-y 			                        += src/lpa.c
-SRC-y 			                        += src/lpdd.c
-SRC-y 			                        += src/luid.c
-SRC-y 			                        += src/ldsd.c
-SRC-y 			                        += src/apdu.c
+SRC-$(CFG_AGENT_BOOTSRRAP_ON)           += ./core/bootstrap/src/bootstrap.c
+SRC-$(CFG_AGENT_BOOTSRRAP_ON)           += ./core/bootstrap/src/profile_parse.c
+
+ifeq ($(CFG_AGENT_SINGLE_BOOTSRRAP_ON), y)
+SRC-SINGLE-$(CFG_AGENT_BOOTSRRAP_ON)    += ./core/bootstrap/src/bootstrap.c
+SRC-SINGLE-$(CFG_AGENT_BOOTSRRAP_ON)    += ./core/bootstrap/src/profile_parse.c
+endif
+
+SRC-y                                   += $(wildcard ./core/mqtt/src/*.c)
+SRC-y                                   += src/config.c
+SRC-y                                   += src/agent_main.c
+SRC-y                                   += src/agent_queue.c
+SRC-y                                   += src/card_manager.c
+SRC-y                                   += src/msg_process.c
+SRC-y                                   += src/ipc_socket_client.c
+SRC-y                                   += src/network_detection.c
+SRC-y                                   += src/lpa.c
+SRC-y                                   += src/lpdd.c
+SRC-y                                   += src/luid.c
+SRC-y                                   += src/ldsd.c
+SRC-y                                   += src/apdu.c
 
 # Add your upload-xxx cmd here
-SRC-y 			                        += ./core/upload/src/upload.c
-SRC-y 			                        += ./core/upload/src/upload_registered.c
-SRC-y 			                        += ./core/upload/src/upload_boot.c
-SRC-y 			                        += ./core/upload/src/upload_info.c
-SRC-y 			                        += ./core/upload/src/upload_init.c
+SRC-y                                   += ./core/upload/src/upload.c
+SRC-y                                   += ./core/upload/src/upload_registered.c
+SRC-y                                   += ./core/upload/src/upload_boot.c
+SRC-y                                   += ./core/upload/src/upload_info.c
+SRC-y                                   += ./core/upload/src/upload_init.c
 
 # Add your downstream-xxx cmd here
-SRC-y 			                        += ./core/downstream/src/downstream.c
-SRC-y 			                        += ./core/downstream/src/downstream_inspect.c
-SRC-y 			                        += ./core/downstream/src/downstream_reboot.c
-SRC-y 			                        += ./core/downstream/src/downstream_reset.c
-SRC-y 			                        += ./core/cardm/src/msg_push_ac_cmd.c
-SRC-y 			                        += ./core/cardm/src/msg_delete_cmd.c
-SRC-y 			                        += ./core/cardm/src/msg_enable_cmd.c
-SRC-y 			                        += ./core/networkd/src/upload_network.c
+SRC-y                                   += ./core/downstream/src/downstream.c
+SRC-y                                   += ./core/downstream/src/downstream_inspect.c
+SRC-y                                   += ./core/downstream/src/downstream_reboot.c
+SRC-y                                   += ./core/downstream/src/downstream_reset.c
+SRC-y                                   += ./core/cardm/src/msg_push_ac_cmd.c
+SRC-y                                   += ./core/cardm/src/msg_delete_cmd.c
+SRC-y                                   += ./core/cardm/src/msg_enable_cmd.c
+SRC-y                                   += ./core/networkd/src/upload_network.c
 
 # Personalise module
 SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/personalise.c
@@ -124,15 +130,18 @@ SRC-$(CFG_AGENT_OTA_ON)                 += ./core/ota/src/upgrade.c
 SRC-$(CFG_AGENT_OTA_ON)                 += ./core/ota/src/ota_upgrade.c
 
 # logger manager module
-SRC-y 			                        += ./core/logm/src/logm.c
+SRC-y                                   += ./core/logm/src/logm.c
 
 # agent 2 monitor
-SRC-y 			                        += ./core/agent2monitor/src/agent2monitor.c
+SRC-y                                   += ./core/agent2monitor/src/agent2monitor.c
+
+# agent main 
+SRC-y                                   += ./main/src/main.c
 
 ############################################################################
 # Never adjustment order of these files
-SRC-y 			                        += ./core/upload/src/upload_null_end.c
-SRC-y 			                        += ./core/downstream/src/downstream_null_end.c
+SRC-y                                   += ./core/upload/src/upload_null_end.c
+SRC-y                                   += ./core/downstream/src/downstream_null_end.c
 ############################################################################
 
 # Config your include file path by += xxx-inc
@@ -169,6 +178,12 @@ endif
 # Never modify from this line
 ############################################################################################
 -include $(REDTEA_SUPPORT_REDTEA_PATH)/sysapp.mk
+ifeq ($(CFG_AGENT_SINGLE_BOOTSRRAP_ON), y)
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/bootstrap_library.mk
+endif
+ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/android_library.mk
+endif
 ############################################################################################
 # Never modify end this line
 ############################################################################################
