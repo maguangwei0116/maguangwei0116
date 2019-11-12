@@ -35,6 +35,7 @@ SRC-y 		+= src/rt_qmi.c
 endif
 ifeq ($(LIBRARY_PLATFORM_ANDROID), y)
 SRC-y 		+= src/rt_qmi_android.c
+SRC-y 		+= src/rt_msg_queue.c
 endif
 SRC-y 		+= src/socket.c
 SRC-y 		+= src/random.c
