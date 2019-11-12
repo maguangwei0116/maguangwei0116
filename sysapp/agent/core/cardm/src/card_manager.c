@@ -14,7 +14,6 @@
 #include "card_manager.h"
 #include "agent_queue.h"
 #include "msg_process.h"
-#include "agent_main.h"
 
 #define RT_LAST_EID                 "/data/redtea/rt_last_eid"
 #define RT_PROFILE_STATE_ENABLED    2

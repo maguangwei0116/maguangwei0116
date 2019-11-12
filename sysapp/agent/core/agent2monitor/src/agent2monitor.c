@@ -2,7 +2,6 @@
 #include "rt_type.h"
 #include "rt_os.h"
 #include "log.h"
-#include "agent_main.h"
 #include "agent2monitor.h"
 #include "hash.h"
 #include "file.h"

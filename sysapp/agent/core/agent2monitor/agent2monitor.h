@@ -25,15 +25,30 @@ typedef enum AGENT_MONITOR_CMD {
     CMD_RFU             = 0x05,
 } agent_monitor_cmd_e;
 
+typedef struct ATOM_DATA {
+    uint8_t         start[7];               // agent message flag, the 6th and 7th must be 0xFF
+    uint8_t         cmd;                    // see the docs
+    uint8_t         rfu[3];                 // reserve for keep 4 bytes aligned
+    uint8_t         data_len;               // data len
+    uint8_t         *data;                  // data buf
+} atom_data_t;
+
+typedef struct INFO_VUICC_DATA {
+    uint8_t         vuicc_switch;           // lpa_channel_type_e, IPC used for vuicc
+    uint8_t         log_level;              // log_level_e
+    uint8_t         reserve[2];             // reserve for keep 4 bytes aligned
+    uint32_t        log_size;               // unit: bytes, little endian
+} info_vuicc_data_t;
+
 typedef struct MONITOR_VERSION {
-    char        name[64];           // example: linux-euicc-monitor-general
-    char        version[16];        // example: 0.0.0.1
-    char        chip_model[16];     // example: 9x07
+    char            name[64];               // example: linux-euicc-monitor-general
+    char            version[16];            // example: 0.0.0.1
+    char            chip_model[16];         // example: 9x07
 } monitor_version_t;
 
 typedef struct SIGNATURE_DATA {    
-    uint8_t     hash[64+4];         // hash, end with ¡®\0¡¯    
-    uint8_t     signature[128+4];   // signature data, end with ¡®\0¡¯
+    uint8_t         hash[64+4];             // hash, end with ¡®\0¡¯    
+    uint8_t         signature[128+4];       // signature data, end with ¡®\0¡¯
 } signature_data_t;
 
 int32_t ipc_set_monitor_param(config_info_t *config_info);

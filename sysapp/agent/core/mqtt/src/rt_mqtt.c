@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "rt_type.h"
-#include "agent_main.h"
 #include "config.h"
 #include "cJSON.h"
 #include "MQTTClient.h"

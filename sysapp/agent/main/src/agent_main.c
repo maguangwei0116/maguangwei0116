@@ -11,7 +11,6 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#include "agent_main.h"
 #include "agent_queue.h"
 #include "card_manager.h"
 #include "ipc_socket_client.h"
@@ -43,21 +42,7 @@ typedef struct INIT_OBJ {
     void *          arg;
 } init_obj_t ;
 
-static volatile int32_t toStop = 0;
 static public_value_list_t g_value_list;
-
-static void cfinish(int32_t sig)
-{
-    MSG_PRINTF(LOG_DBG, "recv signal %d, process exit !\r\n", sig);
-    rt_os_signal(RT_SIGINT, NULL);
-    toStop = 1;
-}
-
-static int32_t init_system_signal(void *arg)
-{
-    rt_os_signal(RT_SIGINT, cfinish);
-    return RT_SUCCESS;
-}
 
 static int32_t init_monitor(void *arg)
 {
@@ -158,7 +143,6 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa_channel,          (void *)&g_value_list),
-    INIT_OBJ(init_system_signal,        NULL),
     INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_queue,                (void *)&g_value_list),
@@ -187,13 +171,9 @@ static int32_t agent_init_call(void)
     return RT_SUCCESS;
 }
 
-int32_t main(int32_t argc, char **argv)
+int32_t agent_main(void *arg)
 {
     agent_init_call();
-
-    while (!toStop) {
-        rt_os_sleep(3);
-    }
 
     return 0;
 }

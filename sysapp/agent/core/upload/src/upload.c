@@ -4,7 +4,6 @@
 #include "md5.h"
 #include "http.h"
 #include "agent_queue.h"
-#include "agent_main.h"
 #include "config.h"
 #include "random.h"
 #include "upload.h"

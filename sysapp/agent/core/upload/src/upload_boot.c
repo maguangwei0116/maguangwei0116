@@ -6,7 +6,6 @@
 #include "device_info.h"
 #include "bootstrap.h"
 #include "libcomm.h"
-#include "agent_main.h"
 #include "upgrade.h"
 #include "agent_queue.h"
 #include "rt_qmi.h"

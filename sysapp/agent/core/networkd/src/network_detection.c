@@ -60,7 +60,7 @@ int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
         network_start_timer();
         #if 0 // only for debug
         {
-            uint8_t imsi[IMSI_LENGTH + 1] = {0};
+            uint8_t imsi[32] = {0};
             rt_os_sleep(10);
             rt_qmi_get_current_imsi(imsi);
             MSG_PRINTF(LOG_INFO, "state:%d, imsi:%s\n", g_network_state, imsi);
