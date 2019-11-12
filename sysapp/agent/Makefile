@@ -51,6 +51,8 @@ endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 COMM-LIB                            = comm z ssl crypto
 PTHREAD-LIB                         = pthread
+USER_CFLAGS                         += -fdata-sections -ffunction-sections -v
+USER_LDFLAGS                        += -Wl,-T gcc_android_arm64_ld.script
 endif
 
 ############################################################################
