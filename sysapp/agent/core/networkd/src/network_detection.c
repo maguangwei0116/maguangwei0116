@@ -21,8 +21,13 @@
 
 #define MAX_INIT_RETRY_CNT              3
 #define DELAY_100MS                     100
-#define MAX_WAIT_BOOTSTRAP_TIME         (150*(DELAY_100MS))  // 15000ms = 15S
+#define MAX_WAIT_BOOTSTRAP_TIME         150  // 150 * 100ms = 15000ms = 15S
 #define NETWORK_STATE_NOT_READY         -1
+
+typedef struct TASK_PARAM {
+    int32_t *           profile_damaged;
+    profile_type_e *    type;
+} task_param_t;
 
 static int32_t g_network_state          = NETWORK_STATE_NOT_READY;
 static int32_t g_network_new_state      = 0;
@@ -48,11 +53,12 @@ static void network_detection_task(void *arg)
     int32_t ret;
     int32_t cnt = 0;
     dsi_call_info_t dsi_net_hndl;
-    profile_type_e *type = (profile_type_e *)arg;
+    profile_type_e *type = ((task_param_t *)arg)->type;
+    int32_t *profile_damaged = ((task_param_t *)arg)->profile_damaged;
 
     /* non-operational profile */
-    //MSG_PRINTF(LOG_INFO, "start with provisoning profile, wait bootstrap ok ... %d\r\n", *type);
-    if (*type != PROFILE_TYPE_OPERATIONAL) {
+    MSG_PRINTF(LOG_INFO, "start with provisoning profile, wait bootstrap ok ... %d,%d\r\n", *type, *profile_damaged);
+    if (*type != PROFILE_TYPE_OPERATIONAL && *profile_damaged == RT_TRUE) {
         network_wait_bootstrap_start(MAX_WAIT_BOOTSTRAP_TIME);
     }
 
@@ -105,17 +111,23 @@ static void network_state(int32_t state)
     }
 }
 
+static task_param_t g_task_param;
+
 int32_t init_network_detection(void *arg)
 {
     rt_task task_id = 0;
-    int32_t ret = RT_ERROR;
+    int32_t ret = RT_ERROR;    
     profile_type_e *type;
+    int32_t *profile_damaged;
 
-    type = &(((public_value_list_t *)arg)->card_info->type);
+    type                            = &(((public_value_list_t *)arg)->card_info->type);
+    profile_damaged                 = ((public_value_list_t *)arg)->profile_damaged;
+    g_task_param.type               = type;
+    g_task_param.profile_damaged    = profile_damaged;
 
     dial_up_set_dial_callback((void *)network_state);
     
-    ret = rt_create_task(&task_id, (void *)network_detection_task, type);
+    ret = rt_create_task(&task_id, (void *)network_detection_task, &g_task_param);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");
         return RT_ERROR;
