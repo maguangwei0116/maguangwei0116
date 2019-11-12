@@ -112,6 +112,7 @@ static const plmn_info_t g_rt_plmn[] = {
 static profile_data_t g_data;
 static uint8_t *g_buf = NULL;
 static uint16_t g_buf_size = 0;
+static char g_share_profile[128];
 
 static uint32_t get_offset(rt_fshandle_t fp, uint8_t type, uint32_t *size)
 {
@@ -188,7 +189,7 @@ static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     sha256_ctx_t hash_code;
     struct stat statbuf;
 
-    stat(SHARE_PROFILE, &statbuf);
+    stat(g_share_profile, &statbuf);
 
     rt_fseek(fp, 0, RT_FS_SEEK_SET);
     rt_fread(buf, 1, 8, fp);
@@ -299,14 +300,15 @@ static int32_t update_hash(uint8_t *buf, int32_t profile_len, uint8_t *profile_h
     return RT_SUCCESS;
 }
 
-static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index, BOOLEAN_t sequential)
+static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index, 
+                            BOOLEAN_t sequential, uint16_t mcc, uint8_t *profile, uint16_t *len_out)
 {
     BootstrapRequest_t *bootstrap_request = NULL;
     asn_dec_rval_t dc;
     asn_enc_rval_t ec;
     uint8_t jt[4] = {0x08, 0x29, 0x43, 0x05};
     uint8_t profile_hash[32], imsi_buffer[2], bytes[10];
-    uint16_t length, mcc, imsi_len;
+    uint16_t length, imsi_len;
     int32_t ret = RT_ERROR;
     char imsi_buf[5] = {0};
     int32_t i, imsi;
@@ -350,7 +352,6 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     }
 
     if (rt_os_memcmp(bootstrap_request->tbhRequest.imsi.buf, jt, 4) == 0){
-        rt_qmi_get_mcc_mnc(&mcc, NULL);
         for (i = 0; i < ARRAY_SIZE(g_rt_plmn); ++i) {
             if (mcc == g_rt_plmn[i].mcc) {
                 hexstring2bytes(g_rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
@@ -380,7 +381,8 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     }
 
     MSG_INFO_ARRAY("Current profile:", g_buf, g_buf_size);
-    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, g_buf, g_buf_size);
+    rt_os_memcpy(profile, g_buf, g_buf_size);
+    *len_out = g_buf_size;
     ret = RT_SUCCESS;
 end:
     if (bootstrap_request != NULL) {
@@ -391,7 +393,16 @@ end:
     return ret;
 }
 
-static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t random)
+static uint32_t get_selecte_profile_index(uint32_t total_num)
+{
+    uint32_t random = (uint32_t)rt_get_random_num();
+    uint32_t index = random % total_num;
+
+    MSG_PRINTF(LOG_INFO, "The selected index/total = [%d/%d], random = %u\n", index+1, total_num, random);
+    return index;
+}
+
+static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc, char *apn, uint8_t *profile, uint16_t *len_out)
 {
     uint32_t selected_profile_index, profile_len, size;
     uint8_t *profile_buffer = NULL;
@@ -424,10 +435,9 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t rand
     off += get_length(buf, 1);
 
     MSG_PRINTF(LOG_INFO, "apn:%s\n", request->apn.list.array[0]->apnName.buf);
-    rt_qmi_modify_profile(1, 0, request->apn.list.array[0]->apnName.buf, 0);
+    rt_os_strcpy(apn, (char *)request->apn.list.array[0]->apnName.buf);
 
-    selected_profile_index = random % request->totalNum;
-    MSG_PRINTF(LOG_INFO, "The selected index = %d, random = %u\n", selected_profile_index, random);
+    selected_profile_index = get_selecte_profile_index((uint32_t)request->totalNum);
 
     if (request->sequential == 0xFF) {
         profile_len = get_length(buf, 0);
@@ -439,59 +449,12 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint32_t rand
     rt_fseek(fp, off, RT_FS_SEEK_SET);
     rt_fread(profile_buffer, 1, profile_len, fp);
 
-    build_profile(profile_buffer, profile_len, selected_profile_index, request->sequential);
+    build_profile(profile_buffer, profile_len, selected_profile_index, request->sequential, mcc, profile, len_out);
     rt_os_free(profile_buffer);
     ret = RT_SUCCESS;
 end:
     if (request != NULL) {
         ASN_STRUCT_FREE(asn_DEF_ProfileInfo1, request);
-    }
-    return ret;
-}
-
-int32_t selected_profile(uint32_t random)
-{
-    rt_fshandle_t fp;
-    uint8_t buf[8];
-    uint32_t off = g_data.operator_info_offset;
-    uint16_t profile_len, selected_profile_index;
-    int32_t ret = RT_ERROR;
-    int32_t i = 0;
-
-    fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
-    if (fp == NULL) {
-        MSG_PRINTF(LOG_ERR, "Open file failed\n");
-        return RT_ERROR;
-    }
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
-    if (buf[0] != OPT_PROFILES) {
-        MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
-        goto end;
-    }
-    off += get_length(buf, 1);
-
-    rt_fseek(fp, off, RT_FS_SEEK_SET);
-    rt_fread(buf, 1, 8, fp);
-    if (buf[0] != SHARED_PROFILE) {
-        MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
-        goto end;
-    }
-    if (g_data.priority >= g_data.operator_num) {
-        g_data.priority = 0;
-    }
-    for (i = 0; i < g_data.priority; i++) {
-        off += get_length(buf, 1) + get_length(buf, 0);
-        rt_fseek(fp, off, RT_FS_SEEK_SET);
-        rt_fread(buf, 1, 8, fp);
-    }
-    decode_profile_info(fp, off, random);
-
-    g_data.priority++;
-    ret = RT_SUCCESS;
-end:
-    if (fp != NULL) {
-        rt_fclose(fp);
     }
     return ret;
 }
@@ -502,7 +465,7 @@ static int32_t get_specify_data(uint8_t *data, uint32_t offset){
     uint8_t buf[100];
     uint8_t *buffer = NULL;
 
-    fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
+    fp = rt_fopen(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
         return RT_ERROR;
     }
@@ -533,13 +496,17 @@ int32_t get_file_version(uint8_t *data){
     return get_specify_data(data, g_data.file_version_offset);
 }
 
-int32_t init_profile_file(int32_t *arg)
+int32_t init_profile_file(const char *file)
 {
     int32_t ret = RT_ERROR;
     uint32_t len = 0;
     rt_fshandle_t fp;
 
-    fp = rt_fopen(SHARE_PROFILE, RT_FS_READ);
+    if (file) {
+        snprintf(g_share_profile, sizeof(g_share_profile), "%s", (const char *)file);
+    }
+
+    fp = rt_fopen(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
         return RT_ERROR;
     }
@@ -556,5 +523,52 @@ int32_t init_profile_file(int32_t *arg)
     }
 
     g_data.priority = 0;
+    return ret;
+}
+
+int32_t selected_profile(uint16_t mcc, char *apn, uint8_t *profile, uint16_t *profile_len)
+{
+    rt_fshandle_t fp;
+    uint8_t buf[8];
+    uint32_t off = g_data.operator_info_offset;
+    uint16_t selected_profile_index;
+    int32_t ret = RT_ERROR;
+    int32_t i = 0;
+
+    fp = rt_fopen(g_share_profile, RT_FS_READ);
+    if (fp == NULL) {
+        MSG_PRINTF(LOG_ERR, "Open file failed\n");
+        return RT_ERROR;
+    }
+    rt_fseek(fp, off, RT_FS_SEEK_SET);
+    rt_fread(buf, 1, 8, fp);
+    if (buf[0] != OPT_PROFILES) {
+        MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
+        goto end;
+    }
+    off += get_length(buf, 1);
+
+    rt_fseek(fp, off, RT_FS_SEEK_SET);
+    rt_fread(buf, 1, 8, fp);
+    if (buf[0] != SHARED_PROFILE) {
+        MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
+        goto end;
+    }
+    if (g_data.priority >= g_data.operator_num) {
+        g_data.priority = 0;
+    }
+    for (i = 0; i < g_data.priority; i++) {
+        off += get_length(buf, 1) + get_length(buf, 0);
+        rt_fseek(fp, off, RT_FS_SEEK_SET);
+        rt_fread(buf, 1, 8, fp);
+    }
+    decode_profile_info(fp, off, mcc, apn, profile, profile_len);
+
+    g_data.priority++;
+    ret = RT_SUCCESS;
+end:
+    if (fp != NULL) {
+        rt_fclose(fp);
+    }
     return ret;
 }
