@@ -133,8 +133,7 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
         ret = RT_ERR_ASN1_DECODE_FAIL;
         goto end;
     }
-    MSG_INFO("present: %d\n", rsp->present);
-    MSG_INFO("count: %d\n", rsp->choice.profileInfoListOk.list.count);
+    MSG_INFO("present: %d, count: %d\n", rsp->present, rsp->choice.profileInfoListOk.list.count);
 
     if (rsp->present != ProfileInfoListResponse_PR_profileInfoListOk) {
         ret = RT_ERR_UNKNOWN_ERROR;

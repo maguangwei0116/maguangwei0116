@@ -34,7 +34,6 @@
 #define HASH_CODE_LENGTH                        0x20
 
 #define ARRAY_SIZE(a)                           (sizeof((a)) / sizeof((a)[0]))
-#define SHARE_PROFILE                           "/data/redtea/profile_list.der"
 
 typedef struct PROFILE_DATA {
     uint32_t file_info_offset;
@@ -46,8 +45,8 @@ typedef struct PROFILE_DATA {
     int32_t operator_num;
 } profile_data_t;
 
-int32_t init_profile_file(int32_t *arg);
-int32_t selected_profile(uint32_t random);
+int32_t init_profile_file(const char *file);
+int32_t selected_profile(uint16_t mcc, char *apn, uint8_t *profile, uint16_t *profile_len);
 int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size);
 
 #endif // __PROFILE_PARSE_H__

@@ -117,7 +117,7 @@ static int32_t enable_handler(const void *in, const char *event, void **out)
         cJSON_AddItemToObject(content, "iccid", cJSON_CreateString(iccid->valuestring));
     } while(0);
 
-    rt_os_sleep(1);
+    rt_os_sleep(3);
     if (state == RT_SUCCESS) {
         card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     }

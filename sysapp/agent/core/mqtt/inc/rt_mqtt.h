@@ -4,7 +4,8 @@
 
 #include "rt_type.h"
 
-#define MQTT_WITH_YUNBA -88
+#define MQTT_PUBLISH_NO_YUNBA       -88
+#define MQTT_PUBLISH_NO_CONNECTED   -89
 
 int32_t init_mqtt(void *arg);
 int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode);

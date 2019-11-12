@@ -13,6 +13,7 @@
 
 #include "agent_queue.h"
 #include "card_manager.h"
+#include "card_detection.h"
 #include "ipc_socket_client.h"
 #include "network_detection.h"
 #include "rt_mqtt.h"
@@ -148,6 +149,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_queue,                (void *)&g_value_list),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
+    INIT_OBJ(init_card_detection,       (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    (void *)&g_value_list),
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),

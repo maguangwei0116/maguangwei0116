@@ -20,6 +20,8 @@
 #include "upgrade.h"
 #include "config.h"
 
+#define AGENT_MSG_DEBUG     1
+
 typedef enum AGENT_MSG_ID {
     MSG_ID_CARD_MANAGER = 0,
     MSG_ID_LOG_MANAGER,
@@ -40,7 +42,7 @@ typedef enum MSG_MODE {
     MSG_CARD_SETTING_PROFILE,
     MSG_CARD_SETTING_CERTIFICATE,
     MSG_CARD_ENABLE_EXIST_CARD,
-    MSG_ALL_SWITCH_CARD, // 5
+    MSG_START_NETWORK_DETECTION, // 5
     MSG_NETWORK_CONNECTED,
     MSG_NETWORK_DISCONNECTED,
     MSG_BOOTSTRAP_DISCONNECTED,
@@ -49,6 +51,7 @@ typedef enum MSG_MODE {
     MSG_MQTT_CONNECTED,
     MSG_MQTT_DISCONNECTED,
     MSG_BOOTSTRAP_START_TIMER,
+    MSG_CARD_UPDATE,
 } msg_mode_e;
 
 typedef struct TARGET_VERSION {
@@ -71,7 +74,23 @@ typedef struct PUBLIC_VALUE_LIST {
 } public_value_list_t;
 
 int32_t init_queue(void *arg);
+
+#if (AGENT_MSG_DEBUG)
+#include "log.h"
+extern const char * g_msg_id_e[];
+extern const char * g_msg_mode_e[];
+int32_t _msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len);
+#define msg_send_agent_queue(id, mode, buffer, len)\
+    ({\
+        MSG_PRINTF(LOG_WARN, "============>send agent queue: [%s], mode: [%s]\r\n", g_msg_id_e[(id)], g_msg_mode_e[(mode)]);\
+        int32_t i_ret = _msg_send_agent_queue(id, mode, buffer, len);\
+        i_ret;\
+    })
+#else
 int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t len);
+#endif
+
 int32_t msg_send_upload_queue(void *buffer, int32_t len);
 
 #endif // __AGENT_QUEUE_H__
+

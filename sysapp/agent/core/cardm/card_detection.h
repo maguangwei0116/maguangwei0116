@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : network_detection.h
- * Date        : 2019.08.19
+ * File name   : card_detection.h
+ * Date        : 2019.11.05
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,12 +11,14 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifndef __NETWORK_DETECTION_H__
-#define __NETWORK_DETECTION_H__
+#ifndef __CARD_DETECTION_H__
+#define __CARD_DETECTION_H__
 
 #include "rt_type.h"
 
-int32_t init_network_detection(void *arg);
+int32_t init_card_detection(void *arg);
+int32_t card_detection_enable(void);
+int32_t card_detection_disable(void);
 
-#endif // __NETWORK_DETECTION_H__
+#endif // __CARD_DETECTION_H__
 

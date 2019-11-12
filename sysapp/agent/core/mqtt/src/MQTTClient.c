@@ -1028,8 +1028,8 @@ int MQTTClient_connectURI(MQTTClient handle, MQTTClient_connectOptions* options,
     m->c->MQTTVersion = options->MQTTVersion;
     if(options->MQTTVersion == 0)
     {
-        m->c->MQTTVersion = 0x13;
-        options->MQTTVersion = 0x13;
+        m->c->MQTTVersion = MQTTVERSION_YUNBA_3_1;
+        options->MQTTVersion = MQTTVERSION_YUNBA_3_1;
     }
 
     if ((rc = MQTTClient_connectURIVersion(handle, options, serverURI, options->MQTTVersion, start, millisecsTimeout)) != MQTTCLIENT_SUCCESS)
@@ -1137,7 +1137,7 @@ int MQTTClient_disconnect1(MQTTClient handle, int timeout, int internal, int sto
     int was_connected = 0;
     FUNC_ENTRY;
     Thread_lock_mutex(mqttclient_mutex);
-    Log(TRACE_MIN, -1, "%s ...", __func__);
+    //Log(TRACE_MIN, -1, "%s ...", __func__);
     if (m == NULL || m->c == NULL)
     {
         rc = MQTTCLIENT_FAILURE;
@@ -1266,7 +1266,9 @@ int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, i
         ListAppend(qoss, &qos[i], sizeof(int));
     }
 
+    Log(TRACE_MIN, -1, "subscribe before ...\r\n");
     rc = MQTTProtocol_subscribe(m->c, topics, qoss, msgid);
+    Log(TRACE_MIN, -1, "subscribe after ...\r\n");
     ListFreeNoContent(topics);
     ListFreeNoContent(qoss);
     if (rc == TCPSOCKET_COMPLETE)
@@ -1290,7 +1292,10 @@ int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, i
             m->pack = NULL;
         }
         else
+        {
             rc = SOCKET_ERROR;
+        }
+        Log(TRACE_MIN, -1, "subscribe ack ...\r\n");
     }
     if (rc == SOCKET_ERROR)
     {
@@ -1299,7 +1304,9 @@ int MQTTClient_subscribeMany(MQTTClient handle, int count, char* const* topic, i
         Thread_lock_mutex(mqttclient_mutex);
     }
     else if (rc == TCPSOCKET_COMPLETE)
+    {
         rc = MQTTCLIENT_SUCCESS;
+    }
 
 exit:
     Thread_unlock_mutex(mqttclient_mutex);
@@ -1317,7 +1324,8 @@ int MQTTClient_subscribe_many(MQTTClient handle, int count, char** topic)
     memset(qos, DEFAULT_QOS, count);
     #else
     for (i = 0; i < count; i++) {
-        qos[i] = DEFAULT_QOS;       
+        qos[i] = DEFAULT_QOS; 
+        Log(TRACE_MIN, -1, "#%2d subscribe topic: %s, qos:%d", i, topic[i], qos[i]);
     }
     #endif
     
@@ -1345,18 +1353,18 @@ int MQTTClient_subscribe(MQTTClient handle, const char* topic, int qos)
 
 int MQTTClient_dosubscribe(MQTTClient handle, char* topic, int qos)
 {
-        int rc = 0;
+    int rc = 0;
 
-        FUNC_ENTRY;
-        rc = MQTTClient_subscribeMany(handle, 1, &topic, &qos);
-        FUNC_EXIT_RC(rc);
-        return rc;
+    FUNC_ENTRY;
+    rc = MQTTClient_subscribeMany(handle, 1, &topic, &qos);
+    FUNC_EXIT_RC(rc);
+    return rc;
 }
 
 int MQTTClient_presence(MQTTClient handle, char* topic)
 {
     char temp[100];
-    sprintf(temp, "%s/p", topic);
+    snprintf(temp, sizeof(temp), "%s/p", topic);
     return MQTTClient_subscribe(handle, temp, DEFAULT_QOS);
 }
 
@@ -1450,7 +1458,7 @@ int MQTTClient_unsubscribe(MQTTClient handle, const char* topic)
 int MQTTClient_unpresence(MQTTClient handle, char* topic)
 {
     char temp[100];
-    sprintf(temp, "%s/p", topic);
+    snprintf(temp, sizeof(temp), "%s/p", topic);
     return MQTTClient_unsubscribe(handle, temp);
 }
 

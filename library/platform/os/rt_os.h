@@ -117,7 +117,6 @@ void  rt_os_exit(int status);
 void  rt_os_sync(void);
 void  rt_os_sleep(int32_t time);
 void  rt_os_msleep(int32_t m_time);
-
 void *rt_os_signal(int32_t signum, void *handler);
 
 RT_FILE_HANDLE rt_os_open(const char *filename, const char *flags);

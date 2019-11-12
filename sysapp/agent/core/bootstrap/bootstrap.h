@@ -22,4 +22,7 @@ int32_t bootstrap_get_profile_aes_key(uint8_t *data, int32_t *data_len);
 int32_t bootstrap_get_profile_root_sk(uint8_t *data, int32_t *data_len);
 int32_t bootstrap_get_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size);
 
+int32_t bootstrap_init_profile(const char *file);
+int32_t bootstrap_select_profile(uint16_t mcc, char *apn, uint8_t *profile, uint16_t *profile_len);
+
 #endif // __BOOTSTRAP_H__
