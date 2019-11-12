@@ -19,31 +19,12 @@
 #include "rt_timer.h"
 
 #define MAX_INIT_RETRY_CNT              3
-#define MAX_WAIT_REGIST_TIME            180
 #define DELAY_100MS                     100
 #define MAX_WAIT_BOOTSTRAP_TIME         (150*(DELAY_100MS))  // 15000ms = 15S
 #define NETWORK_STATE_NOT_READY         -1
 
 static int32_t g_network_state          = NETWORK_STATE_NOT_READY;
 static int32_t g_network_new_state      = 0;
-static rt_bool g_network_timer_flag     = RT_FALSE;
-
-static void network_timer_callback(void)
-{
-    if (g_network_state == DSI_STATE_CALL_IDLE || g_network_state == NETWORK_STATE_NOT_READY) {  // network disconnected
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_BOOTSTRAP_DISCONNECTED, NULL, 0);
-    }
-    g_network_timer_flag = RT_FALSE;
-    MSG_PRINTF(LOG_INFO, "%s, netwrok state: %d\r\n", __func__, g_network_state);
-}
-
-static void network_start_timer(void)
-{
-    if (g_network_timer_flag == RT_FALSE) {
-        register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
-        g_network_timer_flag = RT_TRUE;
-    }
-}
 
 /*
 avoid this case:
@@ -102,18 +83,6 @@ exit_entry:
 
 int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
-    if (mode == MSG_START_NETWORK_DETECTION) {
-        network_start_timer();
-        #if 0 // only for debug
-        {
-            uint8_t imsi[IMSI_LENGTH + 1] = {0};
-            rt_os_sleep(10);
-            rt_qmi_get_current_imsi(imsi);
-            MSG_PRINTF(LOG_INFO, "state:%d, imsi:%s\n", g_network_state, imsi);
-        }
-        #endif
-    }
-
     return RT_SUCCESS;
 }
 
