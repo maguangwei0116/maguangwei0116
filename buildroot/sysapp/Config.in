@@ -49,6 +49,11 @@ config BR2_CFG_SHARE_PROFILE_ECC_VERIFY
 	bool "BR2_CFG_SHARE_PROFILE_ECC_VERIFY"
 	help
 	  Enable this option if share profile signature of SHA256withECC.
+
+config BR2_CFG_AGENT_SINGLE_BOOTSRRAP_ON	  
+	bool "BR2_CFG_AGENT_SINGLE_BOOTSRRAP_ON"
+	help
+	  Enable this option if you need to output libbootstrap.so.
 	  
 endmenu
 
