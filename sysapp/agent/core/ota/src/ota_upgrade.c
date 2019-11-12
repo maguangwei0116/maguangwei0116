@@ -398,23 +398,23 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
     return RT_FALSE;
 }
 
-static void ota_upgrade_get_random_string(char *str, int32_t len)
+static void ota_upgrade_get_random_string(char *str, uint16_t len)
 {
-    int32_t i, flag;
+    uint16_t i, flag;
 
     for (i = 0; i < len; i++) {
-        flag = rt_get_random_num() % 3;
+        flag = (uint16_t)((uint16_t)rt_get_random_num() % 3);
         switch (flag) {
             case 0:
-                str[i] = rt_get_random_num() % 26 + 'a';
+                str[i] = (uint16_t)((uint16_t)rt_get_random_num() % 26) + 'a';
                 break;
 
             case 1:
-                str[i] = rt_get_random_num() % 26 + 'A';
+                str[i] = (uint16_t)((uint16_t)rt_get_random_num() % 26) + 'A';
                 break;
 
             case 2:
-                str[i] = rt_get_random_num() % 10 + '0';
+                str[i] = (uint16_t)((uint16_t)rt_get_random_num() % 10) + '0';
                 break;
         }
     }

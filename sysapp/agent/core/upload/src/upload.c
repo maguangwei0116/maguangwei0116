@@ -179,21 +179,21 @@ static int32_t upload_send_request(const void *data, int32_t data_len)
 
 static void upload_get_random_tran_id(char *tran_id, uint16_t size)
 {
-    int32_t i, flag;
+    uint16_t i, flag;
 
     for (i = 0; i < size; i++) {
-        flag = rt_get_random_num() % 3;
+        flag = (uint16_t)((uint16_t)rt_get_random_num() % 3);
         switch (flag) {
             case 0:
-                tran_id[i] = rt_get_random_num() % 26 + 'a';
+                tran_id[i] = (uint16_t)((uint16_t)rt_get_random_num() % 26 )+ 'a';
                 break;
 
             case 1:
-                tran_id[i] = rt_get_random_num() % 26 + 'A';
+                tran_id[i] = (uint16_t)((uint16_t)rt_get_random_num() % 26) + 'A';
                 break;
 
             case 2:
-                tran_id[i] = rt_get_random_num() % 10 + '0';
+                tran_id[i] = (uint16_t)((uint16_t)rt_get_random_num() % 10) + '0';
                 break;
         }
     }
