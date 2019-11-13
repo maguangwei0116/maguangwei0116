@@ -114,9 +114,9 @@ static int32_t parse_profile(uint32_t rand_num)
     ret = insert_profile(profiles + (profile_seq * size), size);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "insert profile fail, ret:%d !!\n", ret);
-        goto end;		
+        goto end;
     }
-	
+
     rt_qmi_modify_profile(1, 0, profile_info->apn.list.array[g_operator_num]->apnName.buf, 0);
     MSG_PRINTF(LOG_INFO, "set apn name  : %s\n", profile_info->apn.list.array[g_operator_num]->apnName.buf);
     ret = RT_SUCCESS;
@@ -134,10 +134,11 @@ int32_t backup_process(lpa_channel_type_e channel_mode)
 {
     int32_t ret;
 
+    MSG_PRINTF(LOG_INFO, "Begin to select profile from backup-profile ...\r\n");
     ret = parse_profile((uint32_t)rt_get_random_num());
-	
-    if (channel_mode == LPA_CHANNEL_BY_IPC) {	
-	    trigger_swap_card(1);  // reset card
+
+    if (channel_mode == LPA_CHANNEL_BY_IPC) {
+        trigger_swap_card(1);  // reset card
     }
 
     return ret;

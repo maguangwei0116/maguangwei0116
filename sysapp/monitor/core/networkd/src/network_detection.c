@@ -27,10 +27,11 @@ static void network_timer_callback(void)
     if (g_network_state != DSI_STATE_CALL_CONNECTED) {  // network disconnected
         backup_process(LPA_CHANNEL_BY_IPC);
         g_network_state = -1;
-        MSG_PRINTF(LOG_INFO, "timer out g_network_state:%d\n", g_network_state);
+        MSG_PRINTF(LOG_INFO, "timer out g_network_state:%d, restart a new timer ...\r\n", g_network_state);
+        register_timer(MAX_WAIT_REGIST_TIME, 0 , &network_timer_callback);
     }
     g_network_timer_flag = RT_FALSE;
-    MSG_PRINTF(LOG_INFO, "event state:%d\n", g_network_state);
+    MSG_PRINTF(LOG_INFO, "network state:%d\n", g_network_state);
 }
 
 static void network_start_timer(void)
@@ -61,16 +62,17 @@ static void network_state(int32_t state)
 void network_detection_task(void)
 {
     dsi_call_info_t dsi_net_hndl;
-	
+
     dial_up_set_dial_callback((void *)network_state);
     rt_os_sleep(3);
     dial_up_init(&dsi_net_hndl);
-	
+    network_start_timer();
+
     while (1) {
         dial_up_to_connect(&dsi_net_hndl);
     }
-	
-	dial_up_deinit(&dsi_net_hndl);
 
+    dial_up_deinit(&dsi_net_hndl);
+    
     rt_exit_task(NULL);
 }
