@@ -30,6 +30,12 @@ typedef enum PROFILE_TYPE {
     PROFILE_TYPE_OPERATIONAL        = 2,
 } profile_type_e;
 
+typedef enum INIT_PROFILE_TYPE {
+    INIT_PROFILE_TYPE_PROVISONING   = 0,
+    INIT_PROFILE_TYPE_OPERATIONAL   = 1,
+    INIT_PROFILE_TYPE_LAST_USED     = 2,
+} init_profile_type_e;
+
 typedef struct CARD_INFO {
     profile_info_t                  info[THE_MAX_CARD_NUM];
     uint8_t                         num;

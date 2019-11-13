@@ -63,8 +63,7 @@ static int32_t init_versions(void *arg)
     char share_profile_ver_str[128] = {0};
     static target_versions_t g_target_versions = {0};
     
-    libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
-    MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
+    libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));    
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
 
     ((public_value_list_t *)arg)->version_info = &g_target_versions;
