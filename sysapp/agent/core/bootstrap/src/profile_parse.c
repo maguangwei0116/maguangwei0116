@@ -175,7 +175,8 @@ static uint32_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint32_t *size)
     return get_offset(fp, OPT_PROFILES, size);
 }
 
-static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
+#if 0
+static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
 {
     uint8_t buf[50], hash_code_buf[32], original_hash[32], p[512];
     uint32_t hash_off = 0;
@@ -219,6 +220,82 @@ static uint32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     }
     return RT_SUCCESS;
 }
+#else
+#define MAX_SHA_BLOCK_LEN       1024
+static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
+{
+    int32_t ret = RT_ERROR;
+    int32_t file_size;
+    uint8_t head_buf[16];
+    uint8_t tail_buf[HASH_CODE_LENGTH+2];
+    uint8_t hash_code_buf[HASH_CODE_LENGTH];
+    uint8_t calc_hash_code_buf[HASH_CODE_LENGTH];
+    uint8_t tmp_buf[MAX_SHA_BLOCK_LEN];
+    uint32_t len = 0;
+    uint32_t l_len = 0;
+    int32_t calc_len = 0;
+    int32_t i;
+    int32_t read_len;
+    sha256_ctx_t ctx;
+
+    file_size = linux_file_size(g_share_profile);
+
+    /* get hash buffer */
+    linux_fseek(fp, -sizeof(tail_buf), RT_FS_SEEK_END);
+    linux_fread(tail_buf, 1, sizeof(tail_buf), fp);
+    if (tail_buf[0] != HASH_CODE || tail_buf[1] != HASH_CODE_LENGTH) {
+        MSG_PRINTF(LOG_ERR, "hash tag or length error\r\n");
+        goto exit_entry;
+    }
+    rt_os_memcpy(hash_code_buf, &tail_buf[2], sizeof(hash_code_buf));
+
+    /* get frist tag lengths */
+    linux_fseek(fp, 0, RT_FS_SEEK_SET);
+    linux_fread(head_buf, 1, sizeof(head_buf), fp);
+    if (head_buf[0] != SHARED_PROFILE) {
+        MSG_PRINTF(LOG_ERR, "frist tag error\r\n");
+        goto exit_entry;
+    }
+    len         = get_length(head_buf, 1);  // (tag + len) bytes
+    l_len       = get_length(head_buf, 0);  // length bytes
+    calc_len    = l_len - sizeof(tail_buf); // hash calc len
+    
+    //MSG_PRINTF(LOG_INFO, "tag_len: %d, l_len: %d, file_len: %d, calc_len: %d\r\n", len, l_len, file_size, calc_len);
+
+    /* check lengths value */
+    if (len + l_len != file_size) {
+        MSG_PRINTF(LOG_ERR, "file length unequal\r\n");
+        goto exit_entry;
+    }
+
+    /* calc hash data */
+    linux_fseek(fp, len, RT_FS_SEEK_SET);
+    sha256_init(&ctx);
+    for (i = 0; i < calc_len; i += read_len){
+        read_len = (calc_len - i > sizeof(tmp_buf)) ? sizeof(tmp_buf) : (calc_len - i);
+        read_len = linux_fread(tmp_buf, 1, read_len, fp);
+        if (read_len <= 0) {
+            break;
+        }
+        sha256_update(&ctx, tmp_buf, read_len);
+    }
+    sha256_final(&ctx, calc_hash_code_buf);
+
+    /* check hash data */
+    if (rt_os_memcmp(calc_hash_code_buf, hash_code_buf, sizeof(calc_hash_code_buf))) {
+        MSG_PRINTF(LOG_ERR, "share profile hash check fail\r\n");
+        MSG_INFO_ARRAY("calc-hash: ", calc_hash_code_buf, sizeof(calc_hash_code_buf));
+        MSG_INFO_ARRAY("read-hash: ", hash_code_buf, sizeof(hash_code_buf));
+        goto exit_entry;
+    }
+
+    ret = RT_SUCCESS;
+
+exit_entry:
+
+    return ret;
+}
+#endif
 
 static int32_t decode_file_info(rt_fshandle_t fp)
 {
