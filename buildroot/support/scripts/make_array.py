@@ -15,6 +15,8 @@ if __name__=='__main__':
         all = f.read()
 
         with open(sys.argv[2], 'w') as f:
+            e = "/* backup profile : %s */\n" % sys.argv[1]
+            f.write(e)
             f.write("static const unsigned char card_buf[] = \n{\n    ")
             for d in all:
                 e = "0x%s, " % binascii.b2a_hex(d)
