@@ -17,11 +17,14 @@
 #include <sys/time.h>
 #include "rt_timer.h"
 
+typedef void (*cb_func)(void);
+
 typedef struct RT_TIMER {
-    struct RT_TIMER *prev, *next;
-    int32_t diff_sec;
-    int32_t diff_usec;
-    void (*func)();
+    struct RT_TIMER *   prev; 
+    struct RT_TIMER *   next;
+    int32_t             diff_sec;
+    int32_t             diff_usec;
+    cb_func             func;
 } rt_timer_t;
 
 static pthread_mutex_t g_mutex;
@@ -31,6 +34,7 @@ static void callback_timeout(void)
 {
     rt_timer_t *p, *q;
     struct itimerval itimer;
+    cb_func func = NULL;
 
     rt_mutex_lock(&g_mutex);
     p = g_timer_list;
@@ -54,10 +58,15 @@ static void callback_timeout(void)
     } else {
         g_timer_list = NULL;
     }
-    p->func();
+    func = p->func;
     rt_os_free(p);
     p = NULL;
     rt_mutex_unlock(&g_mutex);
+
+    /* execute callback function */
+    if (func) {
+        func();
+    }
 }
 
 // timer callbach
