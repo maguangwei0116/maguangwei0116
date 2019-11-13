@@ -27,7 +27,7 @@
 #endif
 #define SHARE_PROFILE                           "/data/redtea/profile_list.der"
 #define DEFAULT_SINGLE_INTERVAL_TIME            10                                      // default interval time (seconds)
-#define MAX_WAIT_REGIST_TIME                    30
+#define MAX_WAIT_REGIST_TIME                    180
 
 /* define your interval time table, unit: seconds, max 2.1h */
 static const uint32_t g_time_table[]            = {10, 30, 90, 270, 840, 2520, 7560};
