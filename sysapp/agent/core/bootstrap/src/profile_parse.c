@@ -240,6 +240,12 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
 
     file_size = linux_file_size(g_share_profile);
 
+    /* check file length */
+    if (file_size < (sizeof(tail_buf) + 4)) {
+        MSG_PRINTF(LOG_ERR, "file length too short\r\n");
+        goto exit_entry;
+    }
+
     /* get hash buffer */
     linux_fseek(fp, -sizeof(tail_buf), RT_FS_SEEK_END);
     linux_fread(tail_buf, 1, sizeof(tail_buf), fp);
