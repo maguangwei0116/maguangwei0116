@@ -90,6 +90,20 @@ static int32_t push_ac_parser(const void *in, char *tranid, void **out)
     return ret;
 }
 
+/* check AC format */
+static const char *simple_check_ac_format(const char *ac)
+{
+#define LPA_PREFIX          "LPA:"
+#define LPA_PREFIX_LEN      4
+    if (strstr(ac, LPA_PREFIX)) {
+        return ac + LPA_PREFIX_LEN;
+    } else {
+        return ac;
+    }
+#undef LPA_PREFIX
+#undef LPA_PREFIX_LEN
+}
+
 static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int32_t *prio)
 {
     cJSON *activation_code = NULL;
@@ -123,7 +137,7 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
     while(1) {
         //debug_json_data(activation_code, activation_code);
         MSG_PRINTF(LOG_INFO, "AC: %s\r\n", activation_code->valuestring);
-        state = msg_download_profile(activation_code->valuestring, cc, iccid);
+        state = msg_download_profile(simple_check_ac_format(activation_code->valuestring), cc, iccid);
         if ((state == -302) || (state == -309) || (state == -310) || (state == -311)) {  // retry three times
             count++;
             rt_os_sleep(10);
