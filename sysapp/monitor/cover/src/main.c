@@ -228,11 +228,12 @@ static int32_t agent_task_check_start(void)
 
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE, RT_AGENT_NAME) != RT_TRUE) {
-		upgrade_struct_t upgrade = {0};
-		
+        upgrade_struct_t upgrade = {0};
+
+        MSG_PRINTF(LOG_WARN, "agent verify error\r\n");
         linux_delete_file(RT_AGENT_FILE);
-		snprintf(upgrade.file_name, sizeof(upgrade.file_name), "%s", RT_AGENT_FILE);
-		snprintf(upgrade.real_file_name, sizeof(upgrade.real_file_name), "%s", RT_AGENT_NAME);
+        snprintf(upgrade.file_name, sizeof(upgrade.file_name), "%s", RT_AGENT_FILE);
+        snprintf(upgrade.real_file_name, sizeof(upgrade.real_file_name), "%s", RT_AGENT_NAME);
         init_download(&upgrade);
         choose_uicc_type(LPA_CHANNEL_BY_IPC);
         network_detection_task();

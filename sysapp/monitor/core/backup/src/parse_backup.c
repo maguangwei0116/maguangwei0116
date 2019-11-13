@@ -92,12 +92,12 @@ static int32_t parse_profile(uint32_t rand_num)
 
     dc = ber_decode(NULL, &asn_DEF_ProfileFile, (void **) &profile_file, card_buf, sizeof(card_buf));
     if (dc.code != RC_OK) {
-        MSG_PRINTF(LOG_ERR, "Consumed : %ld\n", dc.consumed);
+        MSG_PRINTF(LOG_ERR, "backup profile decode fail, len: %d, Consumed : %ld\n", sizeof(card_buf), dc.consumed);
         goto end;
     }
 
     operator_num = profile_file->sharedProfile.fileInfo.operatorNum;
-    MSG_PRINTF(LOG_INFO, "Operator num : %d!!\n", operator_num);
+    MSG_PRINTF(LOG_INFO, "Operator num : %d\n", operator_num);
     if (g_operator_num >= operator_num) {
         g_operator_num = 0;
     }

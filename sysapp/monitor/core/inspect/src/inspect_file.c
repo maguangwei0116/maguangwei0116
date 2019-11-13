@@ -92,13 +92,13 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
         MSG_PRINTF(LOG_ERR, "file_name:%s, verify signature failed!!\n", file_name);
         goto end;
     }
-	
+
     get_real_file_name(file_info, MAX_FILE_INFO_LEN);
     if (rt_os_strcmp(file_info, exp_real_file_name)) {
         MSG_PRINTF(LOG_ERR, "file info unmatched, [%s] != [%s]\n", file_info, exp_real_file_name);
         goto end;
     }
-	
+
     ret = RT_TRUE;
 
 end:
