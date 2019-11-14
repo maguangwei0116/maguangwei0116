@@ -198,7 +198,8 @@ int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mo
         char file[256] = {0};
         const char *path = OTA_UPGRADE_TASK_PATH;
         int32_t len;
-        
+        int32_t index = 0;
+
         if((dir = linux_opendir(path))) {
             while((dp = linux_readdir(dir)) != NULL) {
                 /* ignore "." ".." and ".xxxx"(hidden file) */
@@ -209,7 +210,11 @@ int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mo
                 if (!rt_os_strncmp(dp->d_name + len - OTA_UPGRADE_TASK_SUFFIX_LEN, 
                         OTA_UPGRADE_TASK_SUFFIX, OTA_UPGRADE_TASK_SUFFIX_LEN)) {
                     snprintf(file, sizeof(file), "%s/%s", path, dp->d_name);
-                    MSG_PRINTF(LOG_INFO, "file: %s\r\n", file);  
+                    index++;
+                    MSG_PRINTF(LOG_INFO, "task file %d: %s\r\n", index, file);  
+
+                    /* start a breakpoint-renewal */
+                    ota_upgrade_task_deal(file);
                 }
             }
             
@@ -232,6 +237,7 @@ static int32_t ota_upgrade_task_cleanup(const char *tmp_file)
 
     ota_upgrade_get_task_file_name(ota_task_file, sizeof(ota_task_file), tmp_file);
     rt_os_unlink(ota_task_file);
+    rt_os_unlink(tmp_file);  // delete tmp file at the same time !!!
     
     return RT_SUCCESS;  
 }
