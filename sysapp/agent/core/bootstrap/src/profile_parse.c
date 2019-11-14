@@ -472,8 +472,22 @@ end:
 
 static uint32_t get_selecte_profile_index(uint32_t total_num)
 {
-    uint32_t random = (uint32_t)rt_get_random_num();
-    uint32_t index = random % total_num;
+    static uint32_t g_selected_index = 0xFFFFFFFF;
+    uint32_t random;
+    uint32_t index;
+
+    while (1) {
+        random = (uint32_t)rt_get_random_num();
+        index = random % total_num;
+
+        /* never select the last selected card */
+        if (g_selected_index != index) {
+            g_selected_index = index;
+            break;
+        }
+
+        rt_os_msleep(100);
+    }
 
     MSG_PRINTF(LOG_INFO, "The selected index/total = [%d/%d], random = %u\n", index+1, total_num, random);
     return index;

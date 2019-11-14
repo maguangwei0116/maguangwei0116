@@ -78,8 +78,31 @@ end:
     return ret;
 }
 
+static uint32_t get_selecte_profile_index(uint32_t total_num)
+{
+    static uint32_t g_selected_index = 0xFFFFFFFF;
+    uint32_t random;
+    uint32_t index;
+
+    while (1) {
+        random = (uint32_t)rt_get_random_num();
+        index = random % total_num;
+
+        /* never select the last selected card */
+        if (g_selected_index != index) {
+            g_selected_index = index;
+            break;
+        }
+
+        rt_os_msleep(100);
+    }
+
+    MSG_PRINTF(LOG_INFO, "The selected index/total = [%d/%d], random = %u\n", index+1, total_num, random);
+    return index;
+}
+
 /*According rand num to select one profile. Insert vuicc and set apn name*/
-static int32_t parse_profile(uint32_t rand_num)
+static int32_t parse_profile(void)
 {
     ProfileFile_t *profile_file = NULL;
     ProfileInfo1_t *profile_info = NULL;
@@ -88,7 +111,7 @@ static int32_t parse_profile(uint32_t rand_num)
     asn_dec_rval_t dc;
     int32_t size;
     int32_t operator_num;
-    int32_t profile_seq;
+    uint32_t profile_seq;
 
     dc = ber_decode(NULL, &asn_DEF_ProfileFile, (void **) &profile_file, card_buf, sizeof(card_buf));
     if (dc.code != RC_OK) {
@@ -106,10 +129,10 @@ static int32_t parse_profile(uint32_t rand_num)
     profiles = profile_file->sharedProfile.optProfiles.list.array[g_operator_num]->content.buf;
     size = profile_file->sharedProfile.optProfiles.list.array[g_operator_num]->content.size;
     size = size / profile_info->totalNum;  // one profile size
-    profile_seq = rand_num % profile_info->totalNum;
+    
+    profile_seq = get_selecte_profile_index(profile_info->totalNum);
 
     MSG_INFO_ARRAY("insert profile buffer:", profiles + (profile_seq * size), size);
-    MSG_PRINTF(LOG_INFO, "select/total  : %d/%d\n", profile_seq, profile_info->totalNum);
 
     ret = insert_profile(profiles + (profile_seq * size), size);
     if (ret != RT_SUCCESS) {
@@ -135,7 +158,7 @@ int32_t backup_process(lpa_channel_type_e channel_mode)
     int32_t ret;
 
     MSG_PRINTF(LOG_INFO, "Begin to select profile from backup-profile ...\r\n");
-    ret = parse_profile((uint32_t)rt_get_random_num());
+    ret = parse_profile();   
 
     if (channel_mode == LPA_CHANNEL_BY_IPC) {
         trigger_swap_card(1);  // reset card
