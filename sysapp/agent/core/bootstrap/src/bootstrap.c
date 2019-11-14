@@ -51,6 +51,7 @@ static void bootstrap_network_timer_callback(void)
 static void bootstrap_network_start_timer(void)
 {
     if (g_network_timer_flag == RT_FALSE) {
+        MSG_PRINTF(LOG_INFO, "Start a new network detect timer ...\r\n");
         register_timer(MAX_WAIT_REGIST_TIME, 0 , &bootstrap_network_timer_callback);
         g_network_timer_flag = RT_TRUE;
     }
@@ -154,7 +155,8 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
 
             /* ignore frist bootstrap msg when it's using provsioning profile */
             if (g_public_value->card_info->type == PROFILE_TYPE_PROVISONING && frist_bootstrap_msg == 1) {
-                frist_bootstrap_msg = 0;   
+                frist_bootstrap_msg = 0;
+                bootstrap_network_start_timer();
             } else {
                 ipc_select_profile_by_monitor();
             }         
