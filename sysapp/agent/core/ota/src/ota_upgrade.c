@@ -248,7 +248,6 @@ static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
     cJSON *msg = NULL;
     cJSON *tranId = NULL;
     cJSON *payload = NULL;
-    char *payload_str = NULL;
     cJSON *payload_json = NULL;
     cJSON *content = NULL;
     cJSON *target = NULL;
