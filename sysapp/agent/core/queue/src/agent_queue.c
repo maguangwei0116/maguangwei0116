@@ -154,7 +154,6 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_REMOTE_CONFIG:
-
                     break;
 
                 case MSG_ID_NETWORK_DECTION:
