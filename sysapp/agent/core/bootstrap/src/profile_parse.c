@@ -530,9 +530,9 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
 
     selected_profile_index = get_selecte_profile_index((uint32_t)request->totalNum);
 
-    if (request->sequential == 0xFF) {
+    if (request->sequential == 0xFF) { // Successive profile: same iccid, successive imsi
         profile_len = get_length(buf, 0);
-    } else {
+    } else { // non-successive profile
         profile_len = get_length(buf, 0) / request->totalNum;
         off += selected_profile_index * profile_len;
     }
