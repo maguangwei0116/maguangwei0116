@@ -75,7 +75,7 @@ static log_level_e downstream_log_get_level(const char *level_str)
 
 static int32_t downstream_log_parser(const void *in, char *tran_id, void **out)
 {
-    int32_t ret;
+    int32_t ret = RT_ERROR;
     cJSON *msg = NULL;
     cJSON *tranId = NULL;
     cJSON *payload = NULL;

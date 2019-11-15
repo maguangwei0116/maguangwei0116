@@ -8,7 +8,7 @@
 
 static int32_t downstream_reboot_parser(const void *in, char *tranId, void **out)
 {
-    int32_t ret;
+    int32_t ret = RT_ERROR;
     cJSON *msg = NULL;
     cJSON *tran_id = NULL;
     static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];

@@ -244,7 +244,7 @@ static int32_t ota_upgrade_task_cleanup(const char *tmp_file)
 
 static int32_t ota_upgrade_parser(const void *in, char *tran_id, void **out)
 {
-    int32_t ret;
+    int32_t ret = RT_ERROR;
     cJSON *msg = NULL;
     cJSON *tranId = NULL;
     cJSON *payload = NULL;
