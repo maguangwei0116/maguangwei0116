@@ -517,6 +517,11 @@ typedef struct CONFIG_ONLINE_PARAM {
         item_str_out = cJSON_PrintUnformatted(json);\
     } while(0)
 
+#define cJSON_FORMAT_JSON_STR_DATA(json, item_str_out)\
+    do {\
+        item_str_out = cJSON_Print(json);\
+    } while(0)
+
 #define cJSON_DEBUG_JSON_STR_DATA(json)\
     do {\
         const char *tmp_str_out = cJSON_PrintUnformatted(json);\
@@ -755,7 +760,11 @@ static cJSON *config_packer(void *arg)
     CONFIG_PACK_ITEM_INT_DATA(pair_num, items, config_json, USAGE_ENABLE);
     CONFIG_PACK_ITEM_INT_DATA(pair_num, items, config_json, USAGE_FREQ);
 
+#if 0  // unformated-json-string
     cJSON_PRINT_JSON_STR_DATA(config_json, config);
+#else  // formated-json-string
+    cJSON_FORMAT_JSON_STR_DATA(config_json, config);
+#endif
     CJSON_ADD_NEW_STR_OBJ(on_config, config);
 
     ret = 0;
