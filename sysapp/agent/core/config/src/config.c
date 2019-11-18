@@ -132,7 +132,7 @@ ITEM(PROXY_SERVER_ADDR,     config_string_value,    "smdp-test.redtea.io",  "SMD
 #endif
 ITEM(MBN_CONFIGURATION,     config_switch_value,    "1",                    "Whether config MBN (0:disable  1:enable)"),
 ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,   "2",                    "The rules of the first boot option profile (0:Provisioning 1:Operational 2:last)"),
-ITEM(RPLMN_ENABLE,          config_switch_value,    "1",                    "Whether set rplmn (0:disable  1:enable)"),
+ITEM(RPLMN_ENABLE,          NULL,                   "1",                    "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,         config_log_size,        "1",                    "The max size of rt_log file (MB)"),
 ITEM(UICC_MODE,             config_uicc_mode,       "1",                    "The mode of UICC (0:vUICC  1:eUICC)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
@@ -465,6 +465,7 @@ typedef struct CONFIG_ONLINE_PARAM {
 #endif
 
 #define CJSON_INT_TYPE          3
+#define CJSON_STR_TYPE          4
 
 #define CONFIG_GET_ITEM_INT_DATA(json, param, tmp, item)\
     do {\
@@ -489,8 +490,10 @@ typedef struct CONFIG_ONLINE_PARAM {
         tmp = cJSON_GetObjectItem(json, #item);\
         if (tmp) {\
             param->count++;\
-            snprintf((param->item), sizeof(param->item), "%s", tmp->valuestring);\
-            MSG_PRINTF(LOG_INFO, "%-20s : %s\n", #item, param->item);\
+            if (tmp->type == CJSON_STR_TYPE) {\
+                snprintf((param->item), sizeof(param->item), "%s", tmp->valuestring);\
+                MSG_PRINTF(LOG_INFO, "%-20s : %s\n", #item, param->item);\
+            }\
         }\
     } while(0)
 
@@ -553,6 +556,7 @@ static int32_t config_parser(const void *in, char *tran_id, void **out)
     char *config_str = NULL;
     cJSON *policy = NULL;
     cJSON *tmp = NULL;
+    int32_t config_cnt = 0;
     config_online_param_t *param = NULL;
     static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];
     int8_t md5_out_now[MD5_STRING_LENGTH + 1];
@@ -595,6 +599,9 @@ static int32_t config_parser(const void *in, char *tran_id, void **out)
     config_json = cJSON_Parse((const char *)config->valuestring);
     CONFIG_CHK_PINTER_NULL(config_json, -8);
     cJSON_DEBUG_JSON_STR_DATA(config_json);
+
+    config_cnt = cJSON_GetArraySize(config_json);
+    MSG_PRINTF(LOG_INFO, "config_cnt = %d\r\n", config_cnt);
 
     /* get remote config item data */
     CONFIG_GET_ITEM_STR_DATA(config_json, param, tmp, OTI_ENVIRONMENT_ADDR);
