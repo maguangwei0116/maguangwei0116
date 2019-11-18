@@ -9,6 +9,7 @@
 #include "MQTTClient.h"
 #include "MQTTClientPersistence.h"
 #include "downstream.h"
+#include "personalise.h"
 
 #define ADAPTER_APPKEY                  "D358134D21684E8FA23CC25740506A82"
 #define ADAPTER_PORT                    7082
@@ -737,7 +738,7 @@ static void mqtt_connection_lost(void *context, char *cause)
 static rt_bool mqtt_eid_check_upload(void)
 {
     if (mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
-        upload_event_report("NO_CERT", NULL, 0, NULL);
+        personalise_upload_no_cert(NULL);
         return RT_TRUE;
     }  
 

@@ -17,6 +17,7 @@
 #include "rt_type.h"
 
 int32_t init_personalise(void  *arg);
+int32_t personalise_upload_no_cert(void *arg);
 
 #endif // __PERSONALISE_H__
 

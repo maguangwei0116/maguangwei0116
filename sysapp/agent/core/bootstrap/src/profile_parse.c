@@ -590,13 +590,13 @@ int32_t bootstrap_get_profile_root_sk(uint8_t *data, int32_t *data_len){
 
 int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size)
 {
-    int32_t ret;
+    int32_t ret = RT_ERROR;
     int32_t data_len = 0;
-    char version_data[128] = {0}; /* sample: B191031023631863078:skb-beta-0.0.2:aes-beta-0.0.3 */
-    
+    char version_data[256] = {0}; /* sample: B191031023631863078:skb-beta-0.0.2:aes-beta-0.0.3 */
+
     ret = get_specify_data(version_data, &data_len, g_data.file_version_offset);
     if (!ret) {
-        char *p;
+        char *p = NULL;
         char *p0 = version_data;
         char tmp[64] = {0};
 
