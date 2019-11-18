@@ -920,8 +920,8 @@ int32_t ota_upgrade_event(const uint8_t *buf, int32_t len, int32_t mode)
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
     (void)mode;
-    MSG_PRINTF(LOG_INFO, "msg: %s (%d bytes) ==> method: %s ==> event: %s\n", 
-        downstream_msg->msg, downstream_msg->msg_len, downstream_msg->method, downstream_msg->event);
+    //MSG_PRINTF(LOG_INFO, "msg: %s (%d bytes) ==> method: %s ==> event: %s\n", 
+    //    downstream_msg->msg, downstream_msg->msg_len, downstream_msg->method, downstream_msg->event);
     
     downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
     if (downstream_msg->msg) {
