@@ -116,13 +116,13 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
     //debug_json_data(command_content, command_content);
     activation_code = cJSON_GetObjectItem(command_content, "ac");
     if (!activation_code) {
-        MSG_PRINTF(LOG_ERR, "Error before JSON: [%s] (No AC)\n", cJSON_GetErrorPtr());
+        MSG_PRINTF(LOG_ERR, "Error before JSON: [%s] No AC [must have] !\n", cJSON_GetErrorPtr());
         return ERROR_NO_REQUIRED_DATA;
     }
+    
     confirmation_code = cJSON_GetObjectItem(command_content, "cc");
     if (!confirmation_code) {
-        MSG_PRINTF(LOG_ERR, "Error before JSON: [%s] (No CC)\n", cJSON_GetErrorPtr());
-        return ERROR_NO_REQUIRED_DATA;
+        MSG_PRINTF(LOG_WARN, "No CC [optional]\n");
     } else {
         cc = confirmation_code->valuestring;
     }
