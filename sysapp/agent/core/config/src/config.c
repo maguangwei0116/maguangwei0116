@@ -32,25 +32,48 @@
 #define UICC_MODE_vUICC                     "0"
 #define UICC_MODE_eUICC                     "1"
 
+#if 0 // @ref cJSON.h
+/* cJSON Types: */
+#define cJSON_False                         0
+#define cJSON_True                          1
+#define cJSON_NULL                          2
+#define cJSON_Number                        3
+#define cJSON_String                        4
+#define cJSON_Array                         5
+#define cJSON_Object                        6
+#endif
+
+#define CJSON_INT_TYPE                      3
+#define CJSON_STR_TYPE                      4
+
+typedef enum DATA_TYPE {
+    INTEGER =                               CJSON_INT_TYPE,
+    STRING  =                               CJSON_STR_TYPE,
+} data_type_e;
+
 typedef int32_t (*config_func)(const void *in, char *out);
 
 typedef struct CONFIG_ITEM {    
     const char *            key;
     char                    value[MAX_VALUE_SIZE];
     config_func             config;
-    char *                  def_value;
+    data_type_e             type;
+    const char *            def_value;
     const char *            annotation;
 } config_item_t;
 
-#define ITEM(value, config, def_value, annotation)\
+#define ITEM(value, config, type, def_value, annotation)\
 {\
-    #value, {0}, config, def_value, annotation,\
+    #value, {0}, config, type, def_value, annotation,\
 }
 
 static int32_t config_range_int_value(const void *in, int32_t min, int32_t max, char *out)
 {
-    int32_t int_value = (int32_t)in;
-    MSG_PRINTF(LOG_INFO, "%s, int_value=%d\n", __func__, int_value); 
+    const char *str_value = (const char *)in;
+    int32_t int_value = -1;
+
+    int_value = atoi(str_value);
+    //MSG_PRINTF(LOG_INFO, "%s, int_value=%d\n", __func__, int_value); 
 
     if (min <= int_value && int_value <= max) {
         sprintf(out, "%d", int_value);
@@ -63,7 +86,7 @@ static int32_t config_range_int_value(const void *in, int32_t min, int32_t max, 
 static int32_t config_string_value(const void *in, char *out)
 {
     const char *str_value = (const char *)in;
-    MSG_PRINTF(LOG_INFO, "%s, str_value=%s, len=%d\n", __func__, str_value, rt_os_strlen(str_value));   
+    //MSG_PRINTF(LOG_INFO, "%s, str_value=%s, len=%d\n", __func__, str_value, rt_os_strlen(str_value));   
 
     if (rt_os_strlen(str_value) > 0) {
         sprintf(out, "%s", str_value);
@@ -120,30 +143,30 @@ static int32_t config_usage_freq(const void *in, char *out)
 
 static config_item_t g_config_items[] = 
 {
-/*     item_name            config_func             default_value           annotation          */
+/*     item_name            config_func             data_type   default_value           annotation          */
 #if (CFG_ENV_TYPE_PROD)
-ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   "52.220.34.227",        "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"), 
-ITEM(EMQ_SERVER_ADDR,       NULL,                   "18.136.190.97",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     NULL,                   "smdp.redtea.io",       "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "52.220.34.227",        "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"), 
+ITEM(EMQ_SERVER_ADDR,       NULL,                   STRING,     "18.136.190.97",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
+ITEM(PROXY_SERVER_ADDR,     NULL,                   STRING,     "smdp.redtea.io",       "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
 #else
-ITEM(OTI_ENVIRONMENT_ADDR,  config_string_value,                   "54.222.248.186",       "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"), 
-ITEM(EMQ_SERVER_ADDR,       config_string_value,                   "13.229.31.234",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     config_string_value,    "smdp-test.redtea.io",  "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "54.222.248.186",       "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"), 
+ITEM(EMQ_SERVER_ADDR,       NULL,                   STRING,     "13.229.31.234",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
+ITEM(PROXY_SERVER_ADDR,     NULL,                   STRING,     "smdp-test.redtea.io",  "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
 #endif
-ITEM(MBN_CONFIGURATION,     config_switch_value,    "1",                    "Whether config MBN (0:disable  1:enable)"),
-ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,   "2",                    "The rules of the first boot option profile (0:Provisioning 1:Operational 2:last)"),
-ITEM(RPLMN_ENABLE,          NULL,                   "1",                    "Whether set rplmn (0:disable  1:enable)"),
-ITEM(LOG_FILE_SIZE,         config_log_size,        "1",                    "The max size of rt_log file (MB)"),
-ITEM(UICC_MODE,             config_uicc_mode,       "1",                    "The mode of UICC (0:vUICC  1:eUICC)"),
+ITEM(MBN_CONFIGURATION,     config_switch_value,    INTEGER,    "1",                    "Whether config MBN (0:disable  1:enable)"),
+ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,   INTEGER,    "2",                    "The rules of the first boot option profile (0:Provisioning 1:Operational 2:last)"),
+ITEM(RPLMN_ENABLE,          NULL,                   INTEGER,    "1",                    "Whether set rplmn (0:disable  1:enable)"),
+ITEM(LOG_FILE_SIZE,         config_log_size,        INTEGER,    "1",                    "The max size of rt_log file (MB)"),
+ITEM(UICC_MODE,             config_uicc_mode,       INTEGER,    "1",                    "The mode of UICC (0:vUICC  1:eUICC)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,       "LOG_WARN",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,       "LOG_WARN",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,       STRING,     "LOG_WARN",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,       STRING,     "LOG_WARN",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
 #else
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,       "LOG_INFO",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,       "LOG_INFO",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,       STRING,     "LOG_INFO",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,       STRING,     "LOG_INFO",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
 #endif
-ITEM(USAGE_ENABLE,          config_switch_value,    "0",                    "Whether enable upload user traffic (0:disable  1:enable)"),
-ITEM(USAGE_FREQ,            config_usage_freq,      "60",                   "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
+ITEM(USAGE_ENABLE,          config_switch_value,    INTEGER,    "0",                    "Whether enable upload user traffic (0:disable  1:enable)"),
+ITEM(USAGE_FREQ,            config_usage_freq,      INTEGER,    "60",                   "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
 };
 
 static config_info_t g_config_info;
@@ -404,6 +427,8 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_DBG, "UICC_MODE             : %s\n", !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? "vUICC" : "eUICC");
     MSG_PRINTF(LOG_DBG, "MONITOR_LOG_LEVEL     : %s\n", local_config_get_data("MONITOR_LOG_LEVEL"));
     MSG_PRINTF(LOG_DBG, "AGENT_LOG_LEVEL       : %s\n", local_config_get_data("AGENT_LOG_LEVEL"));
+    MSG_PRINTF(LOG_DBG, "USAGE_ENABLE          : %s\n", local_config_get_data("USAGE_ENABLE"));
+    MSG_PRINTF(LOG_DBG, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
 }
 
 int32_t init_config(void *arg)
@@ -431,7 +456,7 @@ typedef enum CONFIG_RESULT {
     CONFIG_PART_OK_ERROR        = -1,       // part config items config ok, redtealink required
     CONFIG_MSG_PARSE_ERROR      = -3001,
     CONFIG_ALL_NONE_ERROR       = -3002,    // total config items all unsupported    
-    CONFIG_ALL_FAIL_ERROR       = -3004,    // total config items all config fail    
+    CONFIG_ALL_FAIL_ERROR       = -3003,    // total config items all config fail    
     CONFIG_OTHER_ERROR          = -3099,
 } config_result_e;
 
@@ -439,76 +464,9 @@ typedef struct CONFIG_ONLINE_PARAM {
     char                        tranId[64];
     config_result_e             result;
     int32_t                     count;  // total config item count
-    char                        OTI_ENVIRONMENT_ADDR[32]; 
-    char                        EMQ_SERVER_ADDR[32];      
-    char                        PROXY_SERVER_ADDR[64];    
-    int32_t                     MBN_CONFIGURATION;    
-    int32_t                     INIT_PROFILE_TYPE;    
-    int32_t                     RPLMN_ENABLE;         
-    int32_t                     LOG_FILE_SIZE;        
-    int32_t                     UICC_MODE;          
-    char                        MONITOR_LOG_LEVEL[16];   
-    char                        AGENT_LOG_LEVEL[16];      
-    int32_t                     USAGE_ENABLE;         
-    int32_t                     USAGE_FREQ;           
+    int32_t                     pair_num;
+    config_item_t *             items;         
 } config_online_param_t;
-
-#if 0 // @ref cJSON.h
-/* cJSON Types: */
-#define cJSON_False             0
-#define cJSON_True              1
-#define cJSON_NULL              2
-#define cJSON_Number            3
-#define cJSON_String            4
-#define cJSON_Array             5
-#define cJSON_Object            6
-#endif
-
-#define CJSON_INT_TYPE          3
-#define CJSON_STR_TYPE          4
-
-#define CONFIG_GET_ITEM_INT_DATA(json, param, tmp, item)\
-    do {\
-        tmp = cJSON_GetObjectItem(json, #item);\
-        if (tmp) {\
-            param->count++;\
-            if (tmp->type == CJSON_INT_TYPE) {\
-                param->item = tmp->valueint;\
-                MSG_PRINTF(LOG_INFO, "%-20s : %d\n", #item, param->item);\
-            } else {\
-                param->item = 0xFFFFFFFF;\
-                MSG_PRINTF(LOG_INFO, "%-20s : %d\n", #item, param->item);\
-            }\
-        } else {\
-            param->item = 0xFFFFFFFF;\
-            MSG_PRINTF(LOG_INFO, "%-20s : %d\n", #item, param->item);\
-        }\
-    } while(0)
-
-#define CONFIG_GET_ITEM_STR_DATA(json, param, tmp, item)\
-    do {\
-        tmp = cJSON_GetObjectItem(json, #item);\
-        if (tmp) {\
-            param->count++;\
-            if (tmp->type == CJSON_STR_TYPE) {\
-                snprintf((param->item), sizeof(param->item), "%s", tmp->valuestring);\
-                MSG_PRINTF(LOG_INFO, "%-20s : %s\n", #item, param->item);\
-            }\
-        }\
-    } while(0)
-
-#define CONFIG_PACK_ITEM_STR_DATA(pair_num, items, json, item)\
-    do {\
-        char *item = config_get_data(#item, pair_num, items);\
-        CJSON_ADD_NEW_STR_OBJ(json, item);\
-    } while(0)
-
-#define CONFIG_PACK_ITEM_INT_DATA(pair_num, items, json, item)\
-    do {\
-        char *tmp_str = config_get_data(#item, pair_num, items);\
-        int32_t item = atoi(tmp_str);\
-        CJSON_ADD_NEW_INT_OBJ(json, item);\
-    } while(0)
 
 #define cJSON_GET_JSON_DATA(json, item)\
     do {\
@@ -543,6 +501,76 @@ typedef struct CONFIG_ONLINE_PARAM {
         }\
     } while(0)
 
+static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
+{
+    int32_t i;
+    int32_t j;
+    int32_t ret = RT_SUCCESS;
+    int32_t config_cnt = 0;
+    cJSON *item;
+    int32_t pair_num = param->pair_num;
+    config_item_t *items = param->items;
+    const char *key;
+    char value[MAX_VALUE_SIZE];
+
+    config_cnt = cJSON_GetArraySize(config);
+    //MSG_PRINTF(LOG_INFO, "config_cnt = %d\r\n", config_cnt);
+    param->count = config_cnt;
+
+    for (i = 0; i < pair_num; i++) {
+        item = cJSON_GetArrayItem(config, i);
+        if (item) {
+            key = item->string; 
+            if (item->type == CJSON_INT_TYPE) {
+                snprintf(value, sizeof(value), "%d", item->valueint);   
+            } else if (item->type == CJSON_STR_TYPE) {
+                snprintf(value, sizeof(value), "%s", item->valuestring);    
+            }
+            MSG_PRINTF(LOG_INFO, "# %02d    %-25s : %s\r\n", i, item->string, value);
+            
+            for (j = 0; j < pair_num; j++) {
+                if (!rt_os_strcmp(items[j].key, key)) {
+                    if (items[j].type == item->type) {
+                        snprintf((char *)items[j].value, sizeof(items[j].value), "%s", value);
+                    } else {
+                        /* data type unmatched, setup a invalid value */
+                            MSG_PRINTF(LOG_INFO, "[%s] data type unmatched !\r\n", key);
+                        if (items[j].type == CJSON_INT_TYPE) {                            
+                            snprintf((char *)items[j].value, sizeof(items[j].value), "%s", "-1");
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+exit_entry:
+    
+    return ret;
+}
+
+static int32_t config_copy_old_items(config_online_param_t *param)
+{
+    int32_t i;
+    int32_t ret = RT_ERROR;
+    param->items = (config_item_t *)rt_os_malloc(sizeof(g_config_items));
+    
+    if (param->items) {
+        param->pair_num = ARRAY_SIZE(g_config_items);
+        rt_os_memcpy(param->items, &g_config_items, sizeof(g_config_items));
+
+        /* clear all values */
+        for(i = 0; i < param->pair_num; i++) {
+            rt_os_memset((char *)param->items[i].value, 0, sizeof(param->items[i].value));
+        }
+
+        ret = RT_SUCCESS;
+    }
+
+    return ret;
+}
+
 static int32_t config_parser(const void *in, char *tran_id, void **out)
 {
     int32_t ret = RT_ERROR;
@@ -556,7 +584,6 @@ static int32_t config_parser(const void *in, char *tran_id, void **out)
     char *config_str = NULL;
     cJSON *policy = NULL;
     cJSON *tmp = NULL;
-    int32_t config_cnt = 0;
     config_online_param_t *param = NULL;
     static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];
     int8_t md5_out_now[MD5_STRING_LENGTH + 1];
@@ -573,49 +600,40 @@ static int32_t config_parser(const void *in, char *tran_id, void **out)
     CONFIG_CHK_PINTER_NULL(param, -1);
     rt_os_memset(param, 0, sizeof(config_online_param_t));
 
+    if (config_copy_old_items(param)) {
+        ret = -2;
+        goto exit_entry;
+    }
+
     msg =  cJSON_Parse((const char *)in);
-    CONFIG_CHK_PINTER_NULL(msg, -2);
+    CONFIG_CHK_PINTER_NULL(msg, -3);
 
     cJSON_GET_JSON_DATA(msg, tranId);
-    CONFIG_CHK_PINTER_NULL(tranId, -3);
+    CONFIG_CHK_PINTER_NULL(tranId, -4);
     
     rt_os_strcpy(tran_id, tranId->valuestring);
     rt_os_strncpy(param->tranId, tranId->valuestring, rt_os_strlen(tranId->valuestring));
 
     cJSON_GET_JSON_DATA(msg, payload);
-    CONFIG_CHK_PINTER_NULL(param, -4);
+    CONFIG_CHK_PINTER_NULL(param, -5);
 
     payload_json = cJSON_Parse((const char *)payload->valuestring);
-    CONFIG_CHK_PINTER_NULL(payload_json, -5);
-    cJSON_DEBUG_JSON_STR_DATA(payload_json);
+    CONFIG_CHK_PINTER_NULL(payload_json, -6);
+    //cJSON_DEBUG_JSON_STR_DATA(payload_json);
 
     cJSON_GET_JSON_DATA(payload_json, content);
-    CONFIG_CHK_PINTER_NULL(content, -6);
+    CONFIG_CHK_PINTER_NULL(content, -7);
 
     cJSON_GET_JSON_DATA(content, config);
-    CONFIG_CHK_PINTER_NULL(config, -7);
-    cJSON_DEBUG_JSON_STR_DATA(config);
+    CONFIG_CHK_PINTER_NULL(config, -8);
+    //cJSON_DEBUG_JSON_STR_DATA(config);
 
     config_json = cJSON_Parse((const char *)config->valuestring);
-    CONFIG_CHK_PINTER_NULL(config_json, -8);
-    cJSON_DEBUG_JSON_STR_DATA(config_json);
-
-    config_cnt = cJSON_GetArraySize(config_json);
-    MSG_PRINTF(LOG_INFO, "config_cnt = %d\r\n", config_cnt);
+    CONFIG_CHK_PINTER_NULL(config_json, -9);
+    //cJSON_DEBUG_JSON_STR_DATA(config_json);
 
     /* get remote config item data */
-    CONFIG_GET_ITEM_STR_DATA(config_json, param, tmp, OTI_ENVIRONMENT_ADDR);
-    CONFIG_GET_ITEM_STR_DATA(config_json, param, tmp, EMQ_SERVER_ADDR);   
-    CONFIG_GET_ITEM_STR_DATA(config_json, param, tmp, PROXY_SERVER_ADDR); 
-    CONFIG_GET_ITEM_INT_DATA(config_json, param, tmp, MBN_CONFIGURATION);  
-    CONFIG_GET_ITEM_INT_DATA(config_json, param, tmp, INIT_PROFILE_TYPE);  
-    CONFIG_GET_ITEM_INT_DATA(config_json, param, tmp, RPLMN_ENABLE);       
-    CONFIG_GET_ITEM_INT_DATA(config_json, param, tmp, LOG_FILE_SIZE);     
-    CONFIG_GET_ITEM_INT_DATA(config_json, param, tmp, UICC_MODE);         
-    CONFIG_GET_ITEM_STR_DATA(config_json, param, tmp, MONITOR_LOG_LEVEL);  
-    CONFIG_GET_ITEM_STR_DATA(config_json, param, tmp, AGENT_LOG_LEVEL);   
-    CONFIG_GET_ITEM_INT_DATA(config_json, param, tmp, USAGE_ENABLE);       
-    CONFIG_GET_ITEM_INT_DATA(config_json, param, tmp, USAGE_FREQ);         
+    config_all_parse(config_json, param);       
 
     *out = param;
     ret = RT_SUCCESS;
@@ -641,32 +659,32 @@ exit_entry:
     return ret;
 }
 
-static int32_t config_handle_items(const char *key, int32_t pair_num, config_item_t *items, const void *in)
+static int32_t config_all_handle(int32_t pair_num, config_item_t *items, const config_online_param_t *param, int32_t *ok_cnt)
 {
-    char *value;
     int32_t i = 0;
+    int32_t j = 0;
     int32_t ret = RT_ERROR;
     config_func config;
+    const char *key;
     
     for (i = 0; i < pair_num; i++) {
-        if (!rt_os_strcmp(items[i].key, key)) {
-            config = items[i].config;
-            if (config) {
-                ret = config(in, items[i].value);
+        for (j = 0; j < param->pair_num; j++) {
+            if (!rt_os_strcmp(items[i].key, param->items[j].key)) {
+                //MSG_PRINTF(LOG_INFO, "key: %s\n", param->items[j].key);
+                config = items[i].config;
+                if (config) {
+                    ret = config(param->items[j].value, items[i].value);
+                    if (!ret) {
+                        (*ok_cnt)++;
+                    }
+                }
+                break;
             }
-        }
+        } 
     }
 
-    return ret;
+    return RT_SUCCESS;
 }
-
-#define CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok, item)\
-    do {\
-        int32_t __l_ret = config_handle_items(#item, pair_num, items, (const void *)param->item);\
-        if (!__l_ret) {\
-            (ok)++;\
-        }\
-    } while(0)
 
 static int32_t config_handler(const void *in, const char *event, void **out)
 {
@@ -690,20 +708,8 @@ static int32_t config_handler(const void *in, const char *event, void **out)
             goto exit_entry;
         }
 
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, OTI_ENVIRONMENT_ADDR);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, EMQ_SERVER_ADDR);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, PROXY_SERVER_ADDR);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, MBN_CONFIGURATION);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, INIT_PROFILE_TYPE);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, RPLMN_ENABLE);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, LOG_FILE_SIZE);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, UICC_MODE);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, MONITOR_LOG_LEVEL);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, AGENT_LOG_LEVEL);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, USAGE_ENABLE);
-        CONFIG_HANDLE_ITEM_DATA(pair_num, items, param, ok_cnt, USAGE_FREQ);
-
-        MSG_PRINTF(LOG_INFO, "total: %d, ok: %d\r\n", total_cnt, ok_cnt);
+        config_all_handle(pair_num, items, param, &ok_cnt);
+        MSG_PRINTF(LOG_INFO, "config total: %d, ok: %d\r\n", total_cnt, ok_cnt);
 
         if (ok_cnt == total_cnt) {
             ret = CONFIG_NO_FAILURE;      // all ok      
@@ -723,11 +729,31 @@ exit_entry:
 
     /* release input param memory */
     if (param) {
+        if (param->items) {
+            rt_os_free((void *)param->items);
+        }
         rt_os_free((void *)param);
         param = NULL;
     }
 
     return ret;
+}
+
+static int32_t config_all_pack(cJSON *config, int32_t pair_num, const config_item_t *items)
+{
+    int32_t i = 0;
+    int32_t int_value;
+    
+    for (i = 0; i < pair_num; i++) {
+        if (items[i].type == INTEGER) {
+            int_value = atoi((char *)items[i].value);
+            cJSON_AddItemToObject(config, (char *)items[i].key, cJSON_CreateNumber(int_value));
+        } else if (items[i].type == STRING) {
+            cJSON_AddItemToObject(config, (char *)items[i].key, cJSON_CreateString((char *)items[i].value));
+        }
+    }
+    
+    return RT_SUCCESS;
 }
 
 static cJSON *config_packer(void *arg)
@@ -754,18 +780,7 @@ static cJSON *config_packer(void *arg)
     }
 
     /* always upload current config item list */
-    CONFIG_PACK_ITEM_STR_DATA(pair_num, items, config_json, OTI_ENVIRONMENT_ADDR);
-    CONFIG_PACK_ITEM_STR_DATA(pair_num, items, config_json, EMQ_SERVER_ADDR);
-    CONFIG_PACK_ITEM_STR_DATA(pair_num, items, config_json, PROXY_SERVER_ADDR);
-    CONFIG_PACK_ITEM_INT_DATA(pair_num, items, config_json, MBN_CONFIGURATION);
-    CONFIG_PACK_ITEM_INT_DATA(pair_num, items, config_json, INIT_PROFILE_TYPE);
-    CONFIG_PACK_ITEM_INT_DATA(pair_num, items, config_json, RPLMN_ENABLE);
-    CONFIG_PACK_ITEM_INT_DATA(pair_num, items, config_json, LOG_FILE_SIZE);
-    CONFIG_PACK_ITEM_INT_DATA(pair_num, items, config_json, UICC_MODE);
-    CONFIG_PACK_ITEM_STR_DATA(pair_num, items, config_json, MONITOR_LOG_LEVEL);
-    CONFIG_PACK_ITEM_STR_DATA(pair_num, items, config_json, AGENT_LOG_LEVEL);
-    CONFIG_PACK_ITEM_INT_DATA(pair_num, items, config_json, USAGE_ENABLE);
-    CONFIG_PACK_ITEM_INT_DATA(pair_num, items, config_json, USAGE_FREQ);
+    config_all_pack(config_json, pair_num, items);
 
 #if 0  // unformated-json-string
     cJSON_PRINT_JSON_STR_DATA(config_json, config);
