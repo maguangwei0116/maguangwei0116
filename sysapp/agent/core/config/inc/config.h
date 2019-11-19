@@ -19,7 +19,8 @@ typedef struct CONFIG_INFO {
     uint32_t            log_max_size;       // unit: MB
     uint8_t             monitor_log_level;  // @ref log_level_e in log.h
     uint8_t             agent_log_level;    // @ref log_level_e in log.h
-    uint8_t             init_profile_type;  // @ref init_profile_type_e in card_manager.h       
+    uint8_t             init_profile_type;  // @ref init_profile_type_e in card_manager.h
+    uint8_t             mbn_enable;         // 0: disable   1: enable
 } config_info_t;
 
 int32_t init_config(void *arg);

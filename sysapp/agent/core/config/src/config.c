@@ -405,6 +405,8 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
         infos->log_max_size = size * M_BYTES;
     }
 
+    infos->mbn_enable = msg_string_to_int(local_config_get_data("MBN_CONFIGURATION"));
+
     log_level = log_get_level(local_config_get_data("MONITOR_LOG_LEVEL"));
     infos->monitor_log_level = (LOG_UNKNOW == log_level) ? LOG_INFO : log_level;
 
