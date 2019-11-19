@@ -90,6 +90,7 @@ endif
 
 SRC-y                                   += $(wildcard ./core/mqtt/src/*.c)
 SRC-y                                   += src/config.c
+SRC-y                                   += src/mbn.c
 SRC-y                                   += src/agent_main.c
 SRC-y                                   += src/agent_queue.c
 SRC-y                                   += src/card_manager.c

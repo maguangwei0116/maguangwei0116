@@ -27,6 +27,7 @@
 #include "personalise.h"
 #include "upgrade.h"
 #include "agent2monitor.h"
+#include "mbn.h"
 #include "libcomm.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
@@ -141,6 +142,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_bootstrap,            (void *)&g_value_list),
     INIT_OBJ(init_versions,             (void *)&g_value_list),   
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
+    INIT_OBJ(init_mbn,                  (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa_channel,          (void *)&g_value_list),
     INIT_OBJ(init_timer,                NULL),
