@@ -15,6 +15,7 @@ vpath %.c ./os
 vpath %.c ./qualcomm
 vpath %.c ./socket
 vpath %.c ./random
+vpath %.c ./at
 
 # Config your resource file list by += xxx.c
 SRC-y 		+= src/file.c
@@ -39,6 +40,7 @@ SRC-y 		+= src/rt_msg_queue.c
 endif
 SRC-y 		+= src/socket.c
 SRC-y 		+= src/random.c
+SRC-y 		+= src/at.c
 
 # Config your include file path by += xxx-inc
 INC-PATH 	+= ./file/
@@ -50,6 +52,7 @@ INC-PATH 	+= ./qualcomm/
 #endif
 INC-PATH 	+= ./socket/
 INC-PATH 	+= ./random/
+INC-PATH 	+= ./at/
 
 INC-y 		+= ./
 INC-y 		+= $(INC-PATH)
