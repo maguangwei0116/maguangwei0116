@@ -168,6 +168,23 @@ static int32_t card_get_provisioning_profile_iccid(char *iccid)
     return ret;
 }
 
+static int32_t card_get_frist_operational_profile_iccid(char *iccid)
+{
+    int32_t ret = RT_ERROR;
+    int32_t ii = 0;
+    
+    for (ii = 0; ii < g_p_info.num; ii++) {
+        if (g_p_info.info[ii].class == PROFILE_TYPE_OPERATIONAL) {
+            rt_os_memcpy(iccid, g_p_info.info[ii].iccid, THE_ICCID_LENGTH);
+            iccid[THE_ICCID_LENGTH] = '\0';
+            ret = RT_SUCCESS;
+            break;
+        }
+    } 
+
+    return ret;
+}
+
 int32_t card_force_enable_provisoning_profile(void)
 {
     char iccid[THE_ICCID_LENGTH + 1] = {0};
@@ -251,10 +268,60 @@ int32_t card_set_opr_profile_apn(void)
     return RT_ERROR;
 }
 
+static int32_t card_init_profile_type(init_profile_type_e type)
+{
+    int32_t ret = RT_SUCCESS;
+
+    MSG_PRINTF(LOG_INFO, "init profile type = %d\r\n", type);
+    if (INIT_PROFILE_TYPE_LAST_USED != type) {
+        char iccid[THE_ICCID_LENGTH + 1] = {0};
+        
+        ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
+        }    
+
+        if (INIT_PROFILE_TYPE_PROVISONING == type) {
+            if (g_p_info.type == PROFILE_TYPE_OPERATIONAL) { /* only enable profile when type is unmatched */
+                ret = card_get_provisioning_profile_iccid(iccid);
+                if (ret) {
+                    MSG_PRINTF(LOG_WARN, "card get provisioning profile iccid fail\r\n");
+                }
+                
+                ret = card_enable_profile(iccid);
+                if (ret) {
+                    MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
+                }
+
+                rt_os_sleep(1);
+            }
+        } else if (INIT_PROFILE_TYPE_OPERATIONAL == type) {
+            if (g_p_info.type != PROFILE_TYPE_OPERATIONAL) { /* only enable profile when type is unmatched */
+                ret = card_get_frist_operational_profile_iccid(iccid);
+                if (ret) {
+                    MSG_PRINTF(LOG_WARN, "card get provisioning profile iccid fail\r\n");
+                }
+
+                ret = card_enable_profile(iccid);
+                if (ret) {
+                    MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
+                }
+
+                rt_os_sleep(1);
+            }
+        }
+    }
+
+    return ret;
+}
+
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
 
+    init_profile_type_e init_profile_type;
+
+    init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
     init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
@@ -268,6 +335,11 @@ int32_t init_card_manager(void *arg)
 
     rt_os_sleep(1);
 
+    ret = card_init_profile_type(init_profile_type);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
+    }
+    
     ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);

@@ -154,7 +154,7 @@ ITEM(EMQ_SERVER_ADDR,       NULL,                   STRING,     "13.229.31.234",
 ITEM(PROXY_SERVER_ADDR,     NULL,                   STRING,     "smdp-test.redtea.io",  "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
 #endif
 ITEM(MBN_CONFIGURATION,     config_switch_value,    INTEGER,    "1",                    "Whether config MBN (0:disable  1:enable)"),
-ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,   INTEGER,    "2",                    "The rules of the first boot option profile (0:Provisioning 1:Operational 2:last)"),
+ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,   INTEGER,    "2",                    "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
 ITEM(RPLMN_ENABLE,          NULL,                   INTEGER,    "1",                    "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,         config_log_size,        INTEGER,    "1",                    "The max size of rt_log file (MB)"),
 ITEM(UICC_MODE,             config_uicc_mode,       INTEGER,    "1",                    "The mode of UICC (0:vUICC  1:eUICC)"),
@@ -406,6 +406,8 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     }
 
     infos->mbn_enable = msg_string_to_int(local_config_get_data("MBN_CONFIGURATION"));
+
+    infos->init_profile_type = msg_string_to_int(local_config_get_data("INIT_PROFILE_TYPE"));
 
     log_level = log_get_level(local_config_get_data("MONITOR_LOG_LEVEL"));
     infos->monitor_log_level = (LOG_UNKNOW == log_level) ? LOG_INFO : log_level;
