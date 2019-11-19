@@ -566,7 +566,11 @@ static int32_t config_copy_old_items(config_online_param_t *param)
 
         /* clear all values */
         for(i = 0; i < param->pair_num; i++) {
-            rt_os_memset((char *)param->items[i].value, 0, sizeof(param->items[i].value));
+            if (param->items[i].type == INTEGER) {
+                snprintf((char *)param->items[i].value, sizeof(param->items[i].value), "%d", -1);
+            } else if (param->items[i].type == STRING) {
+                rt_os_memset((char *)param->items[i].value, 0, sizeof(param->items[i].value));
+            }
         }
 
         ret = RT_SUCCESS;
