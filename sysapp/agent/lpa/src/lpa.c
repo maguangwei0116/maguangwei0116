@@ -26,10 +26,10 @@ int lpa_get_eid(uint8_t *eid)
     //BF3E125A1089049032123451234512345678901235
     // BF3E 12 5A 10 EID
     int8_t channel;
-    uint8_t buf[21];
+    uint8_t buf[64];  // 21 bytes is not enough, 2 more bytes is in need !!! It may stack buffer overflow !!!
     uint16_t size = sizeof(buf);
     int ret = RT_SUCCESS;
-
+    
     if (open_channel(&channel) != RT_SUCCESS) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
