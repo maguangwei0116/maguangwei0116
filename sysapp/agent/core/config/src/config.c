@@ -662,6 +662,8 @@ exit_entry:
         /* msg parse error, output error code */
         param->result = CONFIG_MSG_PARSE_ERROR;
         *out = param;
+        /* change return code */
+        ret = RT_SUCCESS;
     }
 
     return ret;
