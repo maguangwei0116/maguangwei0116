@@ -71,6 +71,7 @@ int32_t rt_qmi_get_current_imsi(uint8_t *imsi)
 
 int32_t rt_qmi_get_signal(int32_t *strength)
 {
+    // 网络等级
 }
 
 int32_t rt_qmi_get_imei(uint8_t *imei)
@@ -95,6 +96,7 @@ int32_t rt_qmi_get_model(uint8_t *model)
 
 int32_t rt_qmi_get_network_type(uint8_t *network_type)
 {
+    // 网络类型
 }
 
 int32_t rt_qmi_init(void *arg)
