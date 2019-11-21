@@ -48,24 +48,7 @@ static int32_t g_queue_id = -1;
 static int32_t g_upload_queue_id = -1;
 static card_info_t **g_card_info;
 
-static void idle_event(const uint8_t *buf, int32_t len, int32_t mode)
-{
-    int32_t status = 0;
-    downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
-
-    (void)mode;
-    
-    downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
-    if (downstream_msg->msg) {
-        rt_os_free(downstream_msg->msg);
-        downstream_msg->msg = NULL;
-    }
-    status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
-
-    upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
-}
-
-static void issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
+static int32_t idle_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t status = 0;
     int32_t ret = RT_ERROR;
@@ -79,9 +62,34 @@ static void issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
         downstream_msg->msg = NULL;
     }
     if (ret == RT_ERROR) {
-        return;
+        return RT_ERROR;
     }
     status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
+
+    upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
+
+    return RT_SUCCESS;
+}
+
+static int32_t issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    int32_t status = 0;
+    int32_t ret = RT_ERROR;
+    downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
+
+    (void)mode;
+    
+    ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
+    if (downstream_msg->msg) {
+        rt_os_free(downstream_msg->msg);
+        downstream_msg->msg = NULL;
+    }
+    if (ret == RT_ERROR) {
+        return RT_ERROR;
+    }
+    status = downstream_msg->handler(downstream_msg->private_arg, downstream_msg->event, &downstream_msg->out_arg);
+
+    return RT_SUCCESS;
 }
 
 #if (AGENT_MSG_DEBUG)
@@ -178,7 +186,6 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_DETECT_NETWORK:
-                    network_detect_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 default: {
