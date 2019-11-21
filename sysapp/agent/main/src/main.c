@@ -30,7 +30,7 @@ static int32_t init_system_signal(void *arg)
 
 int32_t main(int32_t argc, char **argv)
 {
-    agent_main(NULL);
+    agent_main(NULL,NULL);
 
     init_system_signal(NULL);
 

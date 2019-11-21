@@ -15,7 +15,7 @@
 #include "agent_queue.h"
 #include "msg_process.h"
 
-#define RT_LAST_EID                 "/data/redtea/rt_last_eid"
+#define RT_LAST_EID                 "/data/data/com.redteamobile.smart/rt_last_eid"
 #define RT_PROFILE_STATE_ENABLED    2
 
 static card_info_t                  g_p_info;
@@ -76,6 +76,7 @@ static int32_t card_update_eid(rt_bool init)
     int32_t ret = RT_ERROR;
     uint8_t eid[MAX_EID_HEX_LEN] = {0};
     
+    MSG_PRINTF(LOG_WARN, "card_update_eid()\n");
     ret = lpa_get_eid(eid);
     if (!ret) {
         bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
@@ -99,11 +100,14 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     if (ret == RT_SUCCESS) {
         /* get current profile type */
         for (i = 0; i < g_p_info.num; i++) {
+            MSG_PRINTF(LOG_WARN, "cur using iccid: %s state:%d class:%d\n", g_p_info.info[i].iccid, g_p_info.info[i].state, g_p_info.info[i].class);
+        }
+        for (i = 0; i < g_p_info.num; i++) {
             if (g_p_info.info[i].state == 1) {
                 g_p_info.type = g_p_info.info[i].class;
                 rt_os_memcpy(g_p_info.iccid, g_p_info.info[i].iccid, THE_MAX_CARD_NUM);
                 g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';
-                MSG_PRINTF(LOG_WARN, "cur using iccid: %s\n", g_p_info.iccid);
+                MSG_PRINTF(LOG_WARN, "cur using iccid: %s %d\n", g_p_info.info[i].iccid,g_p_info.info[i].state);
                 break;
             }
         }
@@ -339,12 +343,14 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_p_info.eid, 'F', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
     
+    MSG_PRINTF(LOG_WARN, "init_card_manager()\n");
     ret = card_update_eid(RT_TRUE);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
     }
 
     rt_os_sleep(1);
+    MSG_PRINTF(LOG_WARN, "init_card_manager() ending...\n");
 
     ret = card_init_profile_type(init_profile_type);
     if (ret) {

@@ -13,33 +13,60 @@
 
 #include "rt_qmi.h"
 #include "rt_os.h"
+#include "log.h"
+#include "../../../../sysapp/agent/main/agent_main.h"
+
+extern struct arguments *args;
 
 int32_t rt_qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
+    MSG_PRINTF(LOG_DBG, "start callback transmit_apdu()");
+    return jni_transmit_apdu(data, data_len, rsp, rsp_len, channel);
 }
 
 int32_t rt_qmi_close_channel(uint8_t channel)
 {
+    MSG_PRINTF(LOG_DBG, "start callback close_channel()");
+    return jni_close_channel(channel);
+
 }
 
 int32_t rt_qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *channel)
 {
+    MSG_PRINTF(LOG_DBG, "start callback open_channel()");
+    return jni_open_channel(channel);
 }
 
 int32_t rt_qmi_get_register_state(int32_t *register_state)
 {
 }
 
+int32_t rt_qmi_get_mcc(uint16_t *mcc)
+{
+    return jni_get_mcc(mcc);
+}
+
+int32_t rt_qmi_get_mnc(uint16_t *mnc)
+{
+    
+}
+
 int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc)
 {
+    MSG_PRINTF(LOG_DBG, "start callback getMcc()");
+    return rt_qmi_get_mcc(mcc);
 }
 
 int32_t rt_qmi_get_current_iccid(uint8_t *iccid)
 {
+    MSG_PRINTF(LOG_DBG, "start callback getIccid()");
+    jni_get_current_iccid(iccid);
 }
 
 int32_t rt_qmi_get_current_imsi(uint8_t *imsi)
 {
+    MSG_PRINTF(LOG_DBG, "start callback getImsi()");
+    jni_get_current_imsi(imsi);
 }
 
 int32_t rt_qmi_get_signal(int32_t *strength)
@@ -48,7 +75,13 @@ int32_t rt_qmi_get_signal(int32_t *strength)
 
 int32_t rt_qmi_get_imei(uint8_t *imei)
 {
-    rt_os_strcpy((char *)imei, "867184037730144");  // only for test
+    MSG_PRINTF(LOG_DBG, "start callback getImei()");
+    jni_get_imei(imei);
+    MSG_PRINTF(LOG_DBG, "imei is %s\n",imei);
+    
+    // rt_os_strcpy((char *)imei, imei);  // only for test
+    
+    return 0;
 }
 
 int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int8_t pdp_type)

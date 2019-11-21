@@ -35,6 +35,7 @@ static int32_t lpa_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rs
 static uint16_t get_sw(uint8_t *rsp, uint16_t len)
 {
     uint16_t sw = 0;
+    MSG_ERR("2----rsp: %02X%02X\n", rsp[0],rsp[1]);
     sw = ((uint16_t)rsp[len-2] << 8) + rsp[len-1];
     return sw;
 }
@@ -44,6 +45,7 @@ int open_channel(uint8_t *channel)
     int ret = RT_SUCCESS;
     uint8_t cmd[6] = {0x80,0xC0,0x00,0x00,0x00};
 
+    MSG_INFO("Open Channel: start %d\n", *channel);
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
@@ -170,6 +172,7 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
             return RT_ERR_APDU_SEND_FAIL;
         }
         sw = get_sw(rsp, *rsp_len);
+        MSG_ERR("----rsp: %02X%02X\n", rsp[0],rsp[1]);
         do {
             if ((sw & 0xFF00) == 0x6100) {
                 uint16_t size;

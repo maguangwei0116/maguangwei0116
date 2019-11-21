@@ -436,6 +436,17 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
     } else if (MSG_MQTT_CONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv mqtt connected\r\n");
         g_upload_mqtt = RT_TRUE;
+        if (g_report_boot_event == RT_FALSE) {
+            upload_event_report("BOOT", NULL, 0, NULL);
+            g_report_boot_event = RT_TRUE;
+            g_boot_timestamp = time(NULL);
+        } else {
+            //MSG_PRINTF(LOG_INFO, "tmp_timestamp:%d, g_boot_timestamp:%d\r\n", tmp_timestamp, g_boot_timestamp);
+            if ((tmp_timestamp - g_boot_timestamp) >= MAX_BOOT_INFO_INTERVAL) {
+                rt_bool report_all_info = RT_FALSE;
+                upload_event_report("INFO", NULL, 0, &report_all_info);
+            }
+        }  
     } else if (MSG_MQTT_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv mqtt disconnected\r\n");
         g_upload_mqtt = RT_FALSE;

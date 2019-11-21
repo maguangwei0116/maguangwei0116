@@ -148,11 +148,15 @@ static int32_t log_file_write(const char *data, int32_t len)
     return 0;
 }
 
+typedef void (*print)(char*);
+extern print str;
 static void log_local_print(const char *data, int32_t len)
 {
     int32_t size = 0;
+    str(data);
+    return;
     if (g_log_param.mode == LOG_PRINTF_TERMINAL) {
-        printf("%s", data);
+        
     } else {
         //printf("g_log_param.cur_size: %d/%d \r\n", g_log_param.cur_size, g_log_param.max_size);
         if (g_log_param.cur_size > g_log_param.max_size) {
