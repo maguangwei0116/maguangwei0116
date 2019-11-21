@@ -43,7 +43,6 @@ typedef enum DSI_STATE_CALL_STATE {
 #endif
 
 int32_t init_network_detection(void *arg);
-int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode);
 
 /**
  brief:     set current network state

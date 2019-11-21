@@ -12,7 +12,7 @@
  *******************************************************************************/
 
 #include "network_detection.h"
-#include "downstream.h"
+#include "agent_queue.h"
 
 void network_update_state(int32_t state)
 {
@@ -24,6 +24,7 @@ void network_update_state(int32_t state)
         return;
     }
 
+    MSG_PRINTF(LOG_INFO, "network state changed: %d -> %d\r\n", g_network_state, state);
     g_network_state = state;
 
     if (g_network_state == RT_DSI_STATE_CALL_CONNECTED) {  // network connected
@@ -36,31 +37,6 @@ void network_update_state(int32_t state)
     }
 
     #undef NETWORK_STATE_NOT_READY
-}
-
-int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
-{
-    int32_t status = 0;
-    int32_t ret = RT_ERROR;
-    downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
-
-    (void)mode;
-    //MSG_PRINTF(LOG_INFO, "msg: %s ==> method: %s ==> event: %s\n", downstream_msg->msg, downstream_msg->method, downstream_msg->event);
-
-    ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
-    if (downstream_msg->msg) {
-        rt_os_free(downstream_msg->msg);
-        downstream_msg->msg = NULL;
-    }
-    if (ret == RT_ERROR) {
-        return ret;
-    }
-
-    // MSG_PRINTF(LOG_WARN, "tranId: %s, %p\n", downstream_msg->tranId, downstream_msg->tranId);
-    status = downstream_msg->handler(downstream_msg->private_arg,  downstream_msg->event, &downstream_msg->out_arg);
-    upload_event_report(downstream_msg->event, (const char *)downstream_msg->tranId, status, downstream_msg->out_arg);
-
-    return RT_SUCCESS;
 }
 
 #ifdef CFG_PLATFORM_9X07
