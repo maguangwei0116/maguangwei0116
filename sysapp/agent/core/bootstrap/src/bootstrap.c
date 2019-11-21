@@ -134,7 +134,7 @@ int32_t init_bootstrap(void *arg)
 void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     if (g_is_profile_damaged == RT_SUCCESS) {
-        if (g_public_value->card_info->type != PROFILE_TYPE_PROVISONING) {
+        if (g_public_value->card_info->type != PROFILE_TYPE_PROVISONING && g_public_value->card_info->type != PROFILE_TYPE_TEST) {
             return;
         }
         if (mode == MSG_BOOTSTRAP_SELECT_CARD) {
