@@ -185,12 +185,23 @@ static int32_t card_get_frist_operational_profile_iccid(char *iccid)
     return ret;
 }
 
+/* only enable provsioning profile */
 int32_t card_force_enable_provisoning_profile(void)
 {
     char iccid[THE_ICCID_LENGTH + 1] = {0};
 
     card_get_provisioning_profile_iccid(iccid);
     return msg_enable_profile(iccid);   
+}
+
+/* enable provsioning profile && get current profile list */
+int32_t card_force_enable_provisoning_profile_update(void)
+{
+    card_force_enable_provisoning_profile();
+    rt_os_sleep(3);
+    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+
+    return RT_SUCCESS;
 }
 
 static int32_t card_load_profile(const uint8_t *buf, int32_t len)
