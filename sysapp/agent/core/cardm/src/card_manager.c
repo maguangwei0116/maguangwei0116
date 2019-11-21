@@ -94,22 +94,21 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     int32_t ret = RT_ERROR;
     int32_t i;
 
-    ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
-    MSG_PRINTF(LOG_INFO, "profile num: %d\n", g_p_info.num);
+    ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);    
     if (ret == RT_SUCCESS) {
         /* get current profile type */
         for (i = 0; i < g_p_info.num; i++) {
             if (g_p_info.info[i].state == 1) {
                 g_p_info.type = g_p_info.info[i].class;
                 rt_os_memcpy(g_p_info.iccid, g_p_info.info[i].iccid, THE_MAX_CARD_NUM);
-                g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';
-                MSG_PRINTF(LOG_WARN, "cur using iccid: %s\n", g_p_info.iccid);
+                g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';                
                 break;
             }
         }
         if (i == g_p_info.num) {
             g_p_info.type = PROFILE_TYPE_TEST;
         }
+        MSG_PRINTF(LOG_WARN, "cur using iccid: %s, type: %d, profile num: %d\n", g_p_info.iccid, g_p_info.type, g_p_info.num);
         if ((g_p_info.type == PROFILE_TYPE_TEST) ||
             (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
             if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
