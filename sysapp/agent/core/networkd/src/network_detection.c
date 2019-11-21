@@ -17,6 +17,7 @@
 #include "downstream.h"
 #include "card_manager.h"
 #include "card_detection.h"
+#include "bootstrap.h"
 #include "rt_timer.h"
 
 #define MAX_INIT_RETRY_CNT              3
@@ -55,11 +56,17 @@ static void network_detection_task(void *arg)
     dsi_call_info_t dsi_net_hndl;
     profile_type_e *type = ((task_param_t *)arg)->type;
     int32_t *profile_damaged = ((task_param_t *)arg)->profile_damaged;
-
-    /* non-operational profile */
-    MSG_PRINTF(LOG_INFO, "start with provisoning profile, wait bootstrap ok ... %d,%d\r\n", *type, *profile_damaged);
-    if (*type != PROFILE_TYPE_OPERATIONAL && *profile_damaged == RT_TRUE) {
+    
+    MSG_PRINTF(LOG_INFO, "start with profile (%d,%d) ...\r\n", *type, *profile_damaged);
+    
+    /* non-operational profile && share profile ok */
+    if (*type != PROFILE_TYPE_OPERATIONAL && *profile_damaged == RT_SUCCESS) {
         network_wait_bootstrap_start(MAX_WAIT_BOOTSTRAP_TIME);
+    }
+
+    /* operational profile && share profile damaged */
+    if (*type == PROFILE_TYPE_OPERATIONAL && *profile_damaged == RT_ERROR) {
+        operational_network_start_timer();
     }
 
     /* add retry more times */
@@ -67,11 +74,11 @@ static void network_detection_task(void *arg)
         ret = dial_up_init(&dsi_net_hndl);
         if (ret != RT_SUCCESS) {            
             if (++cnt <= MAX_INIT_RETRY_CNT) {
-                MSG_PRINTF(LOG_ERR, "dial up init error (%d) !!!\r\n", cnt);
+                MSG_PRINTF(LOG_ERR, "dial up init error (%d)\r\n", cnt);
                 rt_os_sleep(3);
                 continue;
             }
-            MSG_PRINTF(LOG_ERR, "dial up init final error !!!\r\n");
+            MSG_PRINTF(LOG_ERR, "dial up init final error\r\n");
             goto  exit_entry;
         }
         break;
@@ -136,6 +143,8 @@ int32_t init_network_detection(void *arg)
     return RT_SUCCESS;
 }
 
+#endif
+
 int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t status = 0;
@@ -161,30 +170,22 @@ int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
     return RT_SUCCESS;
 }
 
-#endif
-
 #ifdef CFG_PLATFORM_ANDROID
 
 #include "network_detection.h"
 
 int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
-}
-
-int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
-{
+    (void)buf;
+    (void)len;
+    (void)mode;
+    return RT_SUCCESS;
 }
 
 int32_t init_network_detection(void *arg)
 {
-}
-
-void    network_state_update(int32_t timeout)
-{
-}
-
-void    network_state_force_update(int32_t new_state)
-{
+    (void)arg;
+    return RT_SUCCESS;
 }
 
 #endif
