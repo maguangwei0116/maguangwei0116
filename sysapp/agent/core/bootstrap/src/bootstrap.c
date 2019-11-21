@@ -57,6 +57,12 @@ static void bootstrap_network_start_timer(void)
     }
 }
 
+/* only work in share profile damaged */
+void operational_network_start_timer(void)
+{
+    bootstrap_network_start_timer();  
+}
+
 int32_t bootstrap_select_profile(uint16_t mcc, char *apn, uint8_t *profile, uint16_t *profile_len)
 {
     return selected_profile(mcc, apn, profile, profile_len);    
@@ -72,7 +78,7 @@ static void bootstrap_local_select_profile(void)
     if (g_retry_times > g_max_retry_times) {
         g_retry_times           = 0;
         g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME;
-        MSG_PRINTF(LOG_ERR, "bootstrap select un-work profiles too many times !\r\n");
+        MSG_PRINTF(LOG_ERR, "bootstrap select un-work profiles too many times\r\n");
     } else { 
         uint16_t mcc = 0;
         char apn[128] = {0};
@@ -86,10 +92,10 @@ static void bootstrap_local_select_profile(void)
         if (!last_time) {
             last_time = cur_time;
         }
-        MSG_PRINTF(LOG_INFO, "<<<< bootstrap select card (%d/%d) [%ld] >>>>>>\r\n", g_retry_times, g_max_retry_times, cur_time - last_time);
+        MSG_PRINTF(LOG_INFO, "<<< bootstrap select card (%d/%d) [%ld] >>>\r\n", g_retry_times, g_max_retry_times, cur_time - last_time);
         last_time = cur_time;
         #else
-        MSG_PRINTF(LOG_INFO, "<<<< bootstrap select card (%d/%d) >>>>>>\r\n", g_retry_times, g_max_retry_times);
+        MSG_PRINTF(LOG_INFO, "<<< bootstrap select card (%d/%d) >>>\r\n", g_retry_times, g_max_retry_times);
         #endif
 
         rt_qmi_get_mcc_mnc(&mcc, NULL);
@@ -131,7 +137,6 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
         if (g_public_value->card_info->type != PROFILE_TYPE_PROVISONING) {
             return;
         }
-        MSG_PRINTF(LOG_INFO, "The current mode is %d\n", mode);
         if (mode == MSG_BOOTSTRAP_SELECT_CARD) {
             g_retry_times           = 0;
             g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME;
@@ -149,7 +154,7 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
             bootstrap_network_start_timer();
         }     
     } else {        
-        MSG_PRINTF(LOG_INFO, "The share profile is damaged ! mode: %d, type: %d\n", mode, g_public_value->card_info->type);
+        MSG_PRINTF(LOG_INFO, "share profile damaged, mode:%d, type:%d\n", mode, g_public_value->card_info->type);
         if (mode == MSG_BOOTSTRAP_SELECT_CARD) {
             static int32_t frist_bootstrap_msg = 1;
 
@@ -162,9 +167,9 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
             }         
         } else if (mode == MSG_BOOTSTRAP_DISCONNECTED) {
             if (g_public_value->card_info->type == PROFILE_TYPE_OPERATIONAL) {
-                /* switch to provisoning profile, and check again */
-                card_force_enable_provisoning_profile();     
-                msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_BOOTSTRAP_START_TIMER, NULL, 0);
+                /* switch to provisoning profile and update profile list, and check again */
+                card_force_enable_provisoning_profile_update();
+                bootstrap_network_start_timer();
             } else if (g_public_value->card_info->type == PROFILE_TYPE_PROVISONING) {
                 ipc_select_profile_by_monitor();                
             }
