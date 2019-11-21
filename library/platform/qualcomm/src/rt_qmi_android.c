@@ -46,6 +46,10 @@ int32_t rt_qmi_get_signal(int32_t *strength)
 {
 }
 
+int32_t rt_qmi_get_signal_level(int32_t *level)
+{
+}
+
 int32_t rt_qmi_get_imei(uint8_t *imei)
 {
     rt_os_strcpy((char *)imei, "867184037730144");  // only for test
