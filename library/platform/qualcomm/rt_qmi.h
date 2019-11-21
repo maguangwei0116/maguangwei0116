@@ -25,6 +25,7 @@ int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc);
 int32_t rt_qmi_get_current_iccid(uint8_t *iccid);
 int32_t rt_qmi_get_current_imsi(uint8_t *imsi);
 int32_t rt_qmi_get_signal(int32_t *strength);
+int32_t rt_qmi_get_signal_level(int32_t *level);
 int32_t rt_qmi_get_imei(uint8_t *imei);
 int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int8_t pdp_type);
 int32_t rt_qmi_get_model(uint8_t *model);

@@ -132,9 +132,8 @@ static void rt_get_network_info(uint8_t *mcc_mnc,uint8_t *net_type,uint8_t *leve
     if (mcc_mnc == NULL) {
         return;
     }
-    
-#if 1 || (PLATFORM == PLATFORM_9X07)
-    //used qmi to get network info
+
+    /* used qmi to get network info */
     rt_qmi_get_current_iccid(iccid);
     rt_qmi_get_mcc_mnc(&mcc_int,&mnc_int);
     j += sprintf(mcc_mnc, "%03d", mcc_int);
@@ -153,28 +152,15 @@ static void rt_get_network_info(uint8_t *mcc_mnc,uint8_t *net_type,uint8_t *leve
     }
     leve[1]='\0';
     rt_qmi_get_network_type(net_type);
-    
-#elif PLATFORM == PLATFORM_FIBCOM
-    //used fibcom api to get network info
-    int32_t signal;
-    rt_fibcom_get_iccid(iccid);
-    rt_fibcom_get_mcc_mnc(&mcc_int,&mnc_int);
-    j += sprintf(mcc_mnc, "%03d", mcc_int);
-    j += sprintf(mcc_mnc+j, "%02d", mnc_int);
-    rt_fibcom_get_signal(&signal);
-    sprintf(leve, "%d", signal);
-    if (signal == 5) {
-        *dbm = -51;
-    } else if (signal == 4) {
-        *dbm = -62;
-    } else if (signal == 3) {
-        *dbm = -71;
-    } else if (signal == 2) {
-        *dbm = -86;
-    } else if (signal == 1) {
-        *dbm = -93;
-    } else if (signal == 0) {
-        *dbm = -105;
+
+#ifdef CFG_PLATFORM_ANDROID
+    {
+        /* get android network signal level */
+        int32_t signal_level = 0;
+        rt_qmi_get_signal_level(&signal_level);
+        if (0 <= signal_level && signal_level <= 6) {
+            leve[0] = '0' + signal_level;
+        }
     }
 #endif
 

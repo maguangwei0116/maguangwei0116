@@ -74,6 +74,10 @@ int32_t rt_qmi_get_signal(int32_t *strength)
     // 网络等级
 }
 
+int32_t rt_qmi_get_signal_level(int32_t *level)
+{
+}
+
 int32_t rt_qmi_get_imei(uint8_t *imei)
 {
     MSG_PRINTF(LOG_DBG, "start callback getImei()");
