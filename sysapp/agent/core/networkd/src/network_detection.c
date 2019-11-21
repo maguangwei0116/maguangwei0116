@@ -95,11 +95,6 @@ exit_entry:
     rt_exit_task(NULL);
 }
 
-int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
-{
-    return RT_SUCCESS;
-}
-
 static void network_state(int32_t state)
 {
     if (state == g_network_state) {
@@ -173,14 +168,6 @@ int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
 #ifdef CFG_PLATFORM_ANDROID
 
 #include "network_detection.h"
-
-int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
-{
-    (void)buf;
-    (void)len;
-    (void)mode;
-    return RT_SUCCESS;
-}
 
 int32_t init_network_detection(void *arg)
 {

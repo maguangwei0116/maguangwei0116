@@ -17,7 +17,6 @@
 #include "rt_type.h"
 
 int32_t init_network_detection(void *arg);
-int32_t network_detection_event(const uint8_t *buf, int32_t len, int32_t mode);
 int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode);
 
 #endif // __NETWORK_DETECTION_H__
