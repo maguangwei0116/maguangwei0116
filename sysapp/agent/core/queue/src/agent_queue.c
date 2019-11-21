@@ -15,6 +15,7 @@
 #include "bootstrap.h"
 #include "card_manager.h"
 #include "downstream.h"
+#include "network_detection.h"
 #include "rt_type.h"
 #include "rt_os.h"
 
@@ -237,7 +238,7 @@ static int32_t agent_queue_clear_msg(int32_t time_cnt)
         if (ret == RT_ERROR && !agent_queue.data_buf) {
             break;
         }
-        usleep(10*1000);  // delay 10ms
+        rt_os_msleep(10);  // delay 10ms
     }
 
     return RT_SUCCESS;
@@ -260,7 +261,7 @@ static int32_t upload_queue_clear_msg(int32_t time_cnt)
         if (ret == RT_ERROR && !upload_queue.data_buf) {
             break;
         }
-        usleep(10*1000);  // delay 10ms
+        rt_os_msleep(10);  // delay 10ms
     }
 
     return RT_SUCCESS;
