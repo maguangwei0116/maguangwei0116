@@ -19,7 +19,8 @@
 
 static cJSON *upload_on_network_packer(void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "Upload on network\n");
+    MSG_PRINTF(LOG_DBG, "Upload on network\n");
+    
 exit_entry:
     return (cJSON *)arg;
 }
@@ -73,6 +74,7 @@ static int32_t network_parser(const void *in, char *tranid, void **out)
         MSG_PRINTF(LOG_INFO, "payload:%s,len:%d\n", buf, len);
         ret = RT_SUCCESS;
     } while(0);
+    
     *out = (void *)buf;
     if (agent_msg != NULL) {
         cJSON_Delete(agent_msg);
@@ -83,13 +85,13 @@ static int32_t network_parser(const void *in, char *tranid, void **out)
 static int32_t network_handler(const void *in, const char *event, void **out)
 {
     uint8_t buf[1024];
-    int8_t *cmd = "ping 23.91.101.68 -W 10 -c 5";
+    const int8_t *cmd = "ping 23.91.101.68 -W 10 -c 5";
     int32_t num;
     int32_t state = RT_SUCCESS;
     cJSON *payload = NULL;
     cJSON *content = NULL;
 
-    num = shell_cmd(cmd, buf, 1024);
+    num = shell_cmd(cmd, buf, sizeof(buf));
     buf[num] = '\0';
     MSG_PRINTF(LOG_INFO, "num:%d, buf:%s\n", num, buf);
 

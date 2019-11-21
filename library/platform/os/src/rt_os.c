@@ -177,7 +177,7 @@ int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id)
 int32_t rt_receive_msg_queue(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg)
 {
     if (msgrcv(msgid, buffer, len, msgtyp, msgflg) == -1) {
-        MSG_PRINTF(LOG_ERR, "recv queue error, err(%d)=%s!!\n", errno, strerror(errno));
+        //MSG_PRINTF(LOG_ERR, "recv queue error, err(%d)=%s!!\n", errno, strerror(errno));
         return RT_ERROR;
     }
 

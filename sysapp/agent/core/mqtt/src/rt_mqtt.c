@@ -698,7 +698,7 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
         g_mqtt_param.mqtt_conn_state    = RT_TRUE;
         g_mqtt_param.mqtt_flag          = RT_TRUE;
         g_mqtt_param.lost_flag          = RT_FALSE;
-        MSG_PRINTF(LOG_WARN, "Connect mqtt ok !\r\n");
+        MSG_PRINTF(LOG_DBG, "Connect mqtt ok !\r\n");
         return RT_TRUE;
     } else {
         if (!rt_os_strncmp(g_mqtt_param.opts.channel, "EMQ", 3)) {

@@ -215,7 +215,7 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     }
 
     ret = card_enable_profile(iccid);
-    if (ret) {
+    if (ret && ret != 2) { /* ret value 2: the iccid is enabled now ! */
         MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
     }
 

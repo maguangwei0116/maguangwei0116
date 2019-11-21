@@ -95,7 +95,7 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
 
     //send report by http
     STRUCTURE_OTI_URL(upload_url, MAX_OTI_URL_LEN + 1, g_upload_oti_addr, 7082, "/api/v2/report");
-    MSG_PRINTF(LOG_WARN, "upload_url: %s\r\n", upload_url);
+    MSG_PRINTF(LOG_INFO, "upload_url: %s\r\n", upload_url);
     if (http_parse_url(upload_url, host_addr, file, &port)) {
         MSG_PRINTF(LOG_WARN, "http_parse_url failed!\n");
         ret = HTTP_PARAMETER_ERROR;
