@@ -62,7 +62,7 @@ $(O)/$(TARGET_FILE_NAME): $(OBJS)
 	$($(quiet)do_objdump) -l -x -d "$@" > $(O)/$(DMP_FILE_NAME)
 	$($(quiet)do_copy) -O binary -S "$@" $(O)/$(BIN_FILE_NAME)
 	@$(CHMOD) +x "$@"
-	$($(quiet)do_strip) --strip-all "$@"
+	$(STRIP_ALL) "$@"
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(ELF_FILE_NAME)
 
 .PHONY: all clean info $(TARGET) generate_signature FORCE

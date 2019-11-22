@@ -108,7 +108,7 @@ generate_signature: $(O)/$(LIB_SO_NAME)
 
 $(O)/$(LIB_SO_NAME): $(OBJS) $(ALL_TARGETS)
 	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
-	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
+	$(STRIP_ALL) "$@"
 	
 $(O)/$(LIB_A_NAME): $(OBJS) $(ALL_TARGETS) 
 #	echo ALL_OBJ_TARGETS=$(ALL_OBJ_TARGETS)

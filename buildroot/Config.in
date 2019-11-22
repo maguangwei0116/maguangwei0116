@@ -260,12 +260,12 @@ menu "Compile Options"
 
 choice
 	prompt "Strip"
-	default BR2_STRIP_strip
+	default BR2_CFG_STRIP_strip
 	help
 	  Set tstrip or not
 
-config BR2_STRIP_strip
-	bool "BR2_STRIP_strip"
+config BR2_CFG_STRIP_strip
+	bool "BR2_CFG_STRIP_strip"
 #	depends on !BR2_ELF2FLT
 	help
 	  Binaries and libraries in the target filesystem will be
@@ -274,8 +274,8 @@ config BR2_STRIP_strip
 	  symbols on the target are needed for native debugging, but
 	  not when remote debugging is used.
 
-config BR2_STRIP_sstrip
-	bool "BR2_STRIP_sstrip"
+config BR2_CFG_STRIP_sstrip
+	bool "BR2_CFG_STRIP_sstrip"
 	select BR2_PACKAGE_SSTRIP_HOST
 	depends on !BR2_ELF2FLT
 	help
@@ -286,8 +286,8 @@ config BR2_STRIP_sstrip
 	  symbols on the target are needed for native debugging, but
 	  not when remote debugging is used.
 
-config BR2_STRIP_none
-	bool "BR2_STRIP_none"
+config BR2_CFG_STRIP_none
+	bool "BR2_CFG_STRIP_none"
 	help
 	  Do not strip binaries and libraries in the target
 	  filesystem.
