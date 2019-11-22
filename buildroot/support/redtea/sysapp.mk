@@ -58,7 +58,7 @@ generate_signature: $(O)/$(TARGET_FILE_NAME)
 $(OBJS): $(conf-file)
 
 $(O)/$(TARGET_FILE_NAME): $(OBJS)
-	$($(quiet)do_link) $(MAIN_INCLUDES) -o "$@" $(OBJS) $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME)
+	$($(quiet)do_link) -o "$@" -Wl,--whole-archive $(OBJS) -Wl,--no-whole-archive $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME) 
 	$($(quiet)do_objdump) -l -x -d "$@" > $(O)/$(DMP_FILE_NAME)
 	$($(quiet)do_copy) -O binary -S "$@" $(O)/$(BIN_FILE_NAME)
 	@$(CHMOD) +x "$@"

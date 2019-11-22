@@ -37,12 +37,6 @@ USER_CFLAGS		                    += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME)\"
 USER_CFLAGS		                    += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
 USER_CFLAGS		                    += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
-# Config backtrace module switch [y/n]
-ifeq ($(CFG_ENABLE_LIBUNWIND),y)
-USER_CFLAGS                         += -g -rdynamic -mapcs-frame -funwind-tables -fasynchronous-unwind-tables
-USER_LDFLAGS                        += -lunwind -ldl
-endif
-
 QMI-LIB 				            = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
 COMM-LIB 				            = crypto ssl pthread m
 VUICC-LIB 				            = libvuicc.a

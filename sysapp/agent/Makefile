@@ -37,12 +37,6 @@ USER_CFLAGS                         += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME
 USER_CFLAGS                         += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
 USER_CFLAGS                         += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
-# Config backtrace module switch [y/n]
-ifeq ($(CFG_ENABLE_LIBUNWIND),y)
-USER_CFLAGS                         += -g -rdynamic -mapcs-frame -funwind-tables -fasynchronous-unwind-tables
-USER_LDFLAGS                        += -lunwind -ldl
-endif
-
 # Config your own libraries
 ifeq ($(SYSAPP_PLATFORM_9X07), y)
 QMI-LIB                             = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
@@ -52,7 +46,7 @@ ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 COMM-LIB                            = comm z ssl crypto
 PTHREAD-LIB                         = pthread
 USER_CFLAGS                         += -fdata-sections -ffunction-sections
-USER_LDFLAGS                        += -Wl,-T gcc_android_arm64_ld.script
+USER_LDFLAGS                        += -Wl,-gc-sections -Wl,-T gcc_android_arm64_ld.script
 endif
 
 ############################################################################
