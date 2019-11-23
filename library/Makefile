@@ -37,10 +37,10 @@ LOCAL_TARGET_RELEASE                = $(LIBRARY_SO_TARGET_NAME)_v$(LOCAL_TARGET_
 LOCAL_TARGET_RELEASE_VERSION_NAME   = $(RELEASE_TARGET_VERSION)
 
 # Config your own MACROs in CFLAGS
-USER_CFLAGS                         += -DLOCAL_TARGET_RELEASE_VERSION_NAME=\"$(LOCAL_TARGET_RELEASE_VERSION_NAME)\"
-USER_CFLAGS                         += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME)\"
-USER_CFLAGS                         += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
-USER_CFLAGS                         += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
+LOCAL_CFLAGS                        += -DLOCAL_TARGET_RELEASE_VERSION_NAME=\"$(LOCAL_TARGET_RELEASE_VERSION_NAME)\"
+LOCAL_CFLAGS                        += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME)\"
+LOCAL_CFLAGS                        += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
+LOCAL_CFLAGS                        += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
 ############################################################################################
 # Never modify form this line
