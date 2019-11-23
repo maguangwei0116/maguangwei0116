@@ -225,26 +225,32 @@ int32_t rt_qmi_get_network_type(uint8_t *network_type)
  * PARAMETERS
 *   index : profile index
 *   profile_type
-*       0：3GPP
-*       1：3GPP2
-*       2：EPC
-*   apn : APN used to attach LTE
+*       0: 3GPP
+*       1: 3GPP2
+*       2: EPC
 *   pdp_type
-*       0：IPv4
-*       1：IPv6
+*       0: IPv4
+*       1: IPv6
 *       2: IPv4v6
+*   apn : APN used to attach LTE
+*   mccmnc: special for android set apn API
  * RETURNS
  *  int
  *****************************************************************************/
-int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t *apn, int8_t pdp_type)
+int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t pdp_type, int8_t *apn, int8_t *mcc_mnc)
 {
     qmi_wds_profile_info_t info;
     uint8_t ii = 0;
     int32_t ret = RT_ERROR;
+
+    (void)mcc_mnc;
     info.apn_name = apn;
     info.pdp_type = pdp_type;
     info.profile_index = index;
     info.profile_type = profile_type;
+
+    MSG_PRINTF(LOG_INFO, "set apn: %s [%s]\r\n", (char *)apn, (char *)mcc_mnc);
+    
     while (ret != 0) {
         ret = qmi_modify_profile(&info);
         ii++;

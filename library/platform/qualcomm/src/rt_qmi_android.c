@@ -55,7 +55,7 @@ int32_t rt_qmi_get_imei(uint8_t *imei)
     rt_os_strcpy((char *)imei, "867184037730144");  // only for test
 }
 
-int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int8_t pdp_type)
+int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t pdp_type, int8_t *apn, int8_t *mcc_mnc)
 {
 }
 
