@@ -493,7 +493,7 @@ static uint32_t get_selecte_profile_index(uint32_t total_num)
     return index;
 }
 
-static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc, char *apn, uint8_t *profile, uint16_t *len_out)
+static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *len_out)
 {
     uint32_t selected_profile_index, profile_len, size;
     uint8_t *profile_buffer = NULL;
@@ -525,8 +525,9 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
     linux_fread(buf, 1, 8, fp);
     off += get_length(buf, 1);
 
-    MSG_PRINTF(LOG_INFO, "apn:%s\n", request->apn.list.array[0]->apnName.buf);
     rt_os_strcpy(apn, (char *)request->apn.list.array[0]->apnName.buf);
+    rt_os_strcpy(mcc_mnc, (char *)request->apn.list.array[0]->mccMnc.buf);
+    MSG_PRINTF(LOG_INFO, "apn:%s  mcc_mnc:%s\n", apn, mcc_mnc);
 
     selected_profile_index = get_selecte_profile_index((uint32_t)request->totalNum);
 
@@ -654,7 +655,7 @@ int32_t init_profile_file(const char *file)
     return ret;
 }
 
-int32_t selected_profile(uint16_t mcc, char *apn, uint8_t *profile, uint16_t *profile_len)
+int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *profile_len)
 {
     rt_fshandle_t fp;
     uint8_t buf[8];
@@ -690,7 +691,7 @@ int32_t selected_profile(uint16_t mcc, char *apn, uint8_t *profile, uint16_t *pr
         linux_fseek(fp, off, RT_FS_SEEK_SET);
         linux_fread(buf, 1, 8, fp);
     }
-    decode_profile_info(fp, off, mcc, apn, profile, profile_len);
+    decode_profile_info(fp, off, mcc, apn, mcc_mnc, profile, profile_len);
 
     g_data.priority++;
     ret = RT_SUCCESS;
