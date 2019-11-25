@@ -71,11 +71,12 @@ int32_t rt_qmi_get_current_imsi(uint8_t *imsi)
 
 int32_t rt_qmi_get_signal(int32_t *strength)
 {
-    // 网络等级
+    return jni_get_signal_dbm(strength);
 }
 
 int32_t rt_qmi_get_signal_level(int32_t *level)
 {
+    return jni_get_signal_level(level);
 }
 
 int32_t rt_qmi_get_imei(uint8_t *imei)
@@ -91,6 +92,8 @@ int32_t rt_qmi_get_imei(uint8_t *imei)
 
 int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type,int8_t *apn, int8_t pdp_type)
 {
+    MSG_PRINTF(LOG_DBG, "start callback rt_qmi_modify_profile()");
+    return jni_set_apn(apn);
 }
 
 int32_t rt_qmi_get_model(uint8_t *model)
@@ -100,7 +103,7 @@ int32_t rt_qmi_get_model(uint8_t *model)
 
 int32_t rt_qmi_get_network_type(uint8_t *network_type)
 {
-    // 网络类型
+    return jni_get_network_type(network_type);
 }
 
 int32_t rt_qmi_init(void *arg)

@@ -351,7 +351,7 @@ int32_t init_card_manager(void *arg)
     rt_os_sleep(1);
     MSG_PRINTF(LOG_WARN, "init_card_manager() ending...\n");
 
-    ret = card_init_profile_type(init_profile_type);
+    ret = card_init_profile_type(1);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
     }
