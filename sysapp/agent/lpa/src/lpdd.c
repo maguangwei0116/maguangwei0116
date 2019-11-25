@@ -24,6 +24,7 @@
 #include "hash.h"
 #include "lpa_error_codes.h"
 #include "rt_os.h"
+#include "lpa_https.h"
 
 static uint8_t g_buf[10*1024];
 static uint16_t g_buf_size;
@@ -417,7 +418,7 @@ int initiate_authentication(const char *smdp_addr, char *auth_data, int *size, u
 
     data = cJSON_PrintUnformatted(content);
 
-    ret = https_rich_post(smdp_addr, API_INITIATE_AUTHENTICATION, data, auth_data, size);
+    ret = lpa_https_post(smdp_addr, API_INITIATE_AUTHENTICATION, data, auth_data, size);
     // RT_CHECK_GO(ret == 200, RT_ERR_HTTPS_POST_FAIL, end);
     if (ret == 200) {
         ret = RT_SUCCESS;
@@ -727,7 +728,7 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 
     data = cJSON_PrintUnformatted(content);
 
-    ret = https_rich_post(smdp_addr, API_AUTHENTICATE_CLIENT, data, out, out_size);
+    ret = lpa_https_post(smdp_addr, API_AUTHENTICATE_CLIENT, data, out, out_size);
     RT_CHECK_GO(ret == 200, RT_ERR_HTTPS_POST_FAIL, end);
 
     ret = get_status_codes(out, (char *)b64_in, (char *)g_buf);
@@ -835,7 +836,7 @@ int get_bound_profile_package(const char *smdp_addr, const uint8_t *in, uint16_t
 
     data = cJSON_PrintUnformatted(content);
 
-    ret = https_rich_post(smdp_addr, API_GET_BOUND_PROFILE_PACKAGE, data, out, out_size);
+    ret = lpa_https_post(smdp_addr, API_GET_BOUND_PROFILE_PACKAGE, data, out, out_size);
     RT_CHECK_GO(ret == 200, RT_ERR_HTTPS_POST_FAIL, end);
 
     ret = get_status_codes(out, (char *)b64_in, (char *)g_buf);
@@ -1028,7 +1029,7 @@ int handle_notification(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 
     data = cJSON_PrintUnformatted(content);
 
-    ret = https_rich_post(smdp_addr, API_HANDLE_NOTIFICATION, data, out, out_size);
+    ret = lpa_https_post(smdp_addr, API_HANDLE_NOTIFICATION, data, out, out_size);
     if (ret == 204) {
         ret = RT_SUCCESS;
     } else {
@@ -1072,7 +1073,7 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 
     data = cJSON_PrintUnformatted(content);
 
-    ret = https_rich_post(smdp_addr, API_CANCEL_SESSION, data, out, out_size);
+    ret = lpa_https_post(smdp_addr, API_CANCEL_SESSION, data, out, out_size);
     if (ret == 200) {
         ret = RT_SUCCESS;
     } else {
@@ -1117,6 +1118,6 @@ int load_profile(const uint8_t *data, uint16_t data_len, uint8_t channel)
 
 void close_session(void)
 {
-    https_close_socket();
+    lpa_https_close();
 }
 

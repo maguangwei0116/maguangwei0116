@@ -6,13 +6,6 @@
 
 #include "rt_type.h"
 
-/**************************************************************************************************
-                                    Configure TLS
-**************************************************************************************************/
-//#define TLS_VERIFY_CERT                         1
-//#define TLS_VERIFY_CERT_9_AS_OK                 1
-#define TLS_CERT_PATH                           "/data/redtea/ca-chain.pem"
-
 typedef enum ERR_HTTPS_CODE {
     RT_ERR_HTTPS_GET_HOSTNAME_FAIL      = -300,
     RT_ERR_HTTPS_GET_SOCKET_FAIL        = -301,
@@ -38,7 +31,6 @@ int  https_init(https_ctx_t *https_ctx, const char *host, const char *port, cons
 int  https_post(https_ctx_t *https_ctx, const char *request);
 int  https_read(https_ctx_t *https_ctx, char *buffer, int buffer_size);
 void https_free(https_ctx_t *https_ctx);
-int  https_rich_post(const char *addr, const char *api, const char *body, char *buffer, int *size /* out */);
-void https_close_socket(void);
 
-#endif  // __HTTPS_H__
+#endif  /* __HTTPS_H__ */
+

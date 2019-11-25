@@ -1,17 +1,18 @@
 
+#include <stdio.h>
+
 #include "lpa.h"
 #include "lpa_config.h"
 #include "lpdd.h"
 #include "luid.h"
 #include "convert.h"
-#include "stdio.h"
+#include "lpa_https.h"
 #include "lpa_error_codes.h"
 #include "ProfileInfoListResponse.h"
 #include "ProfileInstallationResult.h"
 #include "MoreEIDOperateResponse.h"
 
 #define BUFFER_SIZE                10*1024
-extern uint8_t *g_proxy_server_url;
 
 extern void init_apdu_channel(lpa_channel_type_e channel_mode);
 
@@ -366,7 +367,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
 
     memset(buf1,0x00,BUFFER_SIZE);
     memset(buf2,0x00,BUFFER_SIZE);
-    g_proxy_server_url = server_url;
+    lpa_https_set_url(server_url);
     MSG_INFO("AC:%s\n", ac);
     RT_CHECK(check_ac(ac, &smdp_addr_start, &smdp_addr_len, &matching_id_start, &matching_id_len, &need_cc));
 

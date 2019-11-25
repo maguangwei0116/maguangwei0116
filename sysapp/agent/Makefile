@@ -97,6 +97,7 @@ SRC-y                                   += src/lpdd.c
 SRC-y                                   += src/luid.c
 SRC-y                                   += src/ldsd.c
 SRC-y                                   += src/apdu.c
+SRC-y                                   += src/lpa_https.c
 
 # Add your upload-xxx cmd here
 SRC-y                                   += ./core/upload/src/upload.c
