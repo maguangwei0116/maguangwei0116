@@ -58,7 +58,7 @@ $(OBJS): $(conf-file)
 
 $(O)/$(LIB_SO_NAME): $(OBJS)
 	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) $(OBJS) -o"$@"
-	$($(quiet)do_strip) --strip-all $(O)/$(LIB_SO_NAME)
+	$(STRIP_ALL) "$@"
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
 	-$(Q)$(call INSTALL_LIBRARY_HEADER_FILE,$(shell ls $(EXTERN_HEADER_FILES)),$(SDK_INSTALL_PATH)/include)
 	@$(ECHO) ""

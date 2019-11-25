@@ -24,6 +24,7 @@
 #include "hash.h"
 #include "lpa_error_codes.h"
 #include "rt_os.h"
+#include "lpa_https.h"
 
 static uint8_t g_buf[10*1024];
 static uint16_t g_buf_size;
@@ -422,7 +423,7 @@ int initiate_authentication(const char *smdp_addr, char *auth_data, int *size, u
     if (ret == 200) {
         ret = RT_SUCCESS;
     } else {
-        MSG_ERR("lpa_https_post: %d\n", ret);
+        MSG_ERR("lpa https post: %d\n", ret);
         // ret = RT_ERR_HTTPS_POST_FAIL;
         ret = ret < 0 ? ret : RT_ERR_HTTPS_POST_FAIL;
         goto end;
@@ -1076,7 +1077,7 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     if (ret == 200) {
         ret = RT_SUCCESS;
     } else {
-        MSG_ERR("lpa_https_post: %d\n", ret);
+        MSG_ERR("lpa https post: %d\n", ret);
         // ret = RT_ERR_HTTPS_POST_FAIL;
         ret = ret < 0 ? ret : RT_ERR_HTTPS_POST_FAIL;
     }
@@ -1117,6 +1118,6 @@ int load_profile(const uint8_t *data, uint16_t data_len, uint8_t channel)
 
 void close_session(void)
 {
-    lpa_https_close_socket();
+    lpa_https_close();
 }
 

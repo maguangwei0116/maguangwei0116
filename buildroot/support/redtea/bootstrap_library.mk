@@ -21,7 +21,7 @@ $(TARGET): $(O)/$(LIB_ANDROID_BOOTSTRAP_SO_NAME)
 
 $(O)/$(LIB_ANDROID_BOOTSTRAP_SO_NAME): $(ANDROID_BOOTSTRAP_OBJS)
 	$($(quiet)do_link) -shared -Wl,-soname=$(LIB_ANDROID_BOOTSTRAP_SO_NAME) $(ANDROID_BOOTSTRAP_OBJS) -o"$@"
-	$($(quiet)do_strip) --strip-all $(O)/$(LIB_ANDROID_BOOTSTRAP_SO_NAME)
+	$(STRIP_ALL) "$@"
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"

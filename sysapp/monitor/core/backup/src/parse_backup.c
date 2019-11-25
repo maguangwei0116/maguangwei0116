@@ -112,6 +112,8 @@ static int32_t parse_profile(void)
     int32_t size;
     int32_t operator_num;
     uint32_t profile_seq;
+    char *apn_name = NULL;
+    char *mcc_mnc = NULL;    
 
     dc = ber_decode(NULL, &asn_DEF_ProfileFile, (void **) &profile_file, card_buf, sizeof(card_buf));
     if (dc.code != RC_OK) {
@@ -140,8 +142,10 @@ static int32_t parse_profile(void)
         goto end;
     }
 
-    rt_qmi_modify_profile(1, 0, profile_info->apn.list.array[g_operator_num]->apnName.buf, 0);
-    MSG_PRINTF(LOG_INFO, "set apn name  : %s\n", profile_info->apn.list.array[g_operator_num]->apnName.buf);
+    apn_name = profile_info->apn.list.array[g_operator_num]->apnName.buf;
+    mcc_mnc = profile_info->apn.list.array[g_operator_num]->mccMnc.buf;
+    rt_qmi_modify_profile(1, 0, 0, apn_name, mcc_mnc);
+    MSG_PRINTF(LOG_INFO, "set apn name  : %s [%s]\n", apn_name, mcc_mnc);
     ret = RT_SUCCESS;
 
 end:

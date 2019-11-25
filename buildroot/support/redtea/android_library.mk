@@ -40,7 +40,7 @@ $(TARGET): $(O)/$(LIB_ANDROID_AGENT_SO_NAME)
 
 $(O)/$(LIB_ANDROID_AGENT_SO_NAME): gen_openssl_objs $(ANDROID_AGENT_OBJS)
 	$($(quiet)do_link) -shared -Wl,-soname=$(LIB_ANDROID_AGENT_SO_NAME) $(ANDROID_AGENT_WITH_OPENSSL_OBJS)  -o"$@"
-	$($(quiet)do_strip) --strip-all $(O)/$(LIB_ANDROID_AGENT_SO_NAME)
+	$(STRIP_ALL) "$@"
 	-$(Q)$(CP) -rf $@ $(SDK_INSTALL_PATH)/lib
 	@$(ECHO) ""
 	@$(ECHO) "+---------------------------------------------------"

@@ -84,7 +84,7 @@ int32_t rt_truncate_data(uint8_t *filename, int32_t offset)
     return linux_truncate(filename, offset);
 }
 
-int32_t rm_dir(const int8_t *dirpath)
+int32_t rt_rm_dir(const int8_t *dirpath)
 {
     char sub_path[128];
     rt_dir_t dirp = NULL;
@@ -104,12 +104,12 @@ int32_t rm_dir(const int8_t *dirpath)
         snprintf(sub_path, sizeof(sub_path), "%s/%s", dirpath, dir->d_name);
 
         if (linux_lstat(sub_path, &st) == -1) {
-            MSG_PRINTF(LOG_WARN, "rm_dir:l-stat %s error\n", sub_path);
+            MSG_PRINTF(LOG_WARN, "rm dir:l-stat %s error\n", sub_path);
             continue;
         }
 
         if (S_ISDIR(st.st_mode)) {
-            if (rm_dir(sub_path) == -1) {  // 如果是目录文件，递归删除
+            if (rt_rm_dir(sub_path) == -1) {  // 如果是目录文件，递归删除
                 linux_closedir(dirp);
                 return -1;
             }
@@ -117,7 +117,7 @@ int32_t rm_dir(const int8_t *dirpath)
         } else if (S_ISREG(st.st_mode)) {  // 普通文件
             rt_os_unlink(sub_path);
         } else {
-            MSG_PRINTF(LOG_WARN, "rm_dir:l-stat %s error\n", sub_path);
+            MSG_PRINTF(LOG_WARN, "rm dir:l-stat %s error\n", sub_path);
             continue;
         }
     }
@@ -130,7 +130,7 @@ int32_t rm_dir(const int8_t *dirpath)
     return RT_SUCCESS;
 }
 
-int32_t rm(const int8_t *file_name)
+int32_t rt_rm(const int8_t *file_name)
 {
     rt_stat_t st;
 
@@ -147,7 +147,7 @@ int32_t rm(const int8_t *file_name)
             return RT_ERROR;
         }
 
-        if (rm_dir(file_name) == -1) {  // delete all the files in dir.
+        if (rt_rm_dir(file_name) == -1) {  // delete all the files in dir.
             return RT_ERROR;
         }
     }

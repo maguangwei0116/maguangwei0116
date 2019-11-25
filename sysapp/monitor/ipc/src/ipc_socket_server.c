@@ -10,12 +10,15 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Sublime text
  *******************************************************************************/
+#include <errno.h>
+#include <string.h>
 
 #include "ipc_socket_server.h"
+#include "rt_os.h"
 #include "socket.h"
 
-#define THE_MAX_CLIENT_NUM  2
-#define THT_BUFFER_LEN      512
+#define THE_MAX_CLIENT_NUM      2
+#define THT_BUFFER_LEN          512
 
 typedef uint16_t (*ipc_callback)(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
 static ipc_callback ipc_cmd;
@@ -41,9 +44,15 @@ int32_t ipc_socket_server(void)
     }
 
     ret = socket_bind(socket_id);
-    if (ret == -1) {
-        MSG_PRINTF(LOG_ERR, "socket bind failed\n");
-        goto end;
+    if (ret < 0) {
+        MSG_PRINTF(LOG_ERR, "socket bind failed, sock_id=%d, err(%d)=%s\n", socket_id, errno, strerror(errno));
+        rt_os_sleep(2);
+        MSG_PRINTF(LOG_ERR, "monitor restart ...\r\n");
+        /* 
+        Usual bind error: [err(98)=Address already in use] 
+        And set SO_REUSEADDR by setsockopt API doesn't work but restart monitor process !
+        */
+        rt_os_exit(-1);
     }
 
     ret = socket_listen(socket_id, THE_MAX_CLIENT_NUM);

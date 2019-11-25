@@ -32,16 +32,10 @@ LOCAL_TARGET_RELEASE                = $(SYSAPP_TARGET_NAME)_v$(LOCAL_TARGET_VERS
 LOCAL_TARGET_RELEASE_VERSION_NAME   = $(LOCAL_TARGET_RELEASE)_$(SYSAPP_GIT_HASH)_$(shell date +%Y-%m-%d_%H:%M:%S)
 
 # Config your own MACROs in CFLAGS
-USER_CFLAGS                         += -DLOCAL_TARGET_RELEASE_VERSION_NAME=\"$(LOCAL_TARGET_RELEASE_VERSION_NAME)\"
-USER_CFLAGS                         += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME)\"
-USER_CFLAGS                         += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
-USER_CFLAGS                         += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
-
-# Config backtrace module switch [y/n]
-ifeq ($(CFG_ENABLE_LIBUNWIND),y)
-USER_CFLAGS                         += -g -rdynamic -mapcs-frame -funwind-tables -fasynchronous-unwind-tables
-USER_LDFLAGS                        += -lunwind -ldl
-endif
+LOCAL_CFLAGS                        += -DLOCAL_TARGET_RELEASE_VERSION_NAME=\"$(LOCAL_TARGET_RELEASE_VERSION_NAME)\"
+LOCAL_CFLAGS                        += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME)\"
+LOCAL_CFLAGS                        += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
+LOCAL_CFLAGS                        += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
 # Config your own libraries
 ifeq ($(SYSAPP_PLATFORM_9X07), y)
@@ -51,8 +45,8 @@ endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 COMM-LIB                            = comm z ssl crypto
 PTHREAD-LIB                         = pthread
-USER_CFLAGS                         += -fdata-sections -ffunction-sections
-USER_LDFLAGS                        += -Wl,-T gcc_android_arm64_ld.script
+LOCAL_CFLAGS                        += -fdata-sections -ffunction-sections
+LOCAL_LDFLAGS                       += -Wl,-gc-sections -Wl,-T gcc_android_arm64_ld.script
 endif
 
 ############################################################################
@@ -103,6 +97,7 @@ SRC-y                                   += src/lpdd.c
 SRC-y                                   += src/luid.c
 SRC-y                                   += src/ldsd.c
 SRC-y                                   += src/apdu.c
+SRC-y                                   += src/lpa_https.c
 
 # Add your upload-xxx cmd here
 SRC-y                                   += ./core/upload/src/upload.c

@@ -123,7 +123,7 @@ static int32_t rt_get_euicc_iccid(uint8_t *iccid)
  * RETURNS
  *  @void
  *****************************************************************************/
-static void rt_get_network_info(uint8_t *mcc_mnc,uint8_t *net_type,uint8_t *leve,int32_t *dbm,uint8_t *iccid)
+static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *level, int32_t *dbm, uint8_t *iccid)
 {
     uint16_t mcc_int = 0;
     uint16_t mnc_int = 0;
@@ -138,19 +138,21 @@ static void rt_get_network_info(uint8_t *mcc_mnc,uint8_t *net_type,uint8_t *leve
     rt_qmi_get_mcc_mnc(&mcc_int,&mnc_int);
     j += sprintf(mcc_mnc, "%03d", mcc_int);
     j += sprintf(mcc_mnc+j, "%02d", mnc_int);
+
+    /* signal level: [1,5] */
     rt_qmi_get_signal(dbm);
     if (*dbm < -100) {
-        leve[0] = '0';
+        level[0] = '1';
     } else if (*dbm < -85) {
-        leve[0] = '1';
+        level[0] = '2';
     } else if (*dbm < -70) {
-        leve[0] = '2';
+        level[0] = '3';
     } else if (*dbm < -60) {
-        leve[0] = '3';
+        level[0] = '4';
     } else {
-        leve[0] = '4';
+        level[0] = '5';
     }
-    leve[1]='\0';
+    level[1]='\0';
     rt_qmi_get_network_type(net_type);
 
 #ifdef CFG_PLATFORM_ANDROID
@@ -159,7 +161,7 @@ static void rt_get_network_info(uint8_t *mcc_mnc,uint8_t *net_type,uint8_t *leve
         int32_t signal_level = 0;
         rt_qmi_get_signal_level(&signal_level);
         if (0 <= signal_level && signal_level <= 6) {
-            leve[0] = '0' + signal_level;
+            level[0] = '1' + signal_level;
         }
     }
 #endif
@@ -169,7 +171,7 @@ static void rt_get_network_info(uint8_t *mcc_mnc,uint8_t *net_type,uint8_t *leve
         iccid[j] = 'F';
     }
     iccid[j] = '\0';
-    MSG_PRINTF(LOG_DBG, "*leve:%c\n",*leve);
+    MSG_PRINTF(LOG_DBG, "*level:%c\n", *level);
 }
 
 static cJSON *upload_event_boot_network_info(void)
@@ -180,7 +182,7 @@ static cJSON *upload_event_boot_network_info(void)
     char mccmnc[8] = {0};
     char type[8] = {0};
     int32_t dbm = 0;
-    char level[8] = {0};
+    char signalLevel[8] = {0};
 
     network = cJSON_CreateObject();
     if (!network) {
@@ -189,13 +191,13 @@ static cJSON *upload_event_boot_network_info(void)
         goto exit_entry;
     }
 
-    rt_get_network_info(mccmnc, type, level, &dbm, iccid);
+    rt_get_network_info(mccmnc, type, signalLevel, &dbm, iccid);
 
     CJSON_ADD_NEW_STR_OBJ(network, iccid);
     CJSON_ADD_NEW_STR_OBJ(network, mccmnc);
     CJSON_ADD_NEW_STR_OBJ(network, type);
     CJSON_ADD_NEW_INT_OBJ(network, dbm);
-    CJSON_ADD_NEW_STR_OBJ(network, level);
+    CJSON_ADD_NEW_STR_OBJ(network, signalLevel);
     
     ret = 0;
     

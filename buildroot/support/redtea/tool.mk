@@ -48,3 +48,9 @@ do_strip           	= $(STRIP)
 do_mkver           	= 
 do_transfer        	= $(TRANSFER)
 do_compress        	= $(COMPRESS)
+
+ifeq ($(CFG_STRIP_strip),y)
+STRIP_ALL           = $($(quiet)do_strip) --strip-all
+else
+STRIP_ALL           = $(Q)touch 
+endif

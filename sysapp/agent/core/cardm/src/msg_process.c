@@ -144,7 +144,7 @@ static int32_t msg_insert(uint8_t *iccid, uint8_t *buffer)
  * RETURNS
  *  void
 */
-static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
+static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name, char *mcc_mnc_out)
 {
     cJSON *agent_msg = NULL;
     cJSON *apn_list = NULL;
@@ -172,14 +172,16 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
     apn_list = cJSON_GetObjectItem(agent_msg, "apnInfos");
     if (apn_list != NULL) {
         apn_num = cJSON_GetArraySize(apn_list);
-        MSG_PRINTF(LOG_INFO, "apn_num: %d\r\n", apn_num);
         for (ii = 0; ii < apn_num; ii++) {
-            MSG_PRINTF(LOG_INFO, "apn index: %d\r\n", ii);
+            MSG_PRINTF(LOG_INFO, "apn index: %d/%d\r\n", ii+1, apn_num);
             apn_item = cJSON_GetArrayItem(apn_list, ii);
             mcc_mnc = cJSON_GetObjectItem(apn_item, "mccmnc");
-            if (!mcc_mnc) {
-                MSG_PRINTF(LOG_WARN, "mcc mnc is error\n");
-                continue;
+            if (mcc_mnc != NULL) {
+                rt_os_memcpy(mcc_mnc_out, mcc_mnc->valuestring, rt_os_strlen(mcc_mnc->valuestring));
+                mcc_mnc_out[rt_os_strlen(mcc_mnc->valuestring)] = '\0';
+            } else {
+                mcc_mnc_out[0] = '\0';
+                MSG_PRINTF(LOG_WARN, "mcc mnc is error\n");                
             }
             apn = cJSON_GetObjectItem(apn_item, "apn");
             if (apn != NULL) {
@@ -195,7 +197,7 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name)
         MSG_PRINTF(LOG_WARN, "apn list is error\n");
     }
 
-    MSG_PRINTF(LOG_INFO, "APN_NAME: %s\n", apn_name);
+    //MSG_PRINTF(LOG_INFO, "APN_NAME: %s, MCC_MNC: %s\n", apn_name, mcc_mnc_out);
 
     if (agent_msg != NULL) {
         cJSON_Delete(agent_msg);
@@ -309,11 +311,12 @@ int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])
 
 int32_t msg_set_apn(const char *iccid)
 {
-    char apn_name[100] = {0};
+    char apn_name[128] = {0};
+    char mcc_mnc[32] = {0};
 
-    if (RT_SUCCESS == msg_get_op_apn_name(iccid, apn_name)) {
-        MSG_PRINTF(LOG_WARN, "iccid:%s, set apn_name:%s\n", iccid, apn_name);
-        rt_qmi_modify_profile(1, 0, apn_name, 0);
+    if (RT_SUCCESS == msg_get_op_apn_name(iccid, apn_name, mcc_mnc)) {
+        MSG_PRINTF(LOG_WARN, "iccid:%s, set apn_name:%s  mcc_mnc:%s\n", iccid, apn_name, mcc_mnc);
+        rt_qmi_modify_profile(1, 0, 0, apn_name, mcc_mnc);
     }
 
     return RT_SUCCESS;
