@@ -189,15 +189,18 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     linux_fseek(fp, 0, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 8, fp);
     profile_off = get_length(buf,1);
+    MSG_PRINTF(LOG_INFO, "file_size=%d, profile_off=%d\n", file_size, profile_off);
     hash_off += profile_off;
 
     linux_fseek(fp, profile_off, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 8, fp);
     hash_off += get_length(buf, 0) + get_length(buf, 1);
+    MSG_PRINTF(LOG_INFO, "hash_off=%d\n", hash_off);
 
     linux_fseek(fp, hash_off, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 50, fp);
     if (buf[0] != HASH_CODE || buf[1] != HASH_CODE_LENGTH) {
+        MSG_PRINTF(LOG_ERR, "hash buffer failed %02x, %02x\n", buf[0], buf[1]);
         return RT_ERROR;
     }
     rt_os_memcpy(original_hash, get_value_buffer(buf), 32);
