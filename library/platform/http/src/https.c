@@ -298,7 +298,7 @@ void https_free(https_ctx_t *https_ctx)
     }
 }
 
-int lpa_https_post(const char *addr, const char *api, const char *body,
+int https_rich_post(const char *addr, const char *api, const char *body,
                     char *buffer, int *size /* out */)
 {
     const char *p;
@@ -404,7 +404,7 @@ int lpa_https_post(const char *addr, const char *api, const char *body,
     return status;
 }
 
-void lpa_https_close_socket(void)
+void https_close_socket(void)
 {
     if(g_https_ctx.socket<0){
         return;
