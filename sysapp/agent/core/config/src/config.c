@@ -460,7 +460,8 @@ typedef enum CONFIG_RESULT {
     CONFIG_PART_OK_ERROR        = -1,       // part config items config ok, redtealink required
     CONFIG_MSG_PARSE_ERROR      = -3001,
     CONFIG_ALL_NONE_ERROR       = -3002,    // total config items all unsupported    
-    CONFIG_ALL_FAIL_ERROR       = -3003,    // total config items all config fail    
+    CONFIG_ALL_FAIL_ERROR       = -3003,    // total config items all config fail  
+    CONFIG_AGAIN_ERROR          = -3004,    // Repeated configuration with the same config data
     CONFIG_OTHER_ERROR          = -3099,
 } config_result_e;
 
@@ -516,6 +517,18 @@ static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
     config_item_t *items = param->items;
     const char *key;
     char value[MAX_VALUE_SIZE];
+    char *config_str = NULL;
+    static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];
+    int8_t md5_out_now[MD5_STRING_LENGTH + 1];
+
+    cJSON_FORMAT_JSON_STR_DATA(config, config_str);
+    get_md5_string((int8_t *)config_str, md5_out_now);
+    md5_out_now[MD5_STRING_LENGTH] = '\0';
+    if (rt_os_strcmp(md5_out_pro, md5_out_now) == 0) {
+        MSG_PRINTF(LOG_ERR, "The config data are the same!!\n");
+        return CONFIG_AGAIN_ERROR;
+    }
+    rt_os_strcpy(md5_out_pro, md5_out_now);
 
     config_cnt = cJSON_GetArraySize(config);
     //MSG_PRINTF(LOG_INFO, "config_cnt = %d\r\n", config_cnt);
@@ -641,7 +654,11 @@ static int32_t config_parser(const void *in, char *tran_id, void **out)
     //cJSON_DEBUG_JSON_STR_DATA(config_json);
 
     /* get remote config item data */
-    config_all_parse(config_json, param);       
+    ret = config_all_parse(config_json, param);
+    if (ret) {
+        param->result = ret;
+        goto exit_entry;
+    }
 
     *out = param;
     ret = RT_SUCCESS;
@@ -660,7 +677,9 @@ exit_entry:
 
     if (ret) {
         /* msg parse error, output error code */
-        param->result = CONFIG_MSG_PARSE_ERROR;
+        if (!param->result) {
+            param->result = CONFIG_MSG_PARSE_ERROR;
+        }
         *out = param;
         /* change return code */
         ret = RT_SUCCESS;
