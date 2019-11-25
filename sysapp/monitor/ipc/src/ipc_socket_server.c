@@ -22,10 +22,16 @@
 
 typedef uint16_t (*ipc_callback)(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
 static ipc_callback ipc_cmd;
+static rt_bool g_ipc_server_ok = RT_FALSE;
 
 void ipc_regist_callback(void *fun)
 {
     ipc_cmd = (ipc_callback)fun;
+}
+
+rt_bool ipc_server_check(void)
+{
+    return g_ipc_server_ok;    
 }
 
 int32_t ipc_socket_server(void)
@@ -61,6 +67,8 @@ int32_t ipc_socket_server(void)
         goto end;
     }
 
+    g_ipc_server_ok = RT_TRUE;
+    
     while (1) {
         new_fd = socket_accept(socket_id);
         if (new_fd == -1) {

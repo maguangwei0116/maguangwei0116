@@ -214,17 +214,31 @@ static int32_t ipc_socket_server_start(void)
     return ret;
 }
 
+static int32_t agent_process_kill(void)
+{
+    char cmd[128];
+    
+    /* kill all agent processes */
+    snprintf(cmd, sizeof(cmd), "killall -9 %s > /dev/null 2>&1", RT_AGENT_PTROCESS);
+    system(cmd); 
+
+    return RT_SUCCESS;
+}
+
 static int32_t agent_task_check_start(void)
 {
     int32_t ret;
-    int32_t status;
-    char cmd[128];
+    int32_t status;    
     pid_t child_pid;
     pid_t ret_pid;
 
-    /* kill all agent processes */
-    snprintf(cmd, sizeof(cmd), "killall -9 %s > /dev/null 2>&1", RT_AGENT_PTROCESS);
-    system(cmd);
+    /* wait ipc server start ok */
+    do {
+        if (ipc_server_check()) {
+            break;
+        }
+        rt_os_sleep(1);
+    } while(1);
 
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE, RT_AGENT_NAME) != RT_TRUE) {
@@ -329,6 +343,9 @@ int32_t main(int32_t argc, const char *argv[])
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
     }
+
+    /* kill agent process before ipc server start-up */
+    agent_process_kill();
 
     /* install ipc callbacks and start up ipc server */
     ipc_regist_callback(monitor_cmd);
