@@ -341,6 +341,12 @@ int32_t init_card_manager(void *arg)
     ret = card_update_eid(RT_TRUE);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
+        if (((public_value_list_t *)arg)->config_info->lpa_channel_type == LPA_CHANNEL_BY_QMI) {
+            MSG_PRINTF(LOG_WARN, "eUICC mode with no EID, stay here forever !\r\n");
+            while (1) {
+                rt_os_sleep(1);   
+            }
+        }
     }
 
     rt_os_sleep(1);
