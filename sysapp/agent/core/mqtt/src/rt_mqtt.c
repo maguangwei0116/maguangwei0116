@@ -279,7 +279,7 @@ static rt_bool mqtt_connect_adapter(mqtt_param_t *param)
     MQTTClient *c = &param->client;
     mqtt_opts_t *opts = &param->opts;
     const char *alias = param->alias;
-    const char *eid = "";
+    const char *eid = "";  // OTI server required: Request with [eid=""] when eid isn't exist !!!
 
     if (!mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, 'F') && !mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
         eid = g_mqtt_info.eid;
