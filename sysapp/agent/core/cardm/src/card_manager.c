@@ -15,7 +15,7 @@
 #include "agent_queue.h"
 #include "msg_process.h"
 
-#define RT_LAST_EID                 "/data/redtea/rt_last_eid"
+#define RT_LAST_EID                 "rt_last_eid"
 #define RT_PROFILE_STATE_ENABLED    2
 
 static card_info_t                  g_p_info;
@@ -61,7 +61,7 @@ static int32_t card_check_init_upload(const uint8_t *eid)
 
 static int32_t card_last_eid_init(void)
 {
-    if (rt_os_access(RT_LAST_EID, 0)) {
+    if (!linux_rt_file_exist(RT_LAST_EID)) {
         rt_create_file(RT_LAST_EID);
     } else {
         rt_read_data(RT_LAST_EID, 0, g_last_eid, sizeof(g_last_eid));

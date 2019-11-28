@@ -132,13 +132,13 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 
     while (1) {
         /* There is file need to download in system */
-        if (rt_os_access((const int8_t *)dw_struct.file_path, RT_FS_F_OK) == RT_SUCCESS){
-            uint32_t file_path_size = linux_file_size(dw_struct.file_path);
+        if (linux_rt_file_exist((const char *)dw_struct.file_path)) {
+            uint32_t file_path_size = linux_rt_file_size(dw_struct.file_path);
             snprintf(buf, sizeof(buf), "%d", file_path_size);
             http_set_header_record(&dw_struct, "Range", (const char *)buf);
             dw_struct.range = file_path_size;
         }
-        MSG_PRINTF(LOG_DBG, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
+        MSG_PRINTF(LOG_DBG, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_rt_file_size(dw_struct.file_path));
 
         /* If you force to send http download with range==file_size, it will response http status 406 */
         if (dw_struct.range == d_info->size && d_info->size != 0) {
@@ -149,7 +149,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 
         if (http_client_file_download(&dw_struct) == 0) {
             ret = RT_TRUE;
-            MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
+            MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_rt_file_size(dw_struct.file_path));
             break;
         }
         cnt++;
@@ -182,9 +182,9 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
         return RT_TRUE;
     }
 
-    RT_CHECK_ERR(fp = linux_fopen((char *)d_info->tmpFileName, "r") , NULL);
+    RT_CHECK_ERR(fp = linux_rt_fopen((char *)d_info->tmpFileName, "r") , NULL);
 
-    file_size = linux_file_size((const char *)d_info->tmpFileName);
+    file_size = linux_rt_file_size((const char *)d_info->tmpFileName);
     sha256_init(&sha_ctx);
     if (file_size < HASH_CHECK_BLOCK) {
         rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);

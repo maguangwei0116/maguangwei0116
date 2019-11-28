@@ -108,7 +108,7 @@ typedef struct OTA_UPGRADE_PARAM {
 #define PRIVATE_HASH_STR_LEN            64
 #define MAX_EVENT_LEN                   64
 #define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
-#define OTA_UPGRADE_TASK_PATH           "/data/redtea/ota/"
+#define OTA_UPGRADE_TASK_PATH           ".ota/"
 #define OTA_UPGRADE_TASK_SUFFIX         ".task"
 #define OTA_UPGRADE_TASK_SUFFIX_LEN     5
 
@@ -137,7 +137,7 @@ static int32_t ota_upgrade_task_record(const void *param, uint32_t param_len, co
     char ota_task_file[128];
 
     ota_upgrade_get_task_file_name(ota_task_file, sizeof(ota_task_file), tmp_file);
-    fp = linux_fopen(ota_task_file, "w+");
+    fp = linux_rt_fopen(ota_task_file, "w+");
     OTA_CHK_PINTER_NULL(fp, -1);
 
     task.param_len = param_len;
@@ -165,7 +165,7 @@ static int32_t ota_upgrade_task_deal(const char *ota_task_file)
     ota_task_info_t task = {0};
     ota_upgrade_param_t *param = NULL;
 
-    fp = linux_fopen(ota_task_file, "r"); 
+    fp = linux_rt_fopen(ota_task_file, "r"); 
     OTA_CHK_PINTER_NULL(fp, -1);
     linux_fread(&task, 1, sizeof(task), fp);
     linux_fclose(fp);
@@ -236,8 +236,8 @@ static int32_t ota_upgrade_task_cleanup(const char *tmp_file)
     char ota_task_file[128];
 
     ota_upgrade_get_task_file_name(ota_task_file, sizeof(ota_task_file), tmp_file);
-    rt_os_unlink(ota_task_file);
-    rt_os_unlink(tmp_file);  // delete tmp file at the same time !!!
+    linux_rt_delete_file(ota_task_file);
+    linux_rt_delete_file(tmp_file);  // delete tmp file at the same time !!!
     
     return RT_SUCCESS;  
 }
@@ -339,6 +339,8 @@ exit_entry:
 #define IS_NUM_CHAR(c)          ('0' <= (c) && (c) <= '9')
 #endif
 
+extern int32_t bootstrap_get_profile_name(char *file_name, int32_t len);
+
 static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param, 
                                             char *targetFileName, int32_t len, rt_bool *type_matched)
 {
@@ -346,7 +348,7 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
     const char *g_target_files[] = 
     {
         "/usr/bin/rt_agent",
-        "/data/redtea/profile_list.der",
+        "", // need to get its name from bootstrap module
         "/usr/bin/rt_monitor",
         "/usr/lib/libcomm.so", 
     };
@@ -366,7 +368,9 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
             }
 
             if (i == (MAX_BATCH_CODE_LEN + 1)) {
-                snprintf(targetFileName, len, g_target_files[TARGET_TYPE_SHARE_PROFILE]);
+                char share_profile[128];
+                bootstrap_get_profile_name(share_profile, sizeof(share_profile));
+                snprintf(targetFileName, len, "%s", share_profile);
                 *type_matched = RT_TRUE;
                 MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);                
                 return RT_TRUE;   
@@ -570,9 +574,9 @@ static rt_bool ota_file_check(const void *arg)
     int32_t partlen;
     int32_t file_size;
 
-    RT_CHECK_ERR(fp = linux_fopen((char *)d_info->tmpFileName, "r") , NULL);
+    RT_CHECK_ERR(fp = linux_rt_fopen((char *)d_info->tmpFileName, "r") , NULL);
 
-    file_size = linux_file_size(file);
+    file_size = linux_rt_file_size(file);
     sha256_init(&sha_ctx);
     file_size -= PRIVATE_HASH_STR_LEN;
     if (file_size < HASH_CHECK_BLOCK) {
@@ -648,7 +652,7 @@ static rt_bool ota_file_install(const void *arg)
     
     /* app replace */
     MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
-    if (rt_os_rename(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
+    if (linux_rt_rename_file(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
         MSG_PRINTF(LOG_WARN, "re-name error\n");
         goto exit_entry;
     }
@@ -677,7 +681,7 @@ static rt_bool ota_file_cleanup(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
-    rt_os_unlink(upgrade->tmpFileName);
+    linux_rt_delete_file(upgrade->tmpFileName);
 
     return RT_TRUE;
 }
@@ -714,7 +718,7 @@ static rt_bool ota_file_activate_agent_so_profile(const void *arg)
     MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
     rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
     MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");        
-    rt_os_exit(-1); 
+    rt_os_exit(RT_ERROR); 
 
     return RT_TRUE;
 }
@@ -842,7 +846,7 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
         goto exit_entry;
     }
     
-    ret = 0;
+    ret = RT_SUCCESS;
         
 exit_entry:
 
@@ -878,7 +882,7 @@ exit_entry:
 
 static cJSON *ota_upgrade_packer(void *arg)
 {
-    int32_t ret = 0;
+    int32_t ret = RT_SUCCESS;
     cJSON *app_version = NULL;
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
     const char *name = "";
@@ -907,7 +911,7 @@ static cJSON *ota_upgrade_packer(void *arg)
     CJSON_ADD_NEW_STR_OBJ(app_version, chipModel);
     CJSON_ADD_NEW_INT_OBJ(app_version, type);
     
-    ret = 0;
+    ret = RT_SUCCESS;
     
 exit_entry:
 
@@ -945,11 +949,11 @@ int32_t init_ota(void *arg)
 
     g_ota_card_info = (const card_info_t *)public_value_list->card_info->info;
 
-    if (rt_os_access(OTA_UPGRADE_TASK_PATH, RT_FS_F_OK)) {
-        rt_os_mkdir(OTA_UPGRADE_TASK_PATH);
+    if (!linux_rt_file_exist(OTA_UPGRADE_TASK_PATH)) {
+        linux_rt_mkdir(OTA_UPGRADE_TASK_PATH);
     }
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(UPGRADE, MSG_ID_OTA_UPGRADE, ON_UPGRADE, ota_upgrade_parser, ota_upgrade_handler);

@@ -27,7 +27,7 @@
 #define MAX_VALUE_SIZE                      30
 #define LINK_SYMBOL                         '='                     // key - value pair 之间的连接符
 #define ANNOTATION_SYMBOL                   '#'                     // 注释标识符
-#define CONFIG_FILE_PATH                    "/data/redtea/rt_config.ini"
+#define CONFIG_FILE_PATH                    "rt_config.ini"
 #define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // 判定是否为空白符
 #define UICC_MODE_vUICC                     "0"
 #define UICC_MODE_eUICC                     "1"
@@ -223,7 +223,7 @@ static int32_t config_write_file(const char *file, int32_t pair_num, const confi
     rt_fshandle_t fp;
     char item_data[MAX_LINE_SIZE];
 
-    fp = linux_fopen(file, "w");
+    fp = linux_rt_fopen(file, "w");
     if (!fp) {
         goto exit_entry;
     }
@@ -313,7 +313,7 @@ static int32_t config_read_file(const char *file, int32_t pair_num, config_item_
     char key[MAX_VALUE_SIZE];
     char value[MAX_VALUE_SIZE];
 
-    fp = linux_fopen(file, "r");
+    fp = linux_rt_fopen(file, "r");
     if(!fp) {
         MSG_PRINTF(LOG_WARN, "can't open file %s\n", file);
         goto exit_entry;
@@ -378,7 +378,7 @@ static void config_create_default_file(const char *file, int32_t pair_num, confi
 
 static int32_t config_init_file(const char *file, int32_t pair_num, config_item_t *items)
 {
-    if (rt_os_access(file, RT_FS_F_OK) == RT_ERROR) {
+    if (!linux_rt_file_exist(file)) {
         config_create_default_file(file, pair_num, items);
     }
 
@@ -787,7 +787,7 @@ static int32_t config_all_pack(cJSON *config, int32_t pair_num, const config_ite
 
 static cJSON *config_packer(void *arg)
 {
-    int32_t ret = 0;
+    int32_t ret = RT_SUCCESS;
     cJSON *on_config = NULL;
     char *config = NULL;
     cJSON *config_json = NULL;
@@ -797,14 +797,14 @@ static cJSON *config_packer(void *arg)
     on_config = cJSON_CreateObject();
     if (!on_config) {
         MSG_PRINTF(LOG_WARN, "The on_config is error\n");
-        ret = -1;
+        ret = RT_ERROR;
         goto exit_entry;
     }
 
     config_json = cJSON_CreateObject();
     if (!config_json) {
         MSG_PRINTF(LOG_WARN, "The config_json is error\n");
-        ret = -2;
+        ret = RT_ERROR;
         goto exit_entry;
     }
 
@@ -818,7 +818,7 @@ static cJSON *config_packer(void *arg)
 #endif
     CJSON_ADD_NEW_STR_OBJ(on_config, config);
 
-    ret = 0;
+    ret = RT_SUCCESS;
     
 exit_entry:
 

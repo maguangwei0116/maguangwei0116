@@ -154,9 +154,6 @@ exit_entry:
 
 #define CONTENT_TYPE                "multipart/form-data;boundary=\"2128e33d-b5b5-40e8-a5a6-aadd7db1c23f\""
 
-#define LOG_NAME                    "/data/redtea/rt_log"
-#define LOG_CUT_TMP_FILE            "/data/redtea/log_tmp_cut"
-#define LOG_CUT_FILE                "/data/redtea/log_cut"
 #define LOG_API                     "/api/v2/log"
 #define OTI_ENVIRONMENT_PORT        7082
 #define MAX_UPLOAD_RETRY_TIMES      3
@@ -171,16 +168,18 @@ static const char *g_upload_log_oti_addr    = NULL;
 
 static int32_t log_file_cut(const char *file_name, log_level_e log_level)
 {
-    char cmd[100];
     char buf[512];
     int32_t offset;
     int32_t ret;
-    const char *tmp_file_name = LOG_CUT_TMP_FILE;
+    char log_name[128];
+    char tmp_file_name[128];
 
     /* create a tmp log file */
-    snprintf((char *)cmd, sizeof(cmd), "cp -rf %s %s && touch %s", LOG_NAME, tmp_file_name, file_name);
-    system(cmd);
-    MSG_PRINTF(LOG_DBG, "1--> %s, g_upload_log_eid=%s\r\n", cmd, g_upload_log_eid);
+    log_get_log_file_name(log_name, sizeof(log_name));
+    snprintf(tmp_file_name, sizeof(tmp_file_name), "%s.tmp", log_name);
+    linux_rt_file_copy(log_name, tmp_file_name);
+    rt_create_file(file_name);    
+    MSG_PRINTF(LOG_DBG, "----> g_upload_log_eid=%s\r\n", g_upload_log_eid);
 
     /* add detail information on the header of the upload log file */
     snprintf((char *)buf, sizeof(buf), RT_LOG_HEAD, BOUNDARY, (char *)g_upload_log_eid);
@@ -196,17 +195,17 @@ static int32_t log_file_cut(const char *file_name, log_level_e log_level)
     MSG_PRINTF(LOG_DBG, "----> log cut end ...\n");
 
     /* delete tmp log file */
-    rt_os_unlink(tmp_file_name);
+    linux_rt_delete_file(tmp_file_name);
 
     /* add boundary information on the tail of the upload log file */
-    offset = linux_file_size(file_name);
+    offset = linux_rt_file_size(file_name);
     if (offset <= 0) {
         MSG_PRINTF(LOG_WARN, "read file size error\n");
         ret = RT_ERROR;
         goto exit_entry;
     }
     snprintf(buf, sizeof(buf), "\r\n--%s--", BOUNDARY);
-    if (rt_write_data((uint8_t *)file_name, offset, buf, rt_os_strlen(buf)) == RT_ERROR) {
+    if (rt_write_data((const char *)file_name, offset, buf, rt_os_strlen(buf)) == RT_ERROR) {
         MSG_PRINTF(LOG_WARN, "write %s error\n",file_name);
         ret = RT_ERROR;
         goto exit_entry;
@@ -229,12 +228,17 @@ static void log_file_upload(void *arg)
     char log_host[MAX_OTI_URL_LEN + 1];
     const log_param_t *param = (log_param_t *)arg;
     const char *tranId;
-    const char *log_cut_file = LOG_CUT_FILE;
+    char log_name[128];
+    char log_cut_file[128];
+
+    /* create a tmp log file */
+    log_get_log_file_name(log_name, sizeof(log_name));
+    snprintf(log_cut_file, sizeof(log_cut_file), "%s.cut", log_name);
 
     tranId = param->tranId;
     RT_CHECK_ERR(obj = (http_client_struct_t *)rt_os_malloc(sizeof(http_client_struct_t)), NULL);
     RT_CHECK_NEQ(log_file_cut(log_cut_file, param->log_level), 0);  // log cut
-    RT_CHECK_LESE(log_length = linux_file_size(log_cut_file), 0);  // get log file size
+    RT_CHECK_LESE(log_length = linux_rt_file_size(log_cut_file), 0);  // get log file size
 
     snprintf((char *)log_length_char, sizeof(log_length_char), "%d", log_length);
     obj->manager_type = 0;  // uoload
@@ -268,7 +272,7 @@ static void log_file_upload(void *arg)
 end:
     rt_os_free(obj);
     rt_os_free((void *)param);
-    rt_os_unlink(log_cut_file);
+    linux_rt_delete_file(log_cut_file);
     rt_exit_task(NULL);
 }
 
