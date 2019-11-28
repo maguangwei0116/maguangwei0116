@@ -38,6 +38,6 @@ int32_t main(int32_t argc, char **argv)
         rt_os_sleep(3);
     }
 
-    return 0;
+    return RT_SUCCESS;
 }
  
