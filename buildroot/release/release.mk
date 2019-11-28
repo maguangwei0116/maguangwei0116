@@ -61,6 +61,7 @@ endef
 define COPY_RELEASE_TARGETS
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(RELEASE_INSTALL_PATH)/targets
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(RELEASE_INSTALL_PATH)/targets
+	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/test_lpa $(RELEASE_INSTALL_PATH)/targets	
 	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(RELEASE_INSTALL_PATH)/targets
 	-$(Q)cp -rf $(REDTEA_SHELL_APP) $(RELEASE_INSTALL_PATH)/shells
 	-$(Q)cp -rf $(REDTEA_SHELL_KEEP) $(RELEASE_INSTALL_PATH)/shells
