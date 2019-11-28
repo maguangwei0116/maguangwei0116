@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+
 #include "rt_type.h"
 #include "trigger.h"
 #include "card.h"
@@ -22,7 +23,7 @@
 #include "inspect_file.h"
 #include "libcomm.h"
 #include "download_file.h"
-
+#include "file.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_AGENT_PTROCESS           "rt_agent"
@@ -30,7 +31,9 @@
 #define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_NAME             "monitor"
 #define RT_MONITOR_FILE             "/usr/bin/rt_monitor"
-#define RT_MONITOR_LOG              "/data/redtea/rt_monitor_log"
+#define RT_DATA_PATH                "/data/redtea/"
+#define RT_CARD_PATH                RT_DATA_PATH".vcos/"
+#define RT_MONITOR_LOG              "rt_monitor_log"
 
 #ifdef CFG_SOFTWARE_TYPE_DEBUG
 #define RT_MONITOR_LOG_MAX_SIZE     (30 * 1024 * 1024)
@@ -45,25 +48,33 @@ extern int vsim_get_ver(char *version);
 
 static log_mode_e g_def_mode = LOG_PRINTF_FILE;
 
-typedef struct {
-    uint8_t             hash[64+4];                  // hash, end with ‘\0’
-    uint8_t             signature[128+4];            // signature data, end with ‘\0’
+typedef struct SIGNATURE_DATA {
+    uint8_t             hash[64+4];                 // hash, end with "\0"
+    uint8_t             signature[128+4];           // signature data, end with "\0"
 } signature_data_t;
 
-/* All data should be a string which end with ‘\0’ */
-typedef struct {
+/* All data should be a string which end with "\0" */
+typedef struct MONITOR_VERSION {
     uint8_t             name[64];                  // example: linux-euicc-monitor-general
-    uint8_t             version[16];                // example: 0.0.0.1
+    uint8_t             version[16];               // example: 0.0.0.1
     uint8_t             chip_model[16];            // example: 9x07
 } monitor_version_t;
 
-typedef struct {
+typedef struct INFO_VUICC_DATA {
     uint8_t             vuicc_switch;              // lpa_channel_type_e, IPC used for vuicc
     uint8_t             log_level;                 // log_level_e
     uint8_t             reserve[2];                // reserve for keep 4 bytes aligned
     uint32_t            log_size;                  // unit: bytes, little endian
 } info_vuicc_data_t;
 
+typedef enum AGENT_MONITOR_CMD {
+    CMD_SET_PARAM       = 0x00,
+    CMD_SIGN_CHK        = 0x01,
+    CMD_SELECT_PROFILE  = 0x02,
+    CMD_GET_MONITOR_VER = 0x03,
+    CMD_RESTART_MONITOR = 0x04,
+    CMD_RFU             = 0x05,
+} agent_monitor_cmd_e;
 
 static void cfinish(int32_t sig)
 {
@@ -101,8 +112,8 @@ static int32_t choose_uicc_type(lpa_channel_type_e type)
 static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
     static lpa_channel_type_e type;
-	
-    if (cmd == 0x00) {  // config monitor
+
+    if (cmd == CMD_SET_PARAM) {  // config monitor
         if (len < sizeof(info_vuicc_data_t)) {
             goto end;
         }
@@ -119,21 +130,21 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         log_set_param(g_def_mode, info->log_level, info->log_size);
         *rsp = 0x01;
         *rsp_len = 1;
-    } else if (cmd == 0x01) { // check signature
+    } else if (cmd == CMD_SIGN_CHK) { // check signature
         if (len < sizeof(signature_data_t)) {
             goto end;
         }
         signature_data_t *info = (signature_data_t *)data;
         *rsp = (uint8_t)inspect_abstract_content(info->hash, info->signature);
         *rsp_len = 1;
-    } else if (cmd == 0x02) { // choose one profile from backup profile
+    } else if (cmd == CMD_SELECT_PROFILE) { // choose one profile from backup profile
         int32_t ret;
         choose_uicc_type(type);
         rt_os_sleep(3);  // must have, delay some for card reset !!!
         ret = backup_process(type);
         *rsp = (ret == RT_SUCCESS) ? 0x01 : 0x00;
         *rsp_len = 1;
-    } else if (cmd == 0x03) { // monitor version info
+    } else if (cmd == CMD_GET_MONITOR_VER) { // monitor version info
         monitor_version_t info;
         *rsp_len = sizeof(monitor_version_t);
         rt_os_memset(&info, 0x00, *rsp_len);
@@ -141,7 +152,7 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         rt_os_memcpy(info.version, LOCAL_TARGET_VERSION, rt_os_strlen(LOCAL_TARGET_VERSION));
         rt_os_memcpy(info.chip_model, LOCAL_TARGET_PLATFORM_TYPE, rt_os_strlen(LOCAL_TARGET_PLATFORM_TYPE));
         rt_os_memcpy(rsp, &info, *rsp_len);
-    } else if (cmd == 0x04) { // reset monitor after some time
+    } else if (cmd == CMD_RESTART_MONITOR) { // reset monitor after some time
         uint8_t delay = data[0];
         MSG_PRINTF(LOG_ERR, "restart monitor in %d seconds ...\r\n", delay);
         register_timer(delay, 0, &monitor_exit);
@@ -317,17 +328,24 @@ int32_t main(int32_t argc, const char *argv[])
         g_def_mode = LOG_PRINTF_TERMINAL;
     }
 
+    /* init redtea path */
+    init_rt_file_path(RT_DATA_PATH);
+
     /* init log param */
     init_log_file(RT_MONITOR_LOG);
     log_set_param(g_def_mode, LOG_INFO, RT_MONITOR_LOG_MAX_SIZE);
 
-    #ifdef CFG_ENABLE_LIBUNWIND
+#ifdef CFG_ENABLE_LIBUNWIND
     init_backtrace(monitor_printf);
-    #endif
+#endif
 
     /* install ops callbacks */
     init_callback_ops();
+
+    /* init card path before init card */
+    init_card_path(RT_CARD_PATH);
     init_card(log_print);
+    
 
     /* debug versions information */
     init_app_version(NULL);

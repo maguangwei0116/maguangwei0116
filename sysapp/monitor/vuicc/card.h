@@ -10,6 +10,7 @@ Description:
 #include <stdint.h>
 
 int32_t init_card(void *arg);
+void init_card_path(const char *path);
 int card_reset(uint8_t *atr, uint8_t *atr_size);
 uint16_t card_cmd(uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len);
 

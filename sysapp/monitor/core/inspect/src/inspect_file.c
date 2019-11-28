@@ -40,6 +40,7 @@ static int32_t get_real_file_name(char *name, int32_t len)
     return RT_SUCCESS;
 }
 
+/* file_name: Relative path in data-redtea */
 rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_name)
 {
     rt_fshandle_t fp = NULL;
@@ -55,7 +56,7 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
     rt_bool ret = RT_FALSE;
 
     file_size = linux_file_size(file_name);
-    MSG_PRINTF(LOG_INFO, "file_size:%d\n", file_size);
+    MSG_PRINTF(LOG_INFO, "%s, file_size:%d\n", file_name, file_size);
 
     RT_CHECK_ERR(fp = linux_fopen((char *)file_name, "r"), NULL);
     sha256_init(&sha_ctx);
