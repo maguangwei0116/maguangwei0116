@@ -181,6 +181,9 @@ endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 -include $(REDTEA_SUPPORT_REDTEA_PATH)/android_library.mk
 endif
+ifeq ($(CFG_TEST_LPA_ON), y)
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/test_lpa_sysapp.mk
+endif
 ############################################################################################
 # Never modify end this line
 ############################################################################################
