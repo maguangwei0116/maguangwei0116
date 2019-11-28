@@ -25,21 +25,21 @@ static int32_t downstream_reset_parser(const void *in, char *tranId, void **out)
     msg =  cJSON_Parse((const char *)in);
     if (!msg) {
         MSG_PRINTF(LOG_WARN, "msg error\n");
-        ret = -1;
+        ret = RT_ERROR;
         goto exit_entry;
     }
 
     tran_id = cJSON_GetObjectItem(msg, "tranId");
     if (!tran_id) {
         MSG_PRINTF(LOG_WARN, "tran_id error\n");
-        ret = -2;
+        ret = RT_ERROR;
         goto exit_entry;
     }
     
     rt_os_strcpy(tranId, tran_id->valuestring);
     MSG_PRINTF(LOG_WARN, "tranId: %s, %p, stelen=%d\n", tranId, tranId, rt_os_strlen(tran_id->valuestring));
 
-    ret = 0;
+    ret = RT_SUCCESS;
 
 exit_entry:
 
@@ -53,7 +53,7 @@ exit_entry:
 
 static int32_t downstream_reset_handler(const void *in, const char *event, void **out)
 {
-    int32_t ret = 0;
+    int32_t ret = RT_SUCCESS;
 
     (void)in;
     (void)event;

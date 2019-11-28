@@ -16,7 +16,7 @@ static int32_t downstream_null_start_parser(const void *in, char *tranId, void *
 
 exit_entry:
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 static int32_t downstream_null_start_handler(const void *in, const char *event, void **out)
@@ -29,7 +29,7 @@ static int32_t downstream_null_start_handler(const void *in, const char *event, 
 
 exit_entry:
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(START, MSG_ID_IDLE, START, downstream_null_start_parser, downstream_null_start_handler);
