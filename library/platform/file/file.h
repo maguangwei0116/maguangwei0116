@@ -40,10 +40,10 @@ typedef struct stat                 rt_stat_t;
 #define RT_FS_F_OK                  0
 #endif
 
-rt_dir_t linux_opendir(const char *name);
+rt_dir_t linux_opendir(const char *dir_name);
 int linux_closedir(rt_dir_t dir);
 rt_dirent_t linux_readdir(rt_dir_t dir);
-rt_fshandle_t linux_fopen(const char *filename, rt_fsmode_t mode);
+rt_fshandle_t linux_fopen(const char *file_name, rt_fsmode_t mode);
 int linux_fclose(rt_fshandle_t fp);
 int linux_fseek(rt_fshandle_t fp, long int offset, int whence);
 int linux_feof(rt_fshandle_t fp);
@@ -52,17 +52,29 @@ long int linux_ftell(rt_fshandle_t fp);
 long int linux_fflush(rt_fshandle_t fp);
 size_t linux_fread(void *ptr, size_t size, size_t count, rt_fshandle_t fp);
 size_t linux_fwrite(const void *ptr, size_t size, size_t count, rt_fshandle_t fp);
-bool linux_dir_exist(const char *dir);
-bool linux_file_exist(const char *file);
-int linux_create_dir(const char *dir);
-int linux_delete_dir(const char *dir);
-int linux_delete_file(const char *file);
-int linux_truncate(const char *filename, off_t offset);
-int linux_file_size(const char *file);
-int linux_stat(const char *pathname, rt_stat_t *buf);
+rt_bool linux_dir_exist(const char *dir_name);
+rt_bool linux_file_exist(const char *file_name);
+int linux_create_dir(const char *dir_name);
+int linux_delete_dir(const char *dir_name);
+int linux_delete_file(const char *file_name);
+int linux_truncate(const char *file_name, off_t offset);
+int linux_file_size(const char *file_name);
+int linux_stat(const char *path_name, rt_stat_t *buf);
 int linux_fstat(int fd, rt_stat_t *buf);
-int linux_lstat(const char *pathname, rt_stat_t *buf);
-size_t shell_cmd(const int8_t *cmd, uint8_t *buf, size_t size);
+int linux_lstat(const char *path_name, rt_stat_t *buf);
+int shell_cmd(const int8_t *cmd, uint8_t *buf, int size);
+
+/* API for redtea path file */
+int init_rt_file_path(void *arg);
+rt_fshandle_t linux_rt_fopen(const char *file_name, rt_fsmode_t mode);
+int linux_rt_file_size(const char *file_name);
+int linux_rt_file_copy(const char *src, const char *dst);
+int linux_rt_truncate(const char *file_name, off_t offset);
+int linux_rt_mkdir(const char *path_name);
+rt_bool linux_rt_file_exist(const char *file_name);
+int linux_rt_delete_file(const char *file_name);
+int linux_rt_rename_file(const char *relative_src_file_path, const char *absolute_dst_file_path);
+int linux_rt_file_abs_path(const char *file_name, char *file_abs_path, int len);
 
 #endif // __FILE_H__
 
