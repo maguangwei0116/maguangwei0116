@@ -51,16 +51,18 @@ static int http_client_upload_init(http_client_struct_t *obj)
 
     RT_CHECK_ERR(obj, NULL);
 
-    RT_CHECK_LESE(obj->file_length  = linux_file_size(obj->file_path), 0);
+    MSG_PRINTF(LOG_INFO, "upload file_name:%s\n", obj->file_path);
+
+    RT_CHECK_LESE(obj->file_length  = linux_rt_file_size(obj->file_path), 0);
 
     obj->remain_length = obj->file_length;
     obj->process_length = 0;
     MSG_PRINTF(LOG_WARN, "upload file_name:%s,file_size:%d\n", obj->file_path, obj->file_length);
 
-    RT_CHECK_ERR(obj->fp = linux_fopen(obj->file_path, "r"), NULL);  // 打开文件
+    RT_CHECK_ERR(obj->fp = linux_rt_fopen(obj->file_path, "r"), NULL);  // 打开文件
     RT_CHECK_ERR(obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN), NULL);
 
-    /* 连接服务器 */
+    /* connect server */
     RT_CHECK_NEQ(http_parse_url(obj->http_header.url,
                                 obj->http_header.addr,
                                 obj->http_header.url_interface,
@@ -94,7 +96,9 @@ static int http_client_download_init(http_client_struct_t *obj)
 
     RT_CHECK_ERR(obj, NULL);
 
-    RT_CHECK_ERR(obj->fp = linux_fopen(obj->file_path, "a"), NULL);  // 打开文件
+    MSG_PRINTF(LOG_INFO, "download file_name:%s\n", obj->file_path);
+
+    RT_CHECK_ERR(obj->fp = linux_rt_fopen(obj->file_path, "a"), NULL);
     obj->process_length = 0;
     obj->process_set = 0;
     obj->remain_length = 0;
@@ -106,10 +110,10 @@ static int http_client_download_init(http_client_struct_t *obj)
 
     MSG_PRINTF(LOG_INFO, "addr:%s,port:%d\n", obj->http_header.addr, obj->http_header.port);
 
-    ipAddr.s_addr = inet_addr((char *)obj->http_header.addr);
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port   = htons(obj->http_header.port);
-    server_addr.sin_addr   = ipAddr;
+    ipAddr.s_addr           = inet_addr((char *)obj->http_header.addr);
+    server_addr.sin_family  = AF_INET;
+    server_addr.sin_port    = htons(obj->http_header.port);
+    server_addr.sin_addr    = ipAddr;
 
     RT_CHECK_ERR(obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN), NULL);
     RT_CHECK_ERR(obj->socket = socket(AF_INET, SOCK_STREAM, 0), -1);
@@ -128,14 +132,17 @@ static void http_client_release(http_client_struct_t *obj)
 {
     if (obj->buf != NULL) {
         rt_os_free(obj->buf);
+        obj->buf = NULL;
     }
 
     if (obj->fp != NULL) {
         linux_fclose(obj->fp);
+        obj->fp = NULL;
     }
 
     if (obj->socket > 0) {
         close(obj->socket);
+        obj->socket = -1;
     }
 }
 
