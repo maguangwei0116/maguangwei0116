@@ -29,7 +29,7 @@ int32_t card_detection_disable(void)
 static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *type)
 {
     if ((rt_os_strcmp(iccid, g_cur_iccid)) || (*type != *g_cur_profile_type)) {
-        MSG_PRINTF(LOG_INFO, "iccid changed: (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_cur_iccid, *g_cur_profile_type);
+        MSG_PRINTF(LOG_WARN, "iccid changed: (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_cur_iccid, *g_cur_profile_type);
         snprintf(iccid, size, "%s", g_cur_iccid);
         *type = *g_cur_profile_type;
         return RT_SUCCESS;
