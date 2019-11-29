@@ -131,8 +131,9 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
         }
 
         //MSG_PRINTF(LOG_INFO, "sockfd:%d\n",sockfd);
-        if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
-            MSG_PRINTF(LOG_WARN, "connect err(%d): %s\n", errno, strerror(errno));
+        ret = connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+        if (ret < 0) {
+            MSG_PRINTF(LOG_ERR, "==========>connect ret=%d, err(%d): %s\n", ret, errno, strerror(errno));
             ret = RT_ERROR;
             break;
         }

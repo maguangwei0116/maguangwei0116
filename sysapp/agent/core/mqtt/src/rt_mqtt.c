@@ -981,6 +981,8 @@ static void mqtt_client_state_mechine(void)
                 } else {                    
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
+                        reconnect_cnt = 0;
+                        network_force_down();
                     }
                     delay_s = 3;
                 }
@@ -1007,6 +1009,8 @@ static void mqtt_client_state_mechine(void)
                 } else {                    
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
+                        reconnect_cnt = 0;
+                        network_force_down();
                     }
                     delay_s = 3;
                 }
