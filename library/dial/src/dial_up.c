@@ -541,6 +541,7 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
             case DSI_STATE_CALL_DISCONNECTING:
                 dial_up_stop(dsi_net_hndl);
                 dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_IDLE);
+                rt_os_sleep(5);  // wait some time to start a new dial-up operation !!!
                 break;
 
             default:
