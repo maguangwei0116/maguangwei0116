@@ -98,6 +98,8 @@ int main(int argc, char **argv)
     (void)fp;
 
     log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO, 1*1024*1024); //debug in terminal
+    rt_qmi_init(NULL);                      // must init qmi
+    init_apdu_channel(LPA_CHANNEL_BY_QMI);  // fore to eUICC mode
     
     if (argc < 2) {
         display_usage();
