@@ -25,7 +25,7 @@ all: $(TEST_TARGET)
 $(TEST_TARGET): $(O)/$(TEST_TARGET_FILE_NAME)
 
 # Every object file depend on conf-file
-$(TEST_LPA_OBJS): $(conf-file)
+$(TEST_LPA_O): $(conf-file)
 
 $(O)/$(TEST_TARGET_FILE_NAME): $(TEST_LPA_TOTAL_OBJS)
 	$($(quiet)do_link) -o "$@" -Wl,--whole-archive $(TEST_LPA_TOTAL_OBJS) -Wl,--no-whole-archive $(TEST_LPA_LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME) 
