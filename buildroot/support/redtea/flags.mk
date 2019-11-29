@@ -32,6 +32,7 @@ LDFLAGS         += $(LOCAL_LDFLAGS)
 #CFLAGS         += -Os 
 #CFLAGS         += -fdata-sections 
 #CFLAGS         += -ffunction-sections
+#CFLAGS         += -fvisibility=hidden
 #LDFLAGS        += -Wl,--gc-sections 
 #LDFLAGS        += -Wl,--print-gc-sections
 #LDFLAGS        += -Wl,--print-map
