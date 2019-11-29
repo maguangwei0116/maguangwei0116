@@ -18,12 +18,14 @@
 // #define ACTIVATION_CODE         "1$esim.wo.cn$SATKB8Z-I4YBPHJS$1.3.6.1.4.1.47814.2.4$1"
 // #define CONFIRMATION_CODE       "891985"
 
-static const char *opt_string = "qlLi:r:e:d:a:c:u:vh?";
+static const char *opt_string = "EqlLi:r:e:d:a:c:u:vh?";
+static lpa_channel_type_e g_chan_mode = LPA_CHANNEL_BY_QMI;
 
 static void display_usage(void)
 {
     fprintf(stderr, "This is C-LPA test tool.\n");
     fprintf(stderr, "Usage: test_lpa option [arguments]\n");
+    fprintf(stderr, "  -E\tForce in eUICC mode\n");
     fprintf(stderr, "  -q\tQuery EID\n");
     fprintf(stderr, "  -l\tList profiles\n");
     fprintf(stderr, "  -r\tRemove(Delete) profile with iccid\n");
@@ -35,7 +37,8 @@ static void display_usage(void)
     fprintf(stderr, "  -i\tswitch eid\n");
     fprintf(stderr, "  -L\tList all eid info\n");
     fprintf(stderr, "  -v\tList C-LPA test tool version\n");
-    fprintf(stderr, "  -h or -?\tList this help\n");
+    fprintf(stderr, "  -h\tList this help\n");
+    fprintf(stderr, "  -?\tThe same as -h\n");
 }
 
 static void print_array(const char *tag, uint8_t *array, uint16_t len, bool cr_lf)
@@ -74,6 +77,25 @@ static void print_version(void)
     fprintf(stderr, "Tool version: %s\n", VERSION);
 }
 
+static int get_uicc_mode(void)
+{
+    const char *cmd = "cat /data/redtea/rt_config.ini | grep UICC_MODE | awk {\' print $3\'}";
+    int ret = -1;
+    int mode = 0;
+    char rsp[1024] = {0};
+    
+    ret = shell_cmd(cmd, rsp, sizeof(rsp));
+    if (ret > 0) {
+        mode = atoi(rsp);
+        fprintf(stderr, "Config UICC mode: %s\n", rsp);
+        if (mode == LPA_CHANNEL_BY_QMI || mode == LPA_CHANNEL_BY_IPC) {
+            g_chan_mode = mode;            
+        } 
+    }
+
+    return ret;
+}
+
 int main(int argc, char **argv)
 {
     int ret;
@@ -99,17 +121,25 @@ int main(int argc, char **argv)
 
     log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO, 1*1024*1024); //debug in terminal
     rt_qmi_init(NULL);                      // must init qmi
-    init_apdu_channel(LPA_CHANNEL_BY_QMI);  // fore to eUICC mode
+    get_uicc_mode();
+    init_apdu_channel(g_chan_mode);  // fore to eUICC mode
     
     if (argc < 2) {
         display_usage();
         return -1;
     }
-    //lpa_init();
+
+    fprintf(stderr, "UICC mode : (%d)%s\n", g_chan_mode, (g_chan_mode == LPA_CHANNEL_BY_QMI) ? "eUICC" : "vUICC");
 
     opt = getopt(argc, argv, opt_string);
     while (opt != -1) {
         switch (opt ) {
+            case 'E':
+                g_chan_mode = LPA_CHANNEL_BY_QMI;
+                init_apdu_channel(g_chan_mode);
+                fprintf(stderr, "Force eUICC mode !!!\n");
+                break;
+                
             case 'q':
                 ret = lpa_get_eid(buf);
                 if (ret != RT_SUCCESS) {
