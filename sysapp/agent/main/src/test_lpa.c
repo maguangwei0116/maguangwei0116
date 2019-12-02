@@ -18,13 +18,15 @@
 // #define ACTIVATION_CODE         "1$esim.wo.cn$SATKB8Z-I4YBPHJS$1.3.6.1.4.1.47814.2.4$1"
 // #define CONFIRMATION_CODE       "891985"
 
-static const char *opt_string = "EqlLi:r:e:d:a:c:u:vh?";
+static const char *opt_string = "g:EqlLi:r:e:d:a:c:u:vh?";
 static lpa_channel_type_e g_chan_mode = LPA_CHANNEL_BY_QMI;
+static log_level_e g_log_level = LOG_INFO;
 
 static void display_usage(void)
 {
     fprintf(stderr, "This is C-LPA test tool.\n");
     fprintf(stderr, "Usage: test_lpa option [arguments]\n");
+    fprintf(stderr, "  -g\tLog level: 1-[ERR], 2-[WARN], 3-[DBG], 4-[INFO], sample: -g 1 means LOG_ERROR\n");
     fprintf(stderr, "  -E\tForce in eUICC mode\n");
     fprintf(stderr, "  -q\tQuery EID\n");
     fprintf(stderr, "  -l\tList profiles\n");
@@ -119,7 +121,7 @@ int main(int argc, char **argv)
     (void)rsp_size;
     (void)fp;
 
-    log_set_param(LOG_PRINTF_TERMINAL, LOG_INFO, 1*1024*1024); //debug in terminal
+    log_set_param(LOG_PRINTF_TERMINAL, g_log_level, 1*1024*1024); //debug in terminal
     rt_qmi_init(NULL);                      // must init qmi
     get_uicc_mode();
     init_apdu_channel(g_chan_mode);  // fore to eUICC mode
@@ -130,10 +132,17 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, "UICC mode : (%d)%s\n", g_chan_mode, (g_chan_mode == LPA_CHANNEL_BY_QMI) ? "eUICC" : "vUICC");
+    fprintf(stderr, "log level : (%d)\n", g_log_level);
 
     opt = getopt(argc, argv, opt_string);
     while (opt != -1) {
-        switch (opt ) {
+        switch (opt) {
+            case 'g':
+                g_log_level = atoi(optarg);
+                fprintf(stderr, "config log level : (%d)\n", g_log_level);
+                log_set_param(LOG_PRINTF_TERMINAL, g_log_level, 1*1024*1024); //debug in terminal
+                break;
+                
             case 'E':
                 g_chan_mode = LPA_CHANNEL_BY_QMI;
                 init_apdu_channel(g_chan_mode);
