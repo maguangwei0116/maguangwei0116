@@ -707,15 +707,18 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 {
     int ret = RT_SUCCESS;
     cJSON *content = NULL;
-
     char *data = NULL;
     char *b64_in = NULL;
+    int b64_len = 0;
+    
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
     MSG_INFO("transactionId: %s\n", g_transaction_id);
-
-    b64_in = malloc(((in_size + 2) / 3) * 4 + 1);
+    
+    b64_len = ((in_size + 2) / 3) * 4 + 1;
+    b64_in = malloc(b64_len);
+    rt_os_memset(b64_in, 0, b64_len);    
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
