@@ -248,6 +248,20 @@ int linux_rt_mkdir(const char *path_name)
     return rt_os_mkdir(rt_path_name);
 }
 
+rt_dir_t linux_rt_opendir(const char *path_name)
+{
+    char rt_path_name[MAX_RT_FILE_PATH];
+    
+    if (!path_name) {
+        return RT_ERROR;
+    }
+
+    snprintf(rt_path_name, sizeof(rt_path_name), "%s/%s", g_rt_file_path, path_name);
+    
+    return linux_opendir(rt_path_name);
+}
+
+
 int linux_rt_delete_file(const char *file_name)
 {
     char rt_file_name[MAX_RT_FILE_PATH];

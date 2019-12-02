@@ -71,6 +71,7 @@ int linux_rt_file_size(const char *file_name);
 int linux_rt_file_copy(const char *src, const char *dst);
 int linux_rt_truncate(const char *file_name, off_t offset);
 int linux_rt_mkdir(const char *path_name);
+rt_dir_t linux_rt_opendir(const char *path_name);
 rt_bool linux_rt_file_exist(const char *file_name);
 int linux_rt_delete_file(const char *file_name);
 int linux_rt_rename_file(const char *relative_src_file_path, const char *absolute_dst_file_path);
