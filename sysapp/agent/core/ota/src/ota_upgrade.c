@@ -200,7 +200,7 @@ int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mo
         int32_t len;
         int32_t index = 0;
 
-        if((dir = linux_opendir(path))) {
+        if((dir = linux_rt_opendir(path))) {
             while((dp = linux_readdir(dir)) != NULL) {
                 /* ignore "." ".." and ".xxxx"(hidden file) */
                 if((!rt_os_strncmp(dp->d_name, ".", 1)) || (!rt_os_strncmp(dp->d_name, "..", 2)))
