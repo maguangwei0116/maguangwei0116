@@ -22,10 +22,8 @@
 #include "agent2monitor.h"
 #include "ota.h"
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a)                           (sizeof((a)) / sizeof((a)[0]))
-#endif
-#define SHARE_PROFILE                           "/data/redtea/profile_list.der"
+// #define SHARE_PROFILE                           "/data/redtea/profile_list.der"
+#define SHARE_PROFILE                           "/data/data/com.redteamobile.smart/shared_profile.der"
 #define DEFAULT_SINGLE_INTERVAL_TIME            10                                      // default interval time (seconds)
 #define MAX_WAIT_REGIST_TIME                    180
 

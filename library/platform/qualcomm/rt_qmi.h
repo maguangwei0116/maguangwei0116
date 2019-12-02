@@ -20,6 +20,13 @@
 int32_t rt_qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel);
 int32_t rt_qmi_close_channel(uint8_t channel);
 int32_t rt_qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *channel);
+
+int32_t rt_qmi_send_apdu_vuicc(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel);
+int32_t rt_qmi_close_channel_vuicc(uint8_t channel);
+int32_t rt_qmi_open_channel_vuicc(const uint8_t *aid, uint16_t aid_len, uint8_t *channel);
+
+int32_t rt_qmi_command_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
+
 int32_t rt_qmi_get_register_state(int32_t *register_state);
 int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc);
 int32_t rt_qmi_get_current_iccid(uint8_t *iccid);

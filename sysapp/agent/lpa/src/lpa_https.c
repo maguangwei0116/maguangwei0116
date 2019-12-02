@@ -252,7 +252,7 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
 int lpa_https_close(void)
 {
     if(g_https_ctx.socket<0){
-        return;
+        return RT_ERROR;
     }
     close(g_https_ctx.socket);
     g_https_ctx.ssl = NULL;

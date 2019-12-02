@@ -1,7 +1,7 @@
 /**
-* ╤теДжцнд╪Ч╫Ьпп╤ап╢╡ывВ
-* кЫспеДжцрт key - value pair ╣дпнй╫╢Ф╢╒
-* ╬ълЕа╛╫с╥Ш╨мв╒йм╠Й╨етз c нд╪Чжп╤╗рЕ
+* О©╫О©╫О©╫О©╫О©╫О©╫О©╫д╪О©╫О©╫О©╫О©╫п╤О©╫п╢О©╫О©╫О©╫О©╫
+* О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ key - value pair О©╫О©╫О©╫О©╫й╫О©╫Ф╢╒
+* О©╫О©╫О©╫О©╫О©╫О©╫О©╫с╥О©╫О©╫О©╫в╒О©╫м╠О©╫О©╫О©╫О©╫ c О©╫д╪О©╫О©╫п╤О©╫О©╫О©╫
 */
 
 #include <stdio.h>
@@ -25,10 +25,10 @@
 #define M_BYTES                             (1024 * 1024)
 #define MAX_LINE_SIZE                       384
 #define MAX_VALUE_SIZE                      30
-#define LINK_SYMBOL                         '='                     // key - value pair ж╝╪Д╣да╛╫с╥Ш
-#define ANNOTATION_SYMBOL                   '#'                     // в╒йм╠Йй╤╥Ш
+#define LINK_SYMBOL                         '='                     // key - value pair ж╝О©╫О©╫О©╫О©╫О©╫О©╫с╥О©╫
+#define ANNOTATION_SYMBOL                   '#'                     // в╒О©╫м╠О©╫й╤О©╫О©╫
 #define CONFIG_FILE_PATH                    "/data/redtea/rt_config.ini"
-#define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // еп╤╗йг╥Ян╙©у╟в╥Ш
+#define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // О©╫п╤О©╫О©╫г╥О©╫н╙О©╫у╟в╥О©╫
 #define UICC_MODE_vUICC                     "0"
 #define UICC_MODE_eUICC                     "1"
 
@@ -397,8 +397,10 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     infos->oti_addr          = local_config_get_data("OTI_ENVIRONMENT_ADDR");
     infos->emq_addr          = local_config_get_data("EMQ_SERVER_ADDR");
     infos->proxy_addr        = local_config_get_data("PROXY_SERVER_ADDR");
-    infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
+    // infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
                                                     LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
+
+    infos->lpa_channel_type  = LPA_CHANNEL_BY_IPC;
 
     size = msg_string_to_int(local_config_get_data("LOG_FILE_SIZE"));
     if (size > 0) {

@@ -26,7 +26,8 @@ void init_apdu_channel(lpa_channel_type_e channel_mode)
 static int32_t lpa_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
-        return ipc_send_data(data, data_len, rsp, rsp_len);
+        // return ipc_send_data(data, data_len, rsp, rsp_len);
+        return rt_qmi_command_apdu(data, data_len, rsp, rsp_len);
     } else if (g_channel_mode == LPA_CHANNEL_BY_QMI) {
         return rt_qmi_send_apdu(data, data_len, rsp, rsp_len, channel);
     }
@@ -35,7 +36,6 @@ static int32_t lpa_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rs
 static uint16_t get_sw(uint8_t *rsp, uint16_t len)
 {
     uint16_t sw = 0;
-    MSG_ERR("2----rsp: %02X%02X\n", rsp[0],rsp[1]);
     sw = ((uint16_t)rsp[len-2] << 8) + rsp[len-1];
     return sw;
 }
@@ -45,12 +45,11 @@ int open_channel(uint8_t *channel)
     int ret = RT_SUCCESS;
     uint8_t cmd[6] = {0x80,0xC0,0x00,0x00,0x00};
 
-    MSG_INFO("Open Channel: start %d\n", *channel);
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len;
-        ret = ipc_send_data(g_open_channel_cmd, sizeof(g_open_channel_cmd), rsp, &len);
+        ret = rt_qmi_command_apdu(g_open_channel_cmd, sizeof(g_open_channel_cmd), rsp, &len);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
@@ -58,17 +57,20 @@ int open_channel(uint8_t *channel)
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
             cmd[4] = len;
-            ipc_send_data(cmd, 5, rsp, &len);
+            rt_qmi_command_apdu(cmd, 5, rsp, &len);
             sw = get_sw(rsp, len);
         }
         if (sw != SW_NORMAL) {
             return RT_ERR_UNKNOWN_ERROR;
         }
         *channel = rsp[0];
+        // ret = rt_qmi_open_channel_vuicc(euicc_aid, sizeof(euicc_aid), channel);
     } else {
         ret = rt_qmi_open_channel(euicc_aid, sizeof(euicc_aid), channel);
     }
     MSG_INFO("Open Channel: %d\n", *channel);
+    MSG_INFO("Open Channel ret: %d\n", ret);
+    
     return ret;
 }
 
@@ -81,7 +83,7 @@ int close_channel(uint8_t channel)
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len;
-        ret = ipc_send_data(g_close_channel_cmd, sizeof(g_close_channel_cmd), rsp, &len);
+        ret = rt_qmi_command_apdu(g_close_channel_cmd, sizeof(g_close_channel_cmd), rsp, &len);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
@@ -89,12 +91,13 @@ int close_channel(uint8_t channel)
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
             cmd[4] = len;
-            ipc_send_data(cmd, 5, rsp, &len);
+            rt_qmi_command_apdu(cmd, 5, rsp, &len);
             sw = get_sw(rsp, len);
         }
         if (sw != SW_NORMAL) {
             return RT_ERR_UNKNOWN_ERROR;
         }
+        // ret = rt_qmi_close_channel_vuicc(channel);
     } else {
         ret = rt_qmi_close_channel(channel);
     }
@@ -172,7 +175,6 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
             return RT_ERR_APDU_SEND_FAIL;
         }
         sw = get_sw(rsp, *rsp_len);
-        MSG_ERR("----rsp: %02X%02X\n", rsp[0],rsp[1]);
         do {
             if ((sw & 0xFF00) == 0x6100) {
                 uint16_t size;

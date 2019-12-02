@@ -37,6 +37,30 @@ int32_t rt_qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *chann
     return jni_open_channel(channel);
 }
 
+int32_t rt_qmi_command_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
+{
+    return jni_command_apdu(data, data_len, rsp, rsp_len);
+}
+
+// int32_t rt_qmi_send_apdu_vuicc(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
+// {
+//     MSG_PRINTF(LOG_DBG, "start callback rt_qmi_send_apdu_vuicc()");
+//     return jni_transmit_vuicc_apdu(data, data_len, rsp, rsp_len, channel);
+// }
+
+// int32_t rt_qmi_close_channel_vuicc(uint8_t channel)
+// {
+//     MSG_PRINTF(LOG_DBG, "start callback rt_qmi_close_channel_vuicc()");
+//     return jni_close_vuicc_channel(channel);
+
+// }
+
+// int32_t rt_qmi_open_channel_vuicc(const uint8_t *aid, uint16_t aid_len, uint8_t *channel)
+// {
+//     MSG_PRINTF(LOG_DBG, "start callback rt_qmi_open_channel_vuicc()");
+//     return jni_open_vuicc_channel(channel);
+// }
+
 int32_t rt_qmi_get_register_state(int32_t *register_state)
 {
 }
@@ -82,12 +106,8 @@ int32_t rt_qmi_get_signal_level(int32_t *level)
 int32_t rt_qmi_get_imei(uint8_t *imei)
 {
     MSG_PRINTF(LOG_DBG, "start callback getImei()");
-    jni_get_imei(imei);
-    MSG_PRINTF(LOG_DBG, "imei is %s\n",imei);
     
-    // rt_os_strcpy((char *)imei, imei);  // only for test
-    
-    return 0;
+    return jni_get_imei(imei);
 }
 
 int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t pdp_type, int8_t *apn, int8_t *mcc_mnc)

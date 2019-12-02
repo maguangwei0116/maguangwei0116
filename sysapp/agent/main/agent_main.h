@@ -30,10 +30,17 @@ int32_t jni_get_current_imsi(uint8_t *imsi);
 int32_t jni_get_signal_level(int32_t *level);
 int32_t jni_get_signal_dbm(int32_t *dbm);
 int32_t jni_get_network_type(uint8_t *type);
+int32_t jni_set_apn(uint8_t *apn);
+
 int32_t jni_open_channel(uint8_t *channel);
 int32_t jni_close_channel(uint8_t *channel);
 int32_t jni_transmit_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel);
-int32_t jni_set_apn(uint8_t *apn);
+
+int32_t jni_command_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
+
+int32_t jni_open_vuicc_channel(uint8_t *channel);
+int32_t jni_close_vuicc_channel(uint8_t *channel);
+int32_t jni_transmit_vuicc_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel);
 
 extern int32_t agent_main(void *arg,void *log);
 
