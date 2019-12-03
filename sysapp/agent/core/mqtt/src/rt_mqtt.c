@@ -42,7 +42,11 @@
 
 #define MQTT_KEEP_ALIVE_INTERVAL        300
 
-#define MQTT_RECONNECT_MAX_CNT          5
+/*
+max wait time: 
+MQTT_RECONNECT_MAX_CNT * ((30 seconds, connect timeout) * (retry 3 times) * (server addr type 3 cnt)) ~= 15 mins
+*/
+#define MQTT_RECONNECT_MAX_CNT          3
 
 #define MQTT_SUBSCRIBE_MAX_CNT          3
 
