@@ -43,6 +43,8 @@ int32_t jni_open_vuicc_channel(uint8_t *channel);
 int32_t jni_close_vuicc_channel(uint8_t *channel);
 int32_t jni_transmit_vuicc_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel);
 
-extern int32_t agent_main(void *arg,void *log);
+typedef void (*log_func)(const char *msg);
+
+extern int32_t agent_main(const char *app_path, log_func logger);
 
 #endif // __AGENT_MAIN_H__

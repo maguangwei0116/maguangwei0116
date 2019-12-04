@@ -41,12 +41,13 @@
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
 #endif
 
-struct arguments *args;
+// struct arguments *args;
 
-typedef void (*print)(char*);
-print str;
+// typedef void (*print)(char*);
+// print str;
 
-#define RT_DATA_PATH            "/data/redtea/"
+// #define RT_DATA_PATH            "/data/redtea/"
+
 #define RT_AGENT_LOG            "rt_log"
 
 typedef int32_t (*init_func)(void *arg);
@@ -59,6 +60,7 @@ typedef struct INIT_OBJ
 } init_obj_t;
 
 static public_value_list_t g_value_list;
+static char g_app_path[128];
 
 static int32_t init_monitor(void *arg)
 {
@@ -147,7 +149,7 @@ Adjust the order very carefully !
 **/
 static const init_obj_t g_init_objs[] =
 {
-    INIT_OBJ(init_rt_file_path,         RT_DATA_PATH),
+    INIT_OBJ(init_rt_file_path,         g_app_path),
     INIT_OBJ(init_log_file,             RT_AGENT_LOG),
     INIT_OBJ(init_config,               (void *)&g_value_list),
 
@@ -191,14 +193,16 @@ static int32_t agent_init_call(void)
     return RT_SUCCESS;
 }
 
-int32_t agent_main(void *arg,void *log)
+int32_t agent_main(const char *app_path, log_func logger)
 {
-    args = (struct arguments *) arg;
-    str = (print)log;
-    // str("agent_main");
-    // init_log_file("/data/redtea/rt_log");
-    // log_print_string(4,"agent_mian() start");
+    if (app_path) {
+        snprintf(g_app_path, sizeof(g_app_path), "%s", app_path);
+    }
 
+    if (logger) {
+        log_install_func(logger);
+    }
+    
     agent_init_call();
 
     return RT_SUCCESS;

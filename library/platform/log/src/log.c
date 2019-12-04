@@ -68,6 +68,8 @@ static log_param_t g_log_param =
     {LOG_FILE_DEF_NAME},
 };
 
+static log_func g_log_ex_func = NULL;
+
 int32_t log_set_param(log_mode_e mode, log_level_e level, unsigned int max_size)
 {
     g_log_param.mode = mode;
@@ -141,8 +143,13 @@ extern print str;
 static void log_local_print(const char *data, int32_t len)
 {
     int32_t size = 0;
-    str(data);
-    return;
+
+    if (g_log_ex_func) {
+        /* external logger function */
+        g_log_ex_func(data);
+        return;
+    }
+    
     if (g_log_param.mode == LOG_PRINTF_TERMINAL) {
         
     } else {
@@ -197,6 +204,12 @@ int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *ms
 int32_t log_print_string(log_level_e level, const char *msg)
 {
     return log_print(level, LOG_HAVE_LEVEL_PRINTF, "%s", msg);
+}
+
+int32_t log_install_func(log_func logger)
+{
+    g_log_ex_func = logger;
+    return RT_SUCCESS;
 }
 
 int32_t log_hexdump(const char *file, int32_t line, const char *title, const void *data, unsigned int len)
