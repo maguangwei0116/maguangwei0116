@@ -253,7 +253,7 @@ rt_dir_t linux_rt_opendir(const char *path_name)
     char rt_path_name[MAX_RT_FILE_PATH];
     
     if (!path_name) {
-        return RT_ERROR;
+        return NULL;
     }
 
     snprintf(rt_path_name, sizeof(rt_path_name), "%s/%s", g_rt_file_path, path_name);
