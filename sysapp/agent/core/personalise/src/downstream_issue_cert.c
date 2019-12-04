@@ -28,7 +28,7 @@ typedef struct ISSUE_CERT_STRUCT {
     char                    fileHash[72];
 } issue_cert_struct_t;
 
-#define RT_CERTIFICATE      "/data/data/com.redteamobile.smart/rt_cert"
+#define RT_CERTIFICATE      "rt_cert.tmp"
 
 #define cJSON_GET_STR_DATA(json, item, item_str_out, len, tmp)\
     do {\
@@ -134,7 +134,7 @@ static rt_bool on_issue_cert_install(const void *arg)
     rt_bool ret = RT_FALSE;
 
     MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
-    if (rt_os_rename(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
+    if (linux_rt_rename_file(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
         MSG_PRINTF(LOG_WARN, "re-name error\n");
         goto exit_entry;
     }
@@ -168,7 +168,7 @@ static rt_bool on_issue_cert_cleanup(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
-    rt_os_unlink(upgrade->tmpFileName);
+    linux_rt_delete_file(upgrade->tmpFileName);
 
     return RT_TRUE;
 }
@@ -183,12 +183,12 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
     if (upgrade->downloadResult == RT_SUCCESS) {
-        fp = linux_fopen(RT_CERTIFICATE, RT_FS_READ);
+        fp = linux_rt_fopen(RT_CERTIFICATE, RT_FS_READ);
         if (!fp) {
             MSG_PRINTF(LOG_ERR, "open cert file failed!\n");
             goto exit_entry;
         }
-        length = linux_file_size(RT_CERTIFICATE);
+        length = linux_rt_file_size(RT_CERTIFICATE);
         buf = (uint8_t *) rt_os_malloc(length);
         if (!buf) {
             MSG_PRINTF(LOG_ERR, "malloc failed!\n");
@@ -200,12 +200,11 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
         if (ret) {
             on_issue_cert_status = ret;
         }
-
-        rt_os_free(buf);
+        
         if (fp) {
             linux_fclose(fp);
         }
-        rt_os_unlink(RT_CERTIFICATE);
+        linux_rt_delete_file(RT_CERTIFICATE);
     }else {
         on_issue_cert_status = upgrade->downloadResult;
     }
@@ -213,6 +212,12 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
 exit_entry:
 
     upload_event_report(upgrade->event, (const char *)upgrade->tranId, on_issue_cert_status, (void *)upgrade);
+
+    /* release temp buffer */
+    if (buf) {
+        rt_os_free(buf);
+        buf = NULL;
+    }
 
     /* release upgrade struct memory */
     if (upgrade) {
@@ -264,24 +269,25 @@ static int32_t upgrade_download_issue_cert_package(const void *in, const char *u
         goto exit_entry;
     }
 
-    ret = 0;
+    ret = RT_SUCCESS;
 
-exit_entry:
-    // todo  handler中释放
-    if (param) {
-        rt_os_free((void *)param);
-        param = NULL;
-    }
+exit_entry:   
 
     return ret;
 }
 
 static int32_t downstream_issue_cert_handler(const void *in, const char *event, void **out)
 {
-    int32_t ret = 0;
-
+    int32_t ret = RT_SUCCESS;
     const issue_cert_struct_t *param = (const issue_cert_struct_t *)in;
+    
     ret = upgrade_download_issue_cert_package(param, event);
+
+    if (param) {
+        rt_os_free((void *)param);
+        param = NULL;
+    }
+    
     return ret;
 }
 

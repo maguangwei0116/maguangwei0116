@@ -51,5 +51,7 @@ int32_t init_network_detection(void *arg);
  */
 void    network_update_state(int32_t state); 
 
+void    network_force_down(void);
+
 #endif // __NETWORK_DETECTION_H__
 

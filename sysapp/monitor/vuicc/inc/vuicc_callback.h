@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include "file.h"
 #include "rt_os.h"
+#include "rt_type.h"
 
 typedef struct _file_ops_t {
 
@@ -33,9 +34,9 @@ typedef struct _file_ops_t {
 
     size_t (*fwrite)(const void *ptr, size_t size, size_t count, rt_fshandle_t fp);
 
-    bool (*dir_exist)(const char *dir);
+    rt_bool (*dir_exist)(const char *dir);
 
-    bool (*file_exist)(const char *file);
+    rt_bool (*file_exist)(const char *file);
 
     int (*create_dir)(const char *dir);
 

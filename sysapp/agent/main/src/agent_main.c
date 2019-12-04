@@ -28,6 +28,7 @@
 #include "upgrade.h"
 #include "agent2monitor.h"
 #include "mbn.h"
+#include "file.h"
 #include "libcomm.h"
 #include "agent_main.h"
 
@@ -44,6 +45,9 @@ struct arguments *args;
 
 typedef void (*print)(char*);
 print str;
+
+#define RT_DATA_PATH            "/data/redtea/"
+#define RT_AGENT_LOG            "rt_log"
 
 typedef int32_t (*init_func)(void *arg);
 
@@ -131,7 +135,7 @@ static int32_t agent_printf(const char *fmt, ...)
 
     MSG_PRINTF(LOG_ERR, "%s", msg);
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 extern int32_t init_backtrace(void *arg);
@@ -142,9 +146,10 @@ List your init call here !
 Adjust the order very carefully !
 **/
 static const init_obj_t g_init_objs[] =
-    {
-        INIT_OBJ(init_log_file, NULL),
-        INIT_OBJ(init_config, (void *)&g_value_list),
+{
+    INIT_OBJ(init_rt_file_path,         RT_DATA_PATH),
+    INIT_OBJ(init_log_file,             RT_AGENT_LOG),
+    INIT_OBJ(init_config,               (void *)&g_value_list),
 
 #ifdef CFG_ENABLE_LIBUNWIND
         INIT_OBJ(init_backtrace, agent_printf),
@@ -196,5 +201,5 @@ int32_t agent_main(void *arg,void *log)
 
     agent_init_call();
 
-    return 0;
+    return RT_SUCCESS;
 }

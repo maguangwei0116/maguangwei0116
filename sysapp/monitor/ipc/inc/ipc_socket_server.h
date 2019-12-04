@@ -11,12 +11,14 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifndef __IPC_SOCKET_CLIENT__
-#define __IPC_SOCKET_CLIENT__
+#ifndef __IPC_SOCKET_CLIENT_H__
+#define __IPC_SOCKET_CLIENT_H__
 
 #include "rt_type.h"
 
 int32_t ipc_socket_server(void);
-void ipc_regist_callback(void *fun);
+void    ipc_regist_callback(void *fun);
+rt_bool ipc_server_check(void);
 
-#endif // __IPC_SOCKET__
+#endif // __IPC_SOCKET_CLIENT_H__
+

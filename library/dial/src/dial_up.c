@@ -276,6 +276,17 @@ int32_t dial_up_deinit(dsi_call_info_t *dsi_net_hndl)
     return RT_SUCCESS;
 }
 
+/* force to create a NO_NET event */
+int32_t dial_up_reset(void)
+{
+    int32_t signo = DSI_EVT_NET_NO_NET;
+    
+    /* Pass on the EVENT to upper application */
+    write(g_dsi_event_fd[0], &signo, sizeof(signo));
+
+    MSG_PRINTF(LOG_ERR, "force to create a NO_NET event ...\r\n");
+}
+
 static rt_bool dial_up_get_regist_state(void)
 {
     int32_t regist_state = 0;
@@ -530,6 +541,7 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
             case DSI_STATE_CALL_DISCONNECTING:
                 dial_up_stop(dsi_net_hndl);
                 dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_IDLE);
+                rt_os_sleep(5);  // wait some time to start a new dial-up operation !!!
                 break;
 
             default:

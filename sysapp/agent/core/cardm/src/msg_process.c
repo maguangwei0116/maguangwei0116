@@ -16,8 +16,8 @@
 #include "cJSON.h"
 #include "rt_qmi.h"
 
-#define  MSG_ONE_BLOCK_SIZE                             128
-#define  APN_LIST                                       "/data/data/com.redteamobile.smart/rt_apn_list"
+#define  MSG_ONE_BLOCK_SIZE     128
+#define  APN_LIST               "rt_apn_list"
 
 static const card_info_t *g_card_info;
 static const char *g_smdp_proxy_addr = NULL;
@@ -26,7 +26,7 @@ int32_t init_msg_process(void *arg, void *proxy_addr)
 {
     g_card_info = (card_info_t *)arg;
     g_smdp_proxy_addr = (const char *)proxy_addr;
-    if (rt_os_access(APN_LIST, 0)) {
+    if (!linux_rt_file_exist(APN_LIST)) {
         rt_create_file(APN_LIST);
     }
     return RT_SUCCESS;

@@ -27,7 +27,7 @@
 #define MAX_VALUE_SIZE                      30
 #define LINK_SYMBOL                         '='                     // key - value pair ֮������ӷ�
 #define ANNOTATION_SYMBOL                   '#'                     // ע�ͱ�ʶ��
-#define CONFIG_FILE_PATH                    "/data/redtea/rt_config.ini"
+#define CONFIG_FILE_PATH                    "rt_config.ini"
 #define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // �ж��Ƿ�Ϊ�հ׷�
 #define UICC_MODE_vUICC                     "0"
 #define UICC_MODE_eUICC                     "1"
@@ -223,7 +223,7 @@ static int32_t config_write_file(const char *file, int32_t pair_num, const confi
     rt_fshandle_t fp;
     char item_data[MAX_LINE_SIZE];
 
-    fp = linux_fopen(file, "w");
+    fp = linux_rt_fopen(file, "w");
     if (!fp) {
         goto exit_entry;
     }
@@ -313,7 +313,7 @@ static int32_t config_read_file(const char *file, int32_t pair_num, config_item_
     char key[MAX_VALUE_SIZE];
     char value[MAX_VALUE_SIZE];
 
-    fp = linux_fopen(file, "r");
+    fp = linux_rt_fopen(file, "r");
     if(!fp) {
         MSG_PRINTF(LOG_WARN, "can't open file %s\n", file);
         goto exit_entry;
@@ -378,7 +378,7 @@ static void config_create_default_file(const char *file, int32_t pair_num, confi
 
 static int32_t config_init_file(const char *file, int32_t pair_num, config_item_t *items)
 {
-    if (rt_os_access(file, RT_FS_F_OK) == RT_ERROR) {
+    if (!linux_rt_file_exist(file)) {
         config_create_default_file(file, pair_num, items);
     }
 
@@ -462,7 +462,8 @@ typedef enum CONFIG_RESULT {
     CONFIG_PART_OK_ERROR        = -1,       // part config items config ok, redtealink required
     CONFIG_MSG_PARSE_ERROR      = -3001,
     CONFIG_ALL_NONE_ERROR       = -3002,    // total config items all unsupported    
-    CONFIG_ALL_FAIL_ERROR       = -3003,    // total config items all config fail    
+    CONFIG_ALL_FAIL_ERROR       = -3003,    // total config items all config fail  
+    CONFIG_AGAIN_ERROR          = -3004,    // Repeated configuration with the same config data
     CONFIG_OTHER_ERROR          = -3099,
 } config_result_e;
 
@@ -518,6 +519,18 @@ static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
     config_item_t *items = param->items;
     const char *key;
     char value[MAX_VALUE_SIZE];
+    char *config_str = NULL;
+    static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];
+    int8_t md5_out_now[MD5_STRING_LENGTH + 1];
+
+    cJSON_FORMAT_JSON_STR_DATA(config, config_str);
+    get_md5_string((int8_t *)config_str, md5_out_now);
+    md5_out_now[MD5_STRING_LENGTH] = '\0';
+    if (rt_os_strcmp(md5_out_pro, md5_out_now) == 0) {
+        MSG_PRINTF(LOG_ERR, "The config data are the same!!\n");
+        return CONFIG_AGAIN_ERROR;
+    }
+    rt_os_strcpy(md5_out_pro, md5_out_now);
 
     config_cnt = cJSON_GetArraySize(config);
     //MSG_PRINTF(LOG_INFO, "config_cnt = %d\r\n", config_cnt);
@@ -643,7 +656,11 @@ static int32_t config_parser(const void *in, char *tran_id, void **out)
     //cJSON_DEBUG_JSON_STR_DATA(config_json);
 
     /* get remote config item data */
-    config_all_parse(config_json, param);       
+    ret = config_all_parse(config_json, param);
+    if (ret) {
+        param->result = ret;
+        goto exit_entry;
+    }
 
     *out = param;
     ret = RT_SUCCESS;
@@ -662,7 +679,9 @@ exit_entry:
 
     if (ret) {
         /* msg parse error, output error code */
-        param->result = CONFIG_MSG_PARSE_ERROR;
+        if (!param->result) {
+            param->result = CONFIG_MSG_PARSE_ERROR;
+        }
         *out = param;
         /* change return code */
         ret = RT_SUCCESS;
@@ -770,7 +789,7 @@ static int32_t config_all_pack(cJSON *config, int32_t pair_num, const config_ite
 
 static cJSON *config_packer(void *arg)
 {
-    int32_t ret = 0;
+    int32_t ret = RT_SUCCESS;
     cJSON *on_config = NULL;
     char *config = NULL;
     cJSON *config_json = NULL;
@@ -780,14 +799,14 @@ static cJSON *config_packer(void *arg)
     on_config = cJSON_CreateObject();
     if (!on_config) {
         MSG_PRINTF(LOG_WARN, "The on_config is error\n");
-        ret = -1;
+        ret = RT_ERROR;
         goto exit_entry;
     }
 
     config_json = cJSON_CreateObject();
     if (!config_json) {
         MSG_PRINTF(LOG_WARN, "The config_json is error\n");
-        ret = -2;
+        ret = RT_ERROR;
         goto exit_entry;
     }
 
@@ -801,7 +820,7 @@ static cJSON *config_packer(void *arg)
 #endif
     CJSON_ADD_NEW_STR_OBJ(on_config, config);
 
-    ret = 0;
+    ret = RT_SUCCESS;
     
 exit_entry:
 

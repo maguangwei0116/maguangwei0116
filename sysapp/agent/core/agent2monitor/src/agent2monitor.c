@@ -141,12 +141,12 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
     int32_t partlen;
     int32_t file_size;
 
-    if ((fp = linux_fopen(file, "r")) == NULL) {
+    if ((fp = linux_rt_fopen(file, "r")) == NULL) {
         MSG_PRINTF(LOG_ERR, "error open file\n");
         goto exit_entry;
     }
 
-    file_size = linux_file_size(file);
+    file_size = linux_rt_file_size(file);
     sha256_init(&sha_ctx);
     file_size -= PRIVATE_ECC_HASH_STR_LEN;
     if (file_size < HASH_CHECK_BLOCK) {

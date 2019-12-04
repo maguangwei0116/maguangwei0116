@@ -15,11 +15,11 @@
 #include <stdio.h>
 #include "rt_type.h"
 
-extern int32_t rt_write_data(uint8_t *addr,uint32_t offset,const uint8_t *data_buffer,uint32_t len);
-extern int32_t rt_read_data(uint8_t *addr,uint32_t offset,uint8_t *data_buffer,uint32_t len);
-extern int32_t rt_create_file(uint8_t *file_name);
-extern int32_t rt_truncate_data(uint8_t *filename,int32_t offset);
-extern int32_t rt_rm_dir(const int8_t *dirpath);
-extern int32_t rt_rm(const int8_t *file_name);
+extern int32_t rt_write_data(const char *file_name, uint32_t offset, const uint8_t *data_buffer, uint32_t len);
+extern int32_t rt_read_data(const char *file_name, uint32_t offset, uint8_t *data_buffer, uint32_t len);
+extern int32_t rt_create_file(const char *file_name);
+extern int32_t rt_truncate_data(const char *file_name, uint32_t offset);
+extern int32_t rt_rm_dir(const char *dir_path);
+extern int32_t rt_rm(const char *file_name);
 
 #endif   // __RT_MANAGE_DATA_H__

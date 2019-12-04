@@ -14,7 +14,7 @@ TARGET                              = $(shell pwd | sed 's/^\(.*\)[/]//')
 ENV_TYPE                            = $(SYSAPP_ENV_TYPE)
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
-LOCAL_TARGET_VERSION                = 0.0.0.8
+LOCAL_TARGET_VERSION                = 0.0.0.9
 
 # Check input tag version
 ifdef AGENT_VERSION
@@ -180,6 +180,9 @@ ifeq ($(CFG_AGENT_SINGLE_BOOTSRRAP_ON), y)
 endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 -include $(REDTEA_SUPPORT_REDTEA_PATH)/android_library.mk
+endif
+ifeq ($(CFG_TEST_LPA_ON), y)
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/test_lpa_sysapp.mk
 endif
 ############################################################################################
 # Never modify end this line

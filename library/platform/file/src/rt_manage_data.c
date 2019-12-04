@@ -18,12 +18,12 @@
 #include "rt_manage_data.h"
 #include "file.h"
 
-int32_t rt_create_file(uint8_t *file_name)
+int32_t rt_create_file(const char *file_name)
 {
     int8_t status = RT_ERROR;
     rt_fshandle_t fp = NULL;
 
-    if ((fp = linux_fopen(file_name, "w+")) == NULL) {
+    if ((fp = linux_rt_fopen(file_name, "w+")) == NULL) {
         MSG_PRINTF(LOG_WARN, "open failed \n");
     } else {
         status = RT_SUCCESS;
@@ -35,12 +35,12 @@ int32_t rt_create_file(uint8_t *file_name)
     return status;
 }
 
-int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer, uint32_t len)
+int32_t rt_write_data(const char *file_name, uint32_t offset, const uint8_t *data_buffer, uint32_t len)
 {
     rt_fshandle_t fp = NULL;
     int32_t status = RT_ERROR;
 
-    fp = linux_fopen(addr, "rb+");
+    fp = linux_rt_fopen(file_name, "rb+");
     if (fp == NULL) {
         MSG_PRINTF(LOG_WARN, "open file failed\n");
     } else {
@@ -57,14 +57,14 @@ int32_t rt_write_data(uint8_t *addr, uint32_t offset, const uint8_t *data_buffer
     return status;
 }
 
-int32_t rt_read_data(uint8_t *addr, uint32_t offset, uint8_t *data_buffer, uint32_t len)
+int32_t rt_read_data(const char *file_name, uint32_t offset, uint8_t *data_buffer, uint32_t len)
 {
     rt_fshandle_t fp = NULL;
     int32_t status = RT_ERROR;
 
-    fp = linux_fopen(addr, "r");
+    fp = linux_rt_fopen(file_name, "r");
     if (NULL == fp) {
-        MSG_PRINTF(LOG_WARN, "open file failed\n");
+        MSG_PRINTF(LOG_WARN, "open file %s failed\n", file_name);
     } else {
         linux_fseek(fp, offset, RT_FS_SEEK_SET);
         if (linux_fread(data_buffer, len, 1, fp) != 1) {
@@ -76,22 +76,22 @@ int32_t rt_read_data(uint8_t *addr, uint32_t offset, uint8_t *data_buffer, uint3
 
     return status;
 }
-int32_t rt_truncate_data(uint8_t *filename, int32_t offset)
+int32_t rt_truncate_data(const char *file_name, uint32_t offset)
 {
-    if (filename == NULL) {
+    if (!file_name) {
         return RT_ERROR;
     }
-    return linux_truncate(filename, offset);
+    return linux_rt_truncate(file_name, offset);
 }
 
-int32_t rt_rm_dir(const int8_t *dirpath)
+int32_t rt_rm_dir(const char *dir_path)
 {
     char sub_path[128];
     rt_dir_t dirp = NULL;
     rt_dirent_t dir;
     rt_stat_t st;
 
-    linux_opendir(dirpath);
+    linux_opendir(dir_path);
     if (!dirp) {
         return RT_ERROR;
     }
@@ -101,7 +101,7 @@ int32_t rt_rm_dir(const int8_t *dirpath)
             continue;
         }
 
-        snprintf(sub_path, sizeof(sub_path), "%s/%s", dirpath, dir->d_name);
+        snprintf(sub_path, sizeof(sub_path), "%s/%s", dir_path, dir->d_name);
 
         if (linux_lstat(sub_path, &st) == -1) {
             MSG_PRINTF(LOG_WARN, "rm dir:l-stat %s error\n", sub_path);
@@ -121,7 +121,7 @@ int32_t rt_rm_dir(const int8_t *dirpath)
             continue;
         }
     }
-    if (rt_os_rmdir(dirpath) == -1) { // delete dir itself.
+    if (rt_os_rmdir(dir_path) == -1) { // delete dir itself.
         linux_closedir(dirp);
         return -1;
     }
@@ -130,7 +130,7 @@ int32_t rt_rm_dir(const int8_t *dirpath)
     return RT_SUCCESS;
 }
 
-int32_t rt_rm(const int8_t *file_name)
+int32_t rt_rm(const char *file_name)
 {
     rt_stat_t st;
 
@@ -154,3 +154,4 @@ int32_t rt_rm(const int8_t *file_name)
 
     return RT_SUCCESS;
 }
+

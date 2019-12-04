@@ -45,6 +45,11 @@ config BR2_CFG_LPA_LOG_ON
 	help
 	  Enable this option if you want to open lpa logger.
 
+config BR2_CFG_TEST_LPA_ON	  
+	bool "BR2_CFG_TEST_LPA_ON"
+	help
+	  Enable this option if you want to export test lpa tool.
+
 config BR2_CFG_SHARE_PROFILE_ECC_VERIFY	  
 	bool "BR2_CFG_SHARE_PROFILE_ECC_VERIFY"
 	help

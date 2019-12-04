@@ -118,6 +118,12 @@ exit_entry:
     rt_exit_task(NULL);
 }
 
+void network_force_down(void)
+{
+    /* force to make network down */
+    dial_up_reset();
+}
+
 int32_t init_network_detection(void *arg)
 {
     rt_task task_id = 0;

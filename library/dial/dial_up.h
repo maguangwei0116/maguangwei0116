@@ -56,6 +56,7 @@ typedef struct DSI_CALL_INFO {
 int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl);
 int32_t dial_up_deinit(dsi_call_info_t *dsi_net_hndl);
 int32_t dial_up_to_connect(dsi_call_info_t *dsi_net_hndl);
+int32_t dial_up_reset(void);  /* force to create a NO_NET event */
 void    dial_up_set_dial_callback(void *func);
 
 #endif  //__DIAL_UP_H__

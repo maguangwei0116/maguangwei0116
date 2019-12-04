@@ -27,7 +27,7 @@
 #define MQTT_CONNECT_EMQ_ERROR          1
 #define MQTT_CONNECT_SUCCESS            0
 
-#define TICKET_SERVER_CACHE             "/data/redtea/ticket_server"
+#define TICKET_SERVER_CACHE             "rt_ticket_server"
 #define MAX_CONNECT_SERVER_TIMER        3
 
 #define USE_ADAPTER_SERVER              1  // use mqtt ticket adapter proxy server ?
@@ -170,17 +170,17 @@ static rt_bool mqtt_save_ticket_server(const mqtt_opts_t *opts)
     data_len[1] = length & 0xff;
 
     if (rt_create_file(TICKET_SERVER_CACHE) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt_create_file  error\n");
+        MSG_PRINTF(LOG_WARN, "rt create_file  error\n");
         goto exit_entry;
     }
 
     if (rt_write_data(TICKET_SERVER_CACHE, 0, data_len, sizeof(data_len)) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt_write_data data_len error\n");
+        MSG_PRINTF(LOG_WARN, "rt write_data data_len error\n");
         goto exit_entry;
     }
 
     if (rt_write_data(TICKET_SERVER_CACHE, sizeof(data_len), save_info, rt_os_strlen(save_info)) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt_write_data TICKET_SERVER_CACHE error\n");
+        MSG_PRINTF(LOG_WARN, "rt write_data TICKET_SERVER_CACHE error\n");
         goto exit_entry;
     }
 
@@ -210,7 +210,7 @@ static rt_bool mqtt_get_ticket_server(mqtt_opts_t *opts)
     rt_bool ret = RT_FALSE;
 
     if (rt_read_data(TICKET_SERVER_CACHE, 0, data_len, sizeof(data_len)) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt_read_data data_len error\n");
+        MSG_PRINTF(LOG_WARN, "rt read_data data_len error\n");
         goto exit_entry;
     }
 
@@ -222,7 +222,7 @@ static rt_bool mqtt_get_ticket_server(mqtt_opts_t *opts)
     }
 
     if (rt_read_data(TICKET_SERVER_CACHE, sizeof(data_len), save_info, length) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt_read_data save_info error\n");
+        MSG_PRINTF(LOG_WARN, "rt read_data save_info error\n");
         goto exit_entry;
     }
 
@@ -279,7 +279,7 @@ static rt_bool mqtt_connect_adapter(mqtt_param_t *param)
     MQTTClient *c = &param->client;
     mqtt_opts_t *opts = &param->opts;
     const char *alias = param->alias;
-    const char *eid = "";
+    const char *eid = "";  // OTI server required: Request with [eid=""] when eid isn't exist !!!
 
     if (!mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, 'F') && !mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
         eid = g_mqtt_info.eid;
@@ -981,6 +981,8 @@ static void mqtt_client_state_mechine(void)
                 } else {                    
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
+                        reconnect_cnt = 0;
+                        network_force_down();
                     }
                     delay_s = 3;
                 }
@@ -1007,6 +1009,8 @@ static void mqtt_client_state_mechine(void)
                 } else {                    
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
+                        reconnect_cnt = 0;
+                        network_force_down();
                     }
                     delay_s = 3;
                 }

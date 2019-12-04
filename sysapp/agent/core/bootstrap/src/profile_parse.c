@@ -185,7 +185,7 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     sha256_ctx_t hash_code;
     int32_t file_size;
 
-    file_size = linux_file_size(g_share_profile);
+    file_size = linux_rt_file_size(g_share_profile);
     linux_fseek(fp, 0, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 8, fp);
     profile_off = get_length(buf,1);
@@ -241,7 +241,7 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     int32_t read_len;
     sha256_ctx_t ctx;
 
-    file_size = linux_file_size(g_share_profile);
+    file_size = linux_rt_file_size(g_share_profile);
 
     /* check file length */
     if (file_size < (sizeof(tail_buf) + 4)) {
@@ -561,7 +561,7 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
     uint8_t buf[128];
     uint8_t *buffer = NULL;
 
-    fp = linux_fopen(g_share_profile, RT_FS_READ);
+    fp = linux_rt_fopen(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
         return RT_ERROR;
     }
@@ -638,7 +638,7 @@ int32_t init_profile_file(const char *file)
     }
 #endif
 
-    fp = linux_fopen(g_share_profile, RT_FS_READ);
+    fp = linux_rt_fopen(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
         MSG_PRINTF(LOG_ERR, "g_share_profile: %s\n",g_share_profile);
         MSG_PRINTF(LOG_ERR, "fp is null !\n");
@@ -670,7 +670,7 @@ int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profil
     int32_t ret = RT_ERROR;
     int32_t i = 0;
 
-    fp = linux_fopen(g_share_profile, RT_FS_READ);
+    fp = linux_rt_fopen(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
         MSG_PRINTF(LOG_ERR, "Open file failed\n");
         return RT_ERROR;

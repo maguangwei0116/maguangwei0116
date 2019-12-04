@@ -59,6 +59,7 @@ static int connect_tcp(const char *host_name, const char *addr)
 int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca)
 {
     int res = -1;
+    
     memset(https_ctx, 0, sizeof(https_ctx_t));
 
     https_ctx->socket = connect_tcp(host, port);
@@ -108,7 +109,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
         ERR_print_errors_fp(stderr);
         return RT_ERR_HTTPS_SSL_HANDSHAKE_FAIL;
     }
-
+    
     X509* cert = SSL_get_peer_certificate(https_ctx->ssl);
     if (cert) {  // Free immediately
         char *line;
@@ -157,17 +158,23 @@ int https_read(https_ctx_t *https_ctx, char *buffer, int buffer_size)
 
 void https_free(https_ctx_t *https_ctx)
 {
-    if (https_ctx->socket > 0) {
-        close(https_ctx->socket);
-    }
-
+    /* release ssl handle */
     if (https_ctx->ssl) {
         SSL_shutdown(https_ctx->ssl);
         SSL_free(https_ctx->ssl);
+        https_ctx->ssl = NULL;
     }
 
+    /* release socket fd */
+    if (https_ctx->socket > 0) {
+        close(https_ctx->socket);
+        https_ctx->socket = -1;
+    }
+
+    /* release ssl CTX */
     if (https_ctx->ssl_cxt) {
         SSL_CTX_free(https_ctx->ssl_cxt);
+        https_ctx->ssl_cxt = NULL;
     }
 }
 

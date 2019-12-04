@@ -80,7 +80,7 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
     buf[MD5_STRING_LENGTH] = '\0';
     http_set_header_record(&dw_struct, "md5sum", (const char *)buf);
     dw_struct.range = 0;
-	
+
     while (1) {
         MSG_PRINTF(LOG_DBG, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_file_size(dw_struct.file_path));
 
@@ -95,7 +95,7 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
             MSG_PRINTF(LOG_ERR, "Download fail too many times !\r\n");
             break;
         }
-		
+
         /* default agent download don't support [Breakpoint-renewal] now */
         dw_struct.range = 0;
         linux_delete_file((const int8_t *)dw_struct.file_path);
@@ -108,15 +108,41 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
 static void upgrade_process(void *args)
 {
     upgrade_struct_t *d_info = (upgrade_struct_t *)args;
+    char tmp_file_name[128];
+    char final_file_name[128];
+    char *p = NULL;
+
+    /* change to tmp file name */
+    p = rt_os_strrchr(d_info->file_name, '/');
+    if (p) {
+        p++;
+    } else {
+        p = d_info->file_name;
+    }
+    snprintf(final_file_name, sizeof(final_file_name), "%s", d_info->file_name);
+    snprintf(tmp_file_name, sizeof(tmp_file_name), "%s.tmp", p);
+    snprintf((char *)d_info->file_name, sizeof(d_info->file_name), "%s", tmp_file_name);
+
+    /* download tmp file [step 1] */
     if (download_file_process(d_info) != RT_TRUE) {               // download file
         MSG_PRINTF(LOG_ERR, "Download file failed !\r\n");
         goto end;
     }
-    if (monitor_inspect_file(d_info->file_name, d_info->real_file_name) != RT_TRUE) {     // inspect file
-        MSG_PRINTF(LOG_ERR, "Inspect file failed !\r\n");
+
+    /* install tmp file [step 2] */
+    if (linux_rt_rename_file((const char *)tmp_file_name, final_file_name) != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "re-name error\n");
         goto end;
     }
-    if (rt_os_chmod(d_info->file_name, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) == 0) {      // chmod file
+
+    /* verify tmp file [step 3] (step order is important) */
+    if (monitor_inspect_file((const char *)final_file_name, d_info->real_file_name) != RT_TRUE) {     // inspect file
+        MSG_PRINTF(LOG_ERR, "Inspect file failed !\r\n");
+        //linux_rt_delete_file((const char *)final_file_name);
+        goto end;
+    }
+
+    if (rt_os_chmod(final_file_name, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) == RT_SUCCESS) {      // chmod file
 #if 0
         MSG_PRINTF(LOG_DBG, "Download agent success, reboot device after 10 seconds !\r\n");
         rt_os_sleep(10);
@@ -127,6 +153,7 @@ static void upgrade_process(void *args)
         rt_os_exit(-1);
 #endif
     }
+    
 end:
     return;
 }

@@ -15,7 +15,7 @@
 #include "agent_queue.h"
 #include "msg_process.h"
 
-#define RT_LAST_EID                 "/data/data/com.redteamobile.smart/rt_last_eid"
+#define RT_LAST_EID                 "rt_last_eid"
 #define RT_PROFILE_STATE_ENABLED    2
 
 static card_info_t                  g_p_info;
@@ -61,7 +61,7 @@ static int32_t card_check_init_upload(const uint8_t *eid)
 
 static int32_t card_last_eid_init(void)
 {
-    if (rt_os_access(RT_LAST_EID, 0)) {
+    if (!linux_rt_file_exist(RT_LAST_EID)) {
         rt_create_file(RT_LAST_EID);
     } else {
         rt_read_data(RT_LAST_EID, 0, g_last_eid, sizeof(g_last_eid));
@@ -80,7 +80,7 @@ static int32_t card_update_eid(rt_bool init)
     ret = lpa_get_eid(eid);
     if (!ret) {
         bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
-        MSG_PRINTF(LOG_INFO, "ret=%d, g_p_info.eid=%s\r\n", ret, g_p_info.eid);
+        MSG_PRINTF(LOG_WARN, "g_p_info.eid=%s\r\n", g_p_info.eid);
     }
 
     if (!ret && !init) {
@@ -346,6 +346,12 @@ int32_t init_card_manager(void *arg)
     ret = card_update_eid(RT_TRUE);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
+        if (((public_value_list_t *)arg)->config_info->lpa_channel_type == LPA_CHANNEL_BY_QMI) {
+            MSG_PRINTF(LOG_WARN, "eUICC mode with no EID, stay here forever !\r\n");
+            while (1) {
+                rt_os_sleep(1);   
+            }
+        }
     }
 
     rt_os_sleep(1);

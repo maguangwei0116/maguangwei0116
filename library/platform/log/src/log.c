@@ -22,8 +22,7 @@
 #include "file.h"
 
 #define LOG_TIMESTAMP_FORMAT    "[%Y-%m-%d %H:%M:%S]"
-#define DATA_REDTEA_PATH        "/data/redtea"
-#define LOG_NAME                "/data/redtea/rt_log"
+#define LOG_FILE_DEF_NAME       "xxx.log"
 #define LOG_FILE_SIZE           1024 * 1024  // 1MB
 #define LOG_BUF_SIZE            2048
 #define LOG_MAX_LINE_SIZE       2 * 1024
@@ -49,7 +48,7 @@ typedef struct LOG_PARAM {
     char            file[LOG_FILE_NAME_LEN];    // log file name
 } log_param_t;
 
-static log_item_t g_log_item_table[] =
+static const log_item_t g_log_item_table[] =
 {
     {LOG_NONE,  "LOG_NONE",     "[NONE]",},
     {LOG_ERR,   "LOG_ERR",      "[ERR ]",},
@@ -66,17 +65,8 @@ static log_param_t g_log_param =
     LOG_FILE_SIZE,
     0,
     NULL,
-    {LOG_NAME},
+    {LOG_FILE_DEF_NAME},
 };
-
-static int32_t init_data_redtea_path(void *arg)
-{
-    if (rt_os_access(DATA_REDTEA_PATH, RT_FS_F_OK)) {
-        rt_os_mkdir(DATA_REDTEA_PATH);
-    }
-
-    return 0;
-}
 
 int32_t log_set_param(log_mode_e mode, log_level_e level, unsigned int max_size)
 {
@@ -86,17 +76,17 @@ int32_t log_set_param(log_mode_e mode, log_level_e level, unsigned int max_size)
         g_log_param.max_size = max_size;
     }
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 static int32_t log_file_size(const char *file)
 {
-    return linux_file_size(file);
+    return linux_rt_file_size(file);
 }
 
 static void log_file_open(void)
 {
-    g_log_param.fp = linux_fopen(g_log_param.file, "a+");
+    g_log_param.fp = linux_rt_fopen(g_log_param.file, "a+");
     if(!g_log_param.fp) {
         printf("log file (%s) open error, err(%d)=%s\n", g_log_param.file, errno, strerror(errno));
         return;
@@ -118,16 +108,14 @@ int32_t init_log_file(void *arg)
         snprintf(g_log_param.file, sizeof(g_log_param.file), "%s", log_file);
     }
 
-    init_data_redtea_path(NULL);
-
     log_file_open();
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 static int32_t log_file_clear(void)
 {
-    g_log_param.fp = linux_fopen(g_log_param.file, "w+");
+    g_log_param.fp = linux_rt_fopen(g_log_param.file, "w+");
     if(!g_log_param.fp) {
         printf("log file open error\n");
         return -1;
@@ -136,7 +124,7 @@ static int32_t log_file_clear(void)
     linux_fclose(g_log_param.fp);
     g_log_param.fp = NULL;
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 static int32_t log_file_write(const char *data, int32_t len)
@@ -145,7 +133,7 @@ static int32_t log_file_write(const char *data, int32_t len)
         linux_fwrite(data, 1, len, g_log_param.fp);
         linux_fflush(g_log_param.fp);
     }
-    return 0;
+    return RT_SUCCESS;
 }
 
 typedef void (*print)(char*);
@@ -185,7 +173,7 @@ int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *ms
     va_list vl_list;
 
     if (level > g_log_param.level) {
-        return -1;
+        return RT_ERROR;
     }
 
     if (level_flag == LOG_HAVE_LEVEL_PRINTF) {
@@ -203,7 +191,7 @@ int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *ms
 
     log_local_print(content, rt_os_strlen(content));
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 int32_t log_print_string(log_level_e level, const char *msg)
@@ -219,7 +207,7 @@ int32_t log_hexdump(const char *file, int32_t line, const char *title, const voi
     const char dimm[] = "+------------------------------------------------------------------------------+";
 
     if (g_log_param.level < LOG_HEXDUMP_LEVEL) {
-        return 0;
+        return RT_SUCCESS;
     }
 
     MSG_PRINTF(LOG_HEXDUMP_LEVEL, "[%s, %d] %s (%d bytes):\r\n", file, line, title, len);
@@ -256,7 +244,7 @@ int32_t log_hexdump(const char *file, int32_t line, const char *title, const voi
 
     MSG_PRINTF(LOG_HEXDUMP_LEVEL, "%s\r\n", dimm);
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 static rt_bool log_check_level(const char *header, log_level_e min_level)
@@ -281,33 +269,36 @@ static rt_bool log_check_level(const char *header, log_level_e min_level)
     return (cur_level <= min_level) ? RT_TRUE: RT_FALSE;
 }
 
+int32_t log_get_log_file_name(char *file_name, int32_t file_name_len)
+{
+    snprintf(file_name, file_name_len, "%s", g_log_param.file);
+    return RT_SUCCESS;
+}
+
 int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e min_level)
 {
     char *data = NULL;
     rt_fshandle_t fp_in = NULL;
     rt_fshandle_t fp_out = NULL;
     int32_t i = 0;
-    int32_t ret;
+    int32_t ret = RT_ERROR;
     char header[LOG_LEVEL_LEN+1] = {0};
 
     data = (char *)rt_os_malloc(LOG_MAX_LINE_SIZE);
     if(!data) {
         MSG_PRINTF(LOG_WARN, "memory alloc fail\n");
-        ret = -1;
         goto exit_entry;
     }
 
-    fp_in = linux_fopen(file_in, "r");
+    fp_in = linux_rt_fopen(file_in, "r");
     if(!fp_in) {
         MSG_PRINTF(LOG_WARN, "can't open file %s\n", file_in);
-        ret = -1;
         goto exit_entry;
     }
 
-    fp_out = linux_fopen(file_out, "a+");
+    fp_out = linux_rt_fopen(file_out, "a+");
     if(!fp_out) {
         MSG_PRINTF(LOG_WARN, "can't open file %s\n", file_out);
-        ret = -1;
         goto exit_entry;
     }
 
@@ -320,7 +311,7 @@ int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e
             }
         }
     }
-    ret = 0;
+    ret = RT_SUCCESS;
 
 exit_entry:
     if (fp_in) {

@@ -158,14 +158,13 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
 
     if (g_proxy_server_url != NULL) {       //add proxy server
         api_t[0] = '/';
-        strcat(api_t,addr);
-        strcat(api_t ,api);
+        strcat(api_t, addr);
+        strcat(api_t, api);
         api = api_t;
         addr = g_proxy_server_url;
     }
 
-    MSG_PRINTF(LOG_INFO, "addr:%s\n", addr);
-    MSG_PRINTF(LOG_INFO, "api:%s\n", api);
+    MSG_PRINTF(LOG_INFO, "addr:%s, api:%s\n", addr, api);
     p = strstr(addr, ":");
     if (p == NULL) {
         // Use default port
@@ -186,7 +185,7 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
         }
     }
 
-    snprintf(request, SEND_BUFFER_SIZE,
+    snprintf(request, sizeof(request),
             "POST %s HTTP/1.1\r\n"
             "User-Agent: gsma-rsp-lpad\r\n"
             "X-Admin-Protocol: gsma/rsp/v2.0.0\r\n"
@@ -203,23 +202,21 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
     done_size = strlen(request);
     left_size = strlen(body);
 
-    snprintf(request + done_size, SEND_BUFFER_SIZE - done_size, "%s", body);
-    SSL_write(g_https_ctx.ssl, request, strlen(request));
-    MSG_PRINTF(LOG_INFO, "sent[%d]:\n%s\n", (int)strlen(request), request);
+    snprintf(request + done_size, sizeof(request) - done_size, "%s", body);
+    https_post(&g_https_ctx, (const char *)request);
 
-    done_size = SEND_BUFFER_SIZE - 1 - done_size;
+    done_size = sizeof(request) - 1 - done_size;
     left_size -= done_size;
 
     while (left_size > 0) {
-        memset(request, 0, SEND_BUFFER_SIZE);
-        snprintf(request, SEND_BUFFER_SIZE, "%s", body + done_size);
-        SSL_write(g_https_ctx.ssl, request, strlen(request));
-        MSG_PRINTF(LOG_INFO, "sent[%d]:\n%s\n", (int)strlen(request), request);
-        done_size += SEND_BUFFER_SIZE - 1;
-        left_size -= SEND_BUFFER_SIZE - 1;
+        memset(request, 0, sizeof(request));
+        snprintf(request, sizeof(request), "%s", body + done_size);
+        https_post(&g_https_ctx, (const char *)request);
+        done_size += sizeof(request) - 1;
+        left_size -= sizeof(request) - 1;
     }
 
-    *size = SSL_read(g_https_ctx.ssl, buffer, *size);
+    *size = https_read(&g_https_ctx, buffer, *size);
     if (*size == 0) {
         return RT_ERR_HTTPS_POST_FAIL;
     }
@@ -232,7 +229,7 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
 
     if (len == CHUNKED) {
         char sbuf[11] = {0}; // For content length, MAX to 0x7FFFFFF(2147483647)
-        p = strtoken(p, sbuf, 11);
+        p = strtoken(p, sbuf, sizeof(sbuf));
         p += 1;             // Skip '\n'
         *size = strtol(sbuf, NULL, 16);
     } else {
@@ -251,11 +248,7 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
 
 int lpa_https_close(void)
 {
-    if(g_https_ctx.socket<0){
-        return RT_ERROR;
-    }
-    close(g_https_ctx.socket);
-    g_https_ctx.ssl = NULL;
+    https_free(&g_https_ctx);
 
     return RT_SUCCESS;
 }
