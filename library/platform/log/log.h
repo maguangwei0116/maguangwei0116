@@ -34,10 +34,13 @@ typedef enum LOG_LEVEL_FLAG {
     LOG_NO_LEVEL_PRINTF
 } log_level_flag_e;
 
+typedef void (*log_func)(const char *msg);
+
 extern int32_t init_log_file(void *arg);
 extern int32_t log_set_param(log_mode_e mode, log_level_e level, unsigned int max_size);
 extern int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *msg, ...);
 extern int32_t log_print_string(log_level_e level, const char *msg);
+extern int32_t log_install_func(log_func logger);
 extern int32_t log_hexdump(const char *file, int32_t line, const char *title, const void *data, unsigned int len);
 extern int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e min_level);
 extern int32_t log_get_log_file_name(char *file_name, int32_t file_name_len);
