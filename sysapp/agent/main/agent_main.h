@@ -25,12 +25,13 @@ struct arguments {
 
 int32_t jni_get_imei(uint8_t *imei);
 int32_t jni_get_mcc(uint16_t *mcc);
+int32_t jni_get_mnc(uint16_t *mnc);
 int32_t jni_get_current_iccid(uint8_t *iccid);
 int32_t jni_get_current_imsi(uint8_t *imsi);
 int32_t jni_get_signal_level(int32_t *level);
 int32_t jni_get_signal_dbm(int32_t *dbm);
 int32_t jni_get_network_type(uint8_t *type);
-int32_t jni_set_apn(uint8_t *apn);
+int32_t jni_set_apn(uint8_t *apn, uint8_t *mcc_mnc);
 
 int32_t jni_open_channel(uint8_t *channel);
 int32_t jni_close_channel(uint8_t *channel);

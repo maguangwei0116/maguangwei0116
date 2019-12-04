@@ -17,7 +17,7 @@
 #include "rt_qmi.h"
 
 #define  MSG_ONE_BLOCK_SIZE                             128
-#define  APN_LIST                                       "/data/redtea/rt_apn_list"
+#define  APN_LIST                                       "/data/data/com.redteamobile.smart/rt_apn_list"
 
 static const card_info_t *g_card_info;
 static const char *g_smdp_proxy_addr = NULL;

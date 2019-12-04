@@ -28,7 +28,7 @@ typedef struct ISSUE_CERT_STRUCT {
     char                    fileHash[72];
 } issue_cert_struct_t;
 
-#define RT_CERTIFICATE      "/data/redtea/rt_cert"
+#define RT_CERTIFICATE      "/data/data/com.redteamobile.smart/rt_cert"
 
 #define cJSON_GET_STR_DATA(json, item, item_str_out, len, tmp)\
     do {\

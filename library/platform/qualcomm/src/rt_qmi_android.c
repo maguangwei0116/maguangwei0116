@@ -42,43 +42,32 @@ int32_t rt_qmi_command_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp
     return jni_command_apdu(data, data_len, rsp, rsp_len);
 }
 
-// int32_t rt_qmi_send_apdu_vuicc(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
-// {
-//     MSG_PRINTF(LOG_DBG, "start callback rt_qmi_send_apdu_vuicc()");
-//     return jni_transmit_vuicc_apdu(data, data_len, rsp, rsp_len, channel);
-// }
-
-// int32_t rt_qmi_close_channel_vuicc(uint8_t channel)
-// {
-//     MSG_PRINTF(LOG_DBG, "start callback rt_qmi_close_channel_vuicc()");
-//     return jni_close_vuicc_channel(channel);
-
-// }
-
-// int32_t rt_qmi_open_channel_vuicc(const uint8_t *aid, uint16_t aid_len, uint8_t *channel)
-// {
-//     MSG_PRINTF(LOG_DBG, "start callback rt_qmi_open_channel_vuicc()");
-//     return jni_open_vuicc_channel(channel);
-// }
-
 int32_t rt_qmi_get_register_state(int32_t *register_state)
 {
 }
 
 int32_t rt_qmi_get_mcc(uint16_t *mcc)
 {
+    if(mcc == NULL){
+        return -1;
+    }
     return jni_get_mcc(mcc);
 }
 
 int32_t rt_qmi_get_mnc(uint16_t *mnc)
 {
-    
+    if(mnc == NULL){
+        return -1;
+    }
+    return jni_get_mnc(mnc);
 }
 
 int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc)
 {
-    MSG_PRINTF(LOG_DBG, "start callback getMcc()");
-    return rt_qmi_get_mcc(mcc);
+    MSG_PRINTF(LOG_DBG, "start callback getMccMnc()");
+    int32_t result = rt_qmi_get_mcc(mcc);
+    result = rt_qmi_get_mnc(mnc);
+    return 0;
 }
 
 int32_t rt_qmi_get_current_iccid(uint8_t *iccid)
@@ -106,14 +95,13 @@ int32_t rt_qmi_get_signal_level(int32_t *level)
 int32_t rt_qmi_get_imei(uint8_t *imei)
 {
     MSG_PRINTF(LOG_DBG, "start callback getImei()");
-    
     return jni_get_imei(imei);
 }
 
 int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t pdp_type, int8_t *apn, int8_t *mcc_mnc)
 {
     MSG_PRINTF(LOG_DBG, "start callback rt_qmi_modify_profile()");
-    return jni_set_apn(apn);
+    return jni_set_apn(apn, mcc_mnc);
 }
 
 int32_t rt_qmi_get_model(uint8_t *model)
