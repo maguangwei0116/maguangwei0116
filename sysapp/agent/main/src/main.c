@@ -13,6 +13,8 @@
 #include "rt_os.h"
 #include "agent_main.h"
 
+#define RT_DATA_PATH            "/data/redtea/"
+
 static volatile int32_t toStop = 0;
 
 static void cfinish(int32_t sig)
@@ -30,7 +32,7 @@ static int32_t init_system_signal(void *arg)
 
 int32_t main(int32_t argc, char **argv)
 {
-    agent_main(NULL);
+    agent_main(RT_DATA_PATH, NULL);
 
     init_system_signal(NULL);
 

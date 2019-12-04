@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-extern int32_t agent_main(void *arg);
+typedef void (*log_func)(const char *msg);
+
+extern int32_t agent_main(const char *app_path, log_func logger);
 
 #endif // __AGENT_MAIN_H__
