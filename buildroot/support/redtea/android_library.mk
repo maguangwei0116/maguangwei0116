@@ -7,8 +7,14 @@ all: $(TARGET)
 
 LIB_ANDROID_AGENT_SO_NAME           = libagent.so
 
+ifeq ($(CFG_PLATFORM_ANDROID_ARM32),y)
+LIBSSL_A                            = $(SYSROOT)/usr/lib/arm-linux-androideabi/libssl.a
+LIBCRYPTO_A                         = $(SYSROOT)/usr/lib/arm-linux-androideabi/libcrypto.a
+endif
+ifeq ($(CFG_PLATFORM_ANDROID_ARM64),y)
 LIBSSL_A                            = $(SYSROOT)/usr/lib/aarch64-linux-android/libssl.a
 LIBCRYPTO_A                         = $(SYSROOT)/usr/lib/aarch64-linux-android/libcrypto.a
+endif
 
 OPENSSL_SSL_OBJS_PATH               = $(O)/openssl/ssl
 OPENSSL_CRYPTO_OBJS_PATH            = $(O)/openssl/crypto

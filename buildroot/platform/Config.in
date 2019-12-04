@@ -25,19 +25,30 @@ config BR2_CFG_PLATFORM_9X07
 	bool "9x07"
 	help
 	  Build for 9x07 platform
+	  
+config BR2_CFG_PLATFORM_ANDROID_ARM32
+	bool "android-arm32"	
+	help
+	  Build for android (ARM32) platform
+	  
+config BR2_CFG_PLATFORM_ANDROID_ARM64
+	bool "android-arm64"
+	help
+	  Build for android (ARM64) platform
+	  
+endchoice
 
 config BR2_CFG_PLATFORM_ANDROID
 	bool "android"
 	help
 	  Build for android platform
 
-endchoice
-
 config BR2_CFG_PLATFORM_TYPE
 	string
-	default "x86" 		if BR2_CFG_PLATFORM_X86
-	default "9x07"  	if BR2_CFG_PLATFORM_9X07
-	default "android"  	if BR2_CFG_PLATFORM_ANDROID
+	default "x86"               if BR2_CFG_PLATFORM_X86
+	default "9x07"              if BR2_CFG_PLATFORM_9X07
+	default "android-arm32"     if BR2_CFG_PLATFORM_ANDROID_ARM32
+	default "android-arm64"     if BR2_CFG_PLATFORM_ANDROID_ARM64
 
 choice
 	prompt "Software Type"

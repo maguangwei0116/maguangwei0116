@@ -46,7 +46,13 @@ ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 COMM-LIB                            = comm z ssl crypto
 PTHREAD-LIB                         = pthread
 LOCAL_CFLAGS                        += -fdata-sections -ffunction-sections
+ifeq ($(CFG_PLATFORM_ANDROID_ARM32), y)
+LOCAL_LDFLAGS                       += $(SYSROOT)/usr/lib/arm-linux-androideabi/libc.a
+LOCAL_LDFLAGS                       += -Wl,-gc-sections -Wl,-T gcc_android_arm32_ld.script
+endif
+ifeq ($(CFG_PLATFORM_ANDROID_ARM64), y)
 LOCAL_LDFLAGS                       += -Wl,-gc-sections -Wl,-T gcc_android_arm64_ld.script
+endif
 endif
 
 ############################################################################
