@@ -147,6 +147,12 @@ int32_t init_network_detection(void *arg)
 
 #ifdef CFG_PLATFORM_ANDROID
 
+void network_force_down(void)
+{
+    /* force to make network down */
+    // TODO
+}
+
 int32_t init_network_detection(void *arg)
 {
     (void)arg;
