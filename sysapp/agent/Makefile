@@ -39,7 +39,7 @@ LOCAL_CFLAGS                        += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TA
 
 # Config your own libraries
 ifeq ($(SYSAPP_PLATFORM_9X07), y)
-QMI-LIB                             = dsi_netctrl dsutils qcmap_client qcmapipc qmi qmi_cci qmi_sap qmiservices
+QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices
 COMM-LIB                            = comm ssl crypto pthread
 endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
