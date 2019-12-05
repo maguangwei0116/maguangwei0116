@@ -271,7 +271,7 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
     }
     *out = (void *)up_content;
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-    if ((to_enable->valueint == RT_TRUE) && (state != -1)) {
+    if (to_enable && (to_enable->valueint == RT_TRUE) && (state != -1)) {
         register_timer(15, 0, &push_ac_timer);
     }
 end:
