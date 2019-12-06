@@ -42,6 +42,13 @@ define SYSAPP_ADD_SHA256withECC
 	$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPTS_PATH) Q=$(Q)
 endef
 
+# Do objdump when it's not android platform
+ifneq ($(CFG_PLATFORM_ANDROID),y)
+define SYSAPP_OBJDUMP
+	$($(quiet)do_objdump) -l -x -d "$@" > $(O)/$(DMP_FILE_NAME)
+endef
+endif
+
 generate_signature: $(O)/$(TARGET_FILE_NAME)
 	$(Q)$(call SYSAPP_ADD_SHA256withECC,$(O)/$(TARGET_FILE_NAME))
 	-$(Q)$(CP) -rf $(O)/$(TARGET_FILE_NAME) $(O)/$(LOCAL_TARGET_RELEASE)
@@ -58,8 +65,8 @@ generate_signature: $(O)/$(TARGET_FILE_NAME)
 $(OBJS): $(conf-file)
 
 $(O)/$(TARGET_FILE_NAME): $(OBJS)
-	$($(quiet)do_link) -o "$@" -Wl,--whole-archive $(OBJS) -Wl,--no-whole-archive $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME) 
-	$($(quiet)do_objdump) -l -x -d "$@" > $(O)/$(DMP_FILE_NAME)
+	$($(quiet)do_link) -o "$@" -Wl,--whole-archive $(OBJS) -Wl,--no-whole-archive $(LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME)
+	$(SYSAPP_OBJDUMP)
 	$($(quiet)do_copy) -O binary -S "$@" $(O)/$(BIN_FILE_NAME)
 	@$(CHMOD) +x "$@"
 	$(STRIP_ALL) "$@"
