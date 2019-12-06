@@ -1,0 +1,37 @@
+menu "Oemapp"
+
+config BR2_PACKAGE_OEMAPP_BUILD
+	bool "Packet oemapp Targets"
+	default n
+	help
+		Packet all oemapp targets.
+	  	
+if BR2_PACKAGE_OEMAPP_BUILD
+
+config BR2_RELEASE_OEMAPP_INSTALL_PATH
+	string "Release Oemapp Targets Install Path"
+	default "$(BASE_DIR)/system/release/oemapp"
+	help 
+		Released oemapp targets install path configuration
+
+config BR2_RELEASE_OEMAPP_OUTPUT_PATH
+	string "Release Oemapp Targets Output Path"
+	default "$(BASE_DIR)/system/release/ubi_targets"
+	help 
+		Released oemapp targets output path configuration
+
+config BR2_RELEASE_OEMAPP_VERSION
+	string "Release Oemapp Targets Version"
+	default "v1.0.0.0"
+	help 
+		Released oemapp targets version configuration
+		
+config BR2_RELEASE_OEMAPP_UBI_TARGET
+	string "Release Oemapp Targets Name"
+	default "oemapp.ubi"
+	help 
+		Released oemapp ubi targets name configuration
+		
+endif
+
+endmenu
