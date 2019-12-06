@@ -12,6 +12,9 @@ RELEASE_OEMAPP_IMG_FILE=$(RELEASE_OEMAPP_OUTPUT_PATH)/oemapp.squashfs
 RELEASE_OEMAPP_CFG_FILE=$(RELEASE_OEMAPP_OUTPUT_PATH)/ubinize_oemapp_ubi.cfg
 REDTEA_SUPPORT_SCRIPTS_PATH=$(PWD)/support/scripts
 RELEASE_OEMAPP_UBI_TOOL=$(REDTEA_SUPPORT_SCRIPTS_PATH)/ubinize_oemapp_ubi.sh
+REDTEA_OEMAPP_VERSION_FILE_TITLE="Release: "   # never modify !!!
+REDTEA_OEMAPP_VERSION_FILE=$(BR2_RELEASE_OEMAPP_INSTALL_PATH)/softsim-release
+REDTEA_SHELL_START_OEMAPP=../doc/shells/start_oemapp.sh
 
 # Auto generate oemapp cfg file
 define CREATE_OEMAPP_CFG_FILE
@@ -26,7 +29,19 @@ define CREATE_OEMAPP_CFG_FILE
 	echo "" >>$(2)
 endef
 
+# Auto generate softsim-release file
+define CREATE_OEMAPP_SOFTSIM_RELEASE
+	if [ true ]; then\
+	version_string=$(REDTEA_OEMAPP_VERSION_FILE_TITLE);\
+	targets_list="$(notdir $(shell ls $(SYSAPP_INSTALL_PATH)/*agent*)) $(notdir $(shell ls $(SYSAPP_INSTALL_PATH)/*monitor*)) $(notdir $(shell ls $(SDK_PATH)/lib/*-libcomm.so*)) ";\
+	for var in $$targets_list;do \
+	version_string+="[`echo "$$var" | cut -d "_" -f 1`_`echo "$$var" | cut -d "_" -f 2`] "; done;\
+	echo "$$version_string" > $(REDTEA_OEMAPP_VERSION_FILE);\
+	fi
+endef
+
 define COPY_RELEASE_OEMAPP_TARGETS
+	-$(Q)cp -rf $(REDTEA_SHELL_START_OEMAPP) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/rt_agent
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/rt_monitor	
 	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/libcomm.so
@@ -42,7 +57,8 @@ oemapp:
 	@test -e $(RELEASE_OEMAPP_OUTPUT_PATH) || mkdir -p $(RELEASE_OEMAPP_OUTPUT_PATH)
 	$(Q)$(call CREATE_OEMAPP_CFG_FILE,$(RELEASE_OEMAPP_IMG_FILE),$(RELEASE_OEMAPP_CFG_FILE))
 	$(Q)$(call COPY_RELEASE_OEMAPP_TARGETS)
-	$(Q)$(CREATE_OEMAPP_UBI_FILE)
+	$(Q)$(call CREATE_OEMAPP_SOFTSIM_RELEASE)	
+	$(Q)$(call CREATE_OEMAPP_UBI_FILE)
 	
 oemapp-clean:
 	rm -rf $(RELEASE_INSTALL_PATH)

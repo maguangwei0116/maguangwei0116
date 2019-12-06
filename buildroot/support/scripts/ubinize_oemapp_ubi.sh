@@ -49,18 +49,6 @@ then
     exit 1
 fi
 
-# Add execution authority
-if [ -e $SrcDir/start_oemapp.sh ]
-then
-	chmod +x $SrcDir/start_oemapp.sh
-fi
-
-# Write version
-if [ -e $SrcDir/start_oemapp.sh ]
-then
-	echo "Release: $ver" > $SrcDir/softsim-release
-fi
-
 # Remove old targets
 if [ -e $OutDir/oemapp.squashfs ]
 then
