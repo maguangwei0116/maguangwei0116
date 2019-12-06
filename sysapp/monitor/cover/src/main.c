@@ -26,11 +26,17 @@
 #include "file.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
+#define RT_DEBUG_IN_TERMINAL        "terminal"
 #define RT_AGENT_PTROCESS           "rt_agent"
 #define RT_AGENT_NAME               "agent"
-#define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_NAME             "monitor"
+#if 1
+#define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_FILE             "/usr/bin/rt_monitor"
+#else  // standard
+#define RT_AGENT_FILE               "/oemapp/rt_agent"
+#define RT_MONITOR_FILE             "/oemapp/rt_monitor"
+#endif
 #define RT_DATA_PATH                "/data/redtea/"
 #define RT_CARD_PATH                RT_DATA_PATH".vcos/"
 #define RT_MONITOR_LOG              "rt_monitor_log"
@@ -186,7 +192,7 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
         rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
         rsp[(*rsp_len)++] = sw & 0xFF;
         MSG_INFO_ARRAY("E-APDU RSP:", rsp, *rsp_len);
-
+ 
         /* enable profile and load bootstrap profile, need to reset */
         if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
             cmd = (rsp[0] << 8) + rsp[1];
@@ -268,20 +274,24 @@ static int32_t agent_task_check_start(void)
     if (child_pid < 0) {
         MSG_PRINTF(LOG_WARN, "error in fork, err(%d)=%s\r\n", errno, strerror(errno));
     } else if (child_pid == 0) {
-        MSG_PRINTF(LOG_INFO, "I am the child process, my process id is %d\r\n", getpid());
-        ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, NULL);
+        MSG_PRINTF(LOG_INFO, "child process, pid %d\r\n", getpid());
+        if (g_def_mode == LOG_PRINTF_TERMINAL) {
+            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, RT_DEBUG_IN_TERMINAL, NULL);
+        } else {
+            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, NULL);
+        }
         if (ret < 0) {
-            MSG_PRINTF(LOG_ERR, "Excute agent fail, ret=%d, err(%d)=%s\n", ret, errno, strerror(errno));
+            MSG_PRINTF(LOG_ERR, "Excute %s fail, ret=%d, err(%d)=%s\n", RT_AGENT_PTROCESS, ret, errno, strerror(errno));
         }
         exit(0);
     } else {
-        MSG_PRINTF(LOG_INFO, "I am the parent process, my process id is %d, child_pid is %d\r\n", getpid(), child_pid);
+        MSG_PRINTF(LOG_INFO, "parent process, pid %d, child_pid %d\r\n", getpid(), child_pid);
 
         /* block to wait designative child process's death */
         while (1) {
             ret_pid = waitpid(child_pid, &status, 0);
             if (ret_pid == child_pid) {
-                MSG_PRINTF(LOG_WARN, "wait designative pid (%d) died, agent process died !\r\n", child_pid);
+                MSG_PRINTF(LOG_WARN, "wait designative pid (%d) died, child process died !\r\n", child_pid);
                 break;
             }
             MSG_PRINTF(LOG_WARN, "wait pid (%d) died !\r\n", ret_pid);
@@ -324,7 +334,7 @@ int32_t main(int32_t argc, const char *argv[])
     rt_bool keep_agent_alive = RT_TRUE;
 
     /* check input param to debug in terminal */
-    if (argc > 1) {
+    if (argc > 1 && !rt_os_strcmp(argv[1], RT_DEBUG_IN_TERMINAL)) {
         g_def_mode = LOG_PRINTF_TERMINAL;
     }
 
@@ -339,6 +349,9 @@ int32_t main(int32_t argc, const char *argv[])
     init_backtrace(monitor_printf);
 #endif
 
+    /* debug versions information */
+    init_app_version(NULL);
+
     /* install ops callbacks */
     init_callback_ops();
 
@@ -346,10 +359,6 @@ int32_t main(int32_t argc, const char *argv[])
     init_card_path(RT_CARD_PATH);
     init_card(log_print);
     
-
-    /* debug versions information */
-    init_app_version(NULL);
-
     /* install system signal handle */
     init_system_signal(NULL);
 

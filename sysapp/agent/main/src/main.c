@@ -30,9 +30,19 @@ static int32_t init_system_signal(void *arg)
     return RT_SUCCESS;
 }
 
+static void debug_with_printf(const char *msg)
+{
+    printf("%s", msg);
+}
+
 int32_t main(int32_t argc, char **argv)
 {
-    agent_main(RT_DATA_PATH, NULL);
+    if (argc > 1) {  // debug in terminal
+        printf("main input: %s\r\n", argv[1]);
+        agent_main(RT_DATA_PATH, debug_with_printf);
+    } else {
+        agent_main(RT_DATA_PATH, NULL);
+    }
 
     init_system_signal(NULL);
 
