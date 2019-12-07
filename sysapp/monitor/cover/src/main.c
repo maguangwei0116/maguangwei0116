@@ -30,14 +30,17 @@
 #define RT_AGENT_PTROCESS           "rt_agent"
 #define RT_AGENT_NAME               "agent"
 #define RT_MONITOR_NAME             "monitor"
-#if 1
+
+#if (CFG_OPEN_MODULE)
 #define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_FILE             "/usr/bin/rt_monitor"
-#else  // standard
+#define RT_DATA_PATH                "/data/redtea/"
+#elif (CFG_STANDARD_MODULE)  // standard
 #define RT_AGENT_FILE               "/oemapp/rt_agent"
 #define RT_MONITOR_FILE             "/oemapp/rt_monitor"
+#define RT_DATA_PATH                "/usrdata/redtea/"
 #endif
-#define RT_DATA_PATH                "/data/redtea/"
+
 #define RT_CARD_PATH                RT_DATA_PATH".vcos/"
 #define RT_MONITOR_LOG              "rt_monitor_log"
 

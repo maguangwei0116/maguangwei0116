@@ -13,7 +13,11 @@
 #include "rt_os.h"
 #include "agent_main.h"
 
+#if (CFG_OPEN_MODULE)
 #define RT_DATA_PATH            "/data/redtea/"
+#elif (CFG_STANDARD_MODULE)  // standard
+#define RT_DATA_PATH            "/usrdata/redtea/"
+#endif
 
 static volatile int32_t toStop = 0;
 
