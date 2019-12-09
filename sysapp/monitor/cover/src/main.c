@@ -332,13 +332,19 @@ static int32_t monitor_printf(const char *fmt, ...)
 extern int32_t init_backtrace(void *arg);
 #endif
 
+static void debug_with_printf(const char *msg)
+{
+    printf("%s", msg);
+}
+
 int32_t main(int32_t argc, const char *argv[])
 {
     rt_bool keep_agent_alive = RT_TRUE;
 
     /* check input param to debug in terminal */
     if (argc > 1 && !rt_os_strcmp(argv[1], RT_DEBUG_IN_TERMINAL)) {
-        g_def_mode = LOG_PRINTF_TERMINAL;
+        /* install external debug function */
+        log_install_func(debug_with_printf);
     }
 
     /* init redtea path */

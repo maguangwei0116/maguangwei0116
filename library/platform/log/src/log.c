@@ -145,7 +145,6 @@ static void log_local_print(const char *data, int32_t len)
     if (g_log_ex_func) {
         /* external logger function */
         g_log_ex_func(data);
-        return;
     }
     
     if (g_log_param.mode == LOG_PRINTF_TERMINAL) {
