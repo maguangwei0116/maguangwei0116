@@ -28,11 +28,11 @@ LDFLAGS         += -L$(SDK_INSTALL_PATH)/lib
 LDFLAGS         += $(LOCAL_LDFLAGS)
 
 # Config compile optimize flags
-#CFLAGS         += -g 
-#CFLAGS         += -Os 
-#CFLAGS         += -fdata-sections 
+#CFLAGS         += -g
+#CFLAGS         += -Os
+#CFLAGS         += -fdata-sections
 #CFLAGS         += -ffunction-sections
 #CFLAGS         += -fvisibility=hidden
-#LDFLAGS        += -Wl,--gc-sections 
+#LDFLAGS        += -Wl,--gc-sections
 #LDFLAGS        += -Wl,--print-gc-sections
 #LDFLAGS        += -Wl,--print-map

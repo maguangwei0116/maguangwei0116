@@ -39,7 +39,7 @@ LOCAL_CFLAGS                        += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TA
 
 # Config your own libraries
 ifeq ($(SYSAPP_PLATFORM_9X07), y)
-QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices
+QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices ql_softsim_extsdk
 COMM-LIB                            = comm ssl crypto pthread
 endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
@@ -138,7 +138,7 @@ SRC-y                                   += ./core/logm/src/logm.c
 # agent 2 monitor
 SRC-y                                   += ./core/agent2monitor/src/agent2monitor.c
 
-# agent main 
+# agent main
 SRC-y                                   += ./main/src/main.c
 
 ############################################################################
