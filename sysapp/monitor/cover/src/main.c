@@ -56,6 +56,7 @@ extern int init_file_ops(void);
 extern int vsim_get_ver(char *version);
 
 static log_mode_e g_def_mode = LOG_PRINTF_FILE;
+static rt_bool g_agent_debug_terminal = RT_FALSE;
 
 typedef struct SIGNATURE_DATA {
     uint8_t             hash[64+4];                 // hash, end with "\0"
@@ -278,7 +279,7 @@ static int32_t agent_task_check_start(void)
         MSG_PRINTF(LOG_WARN, "error in fork, err(%d)=%s\r\n", errno, strerror(errno));
     } else if (child_pid == 0) {
         MSG_PRINTF(LOG_INFO, "child process, pid %d\r\n", getpid());
-        if (g_def_mode == LOG_PRINTF_TERMINAL) {
+        if (g_agent_debug_terminal) {
             ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, RT_DEBUG_IN_TERMINAL, NULL);
         } else {
             ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, NULL);
@@ -337,14 +338,25 @@ static void debug_with_printf(const char *msg)
     printf("%s", msg);
 }
 
+/*
+Help for debug application in terminal:
+Run: 
+    ./rt_monitor terminal           -> only monitor debug in terminal
+    ./rt_monitor terminal terminal  -> monitor and agent all debug in terminal
+*/
 int32_t main(int32_t argc, const char *argv[])
 {
     rt_bool keep_agent_alive = RT_TRUE;
 
     /* check input param to debug in terminal */
     if (argc > 1 && !rt_os_strcmp(argv[1], RT_DEBUG_IN_TERMINAL)) {
-        /* install external debug function */
+        /* install external debug function for monitor */
         log_install_func(debug_with_printf);
+
+        /* install external debug function for agent */
+        if (argc > 2 && !rt_os_strcmp(argv[2], RT_DEBUG_IN_TERMINAL)) {
+            g_agent_debug_terminal = RT_TRUE;
+        }
     }
 
     /* init redtea path */
