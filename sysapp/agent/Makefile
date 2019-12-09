@@ -40,7 +40,7 @@ LOCAL_CFLAGS                        += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TA
 # Config your own libraries
 ifeq ($(SYSAPP_PLATFORM_9X07), y)
 QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices
-COMM-LIB                            = comm ssl crypto pthread
+COMM-LIB                            = comm ssl crypto pthread dl
 endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 COMM-LIB                            = comm z ssl crypto
@@ -141,6 +141,9 @@ SRC-y                                   += ./core/agent2monitor/src/agent2monito
 # agent main 
 SRC-y                                   += ./main/src/main.c
 
+# ubi
+SRC-y                                   += ./core/ubi/src/ubi.c
+
 ############################################################################
 # Never adjustment order of these files
 SRC-y                                   += ./core/upload/src/upload_null_end.c
@@ -164,6 +167,7 @@ INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
 INC-PATH-y 		                        += ./core/logm/
 INC-PATH-y 		                        += ./core/agent2monitor/
+INC-PATH-y 		                        += ./core/ubi/
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)
