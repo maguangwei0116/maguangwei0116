@@ -10,15 +10,21 @@ if BR2_PACKAGE_OEMAPP_BUILD
 
 config BR2_RELEASE_OEMAPP_INSTALL_PATH
 	string "Release Oemapp Targets Install Path"
-	default "$(BASE_DIR)/system/release/oemapp"
+	default "$(BASE_DIR)/system/oemapp"
 	help 
 		Released oemapp targets install path configuration
 
-config BR2_RELEASE_OEMAPP_OUTPUT_PATH
-	string "Release Oemapp Targets Output Path"
-	default "$(BASE_DIR)/system/release/ubi_targets"
+config BR2_RELEASE_OEMAPP_FLASH_OUTPUT_PATH
+	string "Release Oemapp Targets Flash Output Path"
+	default "$(BASE_DIR)/system/release/ubi_flash_targets"
 	help 
-		Released oemapp targets output path configuration
+		Released oemapp targets flash output path configuration
+
+config BR2_RELEASE_OEMAPP_OTA_OUTPUT_PATH
+	string "Release Oemapp Targets OTA Output Path"
+	default "$(BASE_DIR)/system/release/ubi_ota_targets"
+	help 
+		Released oemapp targets OTA output path configuration
 
 config BR2_RELEASE_OEMAPP_VERSION
 	string "Release Oemapp Targets Version"
