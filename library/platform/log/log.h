@@ -50,13 +50,13 @@ extern log_level_e log_get_level(const char *level_string);
 #ifdef CFG_PLATFORM_9X07
 #define ARRAY_PRINTF(tag, array, len)                                           \
     do {                                                                        \
-        uint8_t *_p_ = (uint8_t *)array;                                        \
+        uint8_t *_p_ = (uint8_t *)(array);                                      \
         uint16_t i;                                                             \
-        log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF,"%s", tag);                      \
-        for (i = 0; i < len; i++) {                                             \
-            log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF, "%02X", _p_[i]);            \
+        log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF,"(%d bytes) %s", (len), (tag)); \
+        for (i = 0; i < (len); i++) {                                           \
+            log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF, "%02X", _p_[i]);           \
         }                                                                       \
-        log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF, "\n");                          \
+        log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF, "\r\n");                       \
     } while(0)
 #endif
 #ifdef CFG_PLATFORM_ANDROID
@@ -71,7 +71,7 @@ static inline void ARRAY_PRINTF(const char *tag, const uint8_t *array, uint16_t 
     uint16_t _len = sizeof(msg);
     uint16_t tag_len = rt_os_strlen(tag);
     
-    snprintf(msg, _len, "%s", tag);
+    snprintf(msg, _len, "(%d bytes) %s", len, tag);
     _msg = &msg[tag_len];
     _len = _len - tag_len;
     for (i = 0; i < len; i++) {                                             
