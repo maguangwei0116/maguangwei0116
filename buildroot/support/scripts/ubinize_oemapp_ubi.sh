@@ -95,6 +95,9 @@ then
     exit 1
 fi
 
+# Clean tmp files
+rm -rf $OutDir/oemapp.squashfs $OutDir/ubinize_oemapp_ubi.cfg
+
 exit 0
    
 
