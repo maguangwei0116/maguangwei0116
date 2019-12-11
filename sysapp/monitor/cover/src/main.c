@@ -197,7 +197,7 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
         rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
         rsp[(*rsp_len)++] = sw & 0xFF;
         MSG_INFO_ARRAY("E-APDU RSP:", rsp, *rsp_len);
- 
+
         /* enable profile and load bootstrap profile, need to reset */
         if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
             cmd = (rsp[0] << 8) + rsp[1];
@@ -239,10 +239,10 @@ static int32_t ipc_socket_server_start(void)
 static int32_t agent_process_kill(void)
 {
     char cmd[128];
-    
+
     /* kill all agent processes */
     snprintf(cmd, sizeof(cmd), "killall -9 %s > /dev/null 2>&1", RT_AGENT_PTROCESS);
-    system(cmd); 
+    system(cmd);
 
     return RT_SUCCESS;
 }
@@ -298,7 +298,7 @@ exit_entry:
 static int32_t agent_task_check_start(void)
 {
     int32_t ret;
-    int32_t status;    
+    int32_t status;
     pid_t child_pid;
     pid_t ret_pid;
 
@@ -442,7 +442,7 @@ int32_t main(int32_t argc, const char *argv[])
     /* init card path before init card */
     init_card_path(RT_CARD_PATH);
     init_card(log_print);
-    
+
     /* install system signal handle */
     init_system_signal(NULL);
 

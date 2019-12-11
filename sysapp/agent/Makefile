@@ -141,6 +141,9 @@ SRC-y                                   += ./core/logm/src/logm.c
 # agent 2 monitor
 SRC-y                                   += ./core/agent2monitor/src/agent2monitor.c
 
+# at module
+SRC-y                                   += ./core/at/src/at_command.c
+
 # agent main
 SRC-y                                   += ./main/src/main.c
 
@@ -171,6 +174,7 @@ INC-PATH-y 		                        += ./core/downstream/
 INC-PATH-y 		                        += ./core/logm/
 INC-PATH-y 		                        += ./core/agent2monitor/
 INC-PATH-y 		                        += ./core/ubi/
+INC-PATH-y 		                        += ./core/at/
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)

@@ -22,32 +22,30 @@
 
 #include "rt_type.h"
 #include "customer_at.h"
-/* include Quectel library header file */
+/* include quectel library header file */
 #include "ql_customer_at.h"
 
 #define AT_COMMAND_TBL "\"redtea\""
 
+typedef int32_t (*atcommand_callback)(char *cmd, char *rsp);
+
+static atcommand_callback atcommand_fun;
 static int32_t test_flag = 0;
 static int32_t g_at_sockfd = -1;
 
 static void atcommand_handler(int32_t sockfd, struct sockaddr_un *un, const char *ptr, int32_t len)
 {
     int32_t retval;
-    char response[32] = { 0 };
-
-    MSG_PRINTF(LOG_INFO, "ptr: %s\n", ptr);
+    char response[1024] = { 0 };
 
     if (0 == strncasecmp(ptr, AT_COMMAND_TBL, rt_os_strlen(AT_COMMAND_TBL))) {
-        if (',' == *(ptr + rt_os_strlen(AT_COMMAND_TBL))) {
-            test_flag = atoi(ptr + rt_os_strlen(AT_COMMAND_TBL) + 1);
-            MSG_PRINTF(LOG_INFO, "set test is: %d\n", test_flag);
-            retval = ql_customer_at_send_response(sockfd, un, true, NULL, 0);
-        } else {
-            snprintf(response, sizeof(response)-1, "\"test\",%d", test_flag);
-            MSG_PRINTF(LOG_INFO, "read test is: %s\n", response);
-            retval = ql_customer_at_send_response(sockfd, un, true, response, rt_os_strlen(response));
+        retval = atcommand_fun((char *)(ptr + rt_os_strlen(AT_COMMAND_TBL)), response);
+        if (retval == RT_ERROR) {
+            rt_os_memcpy(response, "error", 5);
+            response[5] = '\0';
         }
-
+        MSG_PRINTF(LOG_INFO, "read test is: %s\n", response);
+        retval = ql_customer_at_send_response(sockfd, un, true, response, rt_os_strlen(response));
         if (retval) {
             MSG_PRINTF(LOG_ERR, "send at command failed\n");
         }
@@ -89,6 +87,11 @@ static void customer_at_listen_sock(int32_t *sockfd)
     rt_exit_task(NULL);
 }
 
+static void customer_at_regist_callback(atcommand_callback fun)
+{
+    atcommand_fun = fun;
+}
+
 int32_t init_customer_at(void *arg)
 {
     rt_task task_id = 0;
@@ -106,6 +109,8 @@ int32_t init_customer_at(void *arg)
             ret = RT_ERROR;
         }
     }
-    
+
+    customer_at_regist_callback((atcommand_callback)arg);
+
     return ret;
 }
