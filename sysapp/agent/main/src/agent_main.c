@@ -30,6 +30,7 @@
 #include "mbn.h"
 #include "file.h"
 #include "libcomm.h"
+#include "customer_at.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
 
@@ -67,8 +68,8 @@ static int32_t init_versions(void *arg)
     char libcomm_ver[128] = {0};
     char share_profile_ver_str[128] = {0};
     static target_versions_t g_target_versions = {0};
-    
-    libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));    
+
+    libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
 
     ((public_value_list_t *)arg)->version_info = &g_target_versions;
@@ -79,26 +80,26 @@ static int32_t init_versions(void *arg)
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_AGENT].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
 
     /* add share profile version */
-    bootstrap_get_profile_version(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name, 
+    bootstrap_get_profile_version(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name,
                               sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name),
                               g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version,
                               sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version));
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
 
     /* add monitor version */
-    ipc_get_monitor_version(g_target_versions.versions[TARGET_TYPE_MONITOR].name, 
-                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].name), 
-                            g_target_versions.versions[TARGET_TYPE_MONITOR].version, 
-                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].version), 
-                            g_target_versions.versions[TARGET_TYPE_MONITOR].chipModel, 
+    ipc_get_monitor_version(g_target_versions.versions[TARGET_TYPE_MONITOR].name,
+                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].name),
+                            g_target_versions.versions[TARGET_TYPE_MONITOR].version,
+                            sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].version),
+                            g_target_versions.versions[TARGET_TYPE_MONITOR].chipModel,
                             sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].chipModel));
 
     /* add comm so version */
-    libcomm_get_all_version(g_target_versions.versions[TARGET_TYPE_COMM_SO].name, 
-                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].name), 
-                            g_target_versions.versions[TARGET_TYPE_COMM_SO].version, 
-                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].version), 
-                            g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel, 
+    libcomm_get_all_version(g_target_versions.versions[TARGET_TYPE_COMM_SO].name,
+                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].name),
+                            g_target_versions.versions[TARGET_TYPE_COMM_SO].version,
+                            sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].version),
+                            g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel,
                             sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel));
 
     return RT_SUCCESS;
@@ -139,13 +140,13 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_rt_file_path,         g_app_path),
     INIT_OBJ(init_log_file,             RT_AGENT_LOG),
     INIT_OBJ(init_config,               (void *)&g_value_list),
-
+    INIT_OBJ(init_customer_at,          NULL),
 #ifdef CFG_ENABLE_LIBUNWIND
     INIT_OBJ(init_backtrace,            agent_printf),
 #endif
 
     INIT_OBJ(init_bootstrap,            (void *)&g_value_list),
-    INIT_OBJ(init_versions,             (void *)&g_value_list),   
+    INIT_OBJ(init_versions,             (void *)&g_value_list),
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_mbn,                  (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
@@ -188,7 +189,7 @@ int32_t agent_main(const char *app_path, log_func logger)
     if (logger) {
         log_install_func(logger);
     }
-    
+
     agent_init_call();
 
     return RT_SUCCESS;
