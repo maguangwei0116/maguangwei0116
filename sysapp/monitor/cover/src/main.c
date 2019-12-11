@@ -248,13 +248,17 @@ static int32_t agent_process_kill(void)
 }
 
 #ifdef CFG_STANDARD_MODULE
-static int32_t agent_file_copy_check(void)
+static int32_t agent_file_copy_check(rt_bool copy_force)
 {
     uint8_t oem_agent_sign[256] = {0};
     int32_t oem_agent_sign_len = sizeof(oem_agent_sign);
     uint8_t usr_agent_sign[256]  = {0};
     int32_t usr_agent_sign_len = sizeof(usr_agent_sign);
     int32_t ret = RT_ERROR;
+
+    if (copy_force) {
+        goto copy_usrapp_agent;
+    }
 
     if (!linux_file_exist(RT_AGENT_FILE)) {
         goto copy_usrapp_agent;  
@@ -308,15 +312,25 @@ static int32_t agent_task_check_start(void)
 
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE, RT_AGENT_NAME) != RT_TRUE) {
-        upgrade_struct_t upgrade = {0};
-
-        MSG_PRINTF(LOG_WARN, "agent verify error\r\n");
-        linux_delete_file(RT_AGENT_FILE);
-        snprintf(upgrade.file_name, sizeof(upgrade.file_name), "%s", RT_AGENT_FILE);
-        snprintf(upgrade.real_file_name, sizeof(upgrade.real_file_name), "%s", RT_AGENT_NAME);
-        init_download(&upgrade);
-        choose_uicc_type(LPA_CHANNEL_BY_IPC);
-        network_detection_task();
+        MSG_PRINTF(LOG_WARN, "verify agent error\r\n");
+        
+#ifdef CFG_STANDARD_MODULE        
+        {
+            /* check and copy agent process */
+            agent_file_copy_check(RT_TRUE);
+        }
+#else
+        {
+            /* start download default agent */
+            upgrade_struct_t upgrade = {0};
+            linux_delete_file(RT_AGENT_FILE);
+            snprintf(upgrade.file_name, sizeof(upgrade.file_name), "%s", RT_AGENT_FILE);
+            snprintf(upgrade.real_file_name, sizeof(upgrade.real_file_name), "%s", RT_AGENT_NAME);
+            init_download(&upgrade);
+            choose_uicc_type(LPA_CHANNEL_BY_IPC);
+            network_detection_task();
+        }
+#endif
     }
     /* start up agent process by fork function */
     child_pid = fork();
@@ -458,11 +472,6 @@ int32_t main(int32_t argc, const char *argv[])
         rt_os_sleep(1);
     }
     #endif
-
-#ifdef CFG_STANDARD_MODULE
-    /* check and copy agent process */
-    agent_file_copy_check();
-#endif
 
     /* start up agent */
     do {
