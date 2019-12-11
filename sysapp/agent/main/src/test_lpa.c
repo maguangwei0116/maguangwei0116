@@ -8,6 +8,12 @@
 #include "apdu.h"
 #include "log.h"
 
+#if (CFG_OPEN_MODULE)
+#define RT_DATA_PATH            "/data/redtea/"
+#elif (CFG_STANDARD_MODULE)  // standard
+#define RT_DATA_PATH            "/usrdata/redtea/"
+#endif
+
 // #define ACTIVATION_CODE         "1$QUARK-QA.REDTEA.IO$TK3J73RBQ3K91NUP$$1"
 // #define CONFIRMATION_CODE       "redtea_test"
 
@@ -81,7 +87,7 @@ static void print_version(void)
 
 static int get_uicc_mode(void)
 {
-    const char *cmd = "cat /data/redtea/rt_config.ini | grep UICC_MODE | awk {\' print $3\'}";
+    const char *cmd = "cat "RT_DATA_PATH"rt_config.ini | grep UICC_MODE | awk {\' print $3\'}";
     int ret = -1;
     int mode = 0;
     char rsp[1024] = {0};
