@@ -420,6 +420,9 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
 
 static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
 {
+#ifdef CFG_STANDARD_MODULE
+    MSG_PRINTF(LOG_WARN, "Running standard module ...\r\n");
+#endif
     MSG_PRINTF(LOG_WARN, "Agent version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_DBG, "OTI_ENVIRONMENT_ADDR  : %s\n", local_config_get_data("OTI_ENVIRONMENT_ADDR"));
     MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", local_config_get_data("EMQ_SERVER_ADDR"));

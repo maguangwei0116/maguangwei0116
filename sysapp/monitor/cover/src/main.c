@@ -250,9 +250,9 @@ static int32_t agent_process_kill(void)
 #ifdef CFG_STANDARD_MODULE
 static int32_t agent_file_copy_check(void)
 {
-    uint8_t oem_agent_sign[256];
+    uint8_t oem_agent_sign[256] = {0};
     int32_t oem_agent_sign_len = sizeof(oem_agent_sign);
-    uint8_t usr_agent_sign[256];
+    uint8_t usr_agent_sign[256]  = {0};
     int32_t usr_agent_sign_len = sizeof(usr_agent_sign);
     int32_t ret = RT_ERROR;
 
@@ -268,6 +268,9 @@ static int32_t agent_file_copy_check(void)
         ret = RT_SUCCESS;
         goto exit_entry;
     }
+
+    MSG_PRINTF(LOG_WARN, "oem_agent_sign: %s\r\n", oem_agent_sign);
+    MSG_PRINTF(LOG_WARN, "usr_agent_sign: %s\r\n", usr_agent_sign);
 
 copy_usrapp_agent:
 
@@ -350,6 +353,10 @@ static int32_t agent_task_check_start(void)
 static void init_app_version(void *arg)
 {
     uint8_t version[100];
+
+#ifdef CFG_STANDARD_MODULE
+    MSG_PRINTF(LOG_WARN, "Running standard module ...\r\n");
+#endif
 
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     vsim_get_ver(version);
