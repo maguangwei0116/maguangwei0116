@@ -181,7 +181,7 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
             goto exit_entry;
         }
 
-        linux_fseek(fp, -(PRIVATE_ECC_HASH_STR_LEN + MAX_NAME_BLOCK_SIZE), SEEK_CUR);
+        linux_fseek(fp, -(PRIVATE_ECC_HASH_STR_LEN + MAX_NAME_BLOCK_SIZE), RT_FS_SEEK_CUR);
         if (linux_fread(real_name, MAX_NAME_BLOCK_SIZE, 1, fp) != 1){
             MSG_PRINTF(LOG_ERR, "error read file\n");
             goto exit_entry;
