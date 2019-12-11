@@ -41,7 +41,7 @@ rt_bool monitor_get_file_sign_data(const char *file_name, uint8_t *sign, int32_t
     rt_bool ret = RT_FALSE;
     
     RT_CHECK_ERR(fp = linux_fopen((char *)file_name, "r"), NULL);
-    linux_fseek(fp, -(PRIVATE_HASH_STR_LEN), SEEK_CUR);
+    RT_CHECK_ERR(linux_fseek(fp, -(PRIVATE_HASH_STR_LEN), RT_FS_SEEK_END), -1);
     RT_CHECK_ERR(linux_fread(sign_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
 
     if (sign) {
