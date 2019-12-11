@@ -30,7 +30,9 @@
 #include "mbn.h"
 #include "file.h"
 #include "libcomm.h"
+#ifdef CFG_STANDARD_MODULE
 #include "customer_at.h"
+#endif
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
 
@@ -140,7 +142,9 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_rt_file_path,         g_app_path),
     INIT_OBJ(init_log_file,             RT_AGENT_LOG),
     INIT_OBJ(init_config,               (void *)&g_value_list),
+#ifdef CFG_STANDARD_MODULE
     INIT_OBJ(init_customer_at,          NULL),
+#endif
 #ifdef CFG_ENABLE_LIBUNWIND
     INIT_OBJ(init_backtrace,            agent_printf),
 #endif

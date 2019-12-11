@@ -37,7 +37,10 @@ LOCAL_CFLAGS                        += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME
 LOCAL_CFLAGS                        += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
 LOCAL_CFLAGS                        += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
-QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices ql_softsim_extsdk
+QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices
+ifeq ($(CFG_STANDARD_MODULE),y)
+QMI-LIB                             += ql_softsim_extsdk
+endif
 COMM-LIB                            = crypto ssl pthread m
 VUICC-LIB                           = libvuicc.a
 ############################################################################
