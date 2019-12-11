@@ -121,6 +121,11 @@ typedef struct UPGRADE_STRUCT {
     file_cleanup    cleanup;
     upload_on_event on_event;
     file_activate   activate;
+
+#ifdef CFG_STANDARD_MODULE
+    /* ubi update */
+    rt_bool         ubi;
+#endif
 } upgrade_struct_t;
 
 int32_t upgrade_process_create(upgrade_struct_t **d_info);
