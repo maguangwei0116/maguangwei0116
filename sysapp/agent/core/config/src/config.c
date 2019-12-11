@@ -53,7 +53,7 @@ typedef enum DATA_TYPE {
 
 typedef int32_t (*config_func)(const void *in, char *out);
 
-typedef struct CONFIG_ITEM {    
+typedef struct CONFIG_ITEM {
     const char *            key;
     char                    value[MAX_VALUE_SIZE];
     config_func             config;
@@ -73,7 +73,7 @@ static int32_t config_range_int_value(const void *in, int32_t min, int32_t max, 
     int32_t int_value = -1;
 
     int_value = atoi(str_value);
-    //MSG_PRINTF(LOG_INFO, "%s, int_value=%d\n", __func__, int_value); 
+    //MSG_PRINTF(LOG_INFO, "%s, int_value=%d\n", __func__, int_value);
 
     if (min <= int_value && int_value <= max) {
         sprintf(out, "%d", int_value);
@@ -86,7 +86,7 @@ static int32_t config_range_int_value(const void *in, int32_t min, int32_t max, 
 static int32_t config_string_value(const void *in, char *out)
 {
     const char *str_value = (const char *)in;
-    //MSG_PRINTF(LOG_INFO, "%s, str_value=%s, len=%d\n", __func__, str_value, rt_os_strlen(str_value));   
+    //MSG_PRINTF(LOG_INFO, "%s, str_value=%s, len=%d\n", __func__, str_value, rt_os_strlen(str_value));
 
     if (rt_os_strlen(str_value) > 0) {
         sprintf(out, "%s", str_value);
@@ -120,36 +120,36 @@ static int32_t config_log_level(const void *in, char *out)
 /* value: [0,2] */
 static int32_t config_init_pro_type(const void *in, char *out)
 {
-    return config_range_int_value(in, 0, 2, out);  
+    return config_range_int_value(in, 0, 2, out);
 }
 
 /* value: [0,5] */
 static int32_t config_log_size(const void *in, char *out)
 {
-    return config_range_int_value(in, 0, 5, out);  
+    return config_range_int_value(in, 0, 5, out);
 }
 
 /* value: [0,1] */
 static int32_t config_uicc_mode(const void *in, char *out)
 {
-    return config_range_int_value(in, 0, 1, out);  
+    return config_range_int_value(in, 0, 1, out);
 }
 
 /* value: [60,1440] (60mins -- 1 hour) */
 static int32_t config_usage_freq(const void *in, char *out)
 {
-    return config_range_int_value(in, 60, 1440, out);  
+    return config_range_int_value(in, 60, 1440, out);
 }
 
-static config_item_t g_config_items[] = 
+static config_item_t g_config_items[] =
 {
 /*     item_name            config_func             data_type   default_value           annotation          */
 #if (CFG_ENV_TYPE_PROD)
-ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "52.220.34.227",        "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"), 
+ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "52.220.34.227",        "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
 ITEM(EMQ_SERVER_ADDR,       NULL,                   STRING,     "18.136.190.97",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
 ITEM(PROXY_SERVER_ADDR,     NULL,                   STRING,     "smdp.redtea.io",       "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
 #else
-ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "54.222.248.186",       "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"), 
+ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "54.222.248.186",       "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
 ITEM(EMQ_SERVER_ADDR,       NULL,                   STRING,     "13.229.31.234",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
 ITEM(PROXY_SERVER_ADDR,     NULL,                   STRING,     "smdp-test.redtea.io",  "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
 #endif
@@ -178,40 +178,40 @@ static uint32_t msg_string_to_int(const char *str)
     if (!str) {
         return length;
     }
-    
+
     while (*str != '\0') {
         if (('0' <= *str) && (*str <= '9')) {
             length = length * 10 + *str - '0';
         }
         str++;
     }
-    
+
     return length;
 }
 
 static int32_t config_set_data(const char *key, const char *value, int32_t pair_num, config_item_t *items)
 {
     int32_t i = 0;
-    
+
     for (i = 0; i < pair_num; i++) {
         if (!rt_os_strcmp(items[i].key, key)) {
             snprintf(items[i].value, sizeof(items[i].value), "%s", value);
         }
     }
-    
+
     return RT_SUCCESS;
 }
 
 static char *config_get_data(const char *key, int32_t pair_num, const config_item_t *items)
 {
     int32_t i = 0;
-    
+
     for (i = 0; i < pair_num; i++) {
         if (!rt_os_strcmp(items[i].key, key)) {
             return (char *)items[i].value;
         }
     }
-    
+
     return "";
 }
 
@@ -229,7 +229,7 @@ static int32_t config_write_file(const char *file, int32_t pair_num, const confi
     }
 
     for (; i < pair_num; i++) {
-        snprintf(item_data, sizeof(item_data), "%c%s\n%s %c %s\n\n", 
+        snprintf(item_data, sizeof(item_data), "%c%s\n%s %c %s\n\n",
             ANNOTATION_SYMBOL, items[i].annotation, items[i].key, LINK_SYMBOL, items[i].value);
         linux_fwrite(item_data, 1, rt_os_strlen(item_data), fp);
     }
@@ -237,12 +237,12 @@ static int32_t config_write_file(const char *file, int32_t pair_num, const confi
     ret = RT_SUCCESS;
 
 exit_entry:
-    
+
     if (fp) {
         linux_fclose(fp);
         fp = NULL;
     }
-    
+
     return ret;
 }
 
@@ -250,7 +250,7 @@ exit_entry:
 static void config_string_trim(char *str_in, char *str_out)
 {
     char *start, *end, *temp;
-    
+
     temp = str_in;
     while (IS_SPACES(*temp)) {
         ++temp;
@@ -263,7 +263,7 @@ static void config_string_trim(char *str_in, char *str_out)
         --temp;
     }
 
-    end = temp; 
+    end = temp;
     for(str_in = start; str_in <= end;) {
         *str_out++ = *str_in++;
     }
@@ -307,7 +307,7 @@ static int32_t config_read_file(const char *file, int32_t pair_num, config_item_
 {
     int32_t ret = RT_ERROR;
     rt_fshandle_t fp = NULL;
-    int32_t i = 0;    
+    int32_t i = 0;
     char line_data[MAX_LINE_SIZE];
     char line_data_out[MAX_LINE_SIZE];
     char key[MAX_VALUE_SIZE];
@@ -325,7 +325,7 @@ static int32_t config_read_file(const char *file, int32_t pair_num, config_item_
         rt_os_memset(line_data_out, 0, sizeof(line_data_out));
         if (linux_fgets(line_data, sizeof(line_data), fp) != NULL) {
             /* get one config item in a line */
-            config_string_trim(line_data, line_data_out);            
+            config_string_trim(line_data, line_data_out);
             if (line_data_out[0] == ANNOTATION_SYMBOL) {
                 continue;
             }
@@ -338,18 +338,18 @@ static int32_t config_read_file(const char *file, int32_t pair_num, config_item_
             }
         }
     }
-    
+
     ret = RT_SUCCESS;
 
 exit_entry:
-    
+
     if (fp) {
         linux_fclose(fp);
         fp = NULL;
     }
 
     return ret;
-}      
+}
 
 /**
 * parse config file
@@ -393,7 +393,7 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
 {
     int8_t log_level;
     uint32_t size;
-    
+
     infos->oti_addr          = local_config_get_data("OTI_ENVIRONMENT_ADDR");
     infos->emq_addr          = local_config_get_data("EMQ_SERVER_ADDR");
     infos->proxy_addr        = local_config_get_data("PROXY_SERVER_ADDR");
@@ -423,7 +423,7 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_WARN, "Agent version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_DBG, "OTI_ENVIRONMENT_ADDR  : %s\n", local_config_get_data("OTI_ENVIRONMENT_ADDR"));
     MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", local_config_get_data("EMQ_SERVER_ADDR"));
-    MSG_PRINTF(LOG_DBG, "PROXY_SERVER_ADDR     : %s\n", local_config_get_data("PROXY_SERVER_ADDR"));    
+    MSG_PRINTF(LOG_DBG, "PROXY_SERVER_ADDR     : %s\n", local_config_get_data("PROXY_SERVER_ADDR"));
     MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION     : %s\n", local_config_get_data("MBN_CONFIGURATION"));
     MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE     : %s\n", local_config_get_data("INIT_PROFILE_TYPE"));
     MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE          : %s\n", local_config_get_data("RPLMN_ENABLE"));
@@ -445,10 +445,10 @@ int32_t init_config(void *arg)
     config_init_file(CONFIG_FILE_PATH, pair_num, items);
 
     config_sync_global_info(infos, pair_num, items);
-    
+
     ((public_value_list_t *)arg)->config_info = infos;
     log_set_param(LOG_PRINTF_FILE, infos->agent_log_level, infos->log_max_size);
-        
+
     config_debug_cur_param(pair_num, items);
 
     return RT_SUCCESS;
@@ -459,8 +459,8 @@ typedef enum CONFIG_RESULT {
     CONFIG_NO_FAILURE           = 0,
     CONFIG_PART_OK_ERROR        = -1,       // part config items config ok, redtealink required
     CONFIG_MSG_PARSE_ERROR      = -3001,
-    CONFIG_ALL_NONE_ERROR       = -3002,    // total config items all unsupported    
-    CONFIG_ALL_FAIL_ERROR       = -3003,    // total config items all config fail  
+    CONFIG_ALL_NONE_ERROR       = -3002,    // total config items all unsupported
+    CONFIG_ALL_FAIL_ERROR       = -3003,    // total config items all config fail
     CONFIG_AGAIN_ERROR          = -3004,    // Repeated configuration with the same config data
     CONFIG_OTHER_ERROR          = -3099,
 } config_result_e;
@@ -470,7 +470,7 @@ typedef struct CONFIG_ONLINE_PARAM {
     config_result_e             result;
     int32_t                     count;  // total config item count
     int32_t                     pair_num;
-    config_item_t *             items;         
+    config_item_t *             items;
 } config_online_param_t;
 
 #define cJSON_GET_JSON_DATA(json, item)\
@@ -537,14 +537,14 @@ static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
     for (i = 0; i < pair_num; i++) {
         item = cJSON_GetArrayItem(config, i);
         if (item) {
-            key = item->string; 
+            key = item->string;
             if (item->type == CJSON_INT_TYPE) {
-                snprintf(value, sizeof(value), "%d", item->valueint);   
+                snprintf(value, sizeof(value), "%d", item->valueint);
             } else if (item->type == CJSON_STR_TYPE) {
-                snprintf(value, sizeof(value), "%s", item->valuestring);    
+                snprintf(value, sizeof(value), "%s", item->valuestring);
             }
             MSG_PRINTF(LOG_INFO, "# %02d    %-25s : %s\r\n", i, item->string, value);
-            
+
             for (j = 0; j < pair_num; j++) {
                 if (!rt_os_strcmp(items[j].key, key)) {
                     if (items[j].type == item->type) {
@@ -552,7 +552,7 @@ static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
                     } else {
                         /* data type unmatched, setup a invalid value */
                             MSG_PRINTF(LOG_INFO, "[%s] data type unmatched !\r\n", key);
-                        if (items[j].type == CJSON_INT_TYPE) {                            
+                        if (items[j].type == CJSON_INT_TYPE) {
                             snprintf((char *)items[j].value, sizeof(items[j].value), "%s", "-1");
                         }
                     }
@@ -563,7 +563,7 @@ static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
     }
 
 exit_entry:
-    
+
     return ret;
 }
 
@@ -572,7 +572,7 @@ static int32_t config_copy_old_items(config_online_param_t *param)
     int32_t i;
     int32_t ret = RT_ERROR;
     param->items = (config_item_t *)rt_os_malloc(sizeof(g_config_items));
-    
+
     if (param->items) {
         param->pair_num = ARRAY_SIZE(g_config_items);
         rt_os_memcpy(param->items, &g_config_items, sizeof(g_config_items));
@@ -631,7 +631,7 @@ static int32_t config_parser(const void *in, char *tran_id, void **out)
 
     cJSON_GET_JSON_DATA(msg, tranId);
     CONFIG_CHK_PINTER_NULL(tranId, -4);
-    
+
     rt_os_strcpy(tran_id, tranId->valuestring);
     rt_os_strncpy(param->tranId, tranId->valuestring, rt_os_strlen(tranId->valuestring));
 
@@ -662,7 +662,7 @@ static int32_t config_parser(const void *in, char *tran_id, void **out)
 
     *out = param;
     ret = RT_SUCCESS;
-    
+
 exit_entry:
 
     if (msg) {
@@ -695,7 +695,7 @@ static int32_t config_all_handle(int32_t pair_num, config_item_t *items, const c
     int32_t ret = RT_ERROR;
     config_func config;
     const char *key;
-    
+
     for (i = 0; i < pair_num; i++) {
         for (j = 0; j < param->pair_num; j++) {
             if (!rt_os_strcmp(items[i].key, param->items[j].key)) {
@@ -709,7 +709,7 @@ static int32_t config_all_handle(int32_t pair_num, config_item_t *items, const c
                 }
                 break;
             }
-        } 
+        }
     }
 
     return RT_SUCCESS;
@@ -726,7 +726,7 @@ static int32_t config_handler(const void *in, const char *event, void **out)
         config_item_t *items = g_config_items;
         int32_t ok_cnt = 0;
         int32_t total_cnt = param->count;
-    
+
         if (param->result != CONFIG_NO_FAILURE) {
             ret = param->result;
             goto exit_entry;
@@ -741,7 +741,7 @@ static int32_t config_handler(const void *in, const char *event, void **out)
         MSG_PRINTF(LOG_INFO, "config total: %d, ok: %d\r\n", total_cnt, ok_cnt);
 
         if (ok_cnt == total_cnt) {
-            ret = CONFIG_NO_FAILURE;      // all ok      
+            ret = CONFIG_NO_FAILURE;      // all ok
         } else if (ok_cnt == 0) {
             ret = CONFIG_ALL_FAIL_ERROR;  // all fail
         } else {
@@ -772,7 +772,7 @@ static int32_t config_all_pack(cJSON *config, int32_t pair_num, const config_ite
 {
     int32_t i = 0;
     int32_t int_value;
-    
+
     for (i = 0; i < pair_num; i++) {
         if (items[i].type == INTEGER) {
             int_value = atoi((char *)items[i].value);
@@ -781,7 +781,7 @@ static int32_t config_all_pack(cJSON *config, int32_t pair_num, const config_ite
             cJSON_AddItemToObject(config, (char *)items[i].key, cJSON_CreateString((char *)items[i].value));
         }
     }
-    
+
     return RT_SUCCESS;
 }
 
@@ -792,8 +792,8 @@ static cJSON *config_packer(void *arg)
     char *config = NULL;
     cJSON *config_json = NULL;
     int32_t pair_num = ARRAY_SIZE(g_config_items);
-    config_item_t *items = g_config_items;       
-    
+    config_item_t *items = g_config_items;
+
     on_config = cJSON_CreateObject();
     if (!on_config) {
         MSG_PRINTF(LOG_WARN, "The on_config is error\n");
@@ -819,7 +819,7 @@ static cJSON *config_packer(void *arg)
     CJSON_ADD_NEW_STR_OBJ(on_config, config);
 
     ret = RT_SUCCESS;
-    
+
 exit_entry:
 
     if (config_json) {
@@ -832,7 +832,7 @@ exit_entry:
         config = NULL;
     }
 
-    return !ret ? on_config : NULL;   
+    return !ret ? on_config : NULL;
 }
 
 DOWNSTREAM_METHOD_OBJ_INIT(CONFIG, MSG_ID_IDLE, ON_CONFIG, config_parser, config_handler);
