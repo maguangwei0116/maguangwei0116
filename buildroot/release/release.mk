@@ -16,10 +16,10 @@ RELEASE_ENV_TYPE=$(call qstrip,$(BR2_CFG_ENV_TYPE))
 
 REDTEA_RELEASE_README=README.txt
 REDTEA_CHANGE_LOG=../doc/change-log.txt
-REDTEA_SHELL_APP=../doc/shells/start_redtea_app
-REDTEA_SHELL_KEEP=../doc/shells/start_redtea_keep
+REDTEA_SHELL_APP=../doc/shells/open/start_redtea_app
+REDTEA_SHELL_KEEP=../doc/shells/open/start_redtea_keep
 REDTEA_ADB_PUSH_SHELL=adb-push.sh
-REDTEA_SHELL_ADB_PUSH=../doc/shells/$(REDTEA_ADB_PUSH_SHELL)
+REDTEA_SHELL_ADB_PUSH=../doc/shells/open/$(REDTEA_ADB_PUSH_SHELL)
 RELEASE_AUTHOR=$(shell whoami)
 RELEASE_DATE=$(shell date +"%Y%m%d")
 RELEASE_TIME=$(shell date +"%Y-%m-%d %T")

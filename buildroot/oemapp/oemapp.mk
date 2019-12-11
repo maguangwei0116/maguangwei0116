@@ -17,7 +17,9 @@ RELEASE_OEMAPP_UBI_TOOL=$(REDTEA_SUPPORT_SCRIPTS_PATH)/ubinize_oemapp_ubi.sh
 RELEASE_OEMAPP_SIGN_TOOL=$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh
 REDTEA_OEMAPP_VERSION_FILE_TITLE="Release: "   # never modify !!!
 REDTEA_OEMAPP_VERSION_FILE=$(BR2_RELEASE_OEMAPP_INSTALL_PATH)/softsim-release
-REDTEA_SHELL_START_OEMAPP=../doc/shells/start_oemapp.sh
+REDTEA_OEMAPP_SHELL_START=../doc/shells/standard/start_oemapp.sh
+REDTEA_OEMAPP_SHELL_APP=../doc/shells/standard/start_redtea_app
+REDTEA_OEMAPP_SHELL_KEEP=../doc/shells/standard/start_redtea_keep
 
 # Auto generate oemapp cfg file
 define CREATE_OEMAPP_CFG_FILE
@@ -44,7 +46,9 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 endef
 
 define COPY_RELEASE_OEMAPP_TARGETS
-	-$(Q)cp -rf $(REDTEA_SHELL_START_OEMAPP) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
+	-$(Q)cp -rf $(REDTEA_OEMAPP_SHELL_START) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
+	-$(Q)cp -rf $(REDTEA_OEMAPP_SHELL_APP) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
+	-$(Q)cp -rf $(REDTEA_OEMAPP_SHELL_KEEP) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/rt_agent
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/rt_monitor	
 	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/libcomm.so
