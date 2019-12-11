@@ -18,13 +18,49 @@
 #define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
 #define MAX_FILE_HASH_BYTE_LEN          32
 #define MAX_FILE_INFO_LEN               20
-#define PRIVATE_HASH_STR_LEN            128     /*There is ‘\0’ at the end*/
+#define PRIVATE_HASH_STR_LEN            128     /* There is a '\0' at the end */
 #define MAX_FILE_HASH_LEN               64
 #define MAX_PK_LEN                      128
-#define RT_CHECK_ERR(process, result) if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
+#define RT_CHECK_ERR(process, result)   if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
-static uint8_t *pk = "B37F3BAD94DFCC1FBDB0FBF608802FA72D38FAEE3AB8CBBF63BF6C99DA9E31FAE1465F1BCFCAF85A6626B938D1BD12D6901833047C50FE8ED67B84CFCFECCFEA";
-extern int ecc_hash_verify_signature(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_len, uint8_t *sigBuff, int sig_len);  // in vuicc lib
+static const uint8_t *g_verify_pk = "B37F3BAD94DFCC1FBDB0FBF608802FA72D38FAEE3AB8CBBF63BF6C99DA9E31FAE1465F1BCFCAF85A6626B938D1BD12D6901833047C50FE8ED67B84CFCFECCFEA";
+
+/**
+ * function: verify a section data by input public key
+ * return value: 
+ * - 0 (flase) : verify fail
+ * - 1 (true)  : verify ok
+ * notes: This function was defined in libvuicc.a
+ */
+extern int ecc_hash_verify_signature(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_len, uint8_t *sigBuff, int sig_len);
+
+rt_bool monitor_get_file_sign_data(const char *file_name, uint8_t *sign, int32_t *len)
+{
+    rt_fshandle_t fp = NULL;
+    int8_t sign_buffer[PRIVATE_HASH_STR_LEN + 1] = {0};
+    rt_bool ret = RT_FALSE;
+    
+    RT_CHECK_ERR(fp = linux_fopen((char *)file_name, "r"), NULL);
+    linux_fseek(fp, -(PRIVATE_HASH_STR_LEN), SEEK_CUR);
+    RT_CHECK_ERR(linux_fread(sign_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
+
+    if (sign) {
+        rt_os_memcpy(sign, sign_buffer, PRIVATE_HASH_STR_LEN);
+    }
+    
+    if (len) {
+        *len = PRIVATE_HASH_STR_LEN;
+    }
+
+    ret = RT_TRUE;
+
+end:
+    if (fp != NULL) {
+        linux_fclose(fp);
+    }
+
+    return ret;
+}
 
 static int32_t get_real_file_name(char *name, int32_t len)
 {
@@ -49,7 +85,7 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
     int8_t hash_result[MAX_FILE_HASH_LEN + 1];
     int8_t hash_out[MAX_FILE_HASH_BYTE_LEN + 1];
     int8_t file_info[MAX_FILE_INFO_LEN + 1] = {0};
-    int8_t signature_buffer[PRIVATE_HASH_STR_LEN + 1] = {0};
+    int8_t sign_buffer[PRIVATE_HASH_STR_LEN + 1] = {0};
     int32_t file_size = 0;
     uint32_t check_size;
     int32_t partlen;
@@ -80,8 +116,8 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
             sha256_update(&sha_ctx, (uint8_t *)hash_buffer, partlen);
         }
 
-        RT_CHECK_ERR(linux_fread(signature_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
-        MSG_PRINTF(LOG_INFO, "signature_buffer:%s\n", signature_buffer);
+        RT_CHECK_ERR(linux_fread(sign_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
+        MSG_PRINTF(LOG_INFO, "signature_buffer:%s\n", sign_buffer);
     }
     rt_os_memcpy(file_info, &hash_buffer[partlen - MAX_FILE_INFO_LEN], MAX_FILE_INFO_LEN);
     MSG_PRINTF(LOG_INFO, "file_info:%s\n", file_info);
@@ -89,7 +125,7 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
 
     bytestring_to_charstring(hash_out, hash_result, MAX_FILE_HASH_BYTE_LEN);
 
-    if (inspect_abstract_content(hash_result, signature_buffer) != RT_TRUE) {
+    if (inspect_abstract_content(hash_result, sign_buffer) != RT_TRUE) {
         MSG_PRINTF(LOG_ERR, "file_name:%s, verify signature failed!!\n", file_name);
         goto end;
     }
@@ -115,7 +151,7 @@ rt_bool inspect_abstract_content(uint8_t *hash, uint8_t *signature)
     rt_bool ret = RT_FALSE;
 
     ret = ecc_hash_verify_signature(hash, MAX_FILE_HASH_LEN, \
-        pk, MAX_PK_LEN, signature, PRIVATE_HASH_STR_LEN);
+        g_verify_pk, MAX_PK_LEN, signature, PRIVATE_HASH_STR_LEN);
 
     return ret;
 }
