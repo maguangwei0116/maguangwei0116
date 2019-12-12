@@ -144,10 +144,6 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_log_file,             RT_AGENT_LOG),
     INIT_OBJ(init_config,               (void *)&g_value_list),
 
-#ifdef CFG_STANDARD_MODULE
-    INIT_OBJ(init_customer_at,          NULL),
-#endif
-
 #ifdef CFG_ENABLE_LIBUNWIND
     INIT_OBJ(init_backtrace,            agent_printf),
 #endif
@@ -165,8 +161,12 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_card_detection,       (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    (void *)&g_value_list),
+
+#ifdef CFG_STANDARD_MODULE
     INIT_OBJ(init_at_command,           (void *)&g_value_list),
     INIT_OBJ(init_customer_at,          (void *)&at_commnad),
+#endif
+
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
     INIT_OBJ(init_upgrade,              (void *)&g_value_list),
