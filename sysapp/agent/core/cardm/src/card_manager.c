@@ -417,6 +417,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
+            ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
             break;
             
         default:

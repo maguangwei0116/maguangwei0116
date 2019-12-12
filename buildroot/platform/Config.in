@@ -11,6 +11,24 @@ config BR2_CFG_PRODUCT_NAME
 config BR2_CFG_SOFTWARE_NAME
 	string "Software Name"
 	default "general"
+		  
+choice
+	prompt "Module Type"
+	default BR2_CFG_OPEN_MODULE
+	help
+	  Set module type (open or standard)
+
+config BR2_CFG_OPEN_MODULE
+	bool "BR2_CFG_OPEN_MODULE"
+	help
+	  Open module. This is the default.
+
+config BR2_CFG_STANDARD_MODULE
+	bool "BR2_CFG_STANDARD_MODULE"
+	help
+	  Standard module.
+	  
+endchoice
 	
 choice
 	prompt "Build for Platform"
@@ -27,19 +45,21 @@ config BR2_CFG_PLATFORM_9X07
 	  Build for 9x07 platform
 	  
 config BR2_CFG_PLATFORM_ANDROID_ARM32
-	bool "android-arm32"	
+	bool "android-arm32"
+	select BR2_CFG_PLATFORM_ANDROID
 	help
 	  Build for android (ARM32) platform
 	  
 config BR2_CFG_PLATFORM_ANDROID_ARM64
 	bool "android-arm64"
+	select BR2_CFG_PLATFORM_ANDROID
 	help
 	  Build for android (ARM64) platform
 	  
 endchoice
 
 config BR2_CFG_PLATFORM_ANDROID
-	bool "android"
+	bool "Android"
 	help
 	  Build for android platform
 

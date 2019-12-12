@@ -27,12 +27,16 @@ LDFLAGS         += $(LIB-y)
 LDFLAGS         += -L$(SDK_INSTALL_PATH)/lib
 LDFLAGS         += $(LOCAL_LDFLAGS)
 
+# Config run library path
+EXEC_LIB_PATH   = -Wl,-rpath -Wl,"./"
+LDFLAGS         += $(EXEC_LIB_PATH)
+
 # Config compile optimize flags
-#CFLAGS         += -g 
-#CFLAGS         += -Os 
-#CFLAGS         += -fdata-sections 
+#CFLAGS         += -g
+#CFLAGS         += -Os
+#CFLAGS         += -fdata-sections
 #CFLAGS         += -ffunction-sections
 #CFLAGS         += -fvisibility=hidden
-#LDFLAGS        += -Wl,--gc-sections 
+#LDFLAGS        += -Wl,--gc-sections
 #LDFLAGS        += -Wl,--print-gc-sections
 #LDFLAGS        += -Wl,--print-map

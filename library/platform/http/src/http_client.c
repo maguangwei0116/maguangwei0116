@@ -279,7 +279,7 @@ static int http_client_send_body(http_client_struct_t *obj)
                 }
                 MSG_PRINTF(LOG_WARN, "http_client send error,continue\n");
                 rt_os_sleep(1);
-                linux_fseek(obj->fp, SEEK_SET, obj->process_length);
+                linux_fseek(obj->fp, RT_FS_SEEK_SET, obj->process_length);
             } else {
                 obj->remain_length -= obj->process_set;
                 obj->process_length += obj->process_set;

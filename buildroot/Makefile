@@ -346,6 +346,7 @@ include library/library.mk
 include sysapp/sysapp.mk
 #include usrapp/usrapp.mk
 #include image/image.mk
+include oemapp/oemapp.mk
 include release/release.mk
 
 TARGETS+=target-finalize

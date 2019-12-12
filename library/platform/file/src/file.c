@@ -179,6 +179,48 @@ int shell_cmd(const int8_t *cmd, uint8_t *buf, int size)
     return num;
 }
 
+int linux_file_copy(const char *src, const char *dst)
+{
+    uint8_t buffer[MAX_BUFFER_SIZE];
+    rt_fshandle_t pin;
+    rt_fshandle_t pout;
+    int ret = RT_ERROR;
+    int len;
+
+    pin = linux_fopen(src, "rb");
+    pout = linux_fopen(dst, "wb");
+
+    if (!pin || !pout) {
+        MSG_PRINTF(LOG_ERR, "fopen failed\n");
+        goto exit_entry;
+    }
+
+    while (!linux_feof(pin)) {
+        len = linux_fread(buffer, 1, sizeof(buffer), pin);
+        if (len <= 0) {
+            MSG_PRINTF(LOG_ERR, "fread failed!!\n");
+            break;
+        }
+        linux_fwrite(buffer, 1, len, pout);
+    }
+
+    ret = RT_SUCCESS;
+
+exit_entry:
+    
+    if (pin) {
+        linux_fclose(pin);
+        pin = NULL;
+    }
+
+    if (pout) {
+        linux_fclose(pout);
+        pout = NULL;
+    }
+
+    return RT_SUCCESS;
+}
+
 int init_rt_file_path(void *arg)
 {
     const char *redtea_path = (const char *)arg;
@@ -303,7 +345,7 @@ int linux_rt_file_copy(const char *src, const char *dst)
         goto exit_entry;
     }
 
-    while (!feof(pin)) {
+    while (!linux_feof(pin)) {
         len = linux_fread(buffer, 1, sizeof(buffer), pin);
         if (len <= 0) {
             MSG_PRINTF(LOG_ERR, "fread failed!!\n");

@@ -62,6 +62,7 @@ int linux_file_size(const char *file_name);
 int linux_stat(const char *path_name, rt_stat_t *buf);
 int linux_fstat(int fd, rt_stat_t *buf);
 int linux_lstat(const char *path_name, rt_stat_t *buf);
+int linux_file_copy(const char *src, const char *dst);
 int shell_cmd(const int8_t *cmd, uint8_t *buf, int size);
 
 /* API for redtea path file */

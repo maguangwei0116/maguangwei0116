@@ -26,12 +26,22 @@
 #include "file.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
+#define RT_DEBUG_IN_TERMINAL        "terminal"
 #define RT_AGENT_PTROCESS           "rt_agent"
 #define RT_AGENT_NAME               "agent"
-#define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_NAME             "monitor"
+
+#if (CFG_OPEN_MODULE)
+#define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_FILE             "/usr/bin/rt_monitor"
 #define RT_DATA_PATH                "/data/redtea/"
+#elif (CFG_STANDARD_MODULE)  // standard
+#define RT_OEMAPP_AGENT_FILE        "/oemapp/rt_agent"
+#define RT_MONITOR_FILE             "/oemapp/rt_monitor"
+#define RT_DATA_PATH                "/usrdata/redtea/"
+#define RT_AGENT_FILE               "/usrdata/redtea/rt_agent"
+#endif
+
 #define RT_CARD_PATH                RT_DATA_PATH".vcos/"
 #define RT_MONITOR_LOG              "rt_monitor_log"
 
@@ -47,6 +57,7 @@ extern int init_file_ops(void);
 extern int vsim_get_ver(char *version);
 
 static log_mode_e g_def_mode = LOG_PRINTF_FILE;
+static rt_bool g_agent_debug_terminal = RT_FALSE;
 
 typedef struct SIGNATURE_DATA {
     uint8_t             hash[64+4];                 // hash, end with "\0"
@@ -228,18 +239,66 @@ static int32_t ipc_socket_server_start(void)
 static int32_t agent_process_kill(void)
 {
     char cmd[128];
-    
+
     /* kill all agent processes */
     snprintf(cmd, sizeof(cmd), "killall -9 %s > /dev/null 2>&1", RT_AGENT_PTROCESS);
-    system(cmd); 
+    system(cmd);
 
     return RT_SUCCESS;
 }
 
+#ifdef CFG_STANDARD_MODULE
+static int32_t agent_file_copy_check(rt_bool copy_force)
+{
+    uint8_t oem_agent_sign[256] = {0};
+    int32_t oem_agent_sign_len = sizeof(oem_agent_sign);
+    uint8_t usr_agent_sign[256]  = {0};
+    int32_t usr_agent_sign_len = sizeof(usr_agent_sign);
+    int32_t ret = RT_ERROR;
+
+    if (copy_force) {
+        goto copy_usrapp_agent;
+    }
+
+    if (!linux_file_exist(RT_AGENT_FILE)) {
+        goto copy_usrapp_agent;  
+    }
+
+    monitor_get_file_sign_data(RT_OEMAPP_AGENT_FILE, oem_agent_sign, &oem_agent_sign_len);
+    monitor_get_file_sign_data(RT_AGENT_FILE, usr_agent_sign, &usr_agent_sign_len);
+
+    if (oem_agent_sign_len == usr_agent_sign_len && !rt_os_memcmp(oem_agent_sign, usr_agent_sign, oem_agent_sign_len)) {
+        MSG_PRINTF(LOG_WARN, "agent file is the same !!!\r\n");
+        ret = RT_SUCCESS;
+        goto exit_entry;
+    }
+
+    MSG_PRINTF(LOG_WARN, "oem_agent_sign: %s\r\n", oem_agent_sign);
+    MSG_PRINTF(LOG_WARN, "usr_agent_sign: %s\r\n", usr_agent_sign);
+
+copy_usrapp_agent:
+
+    linux_delete_file(RT_AGENT_FILE);
+    ret = linux_file_copy(RT_OEMAPP_AGENT_FILE, RT_AGENT_FILE);
+    if (!ret) {
+        /* add app executable mode */
+        rt_os_chmod(RT_AGENT_FILE, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO);
+        /* sync data to flash */
+        rt_os_sync();
+
+        MSG_PRINTF(LOG_WARN, "copy agent file done !!!\r\n");
+    }
+
+exit_entry:
+
+    return ret;
+}
+#endif
+
 static int32_t agent_task_check_start(void)
 {
     int32_t ret;
-    int32_t status;    
+    int32_t status;
     pid_t child_pid;
     pid_t ret_pid;
 
@@ -253,35 +312,49 @@ static int32_t agent_task_check_start(void)
 
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE, RT_AGENT_NAME) != RT_TRUE) {
-        upgrade_struct_t upgrade = {0};
-
-        MSG_PRINTF(LOG_WARN, "agent verify error\r\n");
-        linux_delete_file(RT_AGENT_FILE);
-        snprintf(upgrade.file_name, sizeof(upgrade.file_name), "%s", RT_AGENT_FILE);
-        snprintf(upgrade.real_file_name, sizeof(upgrade.real_file_name), "%s", RT_AGENT_NAME);
-        init_download(&upgrade);
-        choose_uicc_type(LPA_CHANNEL_BY_IPC);
-        network_detection_task();
+        MSG_PRINTF(LOG_WARN, "verify agent error\r\n");
+        
+#ifdef CFG_STANDARD_MODULE        
+        {
+            /* check and copy agent process */
+            agent_file_copy_check(RT_TRUE);
+        }
+#else
+        {
+            /* start download default agent */
+            upgrade_struct_t upgrade = {0};
+            linux_delete_file(RT_AGENT_FILE);
+            snprintf(upgrade.file_name, sizeof(upgrade.file_name), "%s", RT_AGENT_FILE);
+            snprintf(upgrade.real_file_name, sizeof(upgrade.real_file_name), "%s", RT_AGENT_NAME);
+            init_download(&upgrade);
+            choose_uicc_type(LPA_CHANNEL_BY_IPC);
+            network_detection_task();
+        }
+#endif
     }
     /* start up agent process by fork function */
     child_pid = fork();
     if (child_pid < 0) {
         MSG_PRINTF(LOG_WARN, "error in fork, err(%d)=%s\r\n", errno, strerror(errno));
     } else if (child_pid == 0) {
-        MSG_PRINTF(LOG_INFO, "I am the child process, my process id is %d\r\n", getpid());
-        ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, NULL);
+        MSG_PRINTF(LOG_INFO, "child process, pid %d\r\n", getpid());
+        if (g_agent_debug_terminal) {
+            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, RT_DEBUG_IN_TERMINAL, NULL);
+        } else {
+            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, NULL);
+        }
         if (ret < 0) {
-            MSG_PRINTF(LOG_ERR, "Excute agent fail, ret=%d, err(%d)=%s\n", ret, errno, strerror(errno));
+            MSG_PRINTF(LOG_ERR, "Excute %s fail, ret=%d, err(%d)=%s\n", RT_AGENT_PTROCESS, ret, errno, strerror(errno));
         }
         exit(0);
     } else {
-        MSG_PRINTF(LOG_INFO, "I am the parent process, my process id is %d, child_pid is %d\r\n", getpid(), child_pid);
+        MSG_PRINTF(LOG_INFO, "parent process, pid %d, child_pid %d\r\n", getpid(), child_pid);
 
         /* block to wait designative child process's death */
         while (1) {
             ret_pid = waitpid(child_pid, &status, 0);
             if (ret_pid == child_pid) {
-                MSG_PRINTF(LOG_WARN, "wait designative pid (%d) died, agent process died !\r\n", child_pid);
+                MSG_PRINTF(LOG_WARN, "wait designative pid (%d) died, child process died !\r\n", child_pid);
                 break;
             }
             MSG_PRINTF(LOG_WARN, "wait pid (%d) died !\r\n", ret_pid);
@@ -294,6 +367,10 @@ static int32_t agent_task_check_start(void)
 static void init_app_version(void *arg)
 {
     uint8_t version[100];
+
+#ifdef CFG_STANDARD_MODULE
+    MSG_PRINTF(LOG_WARN, "Running standard module ...\r\n");
+#endif
 
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     vsim_get_ver(version);
@@ -319,13 +396,30 @@ static int32_t monitor_printf(const char *fmt, ...)
 extern int32_t init_backtrace(void *arg);
 #endif
 
+static void debug_with_printf(const char *msg)
+{
+    printf("%s", msg);
+}
+
+/*
+Help for debug application in terminal:
+Run: 
+    ./rt_monitor terminal           -> only monitor debug in terminal
+    ./rt_monitor terminal terminal  -> monitor and agent all debug in terminal
+*/
 int32_t main(int32_t argc, const char *argv[])
 {
     rt_bool keep_agent_alive = RT_TRUE;
 
     /* check input param to debug in terminal */
-    if (argc > 1) {
-        g_def_mode = LOG_PRINTF_TERMINAL;
+    if (argc > 1 && !rt_os_strcmp(argv[1], RT_DEBUG_IN_TERMINAL)) {
+        /* install external debug function for monitor */
+        log_install_func(debug_with_printf);
+
+        /* install external debug function for agent */
+        if (argc > 2 && !rt_os_strcmp(argv[2], RT_DEBUG_IN_TERMINAL)) {
+            g_agent_debug_terminal = RT_TRUE;
+        }
     }
 
     /* init redtea path */
@@ -339,16 +433,15 @@ int32_t main(int32_t argc, const char *argv[])
     init_backtrace(monitor_printf);
 #endif
 
+    /* debug versions information */
+    init_app_version(NULL);
+
     /* install ops callbacks */
     init_callback_ops();
 
     /* init card path before init card */
     init_card_path(RT_CARD_PATH);
     init_card(log_print);
-    
-
-    /* debug versions information */
-    init_app_version(NULL);
 
     /* install system signal handle */
     init_system_signal(NULL);

@@ -13,6 +13,9 @@
 #include "file.h"
 #include "cJSON.h"
 #include "md5.h"
+#ifdef CFG_STANDARD_MODULE
+#include "ubi.h"
+#endif
 
 #if 0
 {
@@ -111,6 +114,11 @@ typedef struct OTA_UPGRADE_PARAM {
 #define OTA_UPGRADE_TASK_PATH           ".ota/"
 #define OTA_UPGRADE_TASK_SUFFIX         ".task"
 #define OTA_UPGRADE_TASK_SUFFIX_LEN     5
+
+#ifdef CFG_STANDARD_MODULE
+#define OTA_UPGRADE_OEMAPP_UBI          "oemapp.ubi"
+#define OTA_UPGRADE_USR_AGENT           "/usrdata/redtea/rt_agent"
+#endif
 
 static const card_info_t *g_ota_card_info = NULL;
 extern const target_versions_t *g_upload_ver_info;
@@ -345,6 +353,14 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
                                             char *targetFileName, int32_t len, rt_bool *type_matched)
 {
     /* type index see @ref target_type_e */
+#ifdef CFG_STANDARD_MODULE
+    /* If your want to upgrade monitor or libcomm.so, pls use xxx.ubi file */
+    const char *g_target_files[] = 
+    {
+        OTA_UPGRADE_USR_AGENT,
+        "", // need to get its name from bootstrap module
+    };
+#else
     const char *g_target_files[] = 
     {
         "/usr/bin/rt_agent",
@@ -352,6 +368,7 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
         "/usr/bin/rt_monitor",
         "/usr/lib/libcomm.so", 
     };
+#endif
     int32_t i = 0;
     int32_t cnt = ARRAY_SIZE(g_target_files);
     char *p;
@@ -621,24 +638,31 @@ end:
 static rt_bool ota_file_check(const void *arg)
 {
     rt_bool ret = RT_FALSE;
-    const upgrade_struct_t *d_info = (const upgrade_struct_t *)arg;
+    upgrade_struct_t *upgrade = (upgrade_struct_t *)arg;
     int32_t iret;
     char real_file_name[32] = {0};
 
 #ifndef CFG_SHARE_PROFILE_ECC_VERIFY
-    if (d_info->type == TARGET_TYPE_SHARE_PROFILE || d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
+    if (upgrade->type == TARGET_TYPE_SHARE_PROFILE || upgrade->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
         /* share profile needn't check signature */
         return RT_TRUE;
     }
 #endif
 
-    iret = ipc_file_verify_by_monitor((const char *)d_info->tmpFileName, real_file_name);
+    iret = ipc_file_verify_by_monitor((const char *)upgrade->tmpFileName, real_file_name);
     if (!iret) {
-        if (rt_os_strstr((const char *)d_info->targetName, real_file_name)) {
+#ifdef CFG_STANDARD_MODULE
+        if (!rt_os_strcmp(OTA_UPGRADE_OEMAPP_UBI, real_file_name)) {
+            upgrade->ubi = RT_TRUE;
+            MSG_PRINTF(LOG_WARN, "oemapp ubi detected !!!\r\n");
+            return RT_TRUE;
+        }
+#endif        
+        if (rt_os_strstr((const char *)upgrade->targetName, real_file_name)) {
             ret = RT_TRUE;
         } else {
             MSG_PRINTF(LOG_WARN, "real_file_name unmatched, targetName:%s, real_file_name:%s\r\n", 
-                            (const char *)d_info->targetName, real_file_name);
+                            (const char *)upgrade->targetName, real_file_name);
         }
     }
     return ret;
@@ -649,6 +673,20 @@ static rt_bool ota_file_install(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
     rt_bool ret = RT_FALSE;
+
+#ifdef CFG_STANDARD_MODULE
+    if (upgrade->ubi) { 
+        int32_t upgrade_ret;
+        char tmp_abs_file[128];
+
+        linux_delete_file(OTA_UPGRADE_USR_AGENT);  // must delete agent to create a new one !!!
+        MSG_PRINTF(LOG_WARN, "goning to upgrade oemapp ubi file !!!\r\n");
+        linux_rt_file_abs_path(upgrade->tmpFileName, tmp_abs_file, sizeof(tmp_abs_file));
+        ret = ubi_update(tmp_abs_file);
+        MSG_PRINTF(LOG_ERR, "%s upgrade %s !!!\r\n", tmp_abs_file, !ret ? "OK" : "FAIL");
+        return !ret ? RT_TRUE : RT_FALSE;
+    }
+#endif 
     
     /* app replace */
     MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
@@ -699,7 +737,7 @@ static rt_bool ota_on_upload_event(const void *arg)
     /* restart app right now ? */
     if (UPGRADE_NO_FAILURE == upgrade->downloadResult && upgrade->execute_app_now) {
         if (upgrade->activate) {
-            upgrade->activate(NULL);
+            upgrade->activate(upgrade);
         }
     }
 
@@ -715,6 +753,18 @@ static rt_bool ota_on_upload_event(const void *arg)
 /* make ota downloaded file take active */
 static rt_bool ota_file_activate_agent_so_profile(const void *arg)
 {
+#ifdef CFG_STANDARD_MODULE
+    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
+
+    if (upgrade && upgrade->ubi) {  
+        MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart terminal !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
+        rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
+        MSG_PRINTF(LOG_WARN, "Current terminal restart to active ubi file ...\r\n");        
+        rt_os_reboot();
+        return RT_TRUE;
+    }
+#endif
+
     MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
     rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
     MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");        

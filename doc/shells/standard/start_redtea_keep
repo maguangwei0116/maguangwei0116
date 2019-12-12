@@ -1,0 +1,24 @@
+#! /bin/sh
+
+set -e
+flag=1
+process_name=rt_monitor
+process=/oemapp/rt_monitor
+
+echo "start while..."
+while [ $flag -eq 1 ]
+do
+  echo "start do..."
+  pid=`ps -ef | grep -w $process_name | grep -v 'grep' | wc -l`;
+  echo "start if..."
+  if [ $pid -eq 0 ]
+  then
+      echo "start..."
+      start-stop-daemon -S -b -a $process
+  else
+      echo "runing..."
+  fi
+  sleep 3s
+done
+
+

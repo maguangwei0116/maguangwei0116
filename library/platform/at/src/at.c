@@ -9,6 +9,7 @@
 #include "rt_type.h"
 #include "log.h"
 
+#define SYS_AT_PORT_NAME        "rt_at_port"
 #define DEFAULT_AT_TIME_OUT     3000
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)           sizeof(a)/sizeof(a[0])
@@ -135,14 +136,25 @@ int32_t init_at(void *arg)
     (void)arg;
     g_at_mutex = linux_mutex_init();
 
-    /* get actual AT port name */
-    for (i = 0; i < cnt; i++) {
-        at_set_port_name(at_port_name_list[i]);
-        ret = at_send_inner(at_cmd, at_rsp, sizeof(at_rsp));
-        if (!ret) {
-            MSG_PRINTF(LOG_DBG, "AT Port: %s\n", g_at_port_name);
-            break;
+    if (!linux_rt_file_exist(SYS_AT_PORT_NAME)) {
+        rt_create_file(SYS_AT_PORT_NAME);
+        /* try to get terminal actual AT port name */
+        for (i = 0; i < cnt; i++) {
+            at_set_port_name(at_port_name_list[i]);
+            ret = at_send_inner(at_cmd, at_rsp, sizeof(at_rsp));
+            if (!ret) {
+                MSG_PRINTF(LOG_DBG, "AT Port: %s\n", g_at_port_name);
+                rt_write_data(SYS_AT_PORT_NAME, 0, g_at_port_name, sizeof(g_at_port_name));
+                break;
+            }
         }
+        if (i == cnt) {
+            MSG_PRINTF(LOG_DBG, "find AT Port fail\n");
+            ret = RT_ERROR;
+        }
+    } else {
+        ret = rt_read_data(SYS_AT_PORT_NAME, 0, g_at_port_name, sizeof(g_at_port_name));
+        MSG_PRINTF(LOG_DBG, "AT Port: %s, ret=%d\n", g_at_port_name, ret);
     }
 
     return ret;

@@ -16,6 +16,9 @@ vpath %.c ./qualcomm
 vpath %.c ./socket
 vpath %.c ./random
 vpath %.c ./at
+ifeq ($(LIBRARY_CFG_STANDARD_MODULE),y)
+vpath %.c ./customer_at
+endif
 
 # Config your resource file list by += xxx.c
 SRC-y 		+= src/file.c
@@ -33,6 +36,9 @@ SRC-y 		+= src/qmi_nas.c
 SRC-y 		+= src/qmi_uim.c
 SRC-y 		+= src/qmi_wds.c
 SRC-y 		+= src/rt_qmi.c
+ifeq ($(LIBRARY_CFG_STANDARD_MODULE),y)
+SRC-y 		+= src/customer_at.c
+endif
 endif
 ifeq ($(LIBRARY_PLATFORM_ANDROID), y)
 SRC-y 		+= src/rt_qmi_android.c
@@ -53,6 +59,9 @@ INC-PATH 	+= ./qualcomm/
 INC-PATH 	+= ./socket/
 INC-PATH 	+= ./random/
 INC-PATH 	+= ./at/
+ifeq ($(LIBRARY_CFG_STANDARD_MODULE),y)
+INC-PATH 	+= ./customer_at/
+endif
 
 INC-y 		+= ./
 INC-y 		+= $(INC-PATH)

@@ -31,6 +31,10 @@
 #include "file.h"
 #include "libcomm.h"
 #include "agent_main.h"
+#ifdef CFG_STANDARD_MODULE
+#include "customer_at.h"
+#include "at_command.h"
+#endif
 
 #define INIT_OBJ(func, arg) \
     {                       \
@@ -81,7 +85,6 @@ static int32_t init_versions(void *arg)
     static target_versions_t g_target_versions = {0};
 
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
-    MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
 
     ((public_value_list_t *)arg)->version_info = &g_target_versions;
@@ -93,9 +96,9 @@ static int32_t init_versions(void *arg)
 
     /* add share profile version */
     bootstrap_get_profile_version(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name,
-                                  sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name),
-                                  g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version,
-                                  sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version));
+                              sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name),
+                              g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version,
+                              sizeof(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].version));
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
 
     /* add monitor version */
@@ -156,22 +159,31 @@ static const init_obj_t g_init_objs[] =
 #ifdef CFG_ENABLE_LIBUNWIND
         INIT_OBJ(init_backtrace, agent_printf),
 #endif
-        INIT_OBJ(init_bootstrap, (void *)&g_value_list),
-        INIT_OBJ(init_versions, (void *)&g_value_list),
-        INIT_OBJ(init_device_info, (void *)&g_value_list),
-        INIT_OBJ(init_monitor, (void *)&g_value_list),
-        INIT_OBJ(init_lpa_channel, (void *)&g_value_list),
-        INIT_OBJ(init_timer, NULL),
-        INIT_OBJ(init_qmi, NULL),
-        INIT_OBJ(init_queue, (void *)&g_value_list),
-        INIT_OBJ(init_personalise, (void *)&g_value_list),
-        INIT_OBJ(init_card_manager, (void *)&g_value_list),
-        INIT_OBJ(init_network_detection, (void *)&g_value_list),
-        INIT_OBJ(init_mqtt, (void *)&g_value_list),
-        INIT_OBJ(init_upload, (void *)&g_value_list),
-        INIT_OBJ(init_upgrade, (void *)&g_value_list),
-        INIT_OBJ(init_ota, (void *)&g_value_list),
-        INIT_OBJ(init_logm, (void *)&g_value_list),
+
+    INIT_OBJ(init_bootstrap,            (void *)&g_value_list),
+    INIT_OBJ(init_versions,             (void *)&g_value_list),
+    INIT_OBJ(init_device_info,          (void *)&g_value_list),
+    INIT_OBJ(init_mbn,                  (void *)&g_value_list),
+    INIT_OBJ(init_monitor,              (void *)&g_value_list),
+    INIT_OBJ(init_lpa_channel,          (void *)&g_value_list),
+    INIT_OBJ(init_timer,                NULL),
+    INIT_OBJ(init_qmi,                  NULL),
+    INIT_OBJ(init_queue,                (void *)&g_value_list),
+    INIT_OBJ(init_personalise,          (void *)&g_value_list),
+    INIT_OBJ(init_card_manager,         (void *)&g_value_list),
+    INIT_OBJ(init_card_detection,       (void *)&g_value_list),
+    INIT_OBJ(init_network_detection,    (void *)&g_value_list),
+
+#ifdef CFG_STANDARD_MODULE
+    INIT_OBJ(init_at_command,           (void *)&g_value_list),
+    INIT_OBJ(init_customer_at,          (void *)&at_commnad),
+#endif
+
+    INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
+    INIT_OBJ(init_upload,               (void *)&g_value_list),
+    INIT_OBJ(init_upgrade,              (void *)&g_value_list),
+    INIT_OBJ(init_ota,                  (void *)&g_value_list),
+    INIT_OBJ(init_logm,                 (void *)&g_value_list),
 };
 
 static int32_t agent_init_call(void)
@@ -200,6 +212,7 @@ int32_t agent_main(const char *app_path, log_func logger)
     if (logger) {
         log_install_func(logger);
     }
+
     agent_init_call();
 
     return RT_SUCCESS;

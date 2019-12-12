@@ -27,7 +27,7 @@ int lpa_get_eid(uint8_t *eid)
     //BF3E125A1089049032123451234512345678901235
     // BF3E 12 5A 10 EID
     uint8_t channel;
-    uint8_t buf[64];  // 21 bytes is not enough, 2 more bytes is in need !!! It may stack buffer overflow !!!
+    uint8_t buf[64] = {0};  // 21 bytes is not enough, 2 more bytes is in need !!! It may stack buffer overflow !!!
     uint16_t size = sizeof(buf);
     int ret = RT_SUCCESS;
     
@@ -43,8 +43,8 @@ int lpa_get_eid(uint8_t *eid)
 
 int lpa_switch_eid(const uint8_t *eid)
 {
-    uint8_t rsp[33];
-    int8_t channel;
+    uint8_t rsp[33] = {0};
+    uint8_t channel;
     uint16_t rsp_size = sizeof(rsp);
     
     if (open_channel(&channel) != RT_SUCCESS) {
@@ -60,13 +60,13 @@ int lpa_switch_eid(const uint8_t *eid)
 int lpa_get_eid_list(uint8_t (*eid_list)[33])
 {
     int ret = RT_SUCCESS;
-    uint8_t buf[500];
+    uint8_t buf[500] = {0};
     asn_dec_rval_t dc;
     uint16_t size = sizeof(buf);
     int i;
     int num =0;
     EIDInfo_t **p = NULL;
-    int8_t channel;
+    uint8_t channel;
 
     if (open_channel(&channel) != RT_SUCCESS) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
@@ -115,15 +115,16 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
     if (open_channel(&channel) != RT_SUCCESS) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
-    if (num == NULL) {
-        return RT_ERR_NULL_POINTER;
-    }
-    buf = (uint8_t *) malloc (size);
-    if (buf == NULL) {
+    if (!num) {
         ret = RT_ERR_NULL_POINTER;
         goto end;
     }
-    buf[0] = '\0';
+    buf = (uint8_t *) malloc (size);
+    if (!buf) {
+        ret = RT_ERR_NULL_POINTER;
+        goto end;
+    }
+    memset(buf, 0, size);
     size = 0;
     get_profiles_info(SEARCH_NONE, NULL, 0, (uint8_t *)buf, (uint16_t *)&size, channel);
     MSG_DUMP_ARRAY("profile info:\n", buf, size);
@@ -165,7 +166,7 @@ end:
 int lpa_delete_profile(const char *iccid)
 {
     int ret;
-    uint8_t rsp[32];
+    uint8_t rsp[32] = {0};
     uint16_t rsp_size = sizeof(rsp);
     uint8_t channel;
 
@@ -188,9 +189,9 @@ int lpa_delete_profile(const char *iccid)
 int lpa_enable_profile(const char *iccid)
 {
     int ret;
-    uint8_t rsp[32];
+    uint8_t rsp[32] = {0};
     uint16_t rsp_size = sizeof(rsp);
-    int8_t channel;
+    uint8_t channel;
 
     if (open_channel(&channel) != RT_SUCCESS) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
@@ -214,7 +215,7 @@ int lpa_enable_profile(const char *iccid)
 int lpa_disable_profile(const char *iccid)
 {
     int ret;
-    uint8_t rsp[32];
+    uint8_t rsp[32] = {0};
     uint16_t rsp_size = sizeof(rsp);
     uint8_t channel;
 
@@ -382,8 +383,6 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     memcpy(mid, ac+matching_id_start, matching_id_len);
     mid[matching_id_len + 1] = '\0';
     MSG_INFO("AC_token:     %s\n", mid);
-
-
     MSG_INFO("SMDP_ADDRESS: %s\n", smdp_addr);
     MSG_INFO("Need CC:      %s\n", need_cc ? "Yes" : "No");
     if (need_cc) {
@@ -394,17 +393,25 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
 
     buf1_len = BUFFER_SIZE;
     ret = initiate_authentication(smdp_addr, (char *)buf1, &buf1_len, channel);
+    if (ret != RT_SUCCESS) {
+        MSG_ERR("initiate_authentication error response:\n%s\n", buf1);
+    } else {
+        MSG_INFO("initiate_authentication response:\n%s\n", buf1);
+    }
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("initiate_authentication response:\n%s\n", buf1);
 
     buf2_len = BUFFER_SIZE;
     ret = authenticate_server(mid, (char *)buf1, buf2, &buf2_len, channel);
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     MSG_DUMP_ARRAY("authenticate_server:\n", buf2, buf2_len);
+    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     buf1_len = BUFFER_SIZE;
-    ret = authenticate_client(smdp_addr, buf2, buf2_len, buf1, &buf1_len);
-    MSG_INFO("authenticate_client response:\n%s\n", buf1);
+    ret = authenticate_client(smdp_addr, buf2, buf2_len, buf1, &buf1_len);    
+    if (ret != RT_SUCCESS) {
+        MSG_ERR("authenticate_client error response:\n%s\n", buf1);
+    } else {
+        MSG_INFO("authenticate_client response:\n%s\n", buf1);
+    }
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     buf2_len = BUFFER_SIZE;
@@ -468,3 +475,4 @@ int lpa_load_profile(const uint8_t *data, uint16_t data_len)
 
     return ret;
 }
+
