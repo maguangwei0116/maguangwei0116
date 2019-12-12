@@ -64,7 +64,6 @@ int open_channel(uint8_t *channel)
             return RT_ERR_UNKNOWN_ERROR;
         }
         *channel = rsp[0];
-        // ret = rt_qmi_open_channel_vuicc(euicc_aid, sizeof(euicc_aid), channel);
     } else {
         ret = rt_qmi_open_channel(euicc_aid, sizeof(euicc_aid), channel);
     }

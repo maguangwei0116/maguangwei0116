@@ -397,10 +397,8 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     infos->oti_addr          = local_config_get_data("OTI_ENVIRONMENT_ADDR");
     infos->emq_addr          = local_config_get_data("EMQ_SERVER_ADDR");
     infos->proxy_addr        = local_config_get_data("PROXY_SERVER_ADDR");
-    // infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
+    infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
                                                     LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
-
-    infos->lpa_channel_type  = LPA_CHANNEL_BY_IPC;
 
     size = msg_string_to_int(local_config_get_data("LOG_FILE_SIZE"));
     if (size > 0) {

@@ -39,6 +39,7 @@ int32_t rt_qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *chann
 
 int32_t rt_qmi_command_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
 {
+    MSG_PRINTF(LOG_DBG, "start callback rt_qmi_command_apdu()");
     return jni_command_apdu(data, data_len, rsp, rsp_len);
 }
 

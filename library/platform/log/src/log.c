@@ -138,8 +138,6 @@ static int32_t log_file_write(const char *data, int32_t len)
     return RT_SUCCESS;
 }
 
-typedef void (*print)(char*);
-extern print str;
 static void log_local_print(const char *data, int32_t len)
 {
     int32_t size = 0;
@@ -147,7 +145,7 @@ static void log_local_print(const char *data, int32_t len)
     if (g_log_ex_func) {
         /* external logger function */
         g_log_ex_func(data);
-        return;
+        // return;
     }
     
     if (g_log_param.mode == LOG_PRINTF_TERMINAL) {

@@ -185,7 +185,6 @@ static int32_t agent_init_call(void)
         ret = g_init_objs[i].init(g_init_objs[i].arg);
         if (rt_os_strcmp("init_log_file", g_init_objs[i].name))
         {
-            str(g_init_objs[i].name);
             MSG_PRINTF(LOG_DBG, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
         }
     }
@@ -198,11 +197,9 @@ int32_t agent_main(const char *app_path, log_func logger)
     if (app_path) {
         snprintf(g_app_path, sizeof(g_app_path), "%s", app_path);
     }
-
     if (logger) {
         log_install_func(logger);
     }
-    
     agent_init_call();
 
     return RT_SUCCESS;

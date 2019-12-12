@@ -18,11 +18,6 @@
 #include <stdint.h>
 #include <jni.h>
 
-struct arguments {
-    JNIEnv *env;
-    jclass type;
-};
-
 int32_t jni_get_imei(uint8_t *imei);
 int32_t jni_get_mcc(uint16_t *mcc);
 int32_t jni_get_mnc(uint16_t *mnc);
