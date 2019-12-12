@@ -35,12 +35,15 @@ define CREATE_OEMAPP_CFG_FILE
 endef
 
 # Auto generate softsim-release file
+# e.g. "Release: [agent-general_v0.0.0.10] [monitor-general_v0.0.0.10] [libcomm.so-general_v0.0.0.10] "
 define CREATE_OEMAPP_SOFTSIM_RELEASE
 	if [ true ]; then\
 	version_string=$(REDTEA_OEMAPP_VERSION_FILE_TITLE);\
 	targets_list="$(notdir $(shell ls $(SYSAPP_INSTALL_PATH)/*agent*)) $(notdir $(shell ls $(SYSAPP_INSTALL_PATH)/*monitor*)) $(notdir $(shell ls $(SDK_PATH)/lib/*-libcomm.so*)) ";\
 	for var in $$targets_list;do \
-	version_string+="[`echo "$$var" | cut -d "_" -f 1`_`echo "$$var" | cut -d "_" -f 2`] "; done;\
+	app_all_name=`echo "$$var" | cut -d "_" -f 1`;\
+	app_name="`echo "$$app_all_name" | cut -d "-" -f 3`-`echo "$$app_all_name" | cut -d "-" -f 4`";\
+	version_string+="["$$app_name"_`echo "$$var" | cut -d "_" -f 2`] "; done;\
 	echo "$$version_string" > $(REDTEA_OEMAPP_VERSION_FILE);\
 	fi
 endef
