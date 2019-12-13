@@ -457,6 +457,25 @@ int32_t init_config(void *arg)
     return RT_SUCCESS;
 }
 
+int32_t config_update_uicc_mode(int32_t mode)
+{
+    const char *key = "UICC_MODE";
+    const char *value = (mode == LPA_CHANNEL_BY_IPC) ? UICC_MODE_vUICC : UICC_MODE_eUICC;
+    const char *old_value = NULL;
+    int32_t pair_num = ARRAY_SIZE(g_config_items);
+    config_item_t *items = g_config_items;
+
+    old_value = local_config_get_data(key);
+    if (rt_os_strcmp(old_value, value)) {
+        /* only update when value changed */
+        config_set_data(key, value, pair_num, items);
+        config_write_file(CONFIG_FILE_PATH, pair_num, items);
+        MSG_PRINTF(LOG_DBG, "UICC mode changed: %s => %s\n", old_value, value);
+    }
+
+    return RT_SUCCESS;
+}
+
 /* remote config error code list */
 typedef enum CONFIG_RESULT {
     CONFIG_NO_FAILURE           = 0,
