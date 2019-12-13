@@ -80,6 +80,8 @@ int32_t rt_send_msg_queue(int32_t msgid, const void *buffer, int32_t len, int32_
 int32_t rt_os_memcmp(const void *mem_des, const void *mem_src, uint32_t len);
 int32_t rt_os_strcmp(const char *mem_des, const char *mem_src);
 int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, uint32_t len);
+int32_t rt_os_strncasecmp(const char *mem_des, const char *mem_src, uint32_t len);
+int32_t rt_os_strcasecmp(const char *mem_des, const char *mem_src);
 uint32_t rt_os_strlen(const char *string);
 char *rt_os_strchr(const char *str, int32_t chr);
 char *rt_os_strrchr(const char *str, int32_t chr);

@@ -312,6 +312,7 @@ void *rt_os_strncpy(char* dest, const char *src, uint32_t len)
 int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, uint32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
         return RT_ERROR;
     }
 
@@ -326,6 +327,26 @@ int32_t rt_os_strcmp(const char *mem_des, const char *mem_src)
     }
 
     return strcmp(mem_des,mem_src);
+}
+
+int32_t rt_os_strncasecmp(const char *mem_des, const char *mem_src, uint32_t len)
+{
+    if ((NULL == mem_des) || (NULL == mem_src)) {
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
+        return RT_ERROR;
+    }
+
+    return strncasecmp(mem_des, mem_src, len);
+}
+
+int32_t rt_os_strcasecmp(const char *mem_des, const char *mem_src)
+{
+    if ((NULL == mem_des) || (NULL == mem_src)) {
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
+        return RT_ERROR;
+    }
+
+    return strcasecmp(mem_des,mem_src);
 }
 
 void *rt_os_memcpy(void *mem_des, const void *mem_src, uint32_t len)
