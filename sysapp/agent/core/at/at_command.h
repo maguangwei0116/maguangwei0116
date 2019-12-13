@@ -17,6 +17,6 @@
 #include "rt_type.h"
 
 int32_t init_at_command(void *arg);
-int32_t at_commnad(char *cmd, char *rsp);
+int32_t at_commnad(const char *cmd, char *rsp, int32_t len);
 
 #endif // __AT_COMMNAD_H__
