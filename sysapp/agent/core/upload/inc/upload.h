@@ -10,7 +10,8 @@ extern "C" {
 #include "rt_type.h"
 #include "cJSON.h"
 
-#define NORMAL_TRAN_ID_LEN          32
+/* uuid sample: 6c90fcc5-a30d-444f-9ba4-5bc433895699 */
+#define MAX_UUID_LEN                37  //(32+4+1)
 #define MAX_TRAN_ID_LEN             64
 
 typedef enum UPLOAD_TOPIC {
