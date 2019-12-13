@@ -468,9 +468,9 @@ int32_t config_update_uicc_mode(int32_t mode)
     old_value = local_config_get_data(key);
     if (rt_os_strcmp(old_value, value)) {
         /* only update when value changed */
+        MSG_PRINTF(LOG_DBG, "UICC mode changed: %s => %s\n", old_value, value);
         config_set_data(key, value, pair_num, items);
         config_write_file(CONFIG_FILE_PATH, pair_num, items);
-        MSG_PRINTF(LOG_DBG, "UICC mode changed: %s => %s\n", old_value, value);
     }
 
     return RT_SUCCESS;
