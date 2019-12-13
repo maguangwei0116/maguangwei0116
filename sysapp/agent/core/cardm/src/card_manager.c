@@ -398,7 +398,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             
         case MSG_NETWORK_DISCONNECTED:
             rt_os_sleep(1);  // must have
-            ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
+            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             break;
 
         case MSG_CARD_ENABLE_EXIST_CARD:
@@ -411,7 +411,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
-            ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);
+            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             break;
             
         default:
