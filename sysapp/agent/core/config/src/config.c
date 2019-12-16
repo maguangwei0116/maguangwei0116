@@ -476,6 +476,96 @@ int32_t config_update_uicc_mode(int32_t mode)
     return RT_SUCCESS;
 }
 
+static int32_t config_get_key_value_fast(const char *app_path, const char *key, char *value)
+{ 
+    char rt_file_name[128];
+    int32_t file_len = 0;
+    rt_fshandle_t fd = NULL;
+    int32_t ret = RT_ERROR;
+    uint8_t *file_data = NULL;
+    char *p0 = NULL;
+    char *p1 = NULL;
+
+    snprintf(rt_file_name, sizeof(rt_file_name), "%s/%s", app_path, CONFIG_FILE_PATH);
+
+    file_len = linux_file_size(rt_file_name);
+    if (file_len <= 0) {
+        goto exit_entry;
+    }
+
+    fd = linux_fopen(rt_file_name, "r");
+    if (fd < 0) {
+        goto exit_entry;
+    }
+
+    file_data = rt_os_malloc(file_len + 1);
+    if (!file_data) {
+        goto exit_entry;
+    }
+    rt_os_memset(file_data, 0, file_len + 1);
+
+    ret = linux_fread(file_data, 1, file_len, fd);
+    if (ret != file_len) {
+        goto exit_entry;
+    }
+
+    p0 = rt_os_strstr(file_data, key);
+    if (!p0) {
+        goto exit_entry;  
+    }
+    p0 += rt_os_strlen(key);
+
+    /* format line: "key = value \r\n" */
+    while (1) {
+        if (*p0 == ' ' || *p0 == '=') {
+            p0++;
+            continue;
+        }
+        break;
+    }
+
+    p1 = p0;
+    while (1) {
+        if (*p1 == ' ' || *p1 == '\r'|| *p1 == '\n' || *p1 == '\t') {            
+            break;
+        }
+        p1++;
+    }
+
+    rt_os_memcpy(value, p0, p1-p0);
+
+    ret = RT_SUCCESS;
+    
+exit_entry:
+
+    if (fd) {
+        linux_fclose(fd);
+        fd = NULL;
+    }
+
+    if (file_data) {
+        rt_os_free(file_data);
+        file_data = NULL;
+    }
+
+    return ret;
+}
+
+int32_t config_get_uicc_mode(const char *app_path, int32_t *mode)
+{
+    const char *key = "UICC_MODE";
+    char value[256] = {0};
+    int32_t ret = RT_ERROR;
+
+    ret = config_get_key_value_fast(app_path, key, value);
+    //printf("ret=%d, key:%s, value:%s\r\n", ret, key, value);
+    if (!ret && mode) {
+        *mode = msg_string_to_int(value);
+    }
+
+    return ret;
+}
+
 /* remote config error code list */
 typedef enum CONFIG_RESULT {
     CONFIG_NO_FAILURE           = 0,
