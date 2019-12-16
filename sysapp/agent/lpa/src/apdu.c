@@ -49,7 +49,8 @@ int open_channel(uint8_t *channel)
         uint16_t sw = 0;
         uint16_t len = sizeof(rsp);
         
-        ret = ipc_send_data(open_channel_cmd, sizeof(open_channel_cmd), rsp, &len);
+        // ret = ipc_send_data(open_channel_cmd, sizeof(open_channel_cmd), rsp, &len);
+        ret = rt_qmi_command_apdu(open_channel_cmd, sizeof(open_channel_cmd), rsp, &len);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
@@ -58,7 +59,8 @@ int open_channel(uint8_t *channel)
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
             sw_61xx_req_cmd[4] = len;
-            ret = ipc_send_data(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
+            // ret = ipc_send_data(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
+            ret = rt_qmi_command_apdu(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
             if (ret != RT_SUCCESS) {
                 return RT_ERR_APDU_SEND_FAIL;
             }
@@ -88,7 +90,8 @@ int close_channel(uint8_t channel)
         uint16_t len = sizeof(rsp);
         
         close_channel_cmd[3] = channel;  // channel id fill into p2
-        ret = ipc_send_data(close_channel_cmd, sizeof(close_channel_cmd), rsp, &len);
+        // ret = ipc_send_data(close_channel_cmd, sizeof(close_channel_cmd), rsp, &len);
+        ret = rt_qmi_command_apdu(close_channel_cmd, sizeof(close_channel_cmd), rsp, &len);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
@@ -98,7 +101,8 @@ int close_channel(uint8_t channel)
             len = (sw & 0xFF);
             sw_61xx_req_cmd[0] = (channel & 0x03) | 0x80;   // Channel should be 0~3, and convert to hexstring
             sw_61xx_req_cmd[4] = len;
-            ret = ipc_send_data(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
+            // ret = ipc_send_data(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
+            ret = rt_qmi_command_apdu(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
             if (ret != RT_SUCCESS) {
                 return RT_ERR_APDU_SEND_FAIL;
             }
@@ -108,7 +112,6 @@ int close_channel(uint8_t channel)
         if (sw != SW_NORMAL) {
             return RT_ERR_UNKNOWN_ERROR;
         }
-        // ret = rt_qmi_close_channel_vuicc(channel);
     } else {
         ret = rt_qmi_close_channel(channel);
     }
