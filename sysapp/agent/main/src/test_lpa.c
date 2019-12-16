@@ -20,6 +20,7 @@
 #define ACTIVATION_CODE         "1$QUARK-QA.REDTEA.IO$WSTBFXLFN3$$1"
 #define CONFIRMATION_CODE       "chucktest"
 #define VERSION                 "V1.0.0"
+#define MAX_PROFILE_NUM         20
 
 // #define ACTIVATION_CODE         "1$esim.wo.cn$SATKB8Z-I4YBPHJS$1.3.6.1.4.1.47814.2.4$1"
 // #define CONFIRMATION_CODE       "891985"
@@ -110,17 +111,17 @@ int main(int argc, char **argv)
     int i;
     char iccid[21] = {0};
     profile_info_t *p_pi;
-    uint8_t eid_list[11][33];
+    uint8_t eid_list[11][33] = {0};
 
     char *ac = NULL;
     char *cc = NULL;
     uint8_t *url = NULL;
 
-    uint8_t cnt;
-    uint8_t buf[1024];
+    uint8_t cnt = 0;
+    uint8_t buf[4096] = {0};
     int opt = 0;
 
-    uint8_t rsp[32];
+    uint8_t rsp[32] = {0};
     uint16_t rsp_size = sizeof(rsp);
     FILE *fp = NULL;
 
@@ -128,7 +129,7 @@ int main(int argc, char **argv)
     (void)fp;
 
     log_set_param(LOG_PRINTF_TERMINAL, g_log_level, 1*1024*1024); //debug in terminal
-    rt_qmi_init(NULL);                      // must init qmi
+    rt_qmi_init(NULL);               // must init qmi
     get_uicc_mode();
     init_apdu_channel(g_chan_mode);  // fore to eUICC mode
     
@@ -166,14 +167,14 @@ int main(int argc, char **argv)
 
             case 'l':
                 p_pi = (profile_info_t *)buf;
-                ret = lpa_get_profile_info(p_pi, &cnt);
+                ret = lpa_get_profile_info(p_pi, &cnt, MAX_PROFILE_NUM);
                 if (ret != RT_SUCCESS) {
                     fprintf(stderr, "Get Profile Info FAILED: %d\n", ret);
                     goto end;
                 }
                 for (i = 0; i < cnt; i++) {
-                    fprintf(stderr, "ICCID: %s, Class: %d, State: %d\n",
-                            p_pi[i].iccid, p_pi[i].class, p_pi[i].state);
+                    fprintf(stderr, "ICCID #%2d: %s, Class: %d, State: %d\n",
+                            i+1, p_pi[i].iccid, p_pi[i].class, p_pi[i].state);
                 }
                 break;
 

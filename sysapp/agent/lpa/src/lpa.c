@@ -101,7 +101,7 @@ end:
     return ret;
 }
 
-int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
+int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
 {
     int ret = RT_SUCCESS;
     uint8_t *buf = NULL;
@@ -127,8 +127,9 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
     memset(buf, 0, size);
     size = 0;
     get_profiles_info(SEARCH_NONE, NULL, 0, (uint8_t *)buf, (uint16_t *)&size, channel);
-    MSG_DUMP_ARRAY("profile info:\n", buf, size);
 
+    MSG_DUMP_ARRAY("profile info:\n", buf, size);
+    
     dc = ber_decode(NULL, &asn_DEF_ProfileInfoListResponse, (void **)&rsp, buf, size);
     if (dc.code != RC_OK) {
         MSG_ERR("Broken ProfileInfoListmResponse decoding at byte %ld\n", (long)dc.consumed);
@@ -144,6 +145,12 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num)
 
     p = (ProfileInfo_t **)(rsp->choice.profileInfoListOk.list.array);
     *num = rsp->choice.profileInfoListOk.list.count;
+
+    if (*num > max_num) {
+        MSG_WARN("too many profile detected (%d > %d)\n", *num, max_num);
+        *num = max_num;
+    }
+    
     if (pi != NULL) {
         for (i = 0; i < *num; i++) {
             memcpy(buf, (p[i])->iccid->buf, (p[i])->iccid->size);

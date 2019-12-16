@@ -94,7 +94,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     int32_t ret = RT_ERROR;
     int32_t i;
 
-    ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num);    
+    ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);    
     if (ret == RT_SUCCESS) {
         /* get current profile type */
         for (i = 0; i < g_p_info.num; i++) {

@@ -16,7 +16,7 @@ typedef struct PROFILE_INFO {
 } profile_info_t;
 int init_lpa(void *arg);
 int lpa_get_eid(uint8_t *eid);
-int lpa_get_profile_info(profile_info_t *pi, uint8_t *num);
+int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num);
 int lpa_get_eid_list(uint8_t (*eid_list)[33]);
 int lpa_switch_eid(const uint8_t *eid);
 /**
