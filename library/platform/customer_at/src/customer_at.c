@@ -25,33 +25,45 @@
 /* include quectel library header file */
 #include "ql_customer_at.h"
 
-#define AT_COMMAND_TBL          "\"uicc\""
-#define AT_COMMAND_TBL_LEN      6  // 4+2
+#define AT_REQ_SELECT_TIMEOUT   5
+#define MAX_CUSTOMER_AT_NUM     5
 
-typedef int32_t (*atcommand_callback)(const char *cmd, char *rsp, int32_t len);
-
-static atcommand_callback g_atcommand_fun;
+static at_cmd_t g_at_cmd[MAX_CUSTOMER_AT_NUM];
+static int32_t g_at_cmd_cnt = 0;
 static int32_t g_at_sockfd = -1;
 
-static void atcommand_handler(int32_t sockfd, struct sockaddr_un *un, const char *ptr, int32_t len)
+static int32_t atcommand_handler(int32_t sockfd, struct sockaddr_un *un, const char *ptr, int32_t len)
 {
-    int32_t retval;
-    char response[1024] = { AT_COMMAND_TBL };
+    int32_t retval = RT_ERROR;
+    int32_t index = 0;
+    int32_t label_len = 0;
+    const char *label = NULL;
+    atcommand_callback func = NULL;
+    char response[1024] = {0};
 
-    if (!rt_os_strncasecmp(ptr, AT_COMMAND_TBL, AT_COMMAND_TBL_LEN)) {
-        retval = g_atcommand_fun((char *)(ptr + AT_COMMAND_TBL_LEN), \
-                &response[AT_COMMAND_TBL_LEN], sizeof(response)-AT_COMMAND_TBL_LEN);
-        if (retval == RT_ERROR) {
-            snprintf(response, sizeof(response), "error");
-            response[5] = '\0';
-        }
-        MSG_PRINTF(LOG_INFO, "at req: %s\n", ptr);
-        MSG_PRINTF(LOG_INFO, "at rsp: %s\n", response);
-        retval = ql_customer_at_send_response(sockfd, un, true, response, rt_os_strlen(response));
-        if (retval) {
-            MSG_PRINTF(LOG_ERR, "send at command failed\n");
+    for (index = 0; index < g_at_cmd_cnt; index++) {
+        label = g_at_cmd[index].label;
+        func = g_at_cmd[index].handle;
+        label_len = rt_os_strlen(label);
+        
+        if (!rt_os_strncasecmp(ptr, label, label_len) && func) {
+            snprintf(response, sizeof(response), "%s", label);
+            retval = func((char *)(ptr + label_len), &response[label_len], sizeof(response)-label_len);
         }
     }
+
+    if (retval == RT_ERROR) {
+        snprintf(response, sizeof(response), "%s", "ERROR");
+    }
+    
+    MSG_PRINTF(LOG_DBG, "at req: %s\n", ptr);
+    MSG_PRINTF(LOG_DBG, "at rsp: %s\n", response);
+    retval = ql_customer_at_send_response(sockfd, un, true, response, rt_os_strlen(response));
+    if (retval) {
+        MSG_PRINTF(LOG_ERR, "send at command failed\n");
+    }
+
+    return retval;
 }
 
 static void customer_at_listen_sock(int32_t *sockfd)
@@ -61,13 +73,18 @@ static void customer_at_listen_sock(int32_t *sockfd)
     struct timeval tv;
     struct sockaddr_un un;
     char buf[1024];
+
+    /* check socket fd */
+    if (!sockfd && *sockfd < 0) {
+        MSG_PRINTF(LOG_ERR, "sockfd error\n");
+        goto exit_entry;
+    }
     
-    MSG_PRINTF(LOG_INFO, "sockfd :%d\n", *sockfd);
     while (1) {
         FD_ZERO(&rfds);
         FD_SET(*sockfd, &rfds);
 
-        tv.tv_sec = 5;
+        tv.tv_sec = AT_REQ_SELECT_TIMEOUT;
         tv.tv_usec = 0;
 
         retval = select(*sockfd + 1, &rfds, NULL, NULL, &tv);
@@ -76,43 +93,52 @@ static void customer_at_listen_sock(int32_t *sockfd)
                 memset(buf, 0, sizeof(buf));
                 memset(&un, 0, sizeof(un));
                 if (ql_customer_at_get_request(*sockfd, &un, buf, sizeof(buf))) {
-                    MSG_PRINTF(LOG_INFO, "get at command request failed\n");
+                    MSG_PRINTF(LOG_ERR, "get at command request failed\n");
                     continue;
                 }
                 atcommand_handler(*sockfd, &un, (const char *)buf, rt_os_strlen(buf));
             }
         } else if (retval < 0){
-            MSG_PRINTF(LOG_INFO, "select error(%d)=%s\n", errno, strerror(errno));
+            MSG_PRINTF(LOG_ERR, "select error(%d)=%s\n", errno, strerror(errno));
         }
     }
 
+exit_entry:
+
     rt_exit_task(NULL);
+    g_at_sockfd = -1;
 }
 
-static void customer_at_regist_callback(atcommand_callback fun)
+static void customer_at_regist_callback(void *arg)
 {
-    g_atcommand_fun = fun;
+    at_cmd_t *at_cmd = (at_cmd_t *)arg;
+
+    /* add "" is needed !!! */
+    snprintf(g_at_cmd[g_at_cmd_cnt].label, sizeof(g_at_cmd[g_at_cmd_cnt].label), "\"%s\"", at_cmd->label);
+    g_at_cmd[g_at_cmd_cnt].handle = at_cmd->handle;
+    g_at_cmd_cnt++;  
 }
 
 int32_t init_customer_at(void *arg)
 {
     rt_task task_id = 0;
     int32_t ret = RT_SUCCESS;
-    
-    g_at_sockfd = ql_customer_at_get_socket();
-    MSG_PRINTF(LOG_INFO, "g_sockfd:%d\n", g_at_sockfd);
+
     if (g_at_sockfd < 0) {
-        MSG_PRINTF(LOG_INFO, "Can not get socket fd\n");
-        ret = RT_ERROR;
-    } else {
-        ret = rt_create_task(&task_id, (void *)customer_at_listen_sock, &g_at_sockfd);
-        if (ret != RT_SUCCESS) {
-            MSG_PRINTF(LOG_ERR, "create task fail\n");
+        g_at_sockfd = ql_customer_at_get_socket();
+        if (g_at_sockfd < 0) {
+            MSG_PRINTF(LOG_ERR, "Can not get socket fd\n");
             ret = RT_ERROR;
+        } else {
+            ret = rt_create_task(&task_id, (void *)customer_at_listen_sock, &g_at_sockfd);
+            if (ret != RT_SUCCESS) {
+                MSG_PRINTF(LOG_ERR, "create task fail\n");
+                ret = RT_ERROR;
+            }
         }
     }
 
-    customer_at_regist_callback((atcommand_callback)arg);
+    customer_at_regist_callback(arg);
 
     return ret;
 }

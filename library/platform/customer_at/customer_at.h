@@ -14,6 +14,15 @@
 #ifndef __CUSTOEMR_AT_H__
 #define __CUSTOEMR_AT_H__
 
+#include "rt_type.h"
+
+typedef int32_t (*atcommand_callback)(const char *cmd, char *rsp, int32_t len);
+
+typedef struct AT_CMD {
+    char                    label[64];      // AT cmd name
+    atcommand_callback      handle;     // AT cmd handle function
+} at_cmd_t;
+
 int32_t init_customer_at(void *arg);
 
 #endif // __CUSTOEMR_AT_H__

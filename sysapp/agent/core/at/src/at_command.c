@@ -12,6 +12,9 @@
  *******************************************************************************/
 #include "agent_queue.h"
 #include "at_command.h"
+#ifdef CFG_STANDARD_MODULE
+#include "customer_at.h"
+#endif
 #include "lpa.h"
 #include "log.h"
 
@@ -32,15 +35,24 @@
 #define       AT_CFG_EUICC                   "\"eUICC\""
 #define       AT_CFG_UICC_LEN                7 // 5+2
 
+#ifdef CFG_STANDARD_MODULE
+/*
+handle function name: xxx_at_cmd_handle
+*/
+#define       AT_CMD_DEF(label)              static at_cmd_t g_at_cmd_##label = {#label, label##_at_cmd_handle}
+#define       AT_CMD_INIT(label)             init_customer_at(&g_at_cmd_##label)
+#define       AT_CMD_INSTALL(label)          \
+              {\
+                  AT_CMD_DEF(label);\
+                  AT_CMD_INIT(label);\
+              }
+#else
+#define       AT_CMD_INSTALL(label)          do {} while(0)
+#endif
+
 static public_value_list_t *g_p_value_list  = NULL;
 
-int32_t init_at_command(void *arg)
-{
-    g_p_value_list = ((public_value_list_t *)arg);
-    return RT_SUCCESS;
-}
-
-static int32_t at_switch_card(profile_type_e type, uint8_t *iccid)
+static int32_t uicc_switch_card(profile_type_e type, uint8_t *iccid)
 {
     int32_t ii = 0;
     int32_t len = 0;
@@ -83,7 +95,7 @@ static int32_t at_switch_card(profile_type_e type, uint8_t *iccid)
     return RT_SUCCESS;
 }
 
-int32_t at_commnad(const char *cmd, char *rsp, int32_t len)
+static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 {
     int32_t ret = RT_ERROR;
     int32_t ii = 0, tmp_len = 0, size = 0;
@@ -129,9 +141,9 @@ int32_t at_commnad(const char *cmd, char *rsp, int32_t len)
                 rt_os_memcpy(iccid, &cmd[5], THE_ICCID_LENGTH);   
                 MSG_PRINTF(LOG_INFO, "iccid: %s\n", iccid);
                 if (cmd[3] == AT_SWITCH_TO_PROVISIONING) {
-                    ret = at_switch_card(PROFILE_TYPE_PROVISONING, iccid);
+                    ret = uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
                 } else if (cmd[3] == AT_SWITCH_TO_OPERATION) {
-                    ret = at_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
+                    ret = uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
                 }
                 if (ret == RT_SUCCESS) {
                     /* rsp: ,cmd,<iccid> */
@@ -152,4 +164,15 @@ int32_t at_commnad(const char *cmd, char *rsp, int32_t len)
         }
     }
     return ret;
+}
+
+
+int32_t init_at_command(void *arg)
+{
+    g_p_value_list = ((public_value_list_t *)arg);
+
+    /* install "UICC" at command */
+    AT_CMD_INSTALL(uicc);
+    
+    return RT_SUCCESS;
 }

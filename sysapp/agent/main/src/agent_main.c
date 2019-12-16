@@ -164,7 +164,6 @@ static const init_obj_t g_init_objs[] =
 
 #ifdef CFG_STANDARD_MODULE
     INIT_OBJ(init_at_command,           (void *)&g_value_list),
-    INIT_OBJ(init_customer_at,          (void *)&at_commnad),
 #endif
 
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
