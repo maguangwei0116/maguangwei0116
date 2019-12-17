@@ -203,11 +203,11 @@ int32_t rt_qmi_get_network_type(uint8_t *network_type)
         }
 
         if(type == 7){
-            rt_os_strcpy((char *)network_type, "4g");
+            rt_os_strcpy((char *)network_type, "4G");
         } else if ((type > 3) && (type < 7)) {
-            rt_os_strcpy((char *)network_type, "3g");
+            rt_os_strcpy((char *)network_type, "3G");
         } else {
-            rt_os_strcpy((char *)network_type, "2g");
+            rt_os_strcpy((char *)network_type, "2G");
         }
         ret = RT_SUCCESS;
     } else {
