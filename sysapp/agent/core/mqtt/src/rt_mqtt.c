@@ -40,7 +40,7 @@
 
 #define MQTT_SUBCRIBE_TOPIC_MAX_CNT     10
 
-#define MQTT_KEEP_ALIVE_INTERVAL        300
+#define MQTT_KEEP_ALIVE_INTERVAL        300 // seconds, about 5 mins
 
 /*
 max wait time: 
@@ -51,8 +51,6 @@ MQTT_RECONNECT_MAX_CNT * ((30 seconds, connect timeout) * (retry 3 times) * (ser
 #define MQTT_SUBSCRIBE_MAX_CNT          3
 
 #define MQTT_ALIAS_MAX_LEN              40
-
-#define MQTT_NETWORK_STATE_TIMEOUT      60  // seconds
 
 #define GET_EID_FLAG(flag)              (((flag) >> 0) & 0x01)
 #define GET_AGENT_FLAG(flag)            (((flag) >> 1) & 0x01)

@@ -98,7 +98,7 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
         host_entry = gethostbyname(hostname);
         //RT_MQTT_COMMAN_DEBUG("get host by name 2\r\n");
         if(!host_entry) {
-            MSG_PRINTF(LOG_WARN, "get hosy by name fail\n");
+            MSG_PRINTF(LOG_WARN, "get host by name fail\n");
             ret = RT_ERROR;
             break;
         }
