@@ -95,6 +95,7 @@ do {\
     snprintf(pid_str, sizeof(pid_str), "%p", (void *)pid);\
     log_print(LOG_LEVEL, LOG_HAVE_LEVEL_PRINTF, "[%s][ %d %s ] "format, pid_str, __LINE__, __FILENAME__, ##__VA_ARGS__);\
 } while (0)
+#define MSG_ORG_PRINTF(LOG_LEVEL, format, ...)  log_print(LOG_LEVEL, LOG_NO_LEVEL_PRINTF, format, ##__VA_ARGS__)
 #endif
 #define MSG_HEXDUMP(title, data, len)           log_hexdump(__FILE__, __LINE__, title, data, len)
 
