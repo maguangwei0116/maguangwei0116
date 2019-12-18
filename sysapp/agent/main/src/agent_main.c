@@ -148,24 +148,23 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_backtrace,            agent_printf),
 #endif
 
+#ifdef CFG_STANDARD_MODULE
+    INIT_OBJ(init_at_command,           (void *)&g_value_list),
+#endif
+
     INIT_OBJ(init_bootstrap,            (void *)&g_value_list),
+    INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_versions,             (void *)&g_value_list),
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_mbn,                  (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa_channel,          (void *)&g_value_list),
-    INIT_OBJ(init_timer,                NULL),
-    INIT_OBJ(init_qmi,                  NULL),
+    INIT_OBJ(init_timer,                NULL),    
     INIT_OBJ(init_queue,                (void *)&g_value_list),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_card_detection,       (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    (void *)&g_value_list),
-
-#ifdef CFG_STANDARD_MODULE
-    INIT_OBJ(init_at_command,           (void *)&g_value_list),
-#endif
-
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
     INIT_OBJ(init_upgrade,              (void *)&g_value_list),
