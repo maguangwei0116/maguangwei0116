@@ -374,6 +374,7 @@ static void config_create_default_file(const char *file, int32_t pair_num, confi
     /* write defconfig file */
     config_write_file(file, pair_num, items);
     MSG_PRINTF(LOG_DBG, "Create default param for [%s] environment !!!\r\n", CFG_ENV_TYPE);
+    rt_os_sync();
 }
 
 static int32_t config_init_file(const char *file, int32_t pair_num, config_item_t *items)
@@ -397,6 +398,12 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     infos->oti_addr          = local_config_get_data("OTI_ENVIRONMENT_ADDR");
     infos->emq_addr          = local_config_get_data("EMQ_SERVER_ADDR");
     infos->proxy_addr        = local_config_get_data("PROXY_SERVER_ADDR");
+
+    if (!rt_os_strlen(infos->oti_addr) || !rt_os_strlen(infos->emq_addr) || !rt_os_strlen(infos->proxy_addr)) {
+        MSG_PRINTF(LOG_WARN, "Necessary config param is empty !!!\r\n");
+        return RT_ERROR;
+    }
+    
     infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
                                                     LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
 
@@ -445,9 +452,14 @@ int32_t init_config(void *arg)
     config_item_t *items = g_config_items;
     config_info_t *infos = &g_config_info;
 
-    config_init_file(CONFIG_FILE_PATH, pair_num, items);
-
-    config_sync_global_info(infos, pair_num, items);
+    while (1) {
+        config_init_file(CONFIG_FILE_PATH, pair_num, items);
+        if (config_sync_global_info(infos, pair_num, items) == RT_ERROR) {
+            linux_rt_delete_file(CONFIG_FILE_PATH);
+            continue;
+        }
+        break;
+    }
 
     ((public_value_list_t *)arg)->config_info = infos;
     log_set_param(LOG_PRINTF_FILE, infos->agent_log_level, infos->log_max_size);
@@ -471,6 +483,7 @@ int32_t config_update_uicc_mode(int32_t mode)
         MSG_PRINTF(LOG_DBG, "UICC mode changed: %s => %s\n", old_value, value);
         config_set_data(key, value, pair_num, items);
         config_write_file(CONFIG_FILE_PATH, pair_num, items);
+        rt_os_sync();
     }
 
     return RT_SUCCESS;
@@ -863,6 +876,7 @@ static int32_t config_handler(const void *in, const char *event, void **out)
         if (ok_cnt > 0) {
             /* update config file */
             config_write_file(CONFIG_FILE_PATH, pair_num, items);
+            rt_os_sync();
         }
     }
 
