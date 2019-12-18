@@ -30,14 +30,26 @@ int lpa_get_eid(uint8_t *eid)
     uint8_t buf[64] = {0};  // 21 bytes is not enough, 2 more bytes is in need !!! It may stack buffer overflow !!!
     uint16_t size = sizeof(buf);
     int ret = RT_SUCCESS;
+    int cnt = 3;  // max 3 times
+    int i = 0;
     
-    if (open_channel(&channel) != RT_SUCCESS) {
-        return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+    for (i = 0; i < cnt; i++) {    
+        if (open_channel(&channel) != RT_SUCCESS) {
+            return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
+        }
+        hexstring2bytes((uint8_t *)eid, buf, &size);
+        ret = get_eid(buf, &size, channel);
+        memcpy(eid, &buf[5], 16);
+        close_channel(channel);
+
+        /* retry more times when APDU SW error */
+        if (ret != RT_ERR_APDU_STORE_DATA_FAIL) {
+            break;
+        }
+
+        rt_os_sleep(1);
     }
-    hexstring2bytes((uint8_t *)eid, buf, &size);
-    ret = get_eid(buf, &size, channel);
-    memcpy(eid, &buf[5], 16);
-    close_channel(channel);
+    
     return ret;
 }
 
