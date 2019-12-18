@@ -109,6 +109,24 @@ static uint8_t *g_buf = NULL;
 static uint16_t g_buf_size = 0;
 static char g_share_profile[128];
 
+static rt_fshandle_t open_share_profile(const char *file_name, rt_fsmode_t mode)
+{    
+#if (CFG_OPEN_MODULE)
+    return linux_rt_fopen(file_name, mode); 
+#elif (CFG_STANDARD_MODULE)  // standard
+    return linux_fopen(file_name, mode); 
+#endif
+}
+
+static int32_t sizeof_share_profile(const char *file_name)
+{    
+#if (CFG_OPEN_MODULE)
+    return linux_rt_file_size(file_name); 
+#elif (CFG_STANDARD_MODULE)  // standard
+    return linux_file_size(file_name); 
+#endif
+}
+
 static uint32_t get_offset(rt_fshandle_t fp, uint8_t type, uint32_t *size)
 {
     int ret = 0;
@@ -185,7 +203,7 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     sha256_ctx_t hash_code;
     int32_t file_size;
 
-    file_size = linux_rt_file_size(g_share_profile);
+    file_size = sizeof_share_profile(g_share_profile);
     linux_fseek(fp, 0, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 8, fp);
     profile_off = get_length(buf,1);
@@ -241,7 +259,7 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     int32_t read_len;
     sha256_ctx_t ctx;
 
-    file_size = linux_rt_file_size(g_share_profile);
+    file_size = sizeof_share_profile(g_share_profile);
 
     /* check file length */
     if (file_size < (sizeof(tail_buf) + 4)) {
@@ -561,7 +579,7 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
     uint8_t buf[128];
     uint8_t *buffer = NULL;
 
-    fp = linux_rt_fopen(g_share_profile, RT_FS_READ);
+    fp = open_share_profile(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
         return RT_ERROR;
     }
@@ -638,7 +656,7 @@ int32_t init_profile_file(const char *file)
     }
 #endif
 
-    fp = linux_rt_fopen(g_share_profile, RT_FS_READ);
+    fp = open_share_profile(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
         return RT_ERROR;
     }
@@ -667,7 +685,7 @@ int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profil
     int32_t ret = RT_ERROR;
     int32_t i = 0;
 
-    fp = linux_rt_fopen(g_share_profile, RT_FS_READ);
+    fp = open_share_profile(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
         MSG_PRINTF(LOG_ERR, "Open file failed\n");
         return RT_ERROR;

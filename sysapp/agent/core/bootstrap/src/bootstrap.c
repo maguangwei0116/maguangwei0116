@@ -25,7 +25,12 @@
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)                           (sizeof((a)) / sizeof((a)[0]))
 #endif
+#if (CFG_OPEN_MODULE)
 #define SHARE_PROFILE                           "rt_share_profile.der"
+#elif (CFG_STANDARD_MODULE)  // standard
+#define SHARE_PROFILE                           "/oemapp/rt_share_profile.der"
+#endif
+
 #define DEFAULT_SINGLE_INTERVAL_TIME            10                                      // default interval time (seconds)
 #define MAX_WAIT_REGIST_TIME                    180
 
@@ -198,10 +203,14 @@ int32_t bootstrap_get_profile_version(char *batch_code, int32_t b_size, char *ve
 int32_t bootstrap_get_profile_name(char *file_name, int32_t len)
 {
     if (file_name) {
+#if (CFG_OPEN_MODULE)
         char abs_share_profile[128]; // share profile absolute path
 
         linux_rt_file_abs_path(SHARE_PROFILE, abs_share_profile, sizeof(abs_share_profile));
         snprintf(file_name, len, "%s", abs_share_profile);
+#elif (CFG_STANDARD_MODULE)
+        snprintf(file_name, len, "%s", SHARE_PROFILE);
+#endif
         return RT_SUCCESS;
     }
 
