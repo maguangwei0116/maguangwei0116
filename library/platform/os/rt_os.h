@@ -16,6 +16,7 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/ipc.h>
+#include <semaphore.h>
 #include "rt_type.h"
 
 #define  RT_FILE_HANDLE                     FILE *
@@ -48,6 +49,7 @@
 typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);
 typedef pthread_mutex_t    rt_pthread_mutex_t;
+typedef sem_t              rt_sem_t;
 
 #ifdef CFG_ENABLE_LIBUNWIND
 extern int32_t thread_info_record(unsigned long pid, const char *name);
@@ -124,13 +126,18 @@ void *rt_os_signal(int32_t signum, void *handler);
 RT_FILE_HANDLE rt_os_open(const char *filename, const char *flags);
 uint32_t rt_os_alarm(uint32_t seconds);
 
-int32_t rt_mutex_init(pthread_mutex_t *mutex);
-int32_t rt_mutex_lock(pthread_mutex_t *mutex);
-int32_t rt_mutex_unlock(pthread_mutex_t *mutex);
+int32_t rt_mutex_init(rt_pthread_mutex_t *mutex);
+int32_t rt_mutex_lock(rt_pthread_mutex_t *mutex);
+int32_t rt_mutex_unlock(rt_pthread_mutex_t *mutex);
 
 rt_pthread_mutex_t *linux_mutex_init(void);
-int32_t linux_mutex_lock(pthread_mutex_t *mutex);
-int32_t linux_mutex_unlock(pthread_mutex_t *mutex);
-int32_t linux_mutex_release(pthread_mutex_t *mutex);
+int32_t linux_mutex_lock(rt_pthread_mutex_t *mutex);
+int32_t linux_mutex_unlock(rt_pthread_mutex_t *mutex);
+int32_t linux_mutex_release(rt_pthread_mutex_t *mutex);
+
+rt_sem_t *linux_sem_init(int32_t pshared, uint32_t value);
+int32_t linux_sem_wait(rt_sem_t *sem);
+int32_t linux_sem_post(rt_sem_t *sem);
+int32_t linux_sem_destroy(rt_sem_t *sem);
 
 #endif // __RT_OS_H__
