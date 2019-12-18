@@ -10,7 +10,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <openssl/err.h>
+
 #include "https.h"
+#include "dns.h"
+
+#define TCP_CONNECT_TIMEOUT     30  // unit: seconds
 
 // Establish a regular tcp connection
 static int connect_tcp(const char *host_name, const char *addr)
@@ -18,24 +22,30 @@ static int connect_tcp(const char *host_name, const char *addr)
     int error, handle;
     struct hostent *host;
     struct sockaddr_in server;
-
+    
+#ifdef CFG_USR_DNS_API
+    MSG_PRINTF(LOG_INFO, "Get hostname by rt api ...\r\n");
+    host = rt_gethostbyname(host_name);
+#else
     host = gethostbyname(host_name);
-    if (host == NULL) {
+#endif
+    if (!host) {
         MSG_PRINTF(LOG_ERR, "Get hostname failed\n");
         return RT_ERR_HTTPS_GET_HOSTNAME_FAIL;
     }
 
     handle = socket(AF_INET, SOCK_STREAM, 0);
-    if (handle == -1) {
+    if (handle < 0) {
         MSG_PRINTF(LOG_ERR, "Get socket failed\n");
         return RT_ERR_HTTPS_GET_SOCKET_FAIL;
     } else {
+        struct timeval timeout;
+    
         server.sin_family = AF_INET;
         server.sin_port = htons(atoi(addr));
         server.sin_addr = *((struct in_addr *)host->h_addr);
-        bzero(&(server.sin_zero), 8);
-        struct timeval timeout;
-        timeout.tv_sec = 30;
+        bzero(&(server.sin_zero), 8);        
+        timeout.tv_sec = TCP_CONNECT_TIMEOUT;
         timeout.tv_usec = 0;
         if (setsockopt(handle, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0){
             MSG_PRINTF(LOG_ERR, "setsockopt0 error\n");
@@ -47,7 +57,7 @@ static int connect_tcp(const char *host_name, const char *addr)
             return RT_ERR_HTTPS_CONNECT_SOCKET_FAIL;
         }
         error = connect(handle, (struct sockaddr *)&server, sizeof(server));
-        if (error == -1) {
+        if (error < 0) {
             MSG_PRINTF(LOG_ERR, "Connect TCP failed\n");
             return RT_ERR_HTTPS_CONNECT_SOCKET_FAIL;
         }

@@ -47,6 +47,7 @@ endif
 SRC-y 		+= src/socket.c
 SRC-y 		+= src/random.c
 SRC-y 		+= src/at.c
+SRC-y 		+= src/dns.c
 
 # Config your include file path by += xxx-inc
 INC-PATH 	+= ./file/
