@@ -658,8 +658,11 @@ int32_t init_profile_file(const char *file)
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
+        MSG_PRINTF(LOG_ERR, "g_share_profile: %s\n",g_share_profile);
+        MSG_PRINTF(LOG_ERR, "fp is null !\n");
         return RT_ERROR;
     }
+    MSG_PRINTF(LOG_ERR, "init_profile_file() !\n");
     ret = rt_check_hash_code_offset(fp);
     if (ret == RT_SUCCESS){
         g_data.file_info_offset = rt_get_file_info_offset(fp, &len);

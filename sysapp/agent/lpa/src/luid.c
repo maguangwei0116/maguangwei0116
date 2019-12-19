@@ -139,6 +139,7 @@ int get_eid(uint8_t *eid, uint16_t *size, uint8_t channel)
     }
     MSG_DUMP_ARRAY("GetEuiccDataRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), eid, size, channel));
+    MSG_INFO("get_eid  *size: %d\n", *size);
     *size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;

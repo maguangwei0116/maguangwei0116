@@ -30,11 +30,11 @@ const char *g_push_channel                  = NULL;
 const devicde_info_t *g_upload_device_info  = NULL;
 const card_info_t *g_upload_card_info       = NULL;
 const target_versions_t *g_upload_ver_info  = NULL;
-#ifdef CFG_PLATFORM_ANDROID
-static rt_bool g_upload_network             = RT_TRUE;
-#else
+// #ifdef CFG_PLATFORM_ANDROID
+// static rt_bool g_upload_network             = RT_TRUE;
+// #else
 static rt_bool g_upload_network             = RT_FALSE;
-#endif
+// #endif
 static rt_bool g_upload_mqtt                = RT_FALSE;
 
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
@@ -201,6 +201,7 @@ static char *random_uuid(char *uuid, int32_t len)
             case 8:
                 sprintf(p, "%c%x", magic[rt_get_random_num() % rt_os_strlen( magic )], b%15 );
                 break;
+
             default:
                 sprintf(p, "%02x", b);
                 break;
@@ -464,6 +465,17 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
     } else if (MSG_MQTT_CONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv mqtt connected\r\n");
         g_upload_mqtt = RT_TRUE;
+        if (g_report_boot_event == RT_FALSE) {
+            upload_event_report("BOOT", NULL, 0, NULL);
+            g_report_boot_event = RT_TRUE;
+            g_boot_timestamp = time(NULL);
+        } else {
+            //MSG_PRINTF(LOG_INFO, "tmp_timestamp:%d, g_boot_timestamp:%d\r\n", tmp_timestamp, g_boot_timestamp);
+            if ((tmp_timestamp - g_boot_timestamp) >= MAX_BOOT_INFO_INTERVAL) {
+                rt_bool report_all_info = RT_FALSE;
+                upload_event_report("INFO", NULL, 0, &report_all_info);
+            }
+        }  
     } else if (MSG_MQTT_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv mqtt disconnected\r\n");
         g_upload_mqtt = RT_FALSE;

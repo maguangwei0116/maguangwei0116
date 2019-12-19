@@ -1095,11 +1095,11 @@ static int32_t mqtt_create_task(void)
 //init parameter
 static void mqtt_init_param(void)
 {
-#ifdef CFG_PLATFORM_ANDROID
-    g_mqtt_param.network_state              = NETWORK_CONNECTED;
-#else
+// #ifdef CFG_PLATFORM_ANDROID
+//     g_mqtt_param.network_state              = NETWORK_CONNECTED;
+// #else
     g_mqtt_param.network_state              = NETWORK_IDLE;
-#endif
+// #endif
     g_mqtt_param.mqtt_state                 = MQTT_IDLE;
     g_mqtt_param.subscribe_eid              = RT_FALSE;
     g_mqtt_param.mqtt_flag                  = RT_FALSE;

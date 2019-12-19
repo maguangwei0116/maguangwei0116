@@ -30,26 +30,38 @@
 #include "mbn.h"
 #include "file.h"
 #include "libcomm.h"
+#include "agent_main.h"
 #ifdef CFG_STANDARD_MODULE
 #include "customer_at.h"
 #include "at_command.h"
 #endif
 
-#define INIT_OBJ(func, arg)     {#func, func, arg}
+#define INIT_OBJ(func, arg) \
+    {                       \
+#func, func, arg    \
+    }
 
 #ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a)           (sizeof((a)) / sizeof((a)[0]))
+#define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
 #endif
+
+// struct arguments *args;
+
+// typedef void (*print)(char*);
+// print str;
+
+// #define RT_DATA_PATH            "/data/redtea/"
 
 #define RT_AGENT_LOG            "rt_log"
 
 typedef int32_t (*init_func)(void *arg);
 
-typedef struct INIT_OBJ {
-    const char *    name;
-    init_func       init;
-    void *          arg;
-} init_obj_t ;
+typedef struct INIT_OBJ
+{
+    const char *name;
+    init_func init;
+    void *arg;
+} init_obj_t;
 
 static public_value_list_t g_value_list;
 static char g_app_path[128];
@@ -64,7 +76,7 @@ static int32_t init_qmi(void *arg)
     return rt_qmi_init(arg);
 }
 
-#define SET_STR_PARAM(param, value)  snprintf((param), sizeof(param), "%s", (value))
+#define SET_STR_PARAM(param, value) snprintf((param), sizeof(param), "%s", (value))
 
 static int32_t init_versions(void *arg)
 {
@@ -177,9 +189,12 @@ static int32_t agent_init_call(void)
     int32_t i;
     int32_t ret;
 
-    for (i = 0; i < ARRAY_SIZE(g_init_objs); i++) {
+    for (i = 0; i < ARRAY_SIZE(g_init_objs); i++)
+    {
+        
         ret = g_init_objs[i].init(g_init_objs[i].arg);
-        if (rt_os_strcmp("init_log_file", g_init_objs[i].name)) {
+        if (rt_os_strcmp("init_log_file", g_init_objs[i].name))
+        {
             MSG_PRINTF(LOG_DBG, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
         }
     }
@@ -192,7 +207,6 @@ int32_t agent_main(const char *app_path, log_func logger)
     if (app_path) {
         snprintf(g_app_path, sizeof(g_app_path), "%s", app_path);
     }
-
     if (logger) {
         log_install_func(logger);
     }
@@ -201,4 +215,3 @@ int32_t agent_main(const char *app_path, log_func logger)
 
     return RT_SUCCESS;
 }
-

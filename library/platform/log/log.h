@@ -66,7 +66,7 @@ static inline void ARRAY_PRINTF(const char *tag, const uint8_t *array, uint16_t 
     extern uint32_t rt_os_strlen(const char *string);
     uint8_t *_p_ = (uint8_t *)array;                                        
     uint16_t i;
-    char msg[2048] = {0};
+    char msg[8192] = {0};
     char *_msg;
     uint16_t _len = sizeof(msg);
     uint16_t tag_len = rt_os_strlen(tag);

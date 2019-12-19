@@ -58,7 +58,7 @@ int lpa_switch_eid(const uint8_t *eid)
     uint8_t rsp[33] = {0};
     uint8_t channel;
     uint16_t rsp_size = sizeof(rsp);
-
+    
     if (open_channel(&channel) != RT_SUCCESS) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }

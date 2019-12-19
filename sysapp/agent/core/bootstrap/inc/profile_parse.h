@@ -33,7 +33,9 @@
 #define PROFILE                                 0x81
 #define HASH_CODE_LENGTH                        0x20
 
+#ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)                           (sizeof((a)) / sizeof((a)[0]))
+#endif
 
 typedef struct PROFILE_DATA {
     uint32_t file_info_offset;

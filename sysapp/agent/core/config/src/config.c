@@ -1,7 +1,7 @@
 /**
-* ¶ÔÅäÖÃÎÄ¼þ½øÐÐ¶ÁÐ´²Ù×÷
-* ËùÓÐÅäÖÃÒÔ key - value pair µÄÐÎÊ½´æ´¢
-* ¾ßÌåÁ¬½Ó·ûºÍ×¢ÊÍ±êºÅÔÚ c ÎÄ¼þÖÐ¶¨Òå
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½Ð´ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ key - value pair ï¿½ï¿½ï¿½ï¿½Ê½ï¿½æ´¢
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó·ï¿½ï¿½ï¿½×¢ï¿½Í±ï¿½ï¿½ï¿½ï¿½ c ï¿½Ä¼ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½
 */
 
 #include <stdio.h>
@@ -25,10 +25,10 @@
 #define M_BYTES                             (1024 * 1024)
 #define MAX_LINE_SIZE                       384
 #define MAX_VALUE_SIZE                      30
-#define LINK_SYMBOL                         '='                     // key - value pair Ö®¼äµÄÁ¬½Ó·û
-#define ANNOTATION_SYMBOL                   '#'                     // ×¢ÊÍ±êÊ¶·û
+#define LINK_SYMBOL                         '='                     // key - value pair Ö®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó·ï¿½
+#define ANNOTATION_SYMBOL                   '#'                     // ×¢ï¿½Í±ï¿½Ê¶ï¿½ï¿½
 #define CONFIG_FILE_PATH                    "rt_config.ini"
-#define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // ÅÐ¶¨ÊÇ·ñÎª¿Õ°×·û
+#define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // ï¿½Ð¶ï¿½ï¿½Ç·ï¿½Îªï¿½Õ°×·ï¿½
 #define UICC_MODE_vUICC                     "0"
 #define UICC_MODE_eUICC                     "1"
 
