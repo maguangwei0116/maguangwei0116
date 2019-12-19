@@ -10,7 +10,7 @@ if BR2_PACKAGE_OEMAPP_BUILD
 
 config BR2_RELEASE_OEMAPP_INSTALL_PATH
 	string "Release Oemapp Targets Install Path"
-	default "$(BASE_DIR)/system/oemapp"
+	default "$(BASE_DIR)/system/release/oemapp"
 	help 
 		Released oemapp targets install path configuration
 
