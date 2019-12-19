@@ -15,7 +15,7 @@
 #define DNS_SERVER_PORT                 53
 #define MAX_IP_LEN                      16 // only for IPV4
 #define MAX_IP_CNT                      1
-#define MAX_TRY_CNT                     3
+#define MAX_TRY_CNT                     1
 #define DNS_TIMEOUTS                    5  // 5 seconds
 #define DNS_PACKET_ID                   0x55AA
 #define DNS_DEBUG_ENABLE                0  // debug enable
@@ -34,7 +34,9 @@
 #define ARRAY_SIZE(a)                   sizeof(a)/sizeof(a[0])
 #endif
 
-/* Add your dns server here */
+/* 
+Add your dns server here, but considering the IP white list !
+*/
 static const char *g_dns_server_list[] = 
 {
     "114.114.114.114",  // 114 DNS   
@@ -679,7 +681,7 @@ static int get_host_ip_by_url_fixed_dns_server(const char *dns_server, const cha
     ret = get_ip_by_dns(dns_server, dns_addr, ip_out, DNS_TIMEOUTS, max_try_cnt);   
     if (ret == 0) {
         for (i = 0; i < MAX_IP_CNT; i++) {
-            DNS_PRINTF("ip out %d: %s\n", j, ip_out[i]);
+            DNS_PRINTF("ip out %d: %s\n", i, ip_out[i]);
         }
         if (rt_os_strlen(ip_out[0]) != 0) {
             DNS_PRINTF("get valid ip addr %s...\n", ip_out[0]);

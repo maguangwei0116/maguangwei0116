@@ -22,12 +22,13 @@ static int connect_tcp(const char *host_name, const char *addr)
     int error, handle;
     struct hostent *host;
     struct sockaddr_in server;
-    
-#ifdef CFG_USR_DNS_API
-    MSG_PRINTF(LOG_INFO, "Get hostname by rt api ...\r\n");
-    host = rt_gethostbyname(host_name);
-#else
+
     host = gethostbyname(host_name);
+#ifdef CFG_USR_DNS_API
+    if (!host) {
+        MSG_PRINTF(LOG_WARN, "Native get hostname fail, try to use rt api ...\r\n");
+        host = rt_gethostbyname(host_name);
+    }
 #endif
     if (!host) {
         MSG_PRINTF(LOG_ERR, "Get hostname failed\n");
