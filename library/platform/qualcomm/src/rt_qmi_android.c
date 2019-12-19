@@ -66,7 +66,7 @@ static int32_t jni_api_common(const char *func, int32_t cnt, ...)
     void *tmp = NULL;    
     void *param_list[MAX_PARAM_CNT] = {0};
 
-    MSG_PRINTF(LOG_DBG, "%s start ...\r\n", func);
+    MSG_PRINTF(LOG_INFO, "%s start ...\r\n", func);
 
     linux_mutex_lock(g_thread_data.mutex);
 
@@ -74,25 +74,25 @@ static int32_t jni_api_common(const char *func, int32_t cnt, ...)
     g_thread_data.ret = &ret;
 
     if (cnt > MAX_PARAM_CNT) {
-        MSG_PRINTF(LOG_DBG, "param cnt too many, cnt=%d\r\n", cnt);
+        MSG_PRINTF(LOG_WARN, "param cnt too many, cnt=%d\r\n", cnt);
         goto exit_entry;  
     }
 
     va_start(vl_list, cnt);
     for(i = 0; i < cnt; i++) {
         tmp = va_arg(vl_list, void *);
-        MSG_PRINTF(LOG_DBG, "param %d: %p\r\n", i+1, tmp);
+        //MSG_PRINTF(LOG_INFO, "param %d: %p\r\n", i+1, tmp);
         param_list[i] = tmp;
     }
     va_end(vl_list);
 
     rt_os_memcpy((uint8_t *)&g_thread_data.param, (uint8_t *)&param_list, sizeof(thread_param_t));
-    MSG_INFO_ARRAY("thread-param: ", &g_thread_data.param, sizeof(thread_param_t));
+    //MSG_INFO_ARRAY("thread-param: ", &g_thread_data.param, sizeof(thread_param_t));
 
     linux_sem_post(g_thread_data.send_sem);
-    MSG_PRINTF(LOG_DBG, "%s post send sem ...\r\n", __func__);
+    //MSG_PRINTF(LOG_INFO, "%s post send sem ...\r\n", __func__);
     linux_sem_wait(g_thread_data.recv_sem);
-    MSG_PRINTF(LOG_DBG, "%s wait recv sem ...\r\n", __func__);
+    //MSG_PRINTF(LOG_INFO, "%s wait recv sem ...\r\n", __func__);
 
 exit_entry:
 
@@ -101,114 +101,8 @@ exit_entry:
     return ret;
 }
 
-#if 1
-#if 0
 /*
-The following 3 APIs for euicc
-*/
-int32_t rt_qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
-{
-    MSG_PRINTF(LOG_DBG, "start callback transmit_apdu()");
-    return jni_euicc_transmit_apdu(data, data_len, rsp, rsp_len, channel);
-}
-
-int32_t rt_qmi_close_channel(uint8_t channel)
-{
-    MSG_PRINTF(LOG_DBG, "start callback close_channel()");
-    return jni_euicc_close_channel(channel);
-}
-
-int32_t rt_qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *channel)
-{
-    MSG_PRINTF(LOG_DBG, "start callback open_channel()");
-    return jni_euicc_open_channel(channel);
-}
-
-/*
-apdu API for vuicc
-*/
-int32_t rt_qmi_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
-{
-    MSG_PRINTF(LOG_DBG, "start callback rt_qmi_exchange_apdu()");
-    return jni_vuicc_transmit_apdu(data, data_len, rsp, rsp_len);
-}
-
-int32_t rt_qmi_get_register_state(int32_t *register_state)
-{
-}
-
-int32_t rt_qmi_get_mcc(uint16_t *mcc)
-{
-    if(mcc == NULL){
-        return -1;
-    }
-    return jni_get_mcc(mcc);
-}
-
-int32_t rt_qmi_get_mnc(uint16_t *mnc)
-{
-    if(mnc == NULL){
-        return -1;
-    }
-    return jni_get_mnc(mnc);
-}
-
-int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc)
-{
-    MSG_PRINTF(LOG_DBG, "start callback getMccMnc()");
-    int32_t result = rt_qmi_get_mcc(mcc);
-    result = rt_qmi_get_mnc(mnc);
-    return 0;
-}
-
-int32_t rt_qmi_get_current_iccid(uint8_t *iccid)
-{
-    MSG_PRINTF(LOG_DBG, "start callback getIccid()");
-    jni_get_current_iccid(iccid);
-}
-
-int32_t rt_qmi_get_current_imsi(uint8_t *imsi)
-{
-    MSG_PRINTF(LOG_DBG, "start callback getImsi()");
-    jni_get_current_imsi(imsi);
-}
-
-int32_t rt_qmi_get_signal(int32_t *strength)
-{
-    return jni_get_signal_dbm(strength);
-}
-
-int32_t rt_qmi_get_signal_level(int32_t *level)
-{
-    return jni_get_signal_level(level);
-}
-
-int32_t rt_qmi_get_imei(uint8_t *imei)
-{
-    MSG_PRINTF(LOG_DBG, "start callback getImei()");
-    return jni_get_imei(imei);
-}
-
-int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t pdp_type, int8_t *apn, int8_t *mcc_mnc)
-{
-    MSG_PRINTF(LOG_DBG, "start callback rt_qmi_modify_profile()");
-    return jni_set_apn(apn, mcc_mnc);
-}
-
-int32_t rt_qmi_get_model(uint8_t *model)
-{
-    rt_os_strcpy((char *)model, "QUECTEL");  // only for test 
-}
-
-int32_t rt_qmi_get_network_type(uint8_t *network_type)
-{
-    return jni_get_network_type(network_type);
-}
-
-#else
-
-/*
-The following 3 APIs for euicc
+The following 3 group APIs for euicc
 */
 int32_t rt_qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
@@ -217,7 +111,6 @@ int32_t rt_qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, u
     uint32_t channel_in = channel;
     int32_t ret;
 
-    MSG_PRINTF(LOG_DBG, "start callback %s()\r\n", __func__);
     ret = jni_api_common(__func__, 5, data, &data_len_in, rsp, &rsp_len_in, &channel_in);
 
     *rsp_len = rsp_len_in;
@@ -234,7 +127,6 @@ static int32_t rt_qmi_send_apdu_handle(void)
     const uint32_t *channel = (const uint32_t *)g_thread_data.param.param5;
     int32_t ret;
 
-    MSG_PRINTF(LOG_DBG, "start callback %s()\r\n", __func__);
     ret = jni_euicc_transmit_apdu(data, data_len, rsp, rsp_len, channel);
 
     return ret;
@@ -476,46 +368,6 @@ static int32_t rt_qmi_get_network_type_handle(void)
     return ret;
 }
 
-#endif
-#endif
-
-int32_t rt_qmi_send_apdu_test(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
-{ 
-    uint32_t data_len_in = data_len;
-    uint32_t rsp_len_in = *rsp_len;
-    uint32_t channel_in = channel;
-    int32_t ret;
-
-    ret = jni_api_common(__func__, 5, data, &data_len_in, rsp, &rsp_len_in, &channel_in);
-
-    *rsp_len = rsp_len_in;
-
-    return ret;
-}
-
-static int32_t rt_qmi_send_apdu_test_handle(void)
-{
-    int32_t ret = RT_SUCCESS;
-    const uint8_t *data = (const uint8_t *)g_thread_data.param.param1;
-    const uint32_t *data_len = (const uint32_t *)g_thread_data.param.param2;
-    uint8_t *rsp = (uint8_t *)g_thread_data.param.param3;
-    uint32_t *rsp_len = (uint32_t *)g_thread_data.param.param4;
-    const uint32_t *channel = (const uint32_t *)g_thread_data.param.param5;
-
-    MSG_PRINTF(LOG_DBG, "start callback %s()\r\n", __func__);
-    MSG_PRINTF(LOG_DBG, "param1: %p\r\n", g_thread_data.param.param1);
-    MSG_PRINTF(LOG_DBG, "param2: %p\r\n", g_thread_data.param.param2);
-    MSG_PRINTF(LOG_DBG, "param3: %p\r\n", g_thread_data.param.param3);
-    MSG_PRINTF(LOG_DBG, "param4: %p\r\n", g_thread_data.param.param4);
-    MSG_PRINTF(LOG_DBG, "param5: %p\r\n", g_thread_data.param.param5);
-    MSG_INFO_ARRAY("data-send: ", data, *data_len);
-    rt_os_memcpy(rsp, "\x12\x34\x56\x78\x90", 5);
-    *rsp_len = 5;
-    MSG_INFO_ARRAY("data-recv ", rsp, *rsp_len);
-
-    return ret;
-}
-
 typedef int32_t (*jni_handle_func)(void);
 
 typedef struct JNI_API {
@@ -541,7 +393,6 @@ static const jni_api_t g_jni_apis[] =
     JNI_API_DEF(rt_qmi_modify_profile),
     JNI_API_DEF(rt_qmi_get_model),
     JNI_API_DEF(rt_qmi_get_network_type),
-    JNI_API_DEF(rt_qmi_send_apdu_test),  // only for test
 };
 
 static int32_t jni_apis_handle(void)
@@ -563,17 +414,15 @@ static int32_t jni_apis_handle(void)
 }
 
 static void android_jni_thread(void)
-{
-    MSG_PRINTF(LOG_DBG, "%s start ...\r\n", __func__);
-    
+{   
     while (1) {
         linux_sem_wait(g_thread_data.send_sem);
-        MSG_PRINTF(LOG_DBG, "%s wait send sem ...\r\n", __func__);
+        //MSG_PRINTF(LOG_INFO, "%s wait send sem ...\r\n", __func__);
 
         jni_apis_handle();
 
         linux_sem_post(g_thread_data.recv_sem);
-        MSG_PRINTF(LOG_DBG, "%s post recv sem ...\r\n", __func__);
+        //MSG_PRINTF(LOG_INFO, "%s post recv sem ...\r\n", __func__);
     }
 
     linux_mutex_release(g_thread_data.mutex);
