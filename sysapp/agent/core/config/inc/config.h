@@ -25,4 +25,9 @@ typedef struct CONFIG_INFO {
 
 int32_t init_config(void *arg);
 
+int32_t config_update_uicc_mode(int32_t mode);  // mode: @ref lpa_channel_type_e
+
+int32_t config_get_uicc_mode(const char *app_path, int32_t *mode); // mode: @ref lpa_channel_type_e
+
 #endif  // __RT_CONFIG_H__
+

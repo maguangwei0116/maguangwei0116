@@ -177,26 +177,54 @@ static int32_t upload_send_request(const void *data, int32_t data_len)
     return ret;
 }
 
-static void upload_get_random_tran_id(char *tran_id, uint16_t size)
+/**
+ * Create random UUID
+ *
+ * @param uuid - buffer to be filled with the uuid string
+ * @param len  - length of uuid buffer
+ */
+static char *random_uuid(char *uuid, int32_t len)
 {
-    uint16_t i, flag;
+    const char *magic = "89ab";
+    char *p = uuid;
+    uint16_t n;
+    uint16_t b;
 
-    for (i = 0; i < size; i++) {
-        flag = (uint16_t)((uint16_t)rt_get_random_num() % 3);
-        switch (flag) {
-            case 0:
-                tran_id[i] = (uint16_t)((uint16_t)rt_get_random_num() % 26 )+ 'a';
+    for( n = 0; n < 16; ++n ) {
+        b = rt_get_random_num()%255;
+
+        switch( n ) {
+            case 6:
+                sprintf(p, "4%x", b%15);
                 break;
-
-            case 1:
-                tran_id[i] = (uint16_t)((uint16_t)rt_get_random_num() % 26) + 'A';
+                
+            case 8:
+                sprintf(p, "%c%x", magic[rt_get_random_num() % rt_os_strlen( magic )], b%15 );
                 break;
+            default:
+                sprintf(p, "%02x", b);
+                break;
+        }
 
-            case 2:
-                tran_id[i] = (uint16_t)((uint16_t)rt_get_random_num() % 10) + '0';
+        p += 2;
+        switch( n ) {
+            case 3:
+            case 5:
+            case 7:
+            case 9:
+                *p++ = '-';
                 break;
         }
     }
+
+    *p = 0;
+
+    return uuid;
+}
+
+static void upload_get_random_tran_id(char *tran_id, uint16_t size)
+{       
+    random_uuid(tran_id, size);
 }
 
 #if 0
@@ -251,7 +279,7 @@ static const char *upload_get_topic_name(upload_topic_e upload_topic)
 
 static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id, upload_topic_e upload_topic)
 {
-    char random_tran_id[NORMAL_TRAN_ID_LEN + 1] = {0};
+    char random_tran_id[MAX_UUID_LEN] = {0};
     const char *tranId = tran_id;
     const char *topic = upload_get_topic_name(upload_topic);
     int32_t version = 0;
@@ -261,7 +289,7 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id, upl
     //MSG_PRINTF(LOG_INFO, "The upload device_id: %s\n", g_upload_device_info->device_id);
     //MSG_PRINTF(LOG_INFO, "The upload topic: %s\n", topic);
     if (!tranId || !rt_os_strlen(tranId)) {
-        upload_get_random_tran_id(random_tran_id, sizeof(random_tran_id) - 1);
+        upload_get_random_tran_id(random_tran_id, sizeof(random_tran_id));
         tranId = (const char *) random_tran_id;
     }
 

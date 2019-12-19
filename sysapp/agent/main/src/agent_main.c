@@ -161,13 +161,13 @@ static const init_obj_t g_init_objs[] =
 #endif
 
     INIT_OBJ(init_bootstrap,            (void *)&g_value_list),
+    INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_versions,             (void *)&g_value_list),
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
     INIT_OBJ(init_mbn,                  (void *)&g_value_list),
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa_channel,          (void *)&g_value_list),
     INIT_OBJ(init_timer,                NULL),
-    INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_queue,                (void *)&g_value_list),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),

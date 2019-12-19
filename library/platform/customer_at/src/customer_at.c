@@ -25,26 +25,28 @@
 /* include quectel library header file */
 #include "ql_customer_at.h"
 
-#define AT_COMMAND_TBL "\"redtea\""
+#define AT_COMMAND_TBL          "\"uicc\""
+#define AT_COMMAND_TBL_LEN      6  // 4+2
 
-typedef int32_t (*atcommand_callback)(char *cmd, char *rsp);
+typedef int32_t (*atcommand_callback)(const char *cmd, char *rsp, int32_t len);
 
-static atcommand_callback atcommand_fun;
-static int32_t test_flag = 0;
+static atcommand_callback g_atcommand_fun;
 static int32_t g_at_sockfd = -1;
 
 static void atcommand_handler(int32_t sockfd, struct sockaddr_un *un, const char *ptr, int32_t len)
 {
     int32_t retval;
-    char response[1024] = { 0 };
+    char response[1024] = { AT_COMMAND_TBL };
 
-    if (0 == strncasecmp(ptr, AT_COMMAND_TBL, rt_os_strlen(AT_COMMAND_TBL))) {
-        retval = atcommand_fun((char *)(ptr + rt_os_strlen(AT_COMMAND_TBL)), response);
+    if (!rt_os_strncasecmp(ptr, AT_COMMAND_TBL, AT_COMMAND_TBL_LEN)) {
+        retval = g_atcommand_fun((char *)(ptr + AT_COMMAND_TBL_LEN), \
+                &response[AT_COMMAND_TBL_LEN], sizeof(response)-AT_COMMAND_TBL_LEN);
         if (retval == RT_ERROR) {
-            rt_os_memcpy(response, "error", 5);
+            snprintf(response, sizeof(response), "error");
             response[5] = '\0';
         }
-        MSG_PRINTF(LOG_INFO, "read test is: %s\n", response);
+        MSG_PRINTF(LOG_INFO, "at req: %s\n", ptr);
+        MSG_PRINTF(LOG_INFO, "at rsp: %s\n", response);
         retval = ql_customer_at_send_response(sockfd, un, true, response, rt_os_strlen(response));
         if (retval) {
             MSG_PRINTF(LOG_ERR, "send at command failed\n");
@@ -89,7 +91,7 @@ static void customer_at_listen_sock(int32_t *sockfd)
 
 static void customer_at_regist_callback(atcommand_callback fun)
 {
-    atcommand_fun = fun;
+    g_atcommand_fun = fun;
 }
 
 int32_t init_customer_at(void *arg)

@@ -12,6 +12,8 @@
  *******************************************************************************/
 #include "agent_queue.h"
 #include "at_command.h"
+#include "lpa.h"
+#include "log.h"
 
 #define       AT_TYPE_GET_INFO               '0'
 #define       AT_TYPE_CONFIG_UICC            '1'
@@ -25,6 +27,10 @@
 #define       AT_CONFIG_LPA_CHANNEL          '2'
 
 #define       AT_CONTENT_DELIMITER           ','
+
+#define       AT_CFG_VUICC                   "\"vUICC\""
+#define       AT_CFG_EUICC                   "\"eUICC\""
+#define       AT_CFG_UICC_LEN                7 // 5+2
 
 static public_value_list_t *g_p_value_list  = NULL;
 
@@ -50,7 +56,7 @@ static int32_t at_switch_card(profile_type_e type, uint8_t *iccid)
             }
         } else if ((PROFILE_TYPE_OPERATIONAL == type) \
             && (g_p_value_list->card_info->info[ii].class == PROFILE_TYPE_OPERATIONAL)){
-            if (rt_os_strncmp(iccid, g_p_value_list->card_info->info[ii].iccid, len) == 0) {
+            if (!rt_os_strncmp(iccid, g_p_value_list->card_info->info[ii].iccid, len)) {
                 break;
             }
             if (g_p_value_list->card_info->info[ii].state == 1) {
@@ -60,6 +66,7 @@ static int32_t at_switch_card(profile_type_e type, uint8_t *iccid)
     }
 
     if (g_p_value_list->card_info->num == 1) { // only one card, return error
+        MSG_PRINTF(LOG_WARN, "only one card detected !\n");
         return RT_ERROR;
     }
 
@@ -76,49 +83,71 @@ static int32_t at_switch_card(profile_type_e type, uint8_t *iccid)
     return RT_SUCCESS;
 }
 
-int32_t at_commnad(char *cmd, char *rsp)
+int32_t at_commnad(const char *cmd, char *rsp, int32_t len)
 {
     int32_t ret = RT_ERROR;
-    int32_t ii = 0, len = 0, size = 0;
-    uint8_t buf[1024];
+    int32_t ii = 0, tmp_len = 0, size = 0;
+    uint8_t buf[1024] = {0};
 
+    MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
     if (*cmd == AT_CONTENT_DELIMITER) {
         if ((cmd[1] == AT_TYPE_GET_INFO) && (cmd[2] == AT_CONTENT_DELIMITER)) {
-            cmd[4] = AT_CONTENT_DELIMITER;
-            rt_os_memcpy(rsp, &cmd[1], 4);
             if (cmd[3] == AT_GET_EID) {            // get eid
-                rt_os_memcpy(&rsp[4], g_p_value_list->card_info->eid, rt_os_strlen(g_p_value_list->card_info->eid));
+                /* rsp: ,cmd,"eid" */
+                snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], \
+                        AT_CONTENT_DELIMITER, (char *)g_p_value_list->card_info->eid);
                 ret = RT_SUCCESS;
-            } else if (cmd[3] == AT_GET_ICCIDS) {  // get iccids
+            } else if (cmd[3] == AT_GET_ICCIDS) {  // get iccids 
+                char num_string[8];
+
+                snprintf(num_string, sizeof(num_string), "%d", g_p_value_list->card_info->num);
+                tmp_len = rt_os_strlen(num_string);
+                rt_os_memcpy(&buf[size], num_string, tmp_len);
+                size += tmp_len;
                 for (ii = 0; ii < g_p_value_list->card_info->num; ii++) {
                     buf[size++] = AT_CONTENT_DELIMITER;
-                    len = rt_os_strlen(g_p_value_list->card_info->info[ii].iccid);
-                    rt_os_memcpy(&buf[size], g_p_value_list->card_info->info[ii].iccid, len);
-                    size += len;
+                    tmp_len = rt_os_strlen(g_p_value_list->card_info->info[ii].iccid);
+                    rt_os_memcpy(&buf[size], g_p_value_list->card_info->info[ii].iccid, tmp_len);
+                    size += tmp_len;
                     buf[size++] = AT_CONTENT_DELIMITER;
                     buf[size++] = g_p_value_list->card_info->info[ii].class + '0';
                     buf[size++] = AT_CONTENT_DELIMITER;
                     buf[size++] = g_p_value_list->card_info->info[ii].state + '0';
                 }
+                /* rsp: ,cmd,nums,<iccid, class, state>,<iccid, class, state> */
+                snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, buf);
                 ret = RT_SUCCESS;
-                rt_os_memcpy(&rsp[3], buf, size);
             } else if (cmd[3] == AT_GET_UICC_TYPE) {  // get uicc type
+                /* rsp: ,cmd,"uicc-type" */
+                snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, \
+                    (g_p_value_list->config_info->lpa_channel_type == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
                 ret = RT_SUCCESS;
-                rt_os_memcpy(&rsp[4], (g_p_value_list->config_info->lpa_channel_type == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC", 5);
             }
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
-            cmd[4] = AT_CONTENT_DELIMITER;
-            rt_os_memcpy(rsp, &cmd[1], 4);
-            if (cmd[3] == AT_SWITCH_TO_PROVISIONING) {
-                ret = at_switch_card(PROFILE_TYPE_PROVISONING, &cmd[5]);
-            } else if (cmd[3] == AT_SWITCH_TO_OPERATION) {
-                ret = at_switch_card(PROFILE_TYPE_OPERATIONAL, &cmd[5]);
-            }
-            if (ret == RT_SUCCESS) {
-                rt_os_memcpy(&rsp[4], &cmd[5], THE_ICCID_LENGTH);
-            }
-            if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {
-                ret = RT_SUCCESS;
+            if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
+                uint8_t iccid[THE_ICCID_LENGTH+1] = {0};
+                rt_os_memcpy(iccid, &cmd[5], THE_ICCID_LENGTH);   
+                MSG_PRINTF(LOG_INFO, "iccid: %s\n", iccid);
+                if (cmd[3] == AT_SWITCH_TO_PROVISIONING) {
+                    ret = at_switch_card(PROFILE_TYPE_PROVISONING, iccid);
+                } else if (cmd[3] == AT_SWITCH_TO_OPERATION) {
+                    ret = at_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
+                }
+                if (ret == RT_SUCCESS) {
+                    /* rsp: ,cmd,<iccid> */
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, (char *)iccid);
+                }
+             } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) { // config "vuicc" or "euicc"
+                MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
+                if (!rt_os_strncasecmp(&cmd[5], AT_CFG_VUICC, AT_CFG_UICC_LEN)) {
+                    ret = config_update_uicc_mode(LPA_CHANNEL_BY_IPC);
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_EUICC, AT_CFG_UICC_LEN)) {
+                    ret = config_update_uicc_mode(LPA_CHANNEL_BY_QMI);
+                }
+                if (ret == RT_SUCCESS) {
+                    /* rsp: ,cmd,"uicc-type" */
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
+                }
             }
         }
     }

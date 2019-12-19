@@ -60,7 +60,7 @@ rt_task rt_get_pid(void)
     return pthread_self();
 }
 
-int32_t rt_mutex_init(pthread_mutex_t *mutex)
+int32_t rt_mutex_init(rt_pthread_mutex_t *mutex)
 {
     int32_t ret = 0;
 
@@ -73,7 +73,7 @@ int32_t rt_mutex_init(pthread_mutex_t *mutex)
     return RT_SUCCESS;
 }
 
-int32_t rt_mutex_lock(pthread_mutex_t *mutex)
+int32_t rt_mutex_lock(rt_pthread_mutex_t *mutex)
 {
     int32_t ret = 0;
 
@@ -85,7 +85,7 @@ int32_t rt_mutex_lock(pthread_mutex_t *mutex)
     return RT_SUCCESS;
 }
 
-int32_t rt_mutex_unlock(pthread_mutex_t *mutex)
+int32_t rt_mutex_unlock(rt_pthread_mutex_t *mutex)
 {
     int32_t ret = 0;
 
@@ -98,7 +98,7 @@ int32_t rt_mutex_unlock(pthread_mutex_t *mutex)
     return RT_SUCCESS;
 }
 
-int32_t rt_mutex_destroy(pthread_mutex_t *mutex)
+int32_t rt_mutex_destroy(rt_pthread_mutex_t *mutex)
 {
     int32_t ret = 0;
 
@@ -111,11 +111,11 @@ int32_t rt_mutex_destroy(pthread_mutex_t *mutex)
     return RT_SUCCESS;
 }
 
-pthread_mutex_t *linux_mutex_init(void)
+rt_pthread_mutex_t *linux_mutex_init(void)
 {
-    pthread_mutex_t *mutex = NULL;
+    rt_pthread_mutex_t *mutex = NULL;
 
-    mutex = rt_os_malloc(sizeof(pthread_mutex_t));
+    mutex = rt_os_malloc(sizeof(rt_pthread_mutex_t));
     if (!mutex) {
         return NULL;
     }
@@ -124,7 +124,7 @@ pthread_mutex_t *linux_mutex_init(void)
     return mutex;
 }
 
-int32_t linux_mutex_lock(pthread_mutex_t *mutex)
+int32_t linux_mutex_lock(rt_pthread_mutex_t *mutex)
 {
     if (!mutex) {
         return RT_ERROR;
@@ -132,7 +132,7 @@ int32_t linux_mutex_lock(pthread_mutex_t *mutex)
     return rt_mutex_lock(mutex);
 }
 
-int32_t linux_mutex_unlock(pthread_mutex_t *mutex)
+int32_t linux_mutex_unlock(rt_pthread_mutex_t *mutex)
 {
     if (!mutex) {
         return RT_ERROR;
@@ -140,13 +140,46 @@ int32_t linux_mutex_unlock(pthread_mutex_t *mutex)
     return rt_mutex_unlock(mutex);
 }
 
-int32_t linux_mutex_release(pthread_mutex_t *mutex)
+int32_t linux_mutex_release(rt_pthread_mutex_t *mutex)
 {
     if (!mutex) {
         return RT_ERROR;
     }
     rt_mutex_destroy(mutex);
     rt_os_free(mutex);
+    return RT_SUCCESS;
+}
+
+rt_sem_t *linux_sem_init(int32_t pshared, uint32_t value)
+{
+    rt_sem_t *sem = NULL;
+
+    sem = rt_os_malloc(sizeof(rt_sem_t));
+    if (!sem) {
+        return NULL;
+    }
+    sem_init(sem, pshared, value); 
+
+    return sem; 
+}
+
+int32_t linux_sem_wait(rt_sem_t *sem)
+{
+    return sem_wait(sem);
+}
+
+int32_t linux_sem_post(rt_sem_t *sem)
+{
+    return sem_post(sem);
+}
+
+int32_t linux_sem_destroy(rt_sem_t *sem)
+{
+    if (!sem) {
+        return RT_ERROR;
+    }
+    sem_destroy(sem);
+    rt_os_free(sem);
     return RT_SUCCESS;
 }
 
@@ -312,6 +345,7 @@ void *rt_os_strncpy(char* dest, const char *src, uint32_t len)
 int32_t rt_os_strncmp(const char *mem_des, const char *mem_src, uint32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
         return RT_ERROR;
     }
 
@@ -326,6 +360,26 @@ int32_t rt_os_strcmp(const char *mem_des, const char *mem_src)
     }
 
     return strcmp(mem_des,mem_src);
+}
+
+int32_t rt_os_strncasecmp(const char *mem_des, const char *mem_src, uint32_t len)
+{
+    if ((NULL == mem_des) || (NULL == mem_src)) {
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
+        return RT_ERROR;
+    }
+
+    return strncasecmp(mem_des, mem_src, len);
+}
+
+int32_t rt_os_strcasecmp(const char *mem_des, const char *mem_src)
+{
+    if ((NULL == mem_des) || (NULL == mem_src)) {
+        MSG_PRINTF(LOG_WARN, "memory is empty!\n");
+        return RT_ERROR;
+    }
+
+    return strcasecmp(mem_des,mem_src);
 }
 
 void *rt_os_memcpy(void *mem_des, const void *mem_src, uint32_t len)
