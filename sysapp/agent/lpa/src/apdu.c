@@ -16,6 +16,15 @@ const static uint8_t euicc_aid[] = {0xA0, 0x00, 0x00, 0x05, 0x59, 0x10, 0x10, 0x
 
 static lpa_channel_type_e g_channel_mode = LPA_CHANNEL_BY_IPC;
 
+static int32_t local_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
+{
+#ifdef CFG_PLATFORM_ANDROID
+        return rt_qmi_exchange_apdu(data, data_len, rsp, rsp_len);
+#else
+        return ipc_send_data(data, data_len, rsp, rsp_len);   
+#endif    
+}
+
 void init_apdu_channel(lpa_channel_type_e channel_mode)
 {
     g_channel_mode = channel_mode;
@@ -24,8 +33,7 @@ void init_apdu_channel(lpa_channel_type_e channel_mode)
 static int32_t lpa_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
-        // return ipc_send_data(data, data_len, rsp, rsp_len);
-        return rt_qmi_exchange_apdu(data, data_len, rsp, rsp_len);
+        return local_exchange_apdu(data, data_len, rsp, rsp_len);
     } else if (g_channel_mode == LPA_CHANNEL_BY_QMI) {
         return rt_qmi_send_apdu(data, data_len, rsp, rsp_len, channel);
     }
@@ -48,9 +56,8 @@ int open_channel(uint8_t *channel)
         uint8_t rsp[SW_BUFFER_LEN + 2] = {0};        
         uint16_t sw = 0;
         uint16_t len = sizeof(rsp);
-        
-        // ret = ipc_send_data(open_channel_cmd, sizeof(open_channel_cmd), rsp, &len);
-        ret = rt_qmi_exchange_apdu(open_channel_cmd, sizeof(open_channel_cmd), rsp, &len);
+
+        ret = local_exchange_apdu(open_channel_cmd, sizeof(open_channel_cmd), rsp, &len);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
@@ -59,8 +66,7 @@ int open_channel(uint8_t *channel)
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
             sw_61xx_req_cmd[4] = len;
-            // ret = ipc_send_data(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
-            ret = rt_qmi_exchange_apdu(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
+            ret = local_exchange_apdu(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
             if (ret != RT_SUCCESS) {
                 return RT_ERR_APDU_SEND_FAIL;
             }
@@ -90,8 +96,7 @@ int close_channel(uint8_t channel)
         uint16_t len = sizeof(rsp);
         
         close_channel_cmd[3] = channel;  // channel id fill into p2
-        // ret = ipc_send_data(close_channel_cmd, sizeof(close_channel_cmd), rsp, &len);
-        ret = rt_qmi_exchange_apdu(close_channel_cmd, sizeof(close_channel_cmd), rsp, &len);
+        ret = local_exchange_apdu(close_channel_cmd, sizeof(close_channel_cmd), rsp, &len);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
@@ -101,8 +106,7 @@ int close_channel(uint8_t channel)
             len = (sw & 0xFF);
             sw_61xx_req_cmd[0] = (channel & 0x03) | 0x80;   // Channel should be 0~3, and convert to hexstring
             sw_61xx_req_cmd[4] = len;
-            // ret = ipc_send_data(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
-            ret = rt_qmi_exchange_apdu(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
+            ret = local_exchange_apdu(sw_61xx_req_cmd, sizeof(sw_61xx_req_cmd), rsp, &len);
             if (ret != RT_SUCCESS) {
                 return RT_ERR_APDU_SEND_FAIL;
             }
