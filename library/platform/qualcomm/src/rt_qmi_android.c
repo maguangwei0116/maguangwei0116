@@ -16,23 +16,28 @@
 #include "rt_os.h"
 #include "log.h"
 
-extern int32_t jni_get_imei(uint8_t *imei);
-extern int32_t jni_get_mcc(uint16_t *mcc);
-extern int32_t jni_get_mnc(uint16_t *mnc);
-extern int32_t jni_get_current_iccid(uint8_t *iccid);
-extern int32_t jni_get_current_imsi(uint8_t *imsi);
-extern int32_t jni_get_signal_level(int32_t *level);
-extern int32_t jni_get_signal_dbm(int32_t *dbm);
-extern int32_t jni_get_network_type(uint8_t *type);
-extern int32_t jni_set_apn(uint8_t *apn, uint8_t *mcc_mnc);
-extern int32_t jni_get_model(uint8_t *model);
-extern int32_t jni_get_monitor_version(uint8_t *monitor_version);
+#define WAEK_API __attribute__((weak))
 
-extern int32_t jni_euicc_open_channel(uint8_t *channel);
-extern int32_t jni_euicc_close_channel(uint8_t *channel);
-extern int32_t jni_euicc_transmit_apdu(const uint8_t *data, const uint32_t *data_len, uint8_t *rsp, uint32_t *rsp_len, const uint32_t *channel);
+/* These APIs defined in android JNI project */
+extern WAEK_API int32_t jni_get_imei(uint8_t *imei);
+extern WAEK_API int32_t jni_get_mcc(uint16_t *mcc);
+extern WAEK_API int32_t jni_get_mnc(uint16_t *mnc);
+extern WAEK_API int32_t jni_get_current_iccid(uint8_t *iccid);
+extern WAEK_API int32_t jni_get_current_imsi(uint8_t *imsi);
+extern WAEK_API int32_t jni_get_signal_level(int32_t *level);
+extern WAEK_API int32_t jni_get_signal_dbm(int32_t *dbm);
+extern WAEK_API int32_t jni_get_network_type(uint8_t *type);
+extern WAEK_API int32_t jni_set_apn(uint8_t *apn, uint8_t *mcc_mnc);
+extern WAEK_API int32_t jni_get_model(uint8_t *model);
+extern WAEK_API int32_t jni_get_monitor_version(uint8_t *monitor_version);
 
-extern int32_t jni_vuicc_transmit_apdu(const uint8_t *data, const uint32_t *data_len, uint8_t *rsp, uint32_t *rsp_len);
+extern WAEK_API int32_t jni_euicc_open_channel(uint8_t *channel);
+extern WAEK_API int32_t jni_euicc_close_channel(uint8_t *channel);
+extern WAEK_API int32_t jni_euicc_transmit_apdu(const uint8_t *data, const uint32_t *data_len, \
+                                    uint8_t *rsp, uint32_t *rsp_len, const uint32_t *channel);
+
+extern WAEK_API int32_t jni_vuicc_transmit_apdu(const uint8_t *data, const uint32_t *data_len, 
+                                    uint8_t *rsp, uint32_t *rsp_len);
 
 #define MAX_PARAM_CNT           6
 
@@ -372,7 +377,7 @@ static int32_t rt_qmi_get_network_type_handle(void)
 
 int32_t rt_qmi_get_monitor_version(uint8_t *version)
 {
-    return jni_api_common(__func__, 1, model);   
+    return jni_api_common(__func__, 1, version);   
 }
 
 static int32_t rt_qmi_get_monitor_version_handle(void)
