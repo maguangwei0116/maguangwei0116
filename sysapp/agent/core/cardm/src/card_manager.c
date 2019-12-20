@@ -14,6 +14,8 @@
 #include "card_manager.h"
 #include "agent_queue.h"
 #include "msg_process.h"
+#include "lpa.h"
+#include "lpa_error_codes.h"
 
 #define RT_LAST_EID                 "rt_last_eid"
 #define RT_PROFILE_STATE_ENABLED    2
@@ -429,6 +431,11 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 
         case MSG_CARD_ENABLE_EXIST_CARD:
             ret = card_enable_profile(buf);
+            if (ret == RT_ERR_APDU_STORE_DATA_FAIL) {
+                MSG_PRINTF(LOG_INFO, "try to enable %s after 3 seconds\r\n", (const char *)buf); 
+                rt_os_sleep(3);  // wait 3 seconds, and try again !!!                 
+                ret = card_enable_profile(buf);
+            } 
             break;
 
         case MSG_CARD_UPDATE:
