@@ -52,7 +52,8 @@ typedef struct SIGNATURE_DATA {
 } signature_data_t;
 
 int32_t ipc_set_monitor_param(config_info_t *config_info);
-int32_t ipc_get_monitor_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size);
+int32_t ipc_get_monitor_version(char *name, int32_t n_size, char *version, \
+                                    int32_t v_size, char *chip_modle, int32_t c_size);
 int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign);
 int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name);
 int32_t ipc_restart_monitor(uint8_t delay);

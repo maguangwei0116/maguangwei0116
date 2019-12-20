@@ -36,21 +36,11 @@
 #include "at_command.h"
 #endif
 
-#define INIT_OBJ(func, arg) \
-    {                       \
-#func, func, arg    \
-    }
+#define INIT_OBJ(func, arg)     {#func, func, arg}
 
 #ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
+#define ARRAY_SIZE(a)           (sizeof((a)) / sizeof((a)[0]))
 #endif
-
-// struct arguments *args;
-
-// typedef void (*print)(char*);
-// print str;
-
-// #define RT_DATA_PATH            "/data/redtea/"
 
 #define RT_AGENT_LOG            "rt_log"
 
@@ -78,6 +68,45 @@ static int32_t init_qmi(void *arg)
 
 #define SET_STR_PARAM(param, value) snprintf((param), sizeof(param), "%s", (value))
 
+static int32_t get_monitor_version(char *name, int32_t n_size, char *version, \
+                                        int32_t v_size, char *chip_modle, int32_t c_size)
+{
+#ifdef CFG_PLATFORM_ANDROID
+#define RT_AGENT_NAME           "agent"
+#define RT_MONITOR_NAME         "monitor"
+
+    extern int32_t rt_qmi_get_monitor_version(uint8_t *version);
+    char m_version[128] = {0};
+    int32_t ret = RT_SUCCESS;
+    
+    ret = rt_qmi_get_monitor_version(m_version);
+    if (!ret) {
+        char m_target_name[128] = {0};
+        const char *p = LOCAL_TARGET_NAME;
+        const char *p0 = p + rt_os_strlen(p);
+        const char *p1 = NULL;
+
+        /* "android-euicc-agent-general" => "android-euicc-monitor-general" */
+        p0 = rt_os_strstr(LOCAL_TARGET_NAME, RT_AGENT_NAME);
+        rt_os_memcpy(m_target_name, p, p0-p);
+        rt_os_memcpy(&m_target_name[p0-p], RT_MONITOR_NAME, rt_os_strlen(RT_MONITOR_NAME));
+        p1 = rt_os_strrchr(LOCAL_TARGET_NAME, '-');
+        rt_os_memcpy(&m_target_name[rt_os_strlen(m_target_name)], p1, rt_os_strlen(p1));
+        /* copy data out */
+        snprintf(name, n_size, "%s", m_target_name);
+        snprintf(version, v_size, "%s", m_version);
+        snprintf(chip_modle, c_size, "%s", LOCAL_TARGET_PLATFORM_TYPE);
+    }
+
+    return ret;
+    
+#undef RT_AGENT_NAME
+#undef RT_MONITOR
+#else
+    return ipc_get_monitor_version(name, n_size, version, v_size, chip_modle, c_size);
+#endif
+}
+
 static int32_t init_versions(void *arg)
 {
     char libcomm_ver[128] = {0};
@@ -102,7 +131,7 @@ static int32_t init_versions(void *arg)
     SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
 
     /* add monitor version */
-    ipc_get_monitor_version(g_target_versions.versions[TARGET_TYPE_MONITOR].name,
+    get_monitor_version(g_target_versions.versions[TARGET_TYPE_MONITOR].name,
                             sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].name),
                             g_target_versions.versions[TARGET_TYPE_MONITOR].version,
                             sizeof(g_target_versions.versions[TARGET_TYPE_MONITOR].version),

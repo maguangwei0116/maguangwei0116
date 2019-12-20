@@ -25,6 +25,8 @@ extern int32_t jni_get_signal_level(int32_t *level);
 extern int32_t jni_get_signal_dbm(int32_t *dbm);
 extern int32_t jni_get_network_type(uint8_t *type);
 extern int32_t jni_set_apn(uint8_t *apn, uint8_t *mcc_mnc);
+extern int32_t jni_get_model(uint8_t *model);
+extern int32_t jni_get_monitor_version(uint8_t *monitor_version);
 
 extern int32_t jni_euicc_open_channel(uint8_t *channel);
 extern int32_t jni_euicc_close_channel(uint8_t *channel);
@@ -348,7 +350,7 @@ static int32_t rt_qmi_get_model_handle(void)
     uint8_t *model = (uint8_t *)g_thread_data.param.param1;
     int32_t ret = RT_SUCCESS;
 
-    rt_os_strcpy((char *)model, "QUECTEL");  // only for test 
+    ret = jni_get_model(model);
     
     return ret;
 }
@@ -365,6 +367,21 @@ static int32_t rt_qmi_get_network_type_handle(void)
 
     ret = jni_get_network_type(network_type);
 
+    return ret;
+}
+
+int32_t rt_qmi_get_monitor_version(uint8_t *version)
+{
+    return jni_api_common(__func__, 1, model);   
+}
+
+static int32_t rt_qmi_get_monitor_version_handle(void)
+{
+    uint8_t *version = (uint8_t *)g_thread_data.param.param1;
+    int32_t ret = RT_SUCCESS;
+
+    ret = jni_get_monitor_version(version);
+    
     return ret;
 }
 
@@ -393,6 +410,7 @@ static const jni_api_t g_jni_apis[] =
     JNI_API_DEF(rt_qmi_modify_profile),
     JNI_API_DEF(rt_qmi_get_model),
     JNI_API_DEF(rt_qmi_get_network_type),
+    JNI_API_DEF(rt_qmi_get_monitor_version),
 };
 
 static int32_t jni_apis_handle(void)

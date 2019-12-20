@@ -40,7 +40,8 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
     }
 }
 
-int32_t ipc_get_monitor_version(char *name, int n_size, char *version, int v_size, char *chip_modle, int c_size)
+int32_t ipc_get_monitor_version(char *name, int32_t n_size, char *version, \
+                                        int32_t v_size, char *chip_modle, int32_t c_size)
 {
     monitor_version_t m_version = {0};
     atom_data_t c_data = {0};
