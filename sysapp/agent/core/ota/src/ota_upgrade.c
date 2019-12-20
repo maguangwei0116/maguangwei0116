@@ -358,7 +358,6 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
     const char *g_target_files[] = 
     {
         OTA_UPGRADE_USR_AGENT,
-        "", // need to get its name from bootstrap module
     };
 #else
     const char *g_target_files[] = 
@@ -376,6 +375,11 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
     const char *fileName = param->target.name;
 
     if (param->target.type == TARGET_TYPE_SHARE_PROFILE || param->target.type == TARGET_TYPE_DEF_SHARE_PROFILE) {
+#ifdef CFG_STANDARD_MODULE
+        /* It's located in read-only path !!! */
+        MSG_PRINTF(LOG_WARN, "Standard module don't support download share profile only !\r\n");
+        return RT_ERROR;
+#endif
         /* sample: B191031023631863078, B + YYMMDDHHMMSSxxxxxx */
         if (fileName[0] == 'B') {
             for (i = 1; i <= MAX_BATCH_CODE_LEN; i++) {

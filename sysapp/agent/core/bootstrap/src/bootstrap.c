@@ -123,8 +123,10 @@ static void bootstrap_download_default_share_profile_once(void)
     
     if (!g_start_download_profile) {
         MSG_PRINTF(LOG_WARN, "download default share profile ...\r\n");
-        g_start_download_profile = RT_TRUE;        
+        g_start_download_profile = RT_TRUE;  
+#if (CFG_OPEN_MODULE)
         ota_download_default_share_profile();
+#endif
     }
 }
 

@@ -658,8 +658,7 @@ int32_t init_profile_file(const char *file)
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
-        MSG_PRINTF(LOG_ERR, "g_share_profile: %s\n",g_share_profile);
-        MSG_PRINTF(LOG_ERR, "fp is null !\n");
+        MSG_PRINTF(LOG_ERR, "g_share_profile: %s, fp is null !\n", g_share_profile);
         return RT_ERROR;
     }
 
@@ -671,6 +670,7 @@ int32_t init_profile_file(const char *file)
         g_data.aes_key_offset = rt_get_aes_key_offset(fp, &len);
         g_data.operator_info_offset = rt_get_operator_profile_offset(fp, &len);
     }
+    
     if (fp != NULL) {
         linux_fclose(fp);
     }
