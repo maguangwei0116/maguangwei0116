@@ -213,7 +213,7 @@ static void upload_queue_task(void)
     while (1) {
         rt_os_memset(&que_t, 0, sizeof(upload_que_t));
         if (rt_receive_msg_queue(g_upload_queue_id, &que_t, len, UPLOAD_QUEUE_MSG_TYPE, 0) == 0) {
-            MSG_PRINTF(LOG_INFO, "upload queue dealing ... que_t.data_buf: %p\r\n", que_t.data_buf);
+            //MSG_PRINTF(LOG_INFO, "upload queue dealing ... que_t.data_buf: %p\r\n", que_t.data_buf);
             ret = upload_event_final_report(que_t.data_buf, que_t.data_len);
             if (ret) {
                 MSG_PRINTF(LOG_WARN, "upload http post fail, ret=%d\r\n", ret);

@@ -642,7 +642,7 @@ int32_t init_profile_file(const char *file)
     int32_t ret = RT_ERROR;
     uint32_t len = 0;
     rt_fshandle_t fp;
-    char real_file_name[32] = {0};
+    char real_file_name[256] = {0};
 
     if (file) {
         snprintf(g_share_profile, sizeof(g_share_profile), "%s", (const char *)file);
@@ -662,7 +662,7 @@ int32_t init_profile_file(const char *file)
         MSG_PRINTF(LOG_ERR, "fp is null !\n");
         return RT_ERROR;
     }
-    MSG_PRINTF(LOG_ERR, "init_profile_file() !\n");
+
     ret = rt_check_hash_code_offset(fp);
     if (ret == RT_SUCCESS){
         g_data.file_info_offset = rt_get_file_info_offset(fp, &len);
