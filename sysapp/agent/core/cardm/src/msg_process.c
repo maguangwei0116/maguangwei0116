@@ -15,6 +15,7 @@
 #include "downstream.h"
 #include "cJSON.h"
 #include "rt_qmi.h"
+#include "lpa_error_codes.h"
 
 #define  MSG_ONE_BLOCK_SIZE     128
 #define  APN_LIST               "rt_apn_list"
@@ -304,8 +305,13 @@ int32_t msg_delete_profile(const char *iccid, rt_bool *opr_iccid_using)
     return ret;
 }
 
-int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21])
+int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21], int32_t avariable_num)
 {
+    if (avariable_num < 0) {
+        MSG_PRINTF(LOG_WARN, "avariable prifle num: %d\n", avariable_num); 
+        return RT_ERR_PROFILE_NUM;
+    }
+    
     return lpa_download_profile(ac, cc, iccid, (uint8_t *)g_smdp_proxy_addr);
 }
 

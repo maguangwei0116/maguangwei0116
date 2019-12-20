@@ -99,20 +99,22 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     if (ret == RT_SUCCESS) {
         /* get current profile type */
         for (i = 0; i < g_p_info.num; i++) {
-            MSG_PRINTF(LOG_WARN, "cur using iccid: %s state:%d class:%d\n", g_p_info.info[i].iccid, g_p_info.info[i].state, g_p_info.info[i].class);
+            MSG_PRINTF(LOG_INFO, "iccid   #%2d: %s state:%d type:%d\n", i + 1, g_p_info.info[i].iccid, 
+                g_p_info.info[i].state, g_p_info.info[i].class);
         }
         for (i = 0; i < g_p_info.num; i++) {
-            if (g_p_info.info[i].state == 1) {
+            if (g_p_info.info[i].state == PROFILE_ENABLED) {
                 g_p_info.type = g_p_info.info[i].class;
                 rt_os_memcpy(g_p_info.iccid, g_p_info.info[i].iccid, THE_MAX_CARD_NUM);
-                g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';                
+                g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';               
                 break;
             }
         }
         if (i == g_p_info.num) {
             g_p_info.type = PROFILE_TYPE_TEST;
         }
-        MSG_PRINTF(LOG_WARN, "cur using iccid: %s, type: %d, profile num: %d\n", g_p_info.iccid, g_p_info.type, g_p_info.num);
+        MSG_PRINTF(LOG_WARN, "using iccid: %s, type: %d, profile num: %d\n", 
+                g_p_info.iccid, g_p_info.type, g_p_info.num);
         if ((g_p_info.type == PROFILE_TYPE_TEST) ||
             (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
             if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
@@ -133,7 +135,7 @@ static int32_t card_enable_profile(const uint8_t *iccid)
     MSG_PRINTF(LOG_INFO, "iccid:%s, len:%d\n", iccid, rt_os_strlen(iccid));
     for (ii = 0; ii < g_p_info.num; ii++) {
         if (rt_os_strncmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
-            if (g_p_info.info[ii].state == 0) {
+            if (g_p_info.info[ii].state == PROFILE_DISABLED) {
                 if (g_p_info.info[ii].class == PROFILE_TYPE_PROVISONING) {
                     ret = lpa_enable_profile(iccid);
                 } else if (g_p_info.info[ii].class == PROFILE_TYPE_OPERATIONAL) {
@@ -274,7 +276,7 @@ int32_t card_set_opr_profile_apn(void)
     int32_t ii = 0;
 
     for (ii = 0; ii < g_p_info.num; ii++) {
-        if (g_p_info.info[ii].state == 1 && g_p_info.info[ii].class == PROFILE_TYPE_OPERATIONAL) {
+        if (g_p_info.info[ii].state == PROFILE_ENABLED && g_p_info.info[ii].class == PROFILE_TYPE_OPERATIONAL) {
             msg_set_apn(g_p_info.info[ii].iccid);
             return RT_SUCCESS;
         }
@@ -342,7 +344,6 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_p_info.eid, 'F', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
     
-    MSG_PRINTF(LOG_WARN, "init_card_manager()\n");
     ret = card_update_eid(RT_TRUE);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
@@ -352,10 +353,9 @@ int32_t init_card_manager(void *arg)
                 rt_os_sleep(1);   
             }
         }
+    } else {
+        rt_os_sleep(1);
     }
-
-    rt_os_sleep(1);
-    MSG_PRINTF(LOG_WARN, "init_card_manager() ending...\n");
 
     ret = card_init_profile_type(init_profile_type);
     if (ret) {
@@ -374,12 +374,14 @@ int32_t init_card_manager(void *arg)
 
     card_set_opr_profile_apn();
 
-    if(g_p_info.type == 2){
-    ret = lpa_enable_profile(g_p_info.iccid);
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
+#ifdef CFG_PLATFORM_ANDROID
+    if(g_p_info.type == PROFILE_TYPE_OPERATIONAL) {
+        ret = lpa_enable_profile(g_p_info.iccid);
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
         }
     }
+#endif
 
     return ret;
 }
@@ -387,6 +389,17 @@ int32_t init_card_manager(void *arg)
 int32_t card_manager_install_profile_ok(void)
 {
     return g_frist_bootstrap_ok;   
+}
+
+int32_t card_get_avariable_profile_num(int32_t *avariable_num)
+{
+    if (avariable_num) {
+        *avariable_num = THE_MAX_CARD_NUM - g_p_info.num;
+        MSG_PRINTF(LOG_INFO, "profile num: %d - %d = %d\r\n", THE_MAX_CARD_NUM, g_p_info.num, *avariable_num);        
+        return RT_SUCCESS;  
+    }
+
+    return RT_ERROR;
 }
 
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)

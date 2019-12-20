@@ -50,7 +50,7 @@ typedef enum JUDGE_TERM {
 } judge_term_e;
 
 int32_t mqtt_msg_event(const uint8_t *buf, int32_t len);
-int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21]);
+int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21], int32_t avariable_num);
 int32_t msg_enable_profile(const char *iccid);
 int32_t msg_delete_profile(const char *iccid, rt_bool *opr_iccid_using);
 int32_t card_update_profile_info(judge_term_e bootstrap_flag);

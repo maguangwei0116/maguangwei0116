@@ -18,6 +18,7 @@
 #include "rt_type.h"
 #include "cJSON.h"
 #include "md5.h"
+#include "card_manager.h"
 
 static uint8_t g_iccid[THE_ICCID_LENGTH + 1] = {0};
 
@@ -104,7 +105,7 @@ static const char *simple_check_ac_format(const char *ac)
 #undef LPA_PREFIX_LEN
 }
 
-static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int32_t *prio)
+static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int32_t *prio, int32_t avariable_num)
 {
     cJSON *activation_code = NULL;
     cJSON *confirmation_code = NULL;
@@ -137,7 +138,7 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
     while(1) {
         //debug_json_data(activation_code, activation_code);
         MSG_PRINTF(LOG_INFO, "AC: %s\r\n", activation_code->valuestring);
-        state = msg_download_profile(simple_check_ac_format(activation_code->valuestring), cc, iccid);
+        state = msg_download_profile(simple_check_ac_format(activation_code->valuestring), cc, iccid, avariable_num);
         if ((state == -302) || (state == -309) || (state == -310) || (state == -311)) {  // retry three times
             count++;
             rt_os_sleep(10);
@@ -181,6 +182,7 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
 static int32_t push_ac_handler(const void *in, const char *event, void **out)
 {
     int32_t item = 0;
+    int32_t avariable_num = 0;
     int32_t ii = 0;
     int32_t fail_times = 0;
     int32_t state = RT_SUCCESS;
@@ -202,7 +204,6 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
         MSG_PRINTF(LOG_ERR, "Install result buffer is empty\n");
         goto end;
     }
-    MSG_PRINTF(LOG_WARN, "install_result [%p] !!!\r\n", install_result);
     do {
         MSG_PRINTF(LOG_INFO, "payload:%s\n", (uint8_t *)in);
         payload = cJSON_Parse((uint8_t *)in);
@@ -228,8 +229,11 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
         MSG_PRINTF(LOG_INFO, "to_enable:%d\r\n", to_enable->valueint);
         item = cJSON_GetArraySize(ac_infos);
 
+        card_get_avariable_profile_num(&avariable_num);
+
         for(ii = 0; ii < item; ii++) {
-            code = download_one_profile(iccid_t, cJSON_GetArrayItem(ac_infos, ii) ,&priority);
+            avariable_num--;
+            code = download_one_profile(iccid_t, cJSON_GetArrayItem(ac_infos, ii) ,&priority, avariable_num);
             code_info = cJSON_CreateObject();
             if (!code_info) {
                 MSG_PRINTF(LOG_ERR, "Code info create failed\n");
@@ -240,13 +244,13 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
             cJSON_AddItemToArray(install_result, code_info);
             MSG_PRINTF(LOG_WARN, "add %d, code:%d, iccid_t=%s\r\n", ii, code, iccid_t);
             if (code == RT_SUCCESS) {
-                MSG_PRINTF(LOG_INFO, "111111 min_prio_value=%d, priority=%d\r\n", min_prio_value, priority);
+                //MSG_PRINTF(LOG_INFO, "111111 min_prio_value=%d, priority=%d\r\n", min_prio_value, priority);
                 if ((frist_download_ok == RT_TRUE) || (priority <= min_prio_value)) {
                     rt_os_memcpy(g_iccid, iccid_t, THE_ICCID_LENGTH);
                     g_iccid[THE_ICCID_LENGTH] = '\0';
                     min_prio_value = priority;
                 }            
-                MSG_PRINTF(LOG_INFO, "222222 min_prio_value=%d, priority=%d, g_iccid=%s\r\n", min_prio_value, priority, g_iccid);
+                //MSG_PRINTF(LOG_INFO, "222222 min_prio_value=%d, priority=%d, g_iccid=%s\r\n", min_prio_value, priority, g_iccid);
                 if (frist_download_ok == RT_TRUE) {
                     frist_download_ok = RT_FALSE;
                 }
@@ -260,7 +264,7 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
         }
     } while(0);
 
-    MSG_PRINTF(LOG_WARN, "Add install result\n");
+    //MSG_PRINTF(LOG_WARN, "Add install result\n");
     if (install_result != NULL) {
         up_content = cJSON_CreateObject();
         if (!up_content) {

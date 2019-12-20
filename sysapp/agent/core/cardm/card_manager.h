@@ -24,6 +24,11 @@
 #define MAX_EID_HEX_LEN             16
 #define MAX_APN_LEN                 32
 
+typedef enum PROFILE_STATE {
+    PROFILE_DISABLED                = 0,
+    PROFILE_ENABLED                 = 1,
+} profile_state_e;
+
 typedef enum PROFILE_TYPE {
     PROFILE_TYPE_TEST               = 0,
     PROFILE_TYPE_PROVISONING        = 1,
@@ -51,5 +56,6 @@ int32_t card_set_opr_profile_apn(void);
 int32_t card_force_enable_provisoning_profile(void);
 int32_t card_force_enable_provisoning_profile_update(void);
 int32_t card_manager_install_profile_ok(void);
+int32_t card_get_avariable_profile_num(int32_t *avariable_num);
 
 #endif // __CARD_MANAGER_H__

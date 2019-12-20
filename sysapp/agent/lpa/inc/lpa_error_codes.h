@@ -33,4 +33,6 @@
 #define RT_ERR_GET_BOUND_PROFILE_PACKAGE        -704
 #define RT_ERR_HANDLE_NOTIFICATION              -705
 
+#define RT_ERR_PROFILE_NUM                      -800  // profile number > fixed store number
+
 #endif  // __LPA_ERROR_CODES_H__
