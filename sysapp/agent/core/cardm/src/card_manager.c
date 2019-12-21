@@ -425,8 +425,10 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             break;
             
         case MSG_NETWORK_DISCONNECTED:
+            #if 0  // card detection do the same things
             rt_os_sleep(1);  // must have
             ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+            #endif
             break;
 
         case MSG_CARD_ENABLE_EXIST_CARD:

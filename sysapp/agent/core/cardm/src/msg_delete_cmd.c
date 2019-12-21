@@ -128,6 +128,12 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
             break;
         }
         all_iccid_num = cJSON_GetArraySize(iccids);
+
+        /* update current profile list */
+        if (card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP) == RT_SUCCESS) {
+            rt_os_sleep(1);
+        }
+        
         for (ii = 0; ii < all_iccid_num; ii++) {
             iccid = cJSON_GetArrayItem(iccids, ii);
             if (!iccid) {
