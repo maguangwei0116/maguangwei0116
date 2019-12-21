@@ -391,7 +391,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             cJSON *content = NULL;
             int32_t ret;
 
-            MSG_PRINTF(LOG_WARN, "\n----------------->%s\n", event);
+            MSG_PRINTF(LOG_WARN, "------->%s\n", event);
             
             content = obj->packer(private_arg);
             //MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
@@ -435,29 +435,36 @@ int32_t init_upload(void *arg)
     return 0;
 }
 
-int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
+static int32_t upload_boot_info_event(void)
 {
     static rt_bool g_report_boot_event = RT_FALSE;
     static time_t g_boot_timestamp;
     time_t tmp_timestamp = time(NULL);
+    
+    if (g_report_boot_event == RT_FALSE) {
+        upload_event_report("BOOT", NULL, 0, NULL);
+        g_report_boot_event = RT_TRUE;
+        g_boot_timestamp = time(NULL);
+    } else {
+        //MSG_PRINTF(LOG_INFO, "tmp_timestamp:%d, g_boot_timestamp:%d\r\n", tmp_timestamp, g_boot_timestamp);
+        if ((tmp_timestamp - g_boot_timestamp) >= MAX_BOOT_INFO_INTERVAL) {
+            rt_bool report_all_info = RT_FALSE;
+            upload_event_report("INFO", NULL, 0, &report_all_info);
+        }
+    } 
 
+    return RT_SUCCESS;
+}
+
+int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
     (void)buf;
     (void)len;
 
     if (MSG_NETWORK_CONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv network connected\r\n");
         g_upload_network = RT_TRUE;
-        if (g_report_boot_event == RT_FALSE) {
-            upload_event_report("BOOT", NULL, 0, NULL);
-            g_report_boot_event = RT_TRUE;
-            g_boot_timestamp = time(NULL);
-        } else {
-            //MSG_PRINTF(LOG_INFO, "tmp_timestamp:%d, g_boot_timestamp:%d\r\n", tmp_timestamp, g_boot_timestamp);
-            if ((tmp_timestamp - g_boot_timestamp) >= MAX_BOOT_INFO_INTERVAL) {
-                rt_bool report_all_info = RT_FALSE;
-                upload_event_report("INFO", NULL, 0, &report_all_info);
-            }
-        }        
+        upload_boot_info_event();      
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;
@@ -465,17 +472,6 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
     } else if (MSG_MQTT_CONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv mqtt connected\r\n");
         g_upload_mqtt = RT_TRUE;
-        if (g_report_boot_event == RT_FALSE) {
-            upload_event_report("BOOT", NULL, 0, NULL);
-            g_report_boot_event = RT_TRUE;
-            g_boot_timestamp = time(NULL);
-        } else {
-            //MSG_PRINTF(LOG_INFO, "tmp_timestamp:%d, g_boot_timestamp:%d\r\n", tmp_timestamp, g_boot_timestamp);
-            if ((tmp_timestamp - g_boot_timestamp) >= MAX_BOOT_INFO_INTERVAL) {
-                rt_bool report_all_info = RT_FALSE;
-                upload_event_report("INFO", NULL, 0, &report_all_info);
-            }
-        }  
     } else if (MSG_MQTT_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv mqtt disconnected\r\n");
         g_upload_mqtt = RT_FALSE;
