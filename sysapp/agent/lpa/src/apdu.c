@@ -19,9 +19,10 @@ static lpa_channel_type_e g_channel_mode = LPA_CHANNEL_BY_IPC;
 static int32_t local_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
 {
 #ifdef CFG_PLATFORM_ANDROID
-        return rt_qmi_exchange_apdu(data, data_len, rsp, rsp_len);
+    extern int32_t rt_qmi_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
+    return rt_qmi_exchange_apdu(data, data_len, rsp, rsp_len);
 #else
-        return ipc_send_data(data, data_len, rsp, rsp_len);   
+    return ipc_send_data(data, data_len, rsp, rsp_len);   
 #endif    
 }
 

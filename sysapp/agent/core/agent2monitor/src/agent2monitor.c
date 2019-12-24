@@ -5,6 +5,9 @@
 #include "agent2monitor.h"
 #include "hash.h"
 #include "file.h"
+#ifdef CFG_PLATFORM_ANDROID
+#include "rt_qmi.h"
+#endif
 
 int32_t ipc_set_monitor_param(config_info_t *config_info)
 {
@@ -29,9 +32,16 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
     rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
     len += c_data.data_len;
 
-    MSG_PRINTF(LOG_INFO, "len:%d, log_max_size:%d, %08x\n", len, info.log_size, info.log_level);
-
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
+    //MSG_PRINTF(LOG_INFO, "len:%d, log_max_size:%d, %08x\n", len, info.log_size, info.log_level);
+    
+#ifdef CFG_PLATFORM_ANDROID
+    {
+        extern int32_t rt_qmi_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
+        rt_qmi_exchange_apdu((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
+    }
+#else
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
+#endif
 
     if (ret_len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;

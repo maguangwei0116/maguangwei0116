@@ -197,7 +197,9 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_versions,             (void *)&g_value_list),
     INIT_OBJ(init_device_info,          (void *)&g_value_list),
+#ifndef CFG_PLATFORM_ANDROID
     INIT_OBJ(init_mbn,                  (void *)&g_value_list),
+#endif
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa_channel,          (void *)&g_value_list),
     INIT_OBJ(init_timer,                NULL),    
