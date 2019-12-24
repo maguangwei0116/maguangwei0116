@@ -14,6 +14,7 @@
 #include "card_manager.h"
 #include "agent_queue.h"
 #include "msg_process.h"
+#include "card_ext.h"
 #include "lpa.h"
 #include "lpa_error_codes.h"
 
@@ -455,5 +456,85 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
     }
 
     return ret;
+}
+
+/* card operate API externally */
+int32_t card_ext_get_eid(char *eid, int32_t size)
+{
+    int32_t ret = RT_ERROR;
+    
+    if (size <= MAX_EID_LEN) {
+        ret = lpa_get_eid((uint8_t *)eid);
+    }
+
+    return ret;
+}
+
+int32_t card_ext_get_profiles_info(char *profiles_info_json, int32_t size)
+{
+    int32_t ret = RT_ERROR;
+    int32_t i = 0;
+    cJSON *profiles_obj = NULL;
+    cJSON *profiles = NULL;
+    cJSON *profile = NULL;
+    const char *iccid = NULL;
+    char *profile_str = NULL;
+    int32_t type;
+    int32_t state;
+    
+    ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+    if (!ret) {
+        profiles_obj = cJSON_CreateObject();
+        profiles = cJSON_CreateArray();        
+        if (profiles_obj && profiles) {
+            for (i = 0; i < g_p_info.num; i++) {
+                profile = cJSON_CreateObject();
+                if (profile) {
+                    iccid = g_p_info.info[i].iccid;
+                    type  = g_p_info.info[i].class;
+                    state = g_p_info.info[i].state;
+                    CJSON_ADD_NEW_STR_OBJ(profile, iccid);
+                    CJSON_ADD_NEW_INT_OBJ(profile, type);
+                    CJSON_ADD_NEW_INT_OBJ(profile, state);
+                    cJSON_AddItemToArray(profiles, profile);
+                }
+            }
+            CJSON_ADD_STR_OBJ(profiles_obj, profiles);
+            profile_str = (char *)cJSON_PrintUnformatted(profiles_obj);
+            if (profile_str && size >= MIN_PROFILES_LEN) {
+                snprintf(profiles_info_json, size, "%s", profile_str);
+                ret = RT_SUCCESS;
+            }
+        }
+    }
+
+exit_entry:
+
+    if (profiles_obj) {
+        cJSON_Delete(profiles_obj);
+        profiles_obj = NULL;
+    } 
+
+    if (profile_str) {
+        cJSON_free(profile_str);
+        profile_str = NULL;
+    }
+    
+    return ret;
+}
+
+int32_t card_ext_delete_profile(const char *iccid)
+{
+    return lpa_delete_profile(iccid);
+}
+
+int32_t card_ext_enable_profile(const char *iccid)
+{
+    return lpa_enable_profile(iccid);
+}
+
+int32_t card_ext_disable_profile(const char *iccid)
+{
+    return lpa_disable_profile(iccid);
 }
 
