@@ -109,6 +109,8 @@ static uint8_t *g_buf = NULL;
 static uint16_t g_buf_size = 0;
 static char g_share_profile[128];
 
+#define SHARED_PROFILE_NAME     "sharedprofile"
+
 static rt_fshandle_t open_share_profile(const char *file_name, rt_fsmode_t mode)
 {    
 #if (CFG_OPEN_MODULE)
@@ -120,11 +122,15 @@ static rt_fshandle_t open_share_profile(const char *file_name, rt_fsmode_t mode)
 
 static int32_t sizeof_share_profile(const char *file_name)
 {    
+    int32_t file_size = 0;
+    
 #if (CFG_OPEN_MODULE)
-    return linux_rt_file_size(file_name); 
+    file_size = linux_rt_file_size(file_name); 
 #elif (CFG_STANDARD_MODULE)  // standard
-    return linux_file_size(file_name); 
+    file_size = linux_file_size(file_name); 
 #endif
+
+    return file_size;
 }
 
 static uint32_t get_offset(rt_fshandle_t fp, uint8_t type, uint32_t *size)
@@ -193,10 +199,13 @@ static uint32_t rt_get_operator_profile_offset(rt_fshandle_t fp, uint32_t *size)
     return get_offset(fp, OPT_PROFILES, size);
 }
 
-#if 0
+#if 1
 static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
 {
-    uint8_t buf[50], hash_code_buf[32], original_hash[32], p[512];
+    uint8_t buf[BLOCK_SIZE] = {0};
+    uint8_t hash_code_buf[HASH_CODE_LENGTH] = {0};
+    uint8_t original_hash[HASH_CODE_LENGTH] = {0};
+    uint8_t p[BLOCK_SIZE] = {0};
     uint32_t hash_off = 0;
     uint32_t profile_off = 0;
     uint32_t index = 0;
@@ -205,24 +214,25 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
 
     file_size = sizeof_share_profile(g_share_profile);
     linux_fseek(fp, 0, RT_FS_SEEK_SET);
-    linux_fread(buf, 1, 8, fp);
+    rt_os_memset(buf, 0, sizeof(buf));
+    linux_fread(buf, 1, sizeof(buf), fp);
     profile_off = get_length(buf,1);
-    MSG_PRINTF(LOG_INFO, "file_size=%d, profile_off=%d\n", file_size, profile_off);
     hash_off += profile_off;
 
     linux_fseek(fp, profile_off, RT_FS_SEEK_SET);
-    linux_fread(buf, 1, 8, fp);
+    linux_fread(buf, 1, sizeof(buf), fp);
     hash_off += get_length(buf, 0) + get_length(buf, 1);
-    MSG_PRINTF(LOG_INFO, "hash_off=%d\n", hash_off);
+    MSG_PRINTF(LOG_INFO, "file_size=%d, profile_off=%d, hash_off=%d\n", file_size, profile_off, hash_off);
 
     linux_fseek(fp, hash_off, RT_FS_SEEK_SET);
-    linux_fread(buf, 1, 50, fp);
+    rt_os_memset(buf, 0, sizeof(buf));
+    linux_fread(buf, 1, sizeof(buf), fp);
     if (buf[0] != HASH_CODE || buf[1] != HASH_CODE_LENGTH) {
         MSG_PRINTF(LOG_ERR, "hash buffer failed %02x, %02x\n", buf[0], buf[1]);
         return RT_ERROR;
     }
-    rt_os_memcpy(original_hash, get_value_buffer(buf), 32);
-    if (file_size != hash_off + get_length(buf, 0) + get_length(buf, 1)){
+    rt_os_memcpy(original_hash, get_value_buffer(buf), HASH_CODE_LENGTH);
+    if (file_size < (hash_off + get_length(buf, 0) + get_length(buf, 1))){
         MSG_PRINTF(LOG_ERR, "The share profile is damaged.\n");
         return RT_ERROR;
     }
@@ -230,12 +240,12 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     linux_fseek(fp, profile_off, RT_FS_SEEK_SET);
     sha256_init(&hash_code);
     for (profile_off; profile_off < hash_off; profile_off += index){
-        index = linux_fread(p, 1, (hash_off - profile_off > 512) ? 512 : hash_off - profile_off, fp);
+        index = linux_fread(p, 1, (hash_off - profile_off > BLOCK_SIZE) ? BLOCK_SIZE : hash_off - profile_off, fp);
         sha256_update(&hash_code, p, index);
     }
     sha256_final(&hash_code, hash_code_buf);
 
-    if (rt_os_memcmp(original_hash, hash_code_buf, 32) != 0){
+    if (rt_os_memcmp(original_hash, hash_code_buf, HASH_CODE_LENGTH) != 0){
         MSG_PRINTF(LOG_ERR, "Share profile hash check failed\n");
         return RT_ERROR;
     }
@@ -247,11 +257,11 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
 {
     int32_t ret = RT_ERROR;
     int32_t file_size;
-    uint8_t head_buf[16];
-    uint8_t tail_buf[HASH_CODE_LENGTH+2];
-    uint8_t hash_code_buf[HASH_CODE_LENGTH];
-    uint8_t calc_hash_code_buf[HASH_CODE_LENGTH];
-    uint8_t tmp_buf[MAX_SHA_BLOCK_LEN];
+    uint8_t head_buf[16] = {0};
+    uint8_t tail_buf[HASH_CODE_LENGTH+2] = {0};
+    uint8_t hash_code_buf[HASH_CODE_LENGTH] = {0};
+    uint8_t calc_hash_code_buf[HASH_CODE_LENGTH] = {0};
+    uint8_t tmp_buf[MAX_SHA_BLOCK_LEN] = {0};
     uint32_t len = 0;
     uint32_t l_len = 0;
     int32_t calc_len = 0;
@@ -637,24 +647,41 @@ int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *versio
     return ret;
 }
 
+int32_t verify_profile_file(const char *file)
+{
+    int32_t ret = RT_TRUE;
+    
+#ifdef CFG_SHARE_PROFILE_ECC_VERIFY
+    char real_file_name[32] = {0};
+
+    ret = ipc_file_verify_by_monitor(file, real_file_name);
+    if (ret == RT_ERROR) {
+        MSG_PRINTF(LOG_ERR, "share profile verify fail !\n");
+        return ret;
+    }
+
+    if (rt_os_strcmp(SHARED_PROFILE_NAME, real_file_name)) {
+        MSG_PRINTF(LOG_ERR, "share profile name unmatched !\n");
+        ret = RT_ERROR;   
+    }    
+#endif 
+
+    return ret;
+}
+
 int32_t init_profile_file(const char *file)
 {
     int32_t ret = RT_ERROR;
     uint32_t len = 0;
     rt_fshandle_t fp;
-    char real_file_name[256] = {0};
 
     if (file) {
         snprintf(g_share_profile, sizeof(g_share_profile), "%s", (const char *)file);
     }
 
-#ifdef CFG_SHARE_PROFILE_ECC_VERIFY
-    ret = ipc_file_verify_by_monitor(g_share_profile, real_file_name);
-    if (ret == RT_ERROR) {
-        MSG_PRINTF(LOG_ERR, "share profile verify fail !\n");
-        return ret;
+    if ((ret = verify_profile_file(g_share_profile)) == RT_ERROR) {
+        return RT_ERROR;
     }
-#endif
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
     if (fp == NULL) {

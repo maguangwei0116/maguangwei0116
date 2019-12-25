@@ -33,6 +33,8 @@
 #define PROFILE                                 0x81
 #define HASH_CODE_LENGTH                        0x20
 
+#define BLOCK_SIZE                              512
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)                           (sizeof((a)) / sizeof((a)[0]))
 #endif
@@ -48,7 +50,9 @@ typedef struct PROFILE_DATA {
 } profile_data_t;
 
 int32_t init_profile_file(const char *file);
+int32_t verify_profile_file(const char *file);
 int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *profile_len);
 int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size);
 
 #endif // __PROFILE_PARSE_H__
+

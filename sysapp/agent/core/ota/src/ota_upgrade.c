@@ -643,16 +643,16 @@ static rt_bool ota_file_check(const void *arg)
 {
     rt_bool ret = RT_FALSE;
     upgrade_struct_t *upgrade = (upgrade_struct_t *)arg;
-    int32_t iret;
+    int32_t iret = RT_ERROR;
     char real_file_name[32] = {0};
 
-#ifndef CFG_SHARE_PROFILE_ECC_VERIFY
+    /* special for verify share profile */
     if (upgrade->type == TARGET_TYPE_SHARE_PROFILE || upgrade->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
-        /* share profile needn't check signature */
-        return RT_TRUE;
+        iret = verify_profile_file((const char *)upgrade->tmpFileName);
+        return (iret == RT_SUCCESS) ? RT_TRUE : RT_FALSE;
     }
-#endif
 
+    /* verify for other type files */
     iret = ipc_file_verify_by_monitor((const char *)upgrade->tmpFileName, real_file_name);
     if (!iret) {
 #ifdef CFG_STANDARD_MODULE
