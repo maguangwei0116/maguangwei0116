@@ -429,8 +429,8 @@ int32_t init_upload(void *arg)
     g_upload_oti_addr       = (const char *)public_value_list->config_info->oti_addr;
     g_upload_ver_info       = (const target_versions_t *)public_value_list->version_info;
 
-    MSG_PRINTF(LOG_INFO, "imei: %p, %s\n", g_upload_device_info->imei, g_upload_device_info->imei);
-    MSG_PRINTF(LOG_INFO, "eid : %p, %s\n", g_upload_eid, g_upload_eid);
+    //MSG_PRINTF(LOG_INFO, "imei: %p, %s\n", g_upload_device_info->imei, g_upload_device_info->imei);
+    //MSG_PRINTF(LOG_INFO, "eid : %p, %s\n", g_upload_eid, g_upload_eid);
 
     return 0;
 }

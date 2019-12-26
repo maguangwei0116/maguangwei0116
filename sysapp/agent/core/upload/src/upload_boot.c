@@ -128,13 +128,23 @@ static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *le
     uint16_t mcc_int = 0;
     uint16_t mnc_int = 0;
     int32_t j = 0;
+    int32_t ret;
 
     if (mcc_mnc == NULL) {
         return;
     }
 
     /* used qmi to get network info */
-    rt_qmi_get_current_iccid(iccid);
+    ret = rt_qmi_get_current_iccid(iccid);
+    if (ret) {
+        /* get local current iccid instead */
+        if (g_upload_card_info) {
+            MSG_PRINTF(LOG_WARN, "get card manager using iccid ...\r\n");
+            sprintf(iccid, "%s", g_upload_card_info->iccid);
+        }
+    }
+
+    
     rt_qmi_get_mcc_mnc(&mcc_int,&mnc_int);
     j += sprintf(mcc_mnc, "%03d", mcc_int);
     j += sprintf(mcc_mnc+j, "%02d", mnc_int);
