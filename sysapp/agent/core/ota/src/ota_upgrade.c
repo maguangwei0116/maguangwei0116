@@ -649,15 +649,19 @@ static rt_bool ota_file_check(const void *arg)
     upgrade_struct_t *upgrade = (upgrade_struct_t *)arg;
     int32_t iret = RT_ERROR;
     char real_file_name[32] = {0};
+    char absolute_file_path[256] = {0};
+
+    /* get file path */
+    linux_rt_file_abs_path((const char *)upgrade->tmpFileName, absolute_file_path, sizeof(absolute_file_path));
 
     /* special for verify share profile */
     if (upgrade->type == TARGET_TYPE_SHARE_PROFILE || upgrade->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
-        iret = verify_profile_file((const char *)upgrade->tmpFileName);
+        iret = verify_profile_file(RT_TRUE, (const char *)absolute_file_path);
         return (iret == RT_SUCCESS) ? RT_TRUE : RT_FALSE;
     }
 
     /* verify for other type files */
-    iret = ipc_file_verify_by_monitor((const char *)upgrade->tmpFileName, real_file_name);
+    iret = ipc_file_verify_by_monitor((const char *)absolute_file_path, real_file_name);
     if (!iret) {
 #ifdef CFG_STANDARD_MODULE
         if (!rt_os_strcmp(OTA_UPGRADE_OEMAPP_UBI, real_file_name)) {

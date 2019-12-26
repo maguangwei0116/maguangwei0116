@@ -138,7 +138,7 @@ file tail data as follow:
 agentFFFFFFFFFFFFFFFB37F3BAD94DFCC1FBDB0FBF608802FA72D38FAEE3AB8CBBF63BF6C99DA9E31FA91B42B6134E73BC8914B84BF2521FD6291F
 5C51670300A3FD13E8EB9966D8FDC
 */
-int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
+int32_t ipc_file_verify_by_monitor(const char *abs_file, char *real_file_name)
 {
     int32_t ret = RT_ERROR;
     sha256_ctx_t sha_ctx;
@@ -152,13 +152,13 @@ int32_t ipc_file_verify_by_monitor(const char *file, char *real_file_name)
     int32_t partlen = 0;
     int32_t file_size = 0;
 
-    file_size = linux_rt_file_size(file);
+    file_size = linux_file_size(abs_file);
     if (file_size <= (PRIVATE_ECC_HASH_STR_LEN + MAX_NAME_BLOCK_SIZE)) {
         MSG_PRINTF(LOG_ERR, "error file size: %d\r\n", file_size);
         goto exit_entry;
     }
 
-    if ((fp = linux_rt_fopen(file, "r")) == NULL) {
+    if ((fp = linux_fopen(abs_file, "r")) == NULL) {
         MSG_PRINTF(LOG_ERR, "error open file\n");
         goto exit_entry;
     }

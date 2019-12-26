@@ -647,14 +647,23 @@ int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *versio
     return ret;
 }
 
-int32_t verify_profile_file(const char *file)
+int32_t verify_profile_file(rt_bool absolute_path, const char *file)
 {
     int32_t ret = RT_SUCCESS;
     
 #ifdef CFG_SHARE_PROFILE_ECC_VERIFY
     char real_file_name[32] = {0};
+    char absolute_file_path[256] = {0};
 
-    ret = ipc_file_verify_by_monitor(file, real_file_name);
+    if (absolute_path) {
+        /* absolute path already */
+        snprintf(absolute_file_path, sizeof(absolute_file_path), "%s", file);
+    } else {
+        /* get file path */
+        linux_rt_file_abs_path(file, absolute_file_path, sizeof(absolute_file_path));
+    }
+
+    ret = ipc_file_verify_by_monitor(absolute_file_path, real_file_name);
     if (ret == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "share profile verify fail !\n");
         return ret;
@@ -679,9 +688,15 @@ int32_t init_profile_file(const char *file)
         snprintf(g_share_profile, sizeof(g_share_profile), "%s", (const char *)file);
     }
 
-    if ((ret = verify_profile_file(g_share_profile)) == RT_ERROR) {
+#if (CFG_OPEN_MODULE)
+    if ((ret = verify_profile_file(RT_FALSE, g_share_profile)) == RT_ERROR) {
         return RT_ERROR;
     }
+#elif (CFG_STANDARD_MODULE)  // standard
+    if ((ret = verify_profile_file(RT_TRUE, g_share_profile)) == RT_ERROR) {
+        return RT_ERROR;
+    }
+#endif    
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
     if (fp == NULL) {
