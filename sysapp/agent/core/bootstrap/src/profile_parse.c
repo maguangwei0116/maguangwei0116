@@ -649,7 +649,7 @@ int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *versio
 
 int32_t verify_profile_file(const char *file)
 {
-    int32_t ret = RT_TRUE;
+    int32_t ret = RT_SUCCESS;
     
 #ifdef CFG_SHARE_PROFILE_ECC_VERIFY
     char real_file_name[32] = {0};
