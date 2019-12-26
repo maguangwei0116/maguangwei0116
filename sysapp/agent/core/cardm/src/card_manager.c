@@ -380,7 +380,7 @@ int32_t init_card_manager(void *arg)
 #ifdef CFG_PLATFORM_ANDROID
     if(g_p_info.type == PROFILE_TYPE_OPERATIONAL) {
         ret = lpa_enable_profile(g_p_info.iccid);
-        if (ret) {
+        if ((ret != RT_SUCCESS) && (ret != RT_PROFILE_STATE_ENABLED)) {
             MSG_PRINTF(LOG_WARN, "card enable profile fail, ret=%d\r\n", ret);
         }
     }

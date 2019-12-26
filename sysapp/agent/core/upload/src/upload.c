@@ -30,11 +30,7 @@ const char *g_push_channel                  = NULL;
 const devicde_info_t *g_upload_device_info  = NULL;
 const card_info_t *g_upload_card_info       = NULL;
 const target_versions_t *g_upload_ver_info  = NULL;
-// #ifdef CFG_PLATFORM_ANDROID
-// static rt_bool g_upload_network             = RT_TRUE;
-// #else
 static rt_bool g_upload_network             = RT_FALSE;
-// #endif
 static rt_bool g_upload_mqtt                = RT_FALSE;
 
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
