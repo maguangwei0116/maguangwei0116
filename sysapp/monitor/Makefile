@@ -41,7 +41,7 @@ QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci q
 ifeq ($(CFG_STANDARD_MODULE),y)
 QMI-LIB                             += ql_softsim_extsdk
 endif
-COMM-LIB                            = crypto ssl pthread m
+COMM-LIB                            = crypto ssl pthread m dl
 VUICC-LIB                           = libvuicc.a
 ############################################################################
 ### path

@@ -147,9 +147,6 @@ SRC-y                                   += ./core/at/src/at_command.c
 # agent main
 SRC-y                                   += ./main/src/main.c
 
-# ubi
-SRC-y                                   += ./core/ubi/src/ubi.c
-
 ############################################################################
 # Never adjustment order of these files
 SRC-y                                   += ./core/upload/src/upload_null_end.c
@@ -173,7 +170,6 @@ INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
 INC-PATH-y 		                        += ./core/logm/
 INC-PATH-y 		                        += ./core/agent2monitor/
-INC-PATH-y 		                        += ./core/ubi/
 INC-PATH-y 		                        += ./core/at/
 
 INC-y 			                        += ./

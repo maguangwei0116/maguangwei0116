@@ -17,7 +17,8 @@ vpath %.c ./socket
 vpath %.c ./random
 vpath %.c ./at
 ifeq ($(LIBRARY_CFG_STANDARD_MODULE),y)
-vpath %.c ./customer_at
+vpath %.c ./module/quectel_ec2x/customer_at
+vpath %.c ./module/quectel_ec2x/ubi
 endif
 
 # Config your resource file list by += xxx.c
@@ -38,6 +39,7 @@ SRC-y 		+= src/qmi_wds.c
 SRC-y 		+= src/rt_qmi.c
 ifeq ($(LIBRARY_CFG_STANDARD_MODULE),y)
 SRC-y 		+= src/customer_at.c
+SRC-y 		+= src/ubi.c
 endif
 endif
 ifeq ($(LIBRARY_PLATFORM_ANDROID), y)
@@ -61,7 +63,8 @@ INC-PATH 	+= ./socket/
 INC-PATH 	+= ./random/
 INC-PATH 	+= ./at/
 ifeq ($(LIBRARY_CFG_STANDARD_MODULE),y)
-INC-PATH 	+= ./customer_at/
+INC-PATH 	+= ./module/quectel_ec2x/customer_at/
+INC-PATH 	+= ./module/quectel_ec2x/ubi/
 endif
 
 INC-y 		+= ./
