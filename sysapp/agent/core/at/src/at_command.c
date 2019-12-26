@@ -15,6 +15,8 @@
 #ifdef CFG_STANDARD_MODULE
 #include "customer_at.h"
 #endif
+#include "ubi.h"
+#include "agent2monitor.h"
 #include "lpa.h"
 #include "log.h"
 
@@ -28,12 +30,18 @@
 #define       AT_SWITCH_TO_PROVISIONING      '0'
 #define       AT_SWITCH_TO_OPERATION         '1'
 #define       AT_CONFIG_LPA_CHANNEL          '2'
+#define       AT_UPGRADE_UBI_FILE            '3'
 
 #define       AT_CONTENT_DELIMITER           ','
 
 #define       AT_CFG_VUICC                   "\"vUICC\""
 #define       AT_CFG_EUICC                   "\"eUICC\""
 #define       AT_CFG_UICC_LEN                7 // 5+2
+
+#define       OTA_UPGRADE_OEMAPP_UBI         "oemapp.ubi"
+#ifdef CFG_STANDARD_MODULE
+#define       OTA_UPGRADE_USR_AGENT          "/usrdata/redtea/rt_agent"
+#endif
 
 #ifdef CFG_STANDARD_MODULE
 /*
@@ -138,6 +146,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
                 uint8_t iccid[THE_ICCID_LENGTH+1] = {0};
+                
                 rt_os_memcpy(iccid, &cmd[5], THE_ICCID_LENGTH);   
                 MSG_PRINTF(LOG_INFO, "iccid: %s\n", iccid);
                 if (cmd[3] == AT_SWITCH_TO_PROVISIONING) {
@@ -146,7 +155,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     ret = uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
                 }
                 if (ret == RT_SUCCESS) {
-                    /* rsp: ,cmd,<iccid> */
+                    /* rsp: ,para,<iccid> */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, (char *)iccid);
                 }
              } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) { // config "vuicc" or "euicc"
@@ -157,8 +166,40 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     ret = config_update_uicc_mode(LPA_CHANNEL_BY_QMI);
                 }
                 if (ret == RT_SUCCESS) {
-                    /* rsp: ,cmd,"uicc-type" */
+                    /* rsp: ,para,"uicc-type" */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
+                }
+            } else if (cmd[3] == AT_UPGRADE_UBI_FILE) { // upgrade ubi file
+                char ubi_abs_file[128] = {0};
+                char real_file_name[32] = {0};
+                char *p0 = NULL;
+                char *p1 = NULL;    
+                
+                MSG_PRINTF(LOG_INFO, "ubi file input: %s\n", &cmd[5]);
+                p0 = rt_os_strchr(&cmd[5], '"');
+                if (p0) {
+                    p1 = rt_os_strchr(p0 + 1, '"'); 
+                    if (p1) {
+                        rt_os_memcpy(ubi_abs_file, p0 + 1, p1 - p0 - 1);  
+                        MSG_PRINTF(LOG_INFO, "ubi_abs_file: %s\n", ubi_abs_file);
+                    }
+                }
+                if (rt_os_strlen(ubi_abs_file)) {
+                    ret = ipc_file_verify_by_monitor(ubi_abs_file, real_file_name);
+                    if (!ret && !rt_os_strcmp(OTA_UPGRADE_OEMAPP_UBI, real_file_name)) {
+#ifdef CFG_STANDARD_MODULE
+                        linux_delete_file(OTA_UPGRADE_USR_AGENT);  // must delete agent to create a new one !!!
+#endif
+                        ret = ubi_update((const char *)ubi_abs_file);
+                        if (ret == RT_SUCCESS) {
+                            /* rsp: ,para,"ubi_file" */
+                            snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
+                        }
+                    } else {
+                        MSG_PRINTF(LOG_ERR, "ubi file verify fail\n");
+                    }
+                } else {
+                    ret = RT_ERROR;
                 }
             }
         }
