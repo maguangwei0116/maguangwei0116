@@ -344,7 +344,11 @@ exit_entry:
 #endif
 
 #ifndef IS_NUM_CHAR
-#define IS_NUM_CHAR(c)          ('0' <= (c) && (c) <= '9')
+#define IS_NUM_CHAR(c)          (('0' <= (c) && (c) <= '9'))
+#endif
+
+#ifndef IS_X_CHAR
+#define IS_X_CHAR(c)            (('x' == (c) || (c) <= 'X'))
 #endif
 
 extern int32_t bootstrap_get_profile_name(char *file_name, int32_t len);
@@ -383,13 +387,13 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
         /* sample: B191031023631863078, B + YYMMDDHHMMSSxxxxxx */
         if (fileName[0] == 'B') {
             for (i = 1; i <= MAX_BATCH_CODE_LEN; i++) {
-                if (!IS_NUM_CHAR(fileName[i])) {
+                if (!IS_NUM_CHAR(fileName[i]) && !IS_X_CHAR(fileName[i])) {
                     break;
                 }
             }
 
             if (i == (MAX_BATCH_CODE_LEN + 1)) {
-                char share_profile[128];
+                char share_profile[128] = {0};
                 bootstrap_get_profile_name(share_profile, sizeof(share_profile));
                 snprintf(targetFileName, len, "%s", share_profile);
                 *type_matched = RT_TRUE;
@@ -524,7 +528,7 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
         goto exit_entry;
     }
 
-    if (param->target.type != TARGET_TYPE_SHARE_PROFILE) {
+    if (param->target.type != TARGET_TYPE_SHARE_PROFILE && param->target.type != TARGET_TYPE_DEF_SHARE_PROFILE) {
         if (rt_os_strcmp(param->target.chipModel, g_upload_ver_info->versions[param->target.type].chipModel)) {
             MSG_PRINTF(LOG_WARN, "unmathed chip model [%s] => [%s]\r\n", 
                             g_upload_ver_info->versions[param->target.type].chipModel, param->target.chipModel);
@@ -795,15 +799,19 @@ static file_activate g_file_activate_list[] =
     ota_file_activate_agent_so_profile,
 };
 
+#define SIMULATION_MSG_FOR_UPGRADE_DEF_SHARE_PROFILE \
+    "{\"tranId\":\"88888888888888888888888888888888\",\"payload\":\"{\\\"method\\\":\\\"UPGRADE\\\"," \
+    "\\\"content\\\":{\\\"policy\\\":{\\\"forced\\\":0,\\\"executionType\\\":\\\"NOW\\\",\\\"profileType\\\":0," \
+    "\\\"retryAttempts\\\":2,\\\"retryInterval\\\":30},\\\"target\\\":{\\\"name\\\":\\\"Bxxxxxxxxxxxxxxxxxx\\\"," \
+    "\\\"type\\\":%d}}}\"}" 
+            
 int32_t ota_download_default_share_profile(void)
 {
     char new_msg[1024];
     int32_t ret;
 
     /* simulate to packet a UPGRADE data bag to start download default share profile */
-    snprintf(new_msg, sizeof(new_msg), 
-            "{\"tranId\":\"88888888888888888888888888888888\",\"payload\":\"{\\\"method\\\":\\\"UPGRADE\\\",\\\"content\\\":{\\\"policy\\\":{\\\"forced\\\":0,\\\"executionType\\\":\\\"NOW\\\",\\\"profileType\\\":0,\\\"retryAttempts\\\":2,\\\"retryInterval\\\":30},\\\"target\\\":{\\\"name\\\":\\\"B191031023631863078\\\",\\\"type\\\":%d}}}\"}", 
-            TARGET_TYPE_DEF_SHARE_PROFILE);
+    snprintf(new_msg, sizeof(new_msg), SIMULATION_MSG_FOR_UPGRADE_DEF_SHARE_PROFILE, TARGET_TYPE_DEF_SHARE_PROFILE);
 
     ret = downstream_msg_handle((const void *)new_msg, rt_os_strlen(new_msg));
 
