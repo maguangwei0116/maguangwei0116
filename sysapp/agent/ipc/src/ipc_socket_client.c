@@ -32,7 +32,7 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
         goto end;
     }
     
-    MSG_INFO_ARRAY("IPC REQ:", data, len);
+    MSG_INFO_ARRAY("IPC REQ: ", data, len);
     ret = socket_send(socket_id, data, len);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "send data failed\n");
@@ -45,7 +45,7 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
         goto end;
     } 
     *rsp_len = ret;
-    MSG_INFO_ARRAY("IPC RSP:", rsp, *rsp_len);
+    MSG_INFO_ARRAY("IPC RSP: ", rsp, *rsp_len);
     ret = RT_SUCCESS;
     
 end:

@@ -7,6 +7,7 @@
 #include "file.h"
 #ifdef CFG_PLATFORM_ANDROID
 #include "rt_qmi.h"
+#include "lpa.h"
 #endif
 
 int32_t ipc_set_monitor_param(config_info_t *config_info)
@@ -37,6 +38,11 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
 #ifdef CFG_PLATFORM_ANDROID
     {
         extern int32_t rt_qmi_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
+
+        if (config_info->lpa_channel_type == LPA_CHANNEL_BY_QMI) {
+            return RT_SUCCESS; /* neend't config monitor param */
+        }
+        
         rt_qmi_exchange_apdu((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
     }
 #else
