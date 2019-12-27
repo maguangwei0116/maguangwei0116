@@ -60,7 +60,7 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
         if (*((p[i])->profileClass) == 1) {
             if (*((p[i])->profileState) != 1) {   // enable provisioning card
                 rt_os_memcpy(&apdu_enable[7], (p[i])->iccid->buf, (p[i])->iccid->size);
-                MSG_INFO_ARRAY("Enable iccid", apdu_enable, sizeof(apdu_enable));
+                MSG_INFO_ARRAY("Enable iccid: ", apdu_enable, sizeof(apdu_enable));
                 ret = cmd_store_data((const uint8_t *)apdu_enable, sizeof(apdu_enable), rsp_buf, &rsp_len, channel);
                 if (ret != RT_SUCCESS) {
                     MSG_PRINTF(LOG_ERR, "Enable failed!!");
@@ -134,7 +134,7 @@ static int32_t parse_profile(void)
     
     profile_seq = get_selecte_profile_index(profile_info->totalNum);
 
-    MSG_INFO_ARRAY("insert profile buffer:", profiles + (profile_seq * size), size);
+    MSG_INFO_ARRAY("insert profile buffer: ", profiles + (profile_seq * size), size);
 
     ret = insert_profile(profiles + (profile_seq * size), size);
     if (ret != RT_SUCCESS) {

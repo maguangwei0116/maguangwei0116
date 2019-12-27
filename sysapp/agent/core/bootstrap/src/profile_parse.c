@@ -404,7 +404,7 @@ static int32_t update_hash(uint8_t *buf, int32_t profile_len, uint8_t *profile_h
     sha256_init(&profile_ctx);
     sha256_update(&profile_ctx, p, size);
     sha256_final(&profile_ctx, profile_hash);
-    MSG_INFO_ARRAY("Current profile_hash:", profile_hash, 32);
+    MSG_INFO_ARRAY("Current profile_hash: ", profile_hash, 32);
     return RT_SUCCESS;
 }
 
@@ -444,8 +444,8 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         uint8_t buffer[21];
         char select_buffer[21];
 
-        //MSG_INFO_ARRAY("selected imsi:", bootstrap_request->tbhRequest.imsi.buf, bootstrap_request->tbhRequest.imsi.size);
-        //MSG_INFO_ARRAY("selected iccid:", bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
+        //MSG_INFO_ARRAY("selected imsi: ", bootstrap_request->tbhRequest.imsi.buf, bootstrap_request->tbhRequest.imsi.size);
+        //MSG_INFO_ARRAY("selected iccid: ", bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
 
         rt_os_memset(buffer, 0 ,sizeof(buffer));
         rt_os_memcpy(buffer, bootstrap_request->tbhRequest.imsi.buf, bootstrap_request->tbhRequest.imsi.size);
@@ -488,7 +488,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         goto end;
     }
 
-    MSG_INFO_ARRAY("Current profile:", g_buf, g_buf_size);
+    MSG_INFO_ARRAY("Current profile: ", g_buf, g_buf_size);
     rt_os_memcpy(profile, g_buf, g_buf_size);
     *len_out = g_buf_size;
     ret = RT_SUCCESS;

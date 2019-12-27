@@ -576,7 +576,7 @@ static int get_ip_by_dns(const char *dns_server, const char *dns_addr,
         
         wlen = sendto(soc, sbuf, len + sizeof(header) + 1, 0, (struct sockaddr *)&addr, sizeof(addr));
         DNS_PRINTF("DNS send to ret = %d\n", wlen);
-        DNS_HEXDUMP("dns send", sbuf, len + sizeof(header) + 1);
+        DNS_HEXDUMP("dns send: ", sbuf, len + sizeof(header) + 1);
         if(wlen < 0) {
             #if defined (PLATFORM_WINDOWS)
             DNS_PRINTF("sendto Error(%d)\n", WSAGetLastError());
@@ -592,7 +592,7 @@ static int get_ip_by_dns(const char *dns_server, const char *dns_addr,
         #if defined (PLATFORM_WINDOWS)
         rlen = recvfrom(soc, rbuf, BUFSIZ, 0, (struct sockaddr *)&raddr, &addr_len);
         DNS_PRINTF("DNS recv from ret = %d\n", rlen);
-        DNS_HEXDUMP("dns recv", rbuf, rlen);
+        DNS_HEXDUMP("dns recv: ", rbuf, rlen);
         if(rlen < 0){
             DNS_PRINTF("recvfrom Error Error(%d)\n", WSAGetLastError());
             ret = -4;
@@ -609,7 +609,7 @@ static int get_ip_by_dns(const char *dns_server, const char *dns_addr,
         }        
         #endif
         else {
-            DNS_HEXDUMP("dns recv", rbuf, rlen);
+            DNS_HEXDUMP("dns recv: ", rbuf, rlen);
             if(dns_packet_hdr_resolve(rbuf, rlen, ipout)  == 0) {
                 DNS_PRINTF("OK!!! DNS request successfully\n");
                 ret = 0;

@@ -169,7 +169,7 @@ int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t
     req.apdu[req.apdu_len] = '\0';
     req.channel_id_valid = 1;
     req.channel_id = channel;
-    MSG_INFO_ARRAY("APDU REQ:",req.apdu,req.apdu_len);
+    MSG_INFO_ARRAY("APDU REQ: ",req.apdu,req.apdu_len);
     QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_SEND_APDU_REQ_V01, req, resp);
     if(err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
@@ -179,7 +179,7 @@ int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t
         if(resp.apdu_valid) {        //analyse respose
             *rsp_len = resp.apdu_len;
             memcpy(rsp,resp.apdu,*rsp_len);
-            MSG_INFO_ARRAY("APDU RSP:",resp.apdu,resp.apdu_len);
+            MSG_INFO_ARRAY("APDU RSP: ",resp.apdu,resp.apdu_len);
         }
     }
     return err;

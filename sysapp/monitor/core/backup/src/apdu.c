@@ -34,11 +34,11 @@ static uint16_t monitor_send_apdu(uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp
 {
     uint16_t sw;
 
-    MSG_INFO_ARRAY("B-APDU REQ:", apdu, apdu_len);
+    MSG_INFO_ARRAY("B-APDU REQ: ", apdu, apdu_len);
     sw = card_cmd((uint8_t *)apdu, apdu_len, rsp, rsp_len);
     rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
     rsp[(*rsp_len)++] = sw & 0xFF;
-    MSG_INFO_ARRAY("B-APDU RSP:", rsp, *rsp_len);
+    MSG_INFO_ARRAY("B-APDU RSP: ", rsp, *rsp_len);
 
     return RT_SUCCESS;
 }

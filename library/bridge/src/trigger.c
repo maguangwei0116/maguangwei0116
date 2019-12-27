@@ -77,7 +77,7 @@ static int process_ind_connect(qmi_client_type user_handle, unsigned int msg_id,
 
     // fill ATR
     trigger_reset(req.atr, (uint16_t *)&req.atr_len);
-    MSG_INFO_ARRAY("ATR:", req.atr, req.atr_len);
+    MSG_INFO_ARRAY("ATR: ", req.atr, req.atr_len);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, txn);
@@ -105,7 +105,7 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     req.slot = ind_msg.slot;
     req.apdu_id = ind_msg.apdu_id;
 
-    MSG_INFO_ARRAY("M-APDU REQ:", ind_msg.command_apdu, ind_msg.command_apdu_len);
+    MSG_INFO_ARRAY("M-APDU REQ: ", ind_msg.command_apdu, ind_msg.command_apdu_len);
 
     // fill Response APDU
     req.response_apdu_segment_valid = true;
@@ -118,7 +118,7 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     req.response_apdu_info.total_response_apdu_size = req.response_apdu_segment_len;
     req.response_apdu_info.response_apdu_segment_offset = 0;
 
-    MSG_INFO_ARRAY("M-APDU RSP:", req.response_apdu_segment, req.response_apdu_segment_len);
+    MSG_INFO_ARRAY("M-APDU RSP: ", req.response_apdu_segment, req.response_apdu_segment_len);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_APDU_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, txn);
@@ -185,7 +185,7 @@ static int process_ind_reset(qmi_client_type user_handle, unsigned int msg_id,
 
     // fill ATR
     trigger_reset(req.atr, (uint16_t *)&req.atr_len);
-    MSG_INFO_ARRAY("ATR", req.atr, req.atr_len);
+    MSG_INFO_ARRAY("ATR: ", req.atr, req.atr_len);
 
     rc = qmi_client_send_msg_async(user_handle, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, txn);
@@ -332,7 +332,7 @@ int t9x07_reset_card(uim_remote_slot_type_enum_v01 slot)
 
     // fill ATR
     trigger_reset(req.atr, (uint16_t *)&req.atr_len);
-    MSG_INFO_ARRAY("ATR", req.atr, req.atr_len);
+    MSG_INFO_ARRAY("ATR: ", req.atr, req.atr_len);
 
     rc = qmi_client_send_msg_async(rm_uim_client, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, &txn);

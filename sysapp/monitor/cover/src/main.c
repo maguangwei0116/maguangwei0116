@@ -187,16 +187,16 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
 
     cmd = (data[5] << 8) + data[6];
     if (cmd == 0xFFFF) { // msg from agent
-        MSG_INFO_ARRAY("A-APDU REQ:", data, len);
+        MSG_INFO_ARRAY("A-APDU REQ: ", data, len);
         sw = monitor_deal_agent_msg(data[7], &data[12], data[11], rsp, rsp_len);
-        MSG_INFO_ARRAY("A-APDU RSP:", rsp, *rsp_len);
+        MSG_INFO_ARRAY("A-APDU RSP: ", rsp, *rsp_len);
         return sw;
     } else { // msg for vuicc
-        MSG_INFO_ARRAY("E-APDU REQ:", data, len);
+        MSG_INFO_ARRAY("E-APDU REQ: ", data, len);
         sw = card_cmd((uint8_t *)data, len, rsp, rsp_len);
         rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
         rsp[(*rsp_len)++] = sw & 0xFF;
-        MSG_INFO_ARRAY("E-APDU RSP:", rsp, *rsp_len);
+        MSG_INFO_ARRAY("E-APDU RSP: ", rsp, *rsp_len);
 
         /* enable profile and load bootstrap profile, need to reset */
         if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {

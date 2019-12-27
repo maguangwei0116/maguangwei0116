@@ -72,7 +72,7 @@ static inline void ARRAY_PRINTF(const char *tag, const uint8_t *array, uint16_t 
     uint16_t tag_len = rt_os_strlen(tag);
     
     snprintf(msg, _len, "(%d bytes) %s", len, tag);
-    _msg = &msg[tag_len];
+    _msg = &msg[rt_os_strlen(msg)];
     _len = _len - tag_len;
     for (i = 0; i < len; i++) {                                             
         snprintf(_msg, _len, "%02X", _p_[i]);            

@@ -53,9 +53,9 @@ static int32_t push_ac_parser(const void *in, char *tranid, void **out)
         MSG_PRINTF(LOG_ERR, "The data are the same!!\n");
         return ret;
     }
-    rt_os_memcpy(md5_out_pro, md5_out_now, MD5_STRING_LENGTH);
-    MSG_INFO_ARRAY("md5_out_pro", md5_out_pro, MD5_STRING_LENGTH);
-    MSG_INFO_ARRAY("md5_out_now", md5_out_now, MD5_STRING_LENGTH);
+    MSG_INFO_ARRAY("md5_out_pro: ", md5_out_pro, MD5_STRING_LENGTH);
+    rt_os_memcpy(md5_out_pro, md5_out_now, MD5_STRING_LENGTH);    
+    MSG_INFO_ARRAY("md5_out_now: ", md5_out_now, MD5_STRING_LENGTH);
     do {
         agent_msg = cJSON_Parse(in);
         if (!agent_msg) {
