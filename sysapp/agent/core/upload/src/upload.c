@@ -12,6 +12,7 @@
 #define MAX_UPLOAD_TIMES                    3
 #define MAX_OTI_URL_LEN                     100
 #define MAX_BOOT_INFO_INTERVAL              5       // unit: second
+#define MQTT_UPLOAD_SWITCH_STATE            0       // turn off now !!!
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do{                 \
@@ -129,11 +130,13 @@ static int32_t upload_send_final_request(const char *data, int32_t data_len)
 {
     int32_t ret = RT_ERROR;
 
+#if (MQTT_UPLOAD_SWITCH_STATE)
     /* send with MQTT frist */
     if (g_upload_mqtt == RT_TRUE) {
         ret = upload_send_mqtt_request(data, data_len);
     }
-    
+#endif
+
     /* send with http when MQTT upload fail, or MQTT disconnected */
     if (ret != RT_SUCCESS) {
         ret = upload_send_http_request(data, data_len);
