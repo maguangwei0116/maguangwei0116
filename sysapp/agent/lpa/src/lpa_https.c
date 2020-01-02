@@ -216,8 +216,10 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
         left_size -= sizeof(request) - 1;
     }
 
-    *size = https_read(&g_https_ctx, buffer, *size);
-    if (*size == 0) {
+    memset(buffer, 0, *size);
+    *size = https_read(&g_https_ctx, buffer, *size);    
+    if (*size == 0 || *size == -1) {
+        MSG_PRINTF(LOG_ERR, "https read, *size=%d\r\n", *size);
         return RT_ERR_HTTPS_POST_FAIL;
     }
 
