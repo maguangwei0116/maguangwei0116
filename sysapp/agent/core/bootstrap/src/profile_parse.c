@@ -517,6 +517,10 @@ static uint32_t get_selecte_profile_index(uint32_t total_num)
             break;
         }
 
+        if (total_num == 1) {
+            break;
+        }
+
         rt_os_msleep(100);
     }
 
