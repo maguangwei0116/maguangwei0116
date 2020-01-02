@@ -51,7 +51,7 @@ int32_t http_tcpclient_create(const char *addr, int32_t port)
     setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(struct timeval));
 
     if (connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) < 0) {
-        MSG_PRINTF(LOG_WARN, "connect error\n");
+        MSG_PRINTF(LOG_WARN, "connect error(%d)=%s\r\n", errno, strerror(errno));
         return RT_ERROR;
     }
     
