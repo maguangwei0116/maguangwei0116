@@ -16,6 +16,7 @@
 #include "card_manager.h"
 #include "downstream.h"
 #include "network_detection.h"
+#include "card_detection.h"
 #include "rt_type.h"
 #include "rt_os.h"
 
@@ -173,6 +174,7 @@ static void agent_queue_task(void)
                     mqtt_connect_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     ota_upgrade_task_check_event(que_t.data_buf, que_t.data_len, que_t.mode);                    
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    card_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode); // It will waste a few time
                     break;
 
