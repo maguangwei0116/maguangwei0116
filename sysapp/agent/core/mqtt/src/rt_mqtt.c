@@ -660,6 +660,7 @@ static int32_t mqtt_msg_arrived(void* context, char* topic_name, int32_t topic_l
 {
     char *msg = (char *)md->payload;
     int32_t len = md->payloadlen;
+    int32_t retained = md->retained;
     char *msg_buf = NULL;
 
     if (len > 0) {   
@@ -667,7 +668,7 @@ static int32_t mqtt_msg_arrived(void* context, char* topic_name, int32_t topic_l
         if (msg_buf) {
             rt_os_memcpy(msg_buf, msg, len);
             msg_buf[len] = '\0';
-            MSG_PRINTF(LOG_INFO, "msg arrived, topic:%s, len: %d bytes: \r\n%s\r\n", topic_name, len, msg_buf);
+            MSG_PRINTF(LOG_INFO, "msg arrived, retained:%d, topic:%s, len: %d bytes: \r\n%s\r\n", retained, topic_name, len, msg_buf);
             
             if (!mqtt_check_topic(topic_name)) {
                 MSG_PRINTF(LOG_WARN, "mqtt unexpected topic [%s] arrived, ignore !\r\n", topic_name);
