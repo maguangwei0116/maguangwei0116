@@ -220,12 +220,9 @@ static int32_t agent_init_call(void)
     int32_t i;
     int32_t ret;
 
-    for (i = 0; i < ARRAY_SIZE(g_init_objs); i++)
-    {
-        
+    for (i = 0; i < ARRAY_SIZE(g_init_objs); i++) {
         ret = g_init_objs[i].init(g_init_objs[i].arg);
-        if (rt_os_strcmp("init_log_file", g_init_objs[i].name))
-        {
+        if (rt_os_strcmp("init_log_file", g_init_objs[i].name)) {
             MSG_PRINTF(LOG_DBG, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
         }
     }
