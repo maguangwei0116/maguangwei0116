@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <error.h>
-#include <sys/vfs.h>
+
 
 #include "upgrade.h"
 #include "md5.h"
@@ -22,11 +22,8 @@
 #include "agent_queue.h"
 
 #define MAX_FILE_PATH_LEN               100
-
 #define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
-
 #define MAX_DOWNLOAD_RETRY_CNT          9       /* plus 1 for max total download times */
-
 #define DEFAULT_OTI_ENVIRONMENT_PORT    7082
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
@@ -39,18 +36,23 @@ static const char *g_upgrade_imei       = NULL;
 
 static int32_t get_system_tf_free(uint32_t *free_byte)
 {
-    struct statfs diskInfo;
+    rt_statfs_t diskInfo;
     unsigned long long totalBlocks;
     unsigned long long freeDisk;
+#ifdef CFG_STANDARD_MODULE
+    const char *disk_path = "/usrdata/";
+#else
+    const char *disk_path = "/data/";
+#endif
     
-    if (statfs("/data/", &diskInfo) < 0) {
+    if (linux_statfs(disk_path, &diskInfo) < 0) {
         MSG_PRINTF(LOG_ERR, "get free byte fail\r\n");
         return RT_ERROR;
     }
     
     totalBlocks = diskInfo.f_bsize;
-    freeDisk = diskInfo.f_bfree * totalBlocks;
-    *free_byte = freeDisk;
+    freeDisk    = diskInfo.f_bfree * totalBlocks;
+    *free_byte  = freeDisk;
     
     return RT_SUCCESS;
 }
@@ -160,6 +162,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         }
         rt_os_sleep(d_info->retryInterval);
     }
+    
     cJSON_Delete(post_info);
 
     return ret;
@@ -318,7 +321,7 @@ int32_t upgrade_process_create(upgrade_struct_t **d_info)
     info = (upgrade_struct_t *)rt_os_malloc(sizeof(upgrade_struct_t));
     *d_info = info;
 
-    return info ? 0: -1;
+    return info ? RT_SUCCESS : RT_ERROR;
 }
 
 int32_t upgrade_process_start(upgrade_struct_t *d_info)
@@ -327,10 +330,10 @@ int32_t upgrade_process_start(upgrade_struct_t *d_info)
     
     if (rt_create_task(&id, (void *)check_upgrade_process, (void *)d_info) != RT_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "Create upgrade thread flase\n");
-        return -1;
+        return RT_ERROR;
     }
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 int32_t init_upgrade(void *arg)
@@ -339,5 +342,5 @@ int32_t init_upgrade(void *arg)
     g_upgrade_oti_addr  = (const char *)public_value_list->config_info->oti_addr;
     g_upgrade_imei      = (const char *)public_value_list->device_info->imei;
 
-    return 0;
+    return RT_SUCCESS;
 }
