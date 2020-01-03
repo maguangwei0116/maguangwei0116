@@ -107,6 +107,42 @@ static int32_t get_monitor_version(char *name, int32_t n_size, char *version, \
 #endif
 }
 
+#ifdef CFG_STANDARD_MODULE
+static int32_t version_format(const char *version, int32_t ver_int[4])
+{
+    sscanf(version, "%d.%d.%d.%d", &ver_int[0], &ver_int[1], &ver_int[2], &ver_int[3]);
+
+    return RT_SUCCESS;
+}
+
+/*
+# Auto generate softsim-release file
+#                  MFR      agent     monitor    so       ubi       share profile batch code 
+# e.g. "Release: general_v4.5.6.10_v7.8.9.10_v1.2.3.10_v12.15.18.30#B191213070351591259"
+*/
+static int32_t get_oemapp_version(const char *a_version, const char * m_version, const char *so_version, \
+                                        const char *share_profile_name, char *version, int32_t v_size)
+{
+    int32_t a_ver_int[4] = {0};
+    int32_t m_ver_int[4] = {0};
+    int32_t so_ver_int[4] = {0};
+    int32_t o_ver_int[4] = {0};
+    int32_t i = 0;
+    
+    version_format(a_version, a_ver_int);
+    version_format(m_version, m_ver_int);
+    version_format(so_version, so_ver_int);
+
+    for (i = 0; i < 4; i++) {
+        o_ver_int[i] = a_ver_int[i] + m_ver_int[i] + so_ver_int[i];
+    }
+
+    snprintf(version, v_size, "%d.%d.%d.%d#%s", o_ver_int[0], o_ver_int[1], o_ver_int[2], o_ver_int[3], share_profile_name);
+
+    return RT_SUCCESS;
+}
+#endif
+
 static int32_t init_versions(void *arg)
 {
     char libcomm_ver[128] = {0};
@@ -145,6 +181,18 @@ static int32_t init_versions(void *arg)
                             sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].version),
                             g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel,
                             sizeof(g_target_versions.versions[TARGET_TYPE_COMM_SO].chipModel));
+
+#ifdef CFG_STANDARD_MODULE
+    /* add oemapp version */
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_OEMAPP].name, LOCAL_TARGET_OEMAPP_NAME);
+    SET_STR_PARAM(g_target_versions.versions[TARGET_TYPE_OEMAPP].chipModel, LOCAL_TARGET_PLATFORM_TYPE);
+    get_oemapp_version(g_target_versions.versions[TARGET_TYPE_AGENT].version,
+                       g_target_versions.versions[TARGET_TYPE_MONITOR].version,
+                       g_target_versions.versions[TARGET_TYPE_COMM_SO].version,
+                       g_target_versions.versions[TARGET_TYPE_SHARE_PROFILE].name,
+                       g_target_versions.versions[TARGET_TYPE_OEMAPP].version,
+                       sizeof(g_target_versions.versions[TARGET_TYPE_OEMAPP].version));
+#endif
 
     return RT_SUCCESS;
 }
