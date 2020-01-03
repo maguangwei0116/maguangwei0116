@@ -163,6 +163,16 @@ int linux_lstat(const char *path_name, rt_stat_t *buf)
     return lstat(path_name, buf);
 }
 
+int linux_statfs(const char *path_name, rt_statfs_t *buf)
+{
+    return statfs(path_name, buf);
+}
+
+int linux_fstatfs(int fd, rt_statfs_t *buf)
+{
+    return fstatfs(fd, buf);
+}
+
 int shell_cmd(const int8_t *cmd, uint8_t *buf, int size)
 {
     rt_fshandle_t fp;

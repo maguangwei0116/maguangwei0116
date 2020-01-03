@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
 
 #include "rt_type.h"
 
@@ -26,6 +27,7 @@ typedef const char *                rt_fsmode_t;
 typedef DIR *                       rt_dir_t;
 typedef struct dirent *             rt_dirent_t;
 typedef struct stat                 rt_stat_t;
+typedef struct statfs               rt_statfs_t;
 
 #define RT_FS_CREATE                "w+"
 #define RT_FS_READ                  "r"
@@ -62,6 +64,8 @@ int linux_file_size(const char *file_name);
 int linux_stat(const char *path_name, rt_stat_t *buf);
 int linux_fstat(int fd, rt_stat_t *buf);
 int linux_lstat(const char *path_name, rt_stat_t *buf);
+int linux_statfs(const char *path_name, rt_statfs_t *buf);
+int linux_fstatfs(int fd, rt_statfs_t *buf);
 int linux_file_copy(const char *src, const char *dst);
 int shell_cmd(const int8_t *cmd, uint8_t *buf, int size);
 
