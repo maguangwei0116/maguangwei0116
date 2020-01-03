@@ -30,6 +30,9 @@ typedef enum TARGET_TYPE {
     TARGET_TYPE_SHARE_PROFILE           = 1,
     TARGET_TYPE_MONITOR                 = 2,
     TARGET_TYPE_COMM_SO                 = 3,
+#ifdef CFG_STANDARD_MODULE
+    TARGET_TYPE_OEMAPP                  = 4,    // oemapp.ubi
+#endif
     TARGET_TYPE_MAX,
     TARGET_TYPE_DEF_SHARE_PROFILE       = 168,  // default share profile
 } target_type_e;

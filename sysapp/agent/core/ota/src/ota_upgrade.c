@@ -1,6 +1,5 @@
 
 #ifdef CFG_AGENT_OTA_ON
-#warning AGENT_OTA_ON on ...
 
 #include "rt_type.h"
 #include "rt_os.h"
@@ -38,8 +37,8 @@
 
 typedef struct OTA_UPGRADE_TARGET {
     char                    name[64];
-    char                    version[16];
-    char                    chipModel[16];
+    char                    version[64];
+    char                    chipModel[32];
     char                    ticket[64];
     uint8_t                 type;
     uint32_t                size;
@@ -48,12 +47,12 @@ typedef struct OTA_UPGRADE_TARGET {
 
 typedef struct OTA_UPGRADE_POLICY {
     uint8_t                 forced;
-    char                    executionType[16];
+    char                    executionType[32];
     uint8_t                 profileType;
     uint16_t                retryAttempts;
     uint16_t                retryInterval;
-    char                    mode[16];
-    char                    issueType[16];
+    char                    mode[32];
+    char                    issueType[32];
 } ota_upgrade_policy_t;
 
 typedef struct OTA_UPGRADE_PARAM {
@@ -114,8 +113,11 @@ typedef struct OTA_UPGRADE_PARAM {
 #define OTA_UPGRADE_TASK_PATH           ".ota/"
 #define OTA_UPGRADE_TASK_SUFFIX         ".task"
 #define OTA_UPGRADE_TASK_SUFFIX_LEN     5
+#define EXECUTION_TYPE_NOW              "NOW"
+#define EXECUTION_TYPE_REBOOT           "REBOOT"
 
 #ifdef CFG_STANDARD_MODULE
+#define OTA_UPGRADE_OEMAPP_NAME         "oemapp"
 #define OTA_UPGRADE_OEMAPP_UBI          "oemapp.ubi"
 #define OTA_UPGRADE_USR_AGENT           "/usrdata/redtea/rt_agent"
 #endif
@@ -139,7 +141,7 @@ static void ota_upgrade_get_task_file_name(char *ota_task_file, int32_t size, co
 
 static int32_t ota_upgrade_task_record(const void *param, uint32_t param_len, const char *tmp_file, const char *event)
 {  
-    int32_t ret = -1;
+    int32_t ret = RT_ERROR;
     rt_fshandle_t fp = NULL;
     ota_task_info_t task = {0};
     char ota_task_file[128];
@@ -195,7 +197,7 @@ exit_entry:
 int32_t ota_upgrade_task_check_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     static int32_t g_task_check = 0;    
-    int32_t ret = -1;
+    int32_t ret = RT_ERROR;
 
     (void)buf;
     (void)len;
@@ -362,6 +364,10 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
     const char *g_target_files[] = 
     {
         OTA_UPGRADE_USR_AGENT,
+        "", // keep empty        
+        "", // keep empty
+        "", // keep empty
+        OTA_UPGRADE_OEMAPP_NAME,
     };
 #else
     const char *g_target_files[] = 
@@ -404,29 +410,36 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
     }
 
     for (i = 0; i < cnt; i++) {
+        /* ignore empty string */
+        if (!rt_os_strlen(g_target_files[i])) {
+            continue;
+        }
+        
         p = rt_os_strrchr(g_target_files[i], '/');
         if (p) {
             p++;
-
-            /* delete "redtea" prefix */
-            p0 = rt_os_strstr(p, "rt_");    
-            if (p0) {
-                p = p0+3;
-            }
-            
-            if (rt_os_strstr(fileName, p)) {
-                snprintf(targetFileName, len, g_target_files[i]);
-                MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
-                if (i != param->target.type) {
-                    MSG_PRINTF(LOG_WARN, "type unmatched: [%d] => [%d]\r\n", i, param->target.type);
-                    *type_matched = RT_FALSE;
-                } else {
-                    *type_matched = RT_TRUE;
-                }
-                return RT_TRUE;
-            }
+        } else {
+            p = (char *)g_target_files[i];
         }
-    }
+
+        /* delete "redtea" prefix */
+        p0 = rt_os_strstr(p, "rt_");    
+        if (p0) {
+            p = p0+3;
+        }     
+        
+        if (rt_os_strstr(fileName, p)) {
+            snprintf(targetFileName, len, g_target_files[i]);
+            MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
+            if (i != param->target.type) {
+                MSG_PRINTF(LOG_WARN, "type unmatched: [%d] => [%d]\r\n", i, param->target.type);
+                *type_matched = RT_FALSE;
+            } else {
+                *type_matched = RT_TRUE;
+            }
+            return RT_TRUE;
+        }
+    }    
 
     MSG_PRINTF(LOG_WARN, "Can't find target file name of [%s]\r\n", fileName);
     return RT_FALSE;
@@ -490,6 +503,22 @@ static rt_bool ota_policy_compare_version(const char *old_in, const char *new_in
         }
     }
 
+#ifdef CFG_STANDARD_MODULE
+    /* check share profile batch code */
+    {
+        const char *old_batch_code = NULL;
+        const char *new_batch_code = NULL;
+
+        old_batch_code = rt_os_strchr(old_in, '#');
+        new_batch_code = rt_os_strchr(new_in, '#');
+
+        if (old_batch_code && new_batch_code && rt_os_strcmp(old_batch_code+1, new_batch_code+1)) {
+            MSG_PRINTF(LOG_WARN, "share profile batch code update [%s] => [%s]\r\n", old_batch_code+1, new_batch_code+1);
+            return RT_TRUE;
+        }
+    }
+#endif
+
     MSG_PRINTF(LOG_WARN, "unmathed version [%s] => [%s]\r\n", old_in, new_in);
     return RT_FALSE;
 }
@@ -499,9 +528,9 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
     int32_t ret;
     uint8_t policy_forced = 0;
 
-    if (!rt_os_strcmp(param->policy.executionType, "NOW")) {
+    if (!rt_os_strcmp(param->policy.executionType, EXECUTION_TYPE_NOW)) {
         upgrade->execute_app_now = RT_TRUE;
-    } else if (!rt_os_strcmp(param->policy.executionType, "REBOOT")) {
+    } else if (!rt_os_strcmp(param->policy.executionType, EXECUTION_TYPE_REBOOT)) {
         upgrade->execute_app_now = RT_FALSE;
     } else {
         MSG_PRINTF(LOG_WARN, "unknow execution type %s\r\n", param->policy.executionType);
@@ -649,7 +678,7 @@ static rt_bool ota_file_check(const void *arg)
     upgrade_struct_t *upgrade = (upgrade_struct_t *)arg;
     int32_t iret = RT_ERROR;
     char real_file_name[32] = {0};
-    char absolute_file_path[256] = {0};
+    char absolute_file_path[128] = {0};
 
     /* get file path */
     linux_rt_file_abs_path((const char *)upgrade->tmpFileName, absolute_file_path, sizeof(absolute_file_path));
@@ -765,18 +794,6 @@ static rt_bool ota_on_upload_event(const void *arg)
 /* make ota downloaded file take active */
 static rt_bool ota_file_activate_agent_so_profile(const void *arg)
 {
-#ifdef CFG_STANDARD_MODULE
-    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
-
-    if (upgrade && upgrade->ubi) {  
-        MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart terminal !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
-        rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
-        MSG_PRINTF(LOG_WARN, "Current terminal restart to active ubi file ...\r\n");        
-        rt_os_reboot();
-        return RT_TRUE;
-    }
-#endif
-
     MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
     rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
     MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");        
@@ -795,12 +812,32 @@ static rt_bool ota_file_activate_monitor(const void *arg)
     return RT_TRUE;
 }
 
-static file_activate g_file_activate_list[] = 
+#ifdef CFG_STANDARD_MODULE
+static rt_bool ota_file_activate_oemapp(const void *arg)
+{
+    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
+
+    if (upgrade && upgrade->ubi) {  
+        MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart terminal !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
+        rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
+        MSG_PRINTF(LOG_WARN, "Current terminal restart to active ubi file ...\r\n");        
+        rt_os_reboot();
+        return RT_TRUE;
+    }
+
+    return RT_FALSE;
+}
+#endif
+
+static const file_activate g_file_activate_list[] = 
 {
     ota_file_activate_agent_so_profile,
     ota_file_activate_agent_so_profile,
     ota_file_activate_monitor,
     ota_file_activate_agent_so_profile,
+#ifdef CFG_STANDARD_MODULE
+    ota_file_activate_oemapp,
+#endif
 };
 
 #define SIMULATION_MSG_FOR_UPGRADE_DEF_SHARE_PROFILE \
@@ -866,13 +903,13 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
     upgrade->size           = param->target.size;
     upgrade->retryAttempts  = param->policy.retryAttempts;
     upgrade->retryInterval  = param->policy.retryInterval;  
-    
+
     if (!tmp_file) {
         ota_upgrade_get_tmp_file_name(param, upgrade->tmpFileName, sizeof(upgrade->tmpFileName));
     } else {
         snprintf(upgrade->tmpFileName, sizeof(upgrade->tmpFileName), "%s", tmp_file);
     }
-    
+
     if (ota_upgrade_get_target_file_name(param, upgrade->targetFileName, 
                                     sizeof(upgrade->targetFileName), &type_matched) != RT_TRUE) {
         ret = UPGRADE_FILE_NAME_ERROR;
@@ -895,14 +932,15 @@ static int32_t ota_upgrade_start(const void *in, const char *upload_event, const
         upgrade->activate   = g_file_activate_list[upgrade->type];
     }
 
-    ota_upgrade_task_record(param, sizeof(ota_upgrade_param_t), upgrade->tmpFileName, upload_event);
-
     /* check private uprade policy */
     ret = ota_policy_check(param, upgrade);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "ota policy check error\n");
         goto exit_entry;
     }
+
+    /* backup ota upgrade task */
+    ota_upgrade_task_record(param, sizeof(ota_upgrade_param_t), upgrade->tmpFileName, upload_event);
 
     /* start upgrade process */
     ret = upgrade_process_start(upgrade);
