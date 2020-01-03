@@ -448,13 +448,23 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             break;
             
+        default:
+            //MSG_PRINTF(LOG_WARN, "unknow command\n");
+            break;
+    }
+
+    return ret;
+}
+
+/* only update profiles when network connected */
+int32_t card_manager_update_profiles_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    int32_t ret = RT_ERROR;
+
+    switch (mode) {
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
             ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-            break;
-            
-        default:
-            //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;
     }
 

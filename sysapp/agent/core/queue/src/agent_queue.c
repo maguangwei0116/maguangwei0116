@@ -170,6 +170,7 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_BROAD_CAST_NETWORK:
+                    card_manager_update_profiles_event(que_t.data_buf, que_t.data_len, que_t.mode); // Update profiles frist
                     upload_event(que_t.data_buf, que_t.data_len, que_t.mode);                    
                     mqtt_connect_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     ota_upgrade_task_check_event(que_t.data_buf, que_t.data_len, que_t.mode);                    
@@ -190,9 +191,8 @@ static void agent_queue_task(void)
                 case MSG_ID_DETECT_NETWORK:
                     break;
 
-                default: {
-                    break;
-                }
+                default:
+                    break;                
             }
 
             // MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, que_t.data_buf:%p\n", que_t.data_len, que_t.data_buf);
