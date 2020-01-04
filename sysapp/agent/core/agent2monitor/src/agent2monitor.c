@@ -91,6 +91,12 @@ int32_t ipc_get_monitor_version(char *name, int32_t n_size, char *version, \
 
 int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign)
 {
+#ifdef CFG_PLATFORM_ANDROID
+    /* close signature data verify on android paltform */
+    (void)hash;
+    (void)sign;
+    return RT_SUCCESS;
+#else
     signature_data_t sign_data = {0};
     atom_data_t c_data = {0};
     uint8_t buf[256] = {0};
@@ -117,6 +123,7 @@ int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign)
     } else {
         return RT_ERROR;
     }
+#endif
 }
 
 #define PRIVATE_ECC_HASH_STR_LEN        128
