@@ -348,6 +348,7 @@ include sysapp/sysapp.mk
 #include image/image.mk
 include oemapp/oemapp.mk
 include release/release.mk
+include backup_profile/backup_profile.mk
 
 TARGETS+=target-finalize
 
