@@ -476,8 +476,11 @@ int32_t card_ext_get_eid(char *eid, int32_t size)
 {
     int32_t ret = RT_ERROR;
     
-    if (size <= MAX_EID_LEN) {
+    if (eid && size > MAX_EID_LEN) {
+        rt_os_memset(eid, 0, size);  // clear
         ret = lpa_get_eid((uint8_t *)eid);
+    } else {
+        MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
     }
 
     return ret;
@@ -514,14 +517,20 @@ int32_t card_ext_get_profiles_info(char *profiles_info_json, int32_t size)
             }
             CJSON_ADD_STR_OBJ(profiles_obj, profiles);
             profile_str = (char *)cJSON_PrintUnformatted(profiles_obj);
-            if (profile_str && size >= MIN_PROFILES_LEN) {
+            if (profile_str && size >= MIN_PROFILES_LEN && profiles_info_json) {
                 snprintf(profiles_info_json, size, "%s", profile_str);
                 ret = RT_SUCCESS;
+            } else {
+                MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
+                ret = RT_ERROR;
             }
+        } else {
+            MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
+            ret = RT_ERROR;
         }
+    } else {
+        MSG_PRINTF(LOG_WARN, "update profiles fail\r\n"); 
     }
-
-exit_entry:
 
     if (profiles_obj) {
         cJSON_Delete(profiles_obj);

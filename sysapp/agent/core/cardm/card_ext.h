@@ -41,12 +41,11 @@ int32_t card_ext_get_eid(char *eid, int32_t size);
 
 /**
  * @brief       get eUICc/vUICC profiles list 
- * @param[out]  profiles_info  - point the buffer that profiles save to. It should be a profile_ext_info_t array. 
- * @param[out]  num     - point the buffer that current profile num save to   
- * @param[in]   max_num - max profile number, Typical value: MAX_ICCID_NUM
+ * @param[out]  profiles_info_json  - point the buffer that profiles save to. It will be JSON format string. 
+ * @param[in]   size    - buffer size of profiles_info_json    
  * @return      0       - success   
                 else    - failure, see error code in lpa
- * @note        size > MAX_PROFILES_LEN, no support mul-thread calling
+ * @note        size >= MIN_PROFILES_LEN, no support mul-thread calling
  *              sample data: {"profiles":[{"iccid":"89860317422045089815","type":1,"state":0},{"iccid":"89860317422045047482","type":2,"state":0},{"iccid":"89852019919070121569","type":2,"state":1}]}
  * @code
  *
