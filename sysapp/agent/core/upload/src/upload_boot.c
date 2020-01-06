@@ -18,7 +18,7 @@ extern const target_versions_t *g_upload_ver_info;
 
 static cJSON *upload_event_boot_device_info(void)
 {
-    int32_t ret         = 0;
+    int32_t ret         = RT_ERROR;
     cJSON *deviceInfo   = NULL;
     const char *imei    = g_upload_device_info->imei;
     const char *deviceId= g_upload_device_info->device_id;
@@ -28,7 +28,6 @@ static cJSON *upload_event_boot_device_info(void)
     deviceInfo = cJSON_CreateObject();
     if (!deviceInfo) {
         MSG_PRINTF(LOG_WARN, "The deviceInfo is error\n");
-        ret = -1;
         goto exit_entry;
     }
 
@@ -37,7 +36,7 @@ static cJSON *upload_event_boot_device_info(void)
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, sn);
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, model);
     
-    ret = 0;
+    ret = RT_SUCCESS;
     
 exit_entry:
 
@@ -47,7 +46,7 @@ exit_entry:
 static cJSON *upload_event_boot_profiles_info(void)
 {
     int32_t i = 0;
-    int32_t ret = 0;
+    int32_t ret = RT_ERROR;
     cJSON *profiles = NULL;
     cJSON *profile = NULL;
     const char *iccid = NULL;
@@ -57,13 +56,11 @@ static cJSON *upload_event_boot_profiles_info(void)
     profiles = cJSON_CreateArray();
     if (!profiles) {
         MSG_PRINTF(LOG_WARN, "The profiles is error\n");
-        ret = -1;
         goto exit_entry;
     }
 
     if (!g_upload_card_info) {
         MSG_PRINTF(LOG_WARN, "The g_upload_card_info is error\n");
-        ret = -2;
         goto exit_entry;
     }
 
@@ -73,7 +70,6 @@ static cJSON *upload_event_boot_profiles_info(void)
         profile = cJSON_CreateObject();
         if (!profile) {
             MSG_PRINTF(LOG_WARN, "The profile is error\n");
-            ret = -3;
             goto exit_entry;
         }
     
@@ -84,7 +80,7 @@ static cJSON *upload_event_boot_profiles_info(void)
         cJSON_AddItemToArray(profiles, profile);
     }
 
-    ret = 0;
+    ret = RT_SUCCESS;
     
 exit_entry:
 
@@ -108,7 +104,38 @@ static int32_t rt_get_euicc_iccid(uint8_t *iccid)
 #elif PLATFORM == PLATFORM_FIBCOM
     return rt_fibcom_get_iccid(iccid);
 #endif
-    return 0;
+    return RT_SUCCESS;
+}
+
+static int32_t last_3_dbms_func(rt_bool in, int32_t *dbm)
+{
+    static int8_t  index = 0;
+    static int32_t last_3_dbms[3] = {0}; 
+
+    if (in) {
+        last_3_dbms[index] = *dbm;
+        index = ((index + 1) >= 3) ? 0 : (index + 1);
+    } else {
+        *dbm = (last_3_dbms[0] + last_3_dbms[1] + last_3_dbms[2]) / 3;
+    }
+
+    return RT_SUCCESS;
+}
+
+/*
+return last 3 times average dbm when qmi-get-signal fail !!
+*/
+static int32_t rt_get_cur_signal(int32_t *dbm)
+{
+    int32_t ret = rt_qmi_get_signal(dbm);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "get current signal fail, try to get average dbm, ret=%d\r\n", ret);
+        last_3_dbms_func(RT_FALSE, dbm);  // get average dbm        
+    } else {
+        last_3_dbms_func(RT_TRUE, dbm);  // set current dbm
+    }
+
+    return ret;
 }
 
 /*****************************************************************************
@@ -128,7 +155,7 @@ static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *le
     uint16_t mcc_int = 0;
     uint16_t mnc_int = 0;
     int32_t j = 0;
-    int32_t ret;
+    int32_t ret = RT_ERROR;
 
     if (mcc_mnc == NULL) {
         return;
@@ -150,7 +177,7 @@ static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *le
     j += sprintf(mcc_mnc+j, "%02d", mnc_int);
 
     /* signal level: [1,5] */
-    rt_qmi_get_signal(dbm);
+    rt_get_cur_signal(dbm);
     if (*dbm < -100) {
         level[0] = '1';
     } else if (*dbm < -85) {
@@ -177,18 +204,18 @@ static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *le
 #endif
 
     j = rt_os_strlen(iccid);
-    for (;j < 20; j++) {
+    for (;j < THE_ICCID_LENGTH; j++) {
         iccid[j] = 'F';
     }
     iccid[j] = '\0';
-    MSG_PRINTF(LOG_DBG, "*level:%c\n", *level);
+    MSG_PRINTF(LOG_INFO, "*level:%c\n", *level);
 }
 
 static cJSON *upload_event_boot_network_info(void)
 {
-    int32_t ret = 0;
+    int32_t ret = RT_ERROR;
     cJSON *network = NULL;
-    char iccid[21] = {0};
+    char iccid[THE_ICCID_LENGTH + 1] = {0};
     char mccmnc[8] = {0};
     char type[8] = {0};
     int32_t dbm = 0;
@@ -197,7 +224,6 @@ static cJSON *upload_event_boot_network_info(void)
     network = cJSON_CreateObject();
     if (!network) {
         MSG_PRINTF(LOG_WARN, "The network is error\n");
-        ret = -1;
         goto exit_entry;
     }
 
@@ -209,7 +235,7 @@ static cJSON *upload_event_boot_network_info(void)
     CJSON_ADD_NEW_INT_OBJ(network, dbm);
     CJSON_ADD_NEW_STR_OBJ(network, signalLevel);
     
-    ret = 0;
+    ret = RT_SUCCESS;
     
 exit_entry:
 
@@ -218,7 +244,7 @@ exit_entry:
 
 static cJSON *upload_event_software_version_info(void)
 {
-    int32_t ret = 0;
+    int32_t ret = RT_ERROR;
     cJSON *software = NULL;
     cJSON *single_version = NULL;
     int32_t i_type;
@@ -230,7 +256,6 @@ static cJSON *upload_event_software_version_info(void)
     software = cJSON_CreateArray();
     if (!software) {
         MSG_PRINTF(LOG_WARN, "The software is error\n");
-        ret = -1;
         goto exit_entry;
     }
     
@@ -238,7 +263,6 @@ static cJSON *upload_event_software_version_info(void)
         single_version = cJSON_CreateObject();
         if (!single_version) {
             MSG_PRINTF(LOG_WARN, "The single_version is error\n");
-            ret = -2;
             goto exit_entry;
         } else {
             type = (target_type_e)i_type;
@@ -253,7 +277,7 @@ static cJSON *upload_event_software_version_info(void)
         }
     }
 
-    ret = 0;
+    ret = RT_SUCCESS;
     
 exit_entry:
 
@@ -262,7 +286,7 @@ exit_entry:
 
 cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_network)
 {
-    int32_t ret = 0;
+    int32_t ret = RT_ERROR;
     int32_t status = 0;
     cJSON *content = NULL;
     cJSON *deviceInfo = NULL;
@@ -303,7 +327,6 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
     content = cJSON_CreateObject();
     if (!content) {
         MSG_PRINTF(LOG_WARN, "The content is error\n");
-        ret = -1;
         goto exit_entry;
     }
 
@@ -323,7 +346,7 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
         CJSON_ADD_STR_OBJ(content, software);
     }
 
-    ret = 0;
+    ret = RT_SUCCESS;
     
 exit_entry:
 

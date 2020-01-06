@@ -87,12 +87,14 @@ int32_t rt_qmi_get_current_imsi(uint8_t *imsi)
 
 int32_t rt_qmi_get_signal(int32_t *strength)
 {
-    qmi_signal_strength_info_t info;
+    qmi_signal_strength_info_t info = {0};
     int32_t ret = 0;
+    
     ret = qmi_get_signal_strength(&info);
     if (ret == 0) {
         *strength = info.signal_strength;
     }
+
     return ret;
 }
 
