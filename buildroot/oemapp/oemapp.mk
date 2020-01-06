@@ -72,9 +72,19 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 			tmp=`echo "$$app_version_x" | cut -d "." -f 1`;ubi_version_1=`expr $$ubi_version_1 + $$tmp`; \
 			tmp=`echo "$$app_version_x" | cut -d "." -f 2`;ubi_version_2=`expr $$ubi_version_2 + $$tmp`; \
 			tmp=`echo "$$app_version_x" | cut -d "." -f 3`;ubi_version_3=`expr $$ubi_version_3 + $$tmp`; \
-			tmp=`echo "$$app_version_x" | cut -d "." -f 4`;ubi_version_4=`expr $$ubi_version_4 + $$tmp`; \
+			tmp=`echo "$$app_version_x" | cut -d "." -f 4`; \
+			if [ -n "$$tmp" ] ; \
+			then \
+				ubi_version_4=`expr $$ubi_version_4 + $$tmp`; \
+			else \
+				ubi_version_4=; \
+			fi; \
 		done; \
-		ubi_version=v$$ubi_version_1.$$ubi_version_2.$$ubi_version_3.$$ubi_version_4; \
+		ubi_version=v$$ubi_version_1.$$ubi_version_2.$$ubi_version_3; \
+		if [ -n "$$ubi_version_4" ] ; \
+		then \
+			ubi_version+=".$$ubi_version_4"; \
+		fi; \
 		ubi_share_profile_version="$$ubi_version""#""$$share_profile_batch_code"; \
 		version_string+="_$$ubi_share_profile_version";\
 		echo "$$version_string" > $(REDTEA_OEMAPP_VERSION_FILE); \
