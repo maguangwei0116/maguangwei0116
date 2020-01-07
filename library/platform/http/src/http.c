@@ -51,7 +51,9 @@ int32_t http_tcpclient_create(const char *addr, int32_t port)
     setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(struct timeval));
 
     if (connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) < 0) {
-        MSG_PRINTF(LOG_WARN, "connect error(%d)=%s\r\n", errno, strerror(errno));
+        MSG_PRINTF(LOG_WARN, "connect fd=%d, error(%d)=%s\r\n", socket_fd, errno, strerror(errno));
+        /* MUST: close this fd !!! */
+        http_tcpclient_close(socket_fd);
         return RT_ERROR;
     }
     
@@ -242,14 +244,14 @@ http_result_e http_post(const char *url, const char *post_str, const char *heade
         socket_fd = http_tcpclient_create(host_addr, port);       // connect network
         if (socket_fd < 0) {
             ret = HTTP_SOCKET_CONNECT_ERROR;
-            MSG_PRINTF(LOG_WARN, "http_tcpclient_create failed\n");
+            MSG_PRINTF(LOG_WARN, "http tcpclient create failed\n");
             break;
         }
         snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, header, rt_os_strlen(post_str), post_str);
 
         if (http_tcpclient_send(socket_fd,lpbuf, rt_os_strlen(lpbuf)) < 0) {      // send data
             ret = HTTP_SOCKET_SEND_ERROR;
-            MSG_PRINTF(LOG_WARN, "http_tcpclient_send failed..\n");
+            MSG_PRINTF(LOG_WARN, "http tcpclient send failed..\n");
             break;
         }
         rt_os_memset(lpbuf, 0, BUFFER_SIZE * 4);
@@ -257,7 +259,7 @@ http_result_e http_post(const char *url, const char *post_str, const char *heade
 
         if (http_tcpclient_recv(socket_fd, lpbuf, BUFFER_SIZE * 4) <= 0) {     // recv data
             ret = HTTP_SOCKET_RECV_ERROR;
-            MSG_PRINTF(LOG_WARN, "http_tcpclient_recv failed\n");
+            MSG_PRINTF(LOG_WARN, "http tcpclient recv failed\n");
             break;
         } else {
              offset = http_parse_result(lpbuf);
@@ -301,13 +303,13 @@ http_result_e http_post_raw(const char *host_ip, int32_t port, void *buffer, int
         socket_fd = http_tcpclient_create(host_ip, port);       // connect network
         if (socket_fd < 0) {
             ret = HTTP_SOCKET_CONNECT_ERROR;
-            MSG_PRINTF(LOG_WARN, "http_tcpclient_create failed\n");
+            MSG_PRINTF(LOG_WARN, "http tcpclient create failed\n");
             break;
         }
 
         if (http_tcpclient_send(socket_fd, buffer, len) < 0) {      // send data
             ret = HTTP_SOCKET_SEND_ERROR;
-            MSG_PRINTF(LOG_WARN, "http_tcpclient_send failed..\n");
+            MSG_PRINTF(LOG_WARN, "http tcpclient send failed..\n");
             break;
         }
 
@@ -315,7 +317,7 @@ http_result_e http_post_raw(const char *host_ip, int32_t port, void *buffer, int
         rt_os_memset(lpbuf, 0, BUFFER_SIZE * 4);        
         if (http_tcpclient_recv(socket_fd, lpbuf, BUFFER_SIZE * 4) <= 0) {     // recv data
             ret = HTTP_SOCKET_RECV_ERROR;
-            MSG_PRINTF(LOG_WARN, "http_tcpclient_recv failed\n");
+            MSG_PRINTF(LOG_WARN, "http tcpclient recv failed\n");
             break;
         } else {
             offset = http_parse_result(lpbuf);
