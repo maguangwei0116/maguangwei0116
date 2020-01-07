@@ -338,6 +338,13 @@ static int32_t agent_task_check_start(void)
         MSG_PRINTF(LOG_WARN, "error in fork, err(%d)=%s\r\n", errno, strerror(errno));
     } else if (child_pid == 0) {
         MSG_PRINTF(LOG_INFO, "child process, pid %d\r\n", getpid());
+        {
+            int32_t fd;
+            /* close all fds (fd>=3) which are open in parent process */
+            for (fd = 3; fd < 100; fd++) {
+                close(fd);
+            }
+        }
         if (g_agent_debug_terminal) {
             ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, RT_DEBUG_IN_TERMINAL, NULL);
         } else {
