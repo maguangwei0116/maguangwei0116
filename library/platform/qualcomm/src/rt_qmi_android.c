@@ -61,6 +61,7 @@ typedef struct THREAD_DATA {
     rt_sem_t *              recv_sem;
     thread_param_t          param;
     int32_t *               ret;
+    rt_task                 task_id;
 } thread_data_t;
 
 static thread_data_t g_thread_data;
@@ -438,6 +439,8 @@ static int32_t jni_apis_handle(void)
 
 static void android_jni_thread(void)
 {   
+    rt_setcancelstate_task(RT_PTHREAD_CANCEL_ENABLE, NULL);
+    
     while (1) {
         linux_sem_wait(g_thread_data.send_sem);
         //MSG_PRINTF(LOG_INFO, "%s wait send sem ...\r\n", __func__);
@@ -451,6 +454,7 @@ static void android_jni_thread(void)
     linux_mutex_release(g_thread_data.mutex);
     linux_sem_destroy(g_thread_data.send_sem);
     linux_sem_destroy(g_thread_data.recv_sem);
+    
     rt_exit_task(NULL);
 }
 
@@ -458,6 +462,18 @@ int32_t rt_qmi_init(void *arg)
 {
     int32_t ret = RT_ERROR;
     rt_task id_connect;
+    static int32_t call_index = 1;
+
+    if (call_index != 1) {
+        rt_cancel_task(g_thread_data.task_id);      //send cancel signal to sub-thread
+        rt_join_task(g_thread_data.task_id, NULL);  //wait sub-thread exit
+        g_thread_data.task_id = 0;
+        linux_mutex_release(g_thread_data.mutex);
+        linux_sem_destroy(g_thread_data.send_sem);
+        linux_sem_destroy(g_thread_data.recv_sem);
+    } else {  // frist call
+        call_index = 2;       
+    }
 
     g_thread_data.mutex = linux_mutex_init();
     g_thread_data.send_sem = linux_sem_init(0, 0);
@@ -466,8 +482,15 @@ int32_t rt_qmi_init(void *arg)
     ret = rt_create_task(&id_connect, (void *)android_jni_thread, NULL);
     if (ret == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "create jni pthread error, err(%d)=%s\r\n", errno, strerror(errno));
+    } else {
+        g_thread_data.task_id = id_connect;
     }
     
     return ret;
+}
+
+int32_t rt_jni_init(void *arg)
+{
+    return rt_qmi_init(arg);   
 }
 
