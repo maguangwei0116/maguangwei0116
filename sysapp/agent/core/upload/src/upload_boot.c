@@ -150,7 +150,8 @@ static int32_t rt_get_cur_signal(int32_t *dbm)
  * RETURNS
  *  @void
  *****************************************************************************/
-static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *level, int32_t *dbm, uint8_t *iccid)
+static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *level, 
+                                        int32_t *dbm, uint8_t *iccid, int32_t *profileType)
 {
     uint16_t mcc_int = 0;
     uint16_t mnc_int = 0;
@@ -171,6 +172,10 @@ static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *le
         }
     }
 
+    /* get current profile type */
+    if (g_upload_card_info && profileType) {
+        *profileType = (int32_t)g_upload_card_info->type;
+    }
     
     rt_qmi_get_mcc_mnc(&mcc_int,&mnc_int);
     j += sprintf(mcc_mnc, "%03d", mcc_int);
@@ -218,6 +223,7 @@ static cJSON *upload_event_boot_network_info(void)
     char iccid[THE_ICCID_LENGTH + 1] = {0};
     char mccmnc[8] = {0};
     char type[8] = {0};
+    int32_t profileType = 0;
     int32_t dbm = 0;
     char signalLevel[8] = {0};
 
@@ -227,9 +233,10 @@ static cJSON *upload_event_boot_network_info(void)
         goto exit_entry;
     }
 
-    rt_get_network_info(mccmnc, type, signalLevel, &dbm, iccid);
+    rt_get_network_info(mccmnc, type, signalLevel, &dbm, iccid, &profileType);
 
     CJSON_ADD_NEW_STR_OBJ(network, iccid);
+    CJSON_ADD_NEW_INT_OBJ(network, profileType);
     CJSON_ADD_NEW_STR_OBJ(network, mccmnc);
     CJSON_ADD_NEW_STR_OBJ(network, type);
     CJSON_ADD_NEW_INT_OBJ(network, dbm);
