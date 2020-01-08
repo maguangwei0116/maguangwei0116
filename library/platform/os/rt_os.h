@@ -45,6 +45,8 @@
 #define  RT_S_IRWXG                         (RT_S_IRGRP | RT_S_IWGRP | RT_S_IXGRP)
 #define  RT_S_IRWXO                         (RT_S_IROTH | RT_S_IWOTH | RT_S_IXOTH)
 #define  RT_IPC_NOWAIT                      IPC_NOWAIT
+#define  RT_PTHREAD_CANCEL_ENABLE           PTHREAD_CANCEL_ENABLE
+#define  RT_PTHREAD_CANCEL_DISABLE          PTHREAD_CANCEL_DISABLE
 
 typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);
@@ -74,6 +76,9 @@ int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
 void    rt_exit_task(void * args);
 #endif
 rt_task rt_get_pid(void);
+int32_t rt_cancel_task(rt_task task_id);
+int32_t rt_join_task(rt_task task_id, void **retval);
+int32_t rt_setcancelstate_task(int32_t state, int32_t *oldstate);
 int32_t rt_init_msg_queue(void *args);
 int32_t rt_creat_msg_queue(int8_t *pathname, int8_t proj_id);
 int32_t rt_receive_msg_queue(int32_t msgid, void *buffer, int32_t len, int64_t msgtyp, int32_t msgflg);

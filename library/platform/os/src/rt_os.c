@@ -60,6 +60,21 @@ rt_task rt_get_pid(void)
     return pthread_self();
 }
 
+int32_t rt_cancel_task(rt_task task_id)
+{
+    return pthread_cancel(task_id);
+}
+
+int32_t rt_join_task(rt_task task_id, void **retval)
+{
+    return pthread_join(task_id, retval);   
+}
+
+int32_t rt_setcancelstate_task(int32_t state, int32_t *oldstate)
+{
+    return pthread_setcancelstate(state, oldstate);
+}
+
 int32_t rt_mutex_init(rt_pthread_mutex_t *mutex)
 {
     int32_t ret = 0;
