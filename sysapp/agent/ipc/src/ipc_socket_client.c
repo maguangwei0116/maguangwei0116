@@ -42,6 +42,7 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
     ret = socket_recv(socket_id, rsp, MAT_SOCKET_BUFFER);
     if (ret <= 0) {
         MSG_PRINTF(LOG_ERR, "recv data failed, ret=%d\n", ret);
+        ret = RT_ERROR;
         goto end;
     } 
     *rsp_len = ret;
