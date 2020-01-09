@@ -15,6 +15,7 @@
 #include "rt_qmi.h"
 #include "rt_os.h"
 #include "log.h"
+#include "rt_timer.h"
 
 #define WAEK_API __attribute__((weak))
 
@@ -39,6 +40,7 @@ extern WAEK_API int32_t jni_euicc_transmit_apdu(const uint8_t *data, const uint3
 extern WAEK_API int32_t jni_vuicc_transmit_apdu(const uint8_t *data, const uint32_t *data_len, 
                                     uint8_t *rsp, uint32_t *rsp_len);
 
+#define JNI_RETURN_ERROR        -1000
 #define MAX_PARAM_CNT           6
 
 #ifndef ARRAY_SIZE
@@ -429,6 +431,9 @@ static int32_t jni_apis_handle(void)
         if (!rt_os_strcmp(g_thread_data.name, g_jni_apis[i].name)) {
             ret = g_jni_apis[i].handle();
             *g_thread_data.ret = ret;
+            if (ret == JNI_RETURN_ERROR) {
+                MSG_PRINTF(LOG_WARN, "jni return fail\r\n"); 
+            }
             return ret;
         }
     }
@@ -502,8 +507,15 @@ int32_t rt_qmi_init(void *arg)
     return ret;
 }
 
+static void rt_jni_init_callback(void)
+{
+    rt_qmi_init(NULL);    
+}
+
 int32_t rt_jni_init(void *arg)
 {
-    return rt_qmi_init(arg);   
+    (void)arg;    
+    register_timer(1, 0, rt_jni_init_callback);
+    return RT_SUCCESS;
 }
 
