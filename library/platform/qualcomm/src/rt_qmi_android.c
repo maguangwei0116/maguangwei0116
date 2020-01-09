@@ -61,6 +61,7 @@ typedef struct THREAD_DATA {
     rt_sem_t *              recv_sem;
     thread_param_t          param;
     int32_t *               ret;
+    int32_t                 running;
     rt_task                 task_id;
 } thread_data_t;
 
@@ -439,22 +440,34 @@ static int32_t jni_apis_handle(void)
 
 static void android_jni_thread(void)
 {   
-    rt_setcancelstate_task(RT_PTHREAD_CANCEL_ENABLE, NULL);
+    int32_t retval = RT_ERROR;
+    
+    g_thread_data.running = 1;
     
     while (1) {
-        linux_sem_wait(g_thread_data.send_sem);
-        //MSG_PRINTF(LOG_INFO, "%s wait send sem ...\r\n", __func__);
+        retval = linux_sem_wait(g_thread_data.send_sem);
+        //MSG_PRINTF(LOG_INFO, "%s wait send sem ...retval=%d, errno(%d)=%s\r\n", __func__, retval, errno, strerror(errno));
 
+        if (g_thread_data.running == -1) {
+            break;
+        }
+        
         jni_apis_handle();
 
         linux_sem_post(g_thread_data.recv_sem);
-        //MSG_PRINTF(LOG_INFO, "%s post recv sem ...\r\n", __func__);
+        //MSG_PRINTF(LOG_INFO, "%s post recv sem ...\r\n", __func__);        
     }
 
     linux_mutex_release(g_thread_data.mutex);
+    g_thread_data.mutex = NULL;
     linux_sem_destroy(g_thread_data.send_sem);
+    g_thread_data.send_sem = NULL;
     linux_sem_destroy(g_thread_data.recv_sem);
-    
+    g_thread_data.recv_sem = NULL;
+
+    g_thread_data.running = 0;
+
+    MSG_PRINTF(LOG_WARN, "%s exit\r\n", __func__);
     rt_exit_task(NULL);
 }
 
@@ -465,12 +478,12 @@ int32_t rt_qmi_init(void *arg)
     static int32_t call_index = 1;
 
     if (call_index != 1) {
-        rt_cancel_task(g_thread_data.task_id);      //send cancel signal to sub-thread
-        rt_join_task(g_thread_data.task_id, NULL);  //wait sub-thread exit
+        g_thread_data.running = -1;
+        linux_sem_post(g_thread_data.send_sem);
+        while (g_thread_data.running == -1) { // wait sub-thread exit
+            rt_os_msleep(10);
+        }
         g_thread_data.task_id = 0;
-        linux_mutex_release(g_thread_data.mutex);
-        linux_sem_destroy(g_thread_data.send_sem);
-        linux_sem_destroy(g_thread_data.recv_sem);
     } else {  // frist call
         call_index = 2;       
     }
