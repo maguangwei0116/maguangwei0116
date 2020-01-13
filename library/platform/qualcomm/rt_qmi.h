@@ -24,7 +24,7 @@ extern "C" {
 #define MIN_ICCID_LEN           20
 #define MIN_IMSI_LEN            15
 #define MIN_IMEI_LEN            15
-#define MIN_MODEL_LEN           64
+#define MIN_MODEL_LEN           16
 #define MIN_NETWORK_TYPE_LEN    8
 
 int32_t rt_qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel);

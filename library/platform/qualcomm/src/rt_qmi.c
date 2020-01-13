@@ -149,16 +149,17 @@ int32_t rt_qmi_init(void *arg)
 int32_t rt_qmi_get_model(char *model, int32_t size)
 {
     int32_t ret = RT_ERROR;
-    qmi_device_info_t devinfo;
+    qmi_device_info_t devinfo = {0};
 
     if (size < MIN_MODEL_LEN) {
         return ret;
     }
     
     if (qmi_query_device_info(&devinfo) == RT_SUCCESS) {
-        rt_os_memcpy(model, devinfo.device_model_id, rt_os_strlen(devinfo.device_model_id));
+        snprintf(model, size, "%s", devinfo.device_model_id);
         ret = RT_SUCCESS;
     }
+    
     return ret;
 }
 
