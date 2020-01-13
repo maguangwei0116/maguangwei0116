@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
+#include "log.h"
 #include "rt_os.h"
 
 #ifdef CFG_ENABLE_LIBUNWIND

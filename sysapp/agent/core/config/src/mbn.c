@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "at.h"
+#include "rt_os.h"
 #include "rt_type.h"
 #include "log.h"
 #include "agent_queue.h"

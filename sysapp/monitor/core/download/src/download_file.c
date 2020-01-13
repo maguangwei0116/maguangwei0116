@@ -42,7 +42,7 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
     cJSON  *post_info = NULL;
     int8_t *out;
     int8_t  buf[100];
-    uint8_t  imei[16];
+    char  imei[16];
     int32_t cnt = -1;  // used to count the number of download
 
     dw_struct.if_continue = 1;
@@ -58,7 +58,7 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
     dw_struct.http_header.record_size = 0;
 
     post_info = cJSON_CreateObject();
-    rt_qmi_get_imei(imei);
+    rt_qmi_get_imei(imei, sizeof(imei));
     cJSON_AddItemToObject(post_info, "swType", cJSON_CreateNumber(0)); // 0 for agent
     cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(imei));  // must have a empty "imei"
     out = (int8_t *)cJSON_PrintUnformatted(post_info);

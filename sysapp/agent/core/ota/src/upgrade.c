@@ -209,11 +209,11 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
     }
 
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
-    bytestring_to_charstring(hash_out, hash_result, MAX_FILE_HASH_BYTE_LEN);
+    bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
 
     MSG_PRINTF(LOG_WARN, "download  hash_result: %s\r\n", hash_result);
     MSG_PRINTF(LOG_WARN, "push file hash_result: %s\r\n", d_info->fileHash);
-    RT_CHECK_NEQ(strncpy_case_insensitive(hash_result, d_info->fileHash, MAX_FILE_HASH_LEN), RT_TRUE);
+    RT_CHECK_NEQ(strncmp_case_insensitive((const char *)hash_result, (const char *)d_info->fileHash, MAX_FILE_HASH_LEN), RT_TRUE);
     MSG_PRINTF(LOG_WARN, "file hash check ok !\r\n");
     ret = RT_TRUE;
 

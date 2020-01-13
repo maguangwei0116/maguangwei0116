@@ -6,6 +6,11 @@
 
 #include "rt_type.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+/* error code for https handle */
 typedef enum ERR_HTTPS_CODE {
     RT_ERR_HTTPS_GET_HOSTNAME_FAIL      = -300,
     RT_ERR_HTTPS_GET_SOCKET_FAIL        = -301,
@@ -22,15 +27,19 @@ typedef enum ERR_HTTPS_CODE {
 } err_https_code_e;
 
 typedef struct HTTPS_CXT {
-    int socket;
-    SSL *ssl;
-    SSL_CTX *ssl_cxt;
+    int                                 socket;     // tcp socket fd
+    SSL *                               ssl;        // openssl handle      
+    SSL_CTX *                           ssl_cxt;    // openssl ssl CTX
 } https_ctx_t;
 
-int  https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca);
-int  https_post(https_ctx_t *https_ctx, const char *request);
-int  https_read(https_ctx_t *https_ctx, char *buffer, int buffer_size);
-void https_free(https_ctx_t *https_ctx);
+extern int  https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca);
+extern int  https_post(https_ctx_t *https_ctx, const char *request);
+extern int  https_read(https_ctx_t *https_ctx, char *buffer, int buffer_size);
+extern void https_free(https_ctx_t *https_ctx);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif  /* __HTTPS_H__ */
 

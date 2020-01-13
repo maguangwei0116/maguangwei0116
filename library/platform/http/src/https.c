@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <openssl/err.h>
 
+#include "log.h"
 #include "https.h"
 #include "dns.h"
 

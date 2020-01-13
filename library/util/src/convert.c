@@ -30,8 +30,8 @@ void pad_F(char *raw_string, char *target, uint8_t size)
     }
     raw_string[i] = '\0';
     strcpy(target, (const char *) raw_string);
-    MSG_PRINTF(LOG_DBG, "raw_string[%d]: %s\n", i, raw_string);
-    MSG_PRINTF(LOG_DBG, "target[%d]: %s\n", i, target);
+    //MSG_PRINTF(LOG_DBG, "raw_string[%d]: %s\n", i, raw_string);
+    //MSG_PRINTF(LOG_DBG, "target[%d]: %s\n", i, target);
 }
 
 int hexstring2bytes(const char *hextring, uint8_t *bytes, uint16_t *length)
@@ -84,6 +84,7 @@ int bytes2hexstring(const uint8_t *bytes, uint16_t length, char *hextring)
 {
     uint16_t i = 0, cnt = 0;
     byte_t tmp;
+    
     if ((bytes == NULL) || (hextring == NULL)) {
         MSG_PRINTF(LOG_ERR, "INVALID PARAMETER\n\n");
         return RT_ERROR;
@@ -107,18 +108,20 @@ int bytes2hexstring(const uint8_t *bytes, uint16_t length, char *hextring)
     return RT_SUCCESS;
 }
 
-rt_bool strncpy_case_insensitive(int8_t *src,int8_t *obj,int16_t len)
+rt_bool strncmp_case_insensitive(const char *src, const char *dst, uint16_t len)
 {
-    int i;
+    uint32_t i;
+    
     for (i = 0; i < len; i++) {
 
-        if (src[i] == obj[i] || src[i] == (obj[i] + 'a' - 'A') || obj[i] == src[i] + 'a' - 'A') {
+        if ((src[i] == dst[i]) || (src[i] == (dst[i] + 'a' - 'A')) || (dst[i] == src[i] + 'a' - 'A')) {
             continue;
         } else {
-            MSG_PRINTF(LOG_WARN, "no.%d number is not equal,src:%c,obj:%c\n", i, src[i], obj[i]);
+            MSG_PRINTF(LOG_WARN, "no.%d number is not equal, src:%c, obj:%c\n", i, src[i], dst[i]);
             return RT_FALSE;
         }
     }
+    
     return RT_TRUE;
 }
 
@@ -135,10 +138,11 @@ static unsigned char to_ascii(unsigned char ch)
     return ch;
 }
 
-void bytestring_to_charstring(int8_t *bytestring, int8_t *charstring, int16_t length)
+void bytestring_to_charstring(const char *bytestring, char *charstring, uint16_t length)
 {
-    int32_t i = 0;
-    int8_t left,right;
+    uint32_t i = 0;
+    uint8_t left,right;
+    
     for (i = 0; i < length ; i ++) {
         left = to_ascii((bytestring[i] >> 4) & 0x0F);
         right = to_ascii(bytestring[i] & 0x0F);
@@ -148,6 +152,4 @@ void bytestring_to_charstring(int8_t *bytestring, int8_t *charstring, int16_t le
     }
     charstring[2*i] = '\0';
 }
-
-
 

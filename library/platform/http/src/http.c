@@ -20,6 +20,7 @@
 #include <time.h>
 #include <string.h>
 
+#include "log.h"
 #include "http.h"
 
 #define HTTP_POST "POST %s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n"\

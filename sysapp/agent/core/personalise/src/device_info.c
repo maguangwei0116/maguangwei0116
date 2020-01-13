@@ -24,11 +24,11 @@ int32_t init_device_info(void *arg)
     int32_t ret = RT_ERROR;
 
     rt_os_memset(&info, 0, sizeof(info));
-    ret = rt_qmi_get_imei(info.imei);
+    ret = rt_qmi_get_imei(info.imei, sizeof(info.imei));
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Get imei failed\n");
     }
-    ret = rt_qmi_get_model(info.model);
+    ret = rt_qmi_get_model(info.model, sizeof(info.model));
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Get model failed\n");
     }

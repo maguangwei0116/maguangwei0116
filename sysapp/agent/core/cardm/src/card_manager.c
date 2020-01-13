@@ -11,6 +11,7 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
+#include "rt_os.h"
 #include "card_manager.h"
 #include "agent_queue.h"
 #include "msg_process.h"
@@ -351,10 +352,21 @@ int32_t init_card_manager(void *arg)
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
         if (((public_value_list_t *)arg)->config_info->lpa_channel_type == LPA_CHANNEL_BY_QMI) {
+#ifdef CFG_PLATFORM_ANDROID
+            MSG_PRINTF(LOG_WARN, "eUICC mode with no EID on android paltform, waiting EID ready ...\r\n");
+            while (1) {
+                rt_os_sleep(5);
+                ret = card_update_eid(RT_TRUE);
+                if (!ret) {
+                    break;
+                }
+            }
+#else
             MSG_PRINTF(LOG_WARN, "eUICC mode with no EID, stay here forever !\r\n");
             while (1) {
                 rt_os_sleep(1);   
             }
+#endif
         }
     } else {
         rt_os_sleep(1);
@@ -464,7 +476,7 @@ int32_t card_manager_update_profiles_event(const uint8_t *buf, int32_t len, int3
     switch (mode) {
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
-            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);           
             break;
     }
 
@@ -529,7 +541,7 @@ int32_t card_ext_get_profiles_info(char *profiles_info_json, int32_t size)
             ret = RT_ERROR;
         }
     } else {
-        MSG_PRINTF(LOG_WARN, "update profiles fail\r\n"); 
+        MSG_PRINTF(LOG_WARN, "update profiles fail, ret=%d\r\n", ret); 
     }
 
     if (profiles_obj) {

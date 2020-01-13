@@ -11,6 +11,7 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
+#include "rt_os.h"
 #include "network_detection.h"
 #include "agent_queue.h"
 

@@ -15,6 +15,8 @@
 #include <dirent.h>
 #include <sys/types.h>
 
+#include "rt_type.h"
+#include "log.h"
 #include "rt_manage_data.h"
 #include "file.h"
 

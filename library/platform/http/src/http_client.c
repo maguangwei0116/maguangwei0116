@@ -13,30 +13,19 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <string.h>
-#include "http_client.h"
+#include <signal.h>
+
 #include "rt_type.h"
+#include "log.h"
+#include "http_client.h"
 
-static void display_progress(http_client_struct_t *obj)
+static void display_progress(const http_client_struct_t *obj)
 {
-#if (VERSION_TYPE == DEBUG)
-    #if 0
-    char buf[101];
-    int percentage = ((float)obj->process_length / obj->file_length) * 100;
-
-    rt_os_memset(buf,'-', 100);
-    buf[100] = '\0';
-    rt_os_memset(buf,'>', percentage);
-    MSG_PRINTF(LOG_WARN, "\r%s %d%%", buf, percentage);
-    rt_fflush(stdout);
-    if (percentage == 100) {
-        MSG_PRINTF(LOG_WARN, "\n");
-    }
-    #else
+#if (VERSION_TYPE == DEBUG) // only for debug version
     int percentage = ((float)obj->process_length / (obj->file_length + obj->range)) * 100;
     MSG_PRINTF(LOG_WARN, "file download [%s] : %3d%% (%7d/%-7d)\r\n", \
                     obj->file_path, percentage, obj->process_length, (obj->file_length + obj->range));
     //rt_os_sleep(1);  // only for test
-    #endif
 #else
     (void)obj;
 #endif
@@ -356,7 +345,7 @@ static int http_client_recv_data(http_client_struct_t *obj)
             linux_fflush(obj->fp);
             rt_os_sync();
             rt_os_sync();
-            display_progress(obj);
+            display_progress((const http_client_struct_t *)obj);
         }
     }
 
@@ -397,7 +386,7 @@ static int http_client_error_prase(http_client_struct_t *obj)
     MSG_PRINTF(LOG_INFO, "respond header:\n%s\n", obj->buf);
     rt_os_memset(length, 0, sizeof(length));
 
-    RT_CHECK_ERR(pos = rt_os_strstr(obj->buf, (const int8_t *)"HTTP/"), NULL);
+    RT_CHECK_ERR(pos = rt_os_strstr((const char *)obj->buf, (const char *)"HTTP/"), NULL);
     rt_os_memcpy(length, pos+9, 3);
     length[3] = '\0';
     resp_status = msg_string_to_int((uint8_t *)length);
@@ -410,8 +399,8 @@ static int http_client_error_prase(http_client_struct_t *obj)
     if (obj->manager_type == 0) {
     } else {
         rt_os_memset(length,0,sizeof(length));
-        RT_CHECK_ERR(pos = rt_os_strstr(obj->buf, (const int8_t *)"Content-Length"), NULL);
-        RT_CHECK_ERR(end = rt_os_strstr(pos, (const int8_t *)"\r\n"), NULL);
+        RT_CHECK_ERR(pos = rt_os_strstr((const char *)obj->buf, (const char *)"Content-Length"), NULL);
+        RT_CHECK_ERR(end = rt_os_strstr((const char *)pos, (const char *)"\r\n"), NULL);
         length_char_len = end - pos -16;
         rt_os_memcpy(length, pos + 16, length_char_len);
         length[length_char_len] = '\0';

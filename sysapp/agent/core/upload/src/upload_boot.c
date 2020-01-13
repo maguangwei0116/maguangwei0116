@@ -87,26 +87,6 @@ exit_entry:
     return !ret ? profiles : NULL;
 }
 
-/*****************************************************************************
- * FUNCTION
- *  get_euicc_iccid.
- * DESCRIPTION
- *  get the iccid of provisioning card.
- * PARAMETERS
- *  @iccid    provisioning card iccid.
-  * RETURNS
- *  @void.
- *****************************************************************************/
-static int32_t rt_get_euicc_iccid(uint8_t *iccid)
-{
-#if 1 || (PLATFORM == PLATFORM_9X07)
-    return rt_qmi_get_current_iccid(iccid);
-#elif PLATFORM == PLATFORM_FIBCOM
-    return rt_fibcom_get_iccid(iccid);
-#endif
-    return RT_SUCCESS;
-}
-
 static int32_t last_3_dbms_func(rt_bool in, int32_t *dbm)
 {
     static int8_t  index = 0;
@@ -150,8 +130,11 @@ static int32_t rt_get_cur_signal(int32_t *dbm)
  * RETURNS
  *  @void
  *****************************************************************************/
-static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *level, 
-                                        int32_t *dbm, uint8_t *iccid, int32_t *profileType)
+static void rt_get_network_info(char *mcc_mnc, int32_t mcc_mnc_size,
+                                    char *net_type, int32_t net_type_size,
+                                    uint8_t *level, int32_t *dbm, 
+                                    char *iccid, int32_t iccid_size, 
+                                    int32_t *profileType)
 {
     uint16_t mcc_int = 0;
     uint16_t mnc_int = 0;
@@ -163,12 +146,12 @@ static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *le
     }
 
     /* used qmi to get network info */
-    ret = rt_qmi_get_current_iccid(iccid);
+    ret = rt_qmi_get_current_iccid(iccid, iccid_size);
     if (ret) {
         /* get local current iccid instead */
         if (g_upload_card_info) {
             MSG_PRINTF(LOG_WARN, "get card manager using iccid ...\r\n");
-            sprintf(iccid, "%s", g_upload_card_info->iccid);
+            snprintf(iccid, iccid_size, "%s", g_upload_card_info->iccid);
         }
     }
 
@@ -177,9 +160,8 @@ static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *le
         *profileType = (int32_t)g_upload_card_info->type;
     }
     
-    rt_qmi_get_mcc_mnc(&mcc_int,&mnc_int);
-    j += sprintf(mcc_mnc, "%03d", mcc_int);
-    j += sprintf(mcc_mnc+j, "%02d", mnc_int);
+    rt_qmi_get_mcc_mnc(&mcc_int, &mnc_int);
+    snprintf(mcc_mnc, mcc_mnc_size, "%03d%02d", mcc_int, mnc_int);
 
     /* signal level: [1,5] */
     rt_get_cur_signal(dbm);
@@ -195,7 +177,7 @@ static void rt_get_network_info(uint8_t *mcc_mnc, uint8_t *net_type, uint8_t *le
         level[0] = '5';
     }
     level[1]='\0';
-    rt_qmi_get_network_type(net_type);
+    rt_qmi_get_network_type(net_type, net_type_size);
 
 #ifdef CFG_PLATFORM_ANDROID
     {
@@ -233,7 +215,7 @@ static cJSON *upload_event_boot_network_info(void)
         goto exit_entry;
     }
 
-    rt_get_network_info(mccmnc, type, signalLevel, &dbm, iccid, &profileType);
+    rt_get_network_info(mccmnc, sizeof(mccmnc), type, sizeof(type), signalLevel, &dbm, iccid, sizeof(iccid), &profileType);
 
     CJSON_ADD_NEW_STR_OBJ(network, iccid);
     CJSON_ADD_NEW_INT_OBJ(network, profileType);

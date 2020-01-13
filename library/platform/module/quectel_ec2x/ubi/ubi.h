@@ -20,8 +20,8 @@ typedef int32_t (*ubi_update_func)(const char *ubi_file);
 typedef int32_t (*ubi_update_usr_func)(void *func, const char *ubi_file);
 
 typedef enum UBI_UPDATE_RESULT {
-    UBI_UPDATE_OK       = 0,
-    UBI_UPDATE_FAIL     = -1,
+    UBI_UPDATE_OK           = 0,
+    UBI_UPDATE_FAIL         = -1,
 } ubi_update_result_e;
 
 typedef struct UBI_UPDATE_API {

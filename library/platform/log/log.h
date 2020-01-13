@@ -14,6 +14,10 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 typedef enum LOG_LEVE {
     LOG_UNKNOW  = -1,
     LOG_NONE    = 0,
@@ -99,5 +103,9 @@ do {\
 #endif
 #define MSG_HEXDUMP(title, data, len)           log_hexdump(__FILE__, __LINE__, title, data, len)
 
-#endif // __LOG_H__
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* __LOG_H__ */
 

@@ -31,6 +31,7 @@
 #include "file.h"
 #include "libcomm.h"
 #include "agent_main.h"
+#include "rt_timer.h"
 #ifdef CFG_STANDARD_MODULE
 #include "customer_at.h"
 #include "at_command.h"

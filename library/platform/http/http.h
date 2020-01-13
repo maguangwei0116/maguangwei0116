@@ -14,6 +14,10 @@
 #ifndef __HTTP_H__
 #define __HTTP_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #include "rt_type.h"
 #include "rt_os.h"
 
@@ -46,4 +50,9 @@ extern int32_t       http_tcpclient_close(int32_t socket);
 extern int32_t       http_parse_result(const char *lpbuf);
 extern int32_t       http_parse_url(const char *url, char *host, char *file, int32_t *port);
 
-#endif  // __HTTP_H__
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif  /* __HTTP_H__ */
+

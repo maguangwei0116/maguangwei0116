@@ -13,11 +13,16 @@
 #ifndef __RT_OS_H__
 #define __RT_OS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/ipc.h>
 #include <semaphore.h>
 #include <pthread.h>
+
 #include "rt_type.h"
 
 #define  RT_FILE_HANDLE                     FILE *
@@ -49,15 +54,15 @@
 #define  RT_PTHREAD_CANCEL_ENABLE           PTHREAD_CANCEL_ENABLE
 #define  RT_PTHREAD_CANCEL_DISABLE          PTHREAD_CANCEL_DISABLE
 
-typedef unsigned long      rt_task;
 typedef void * (* rt_taskfun) (void *para);
-typedef pthread_mutex_t    rt_pthread_mutex_t;
-typedef sem_t              rt_sem_t;
+typedef unsigned long                       rt_task;
+typedef pthread_mutex_t                     rt_pthread_mutex_t;
+typedef sem_t                               rt_sem_t;
 
 #ifdef CFG_ENABLE_LIBUNWIND
 extern int32_t thread_info_record(unsigned long pid, const char *name);
 extern int32_t thread_info_clear(unsigned long pid);
-int32_t _rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
+extern int32_t _rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
 #define rt_create_task(task_id, task_fun, args)\
     ({\
         int32_t _ret = _rt_create_task((task_id), (task_fun), (args));\
@@ -66,7 +71,7 @@ int32_t _rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args);
         };\
         _ret;\
     })
-void _rt_exit_task(void * args);
+extern void _rt_exit_task(void * args);
 #define rt_exit_task(args)\
     ({\
         thread_info_clear((unsigned long)rt_get_pid());\
@@ -143,4 +148,9 @@ int32_t linux_sem_wait(rt_sem_t *sem);
 int32_t linux_sem_post(rt_sem_t *sem);
 int32_t linux_sem_destroy(rt_sem_t *sem);
 
-#endif // __RT_OS_H__
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* __RT_OS_H__ */
+

@@ -14,20 +14,28 @@
 #ifndef __TYPE_H__
 #define __TYPE_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #include <stdio.h>
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
+
 #include "log.h"
-#include "rt_os.h"
-#include "rt_timer.h"
 
 typedef enum RT_BOOL {
-    RT_FALSE = 0,
-    RT_TRUE
+    RT_FALSE            = 0,
+    RT_TRUE             = 1,
 } rt_bool;
 
-#define RT_ERROR                     -1
-#define RT_SUCCESS                   0
+#define RT_ERROR        -1
+#define RT_SUCCESS      0
 
-#endif // __TYPE_H__
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* __TYPE_H__ */
+

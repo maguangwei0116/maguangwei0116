@@ -17,14 +17,14 @@ extern "C" {
 #include "rt_type.h"
 
 /* WARN: API non-thread-safe, the same usage as gethostbyname */
-struct hostent *rt_gethostbyname(const char *name);
+extern struct hostent *rt_gethostbyname(const char *name);
 
 /* WARN: API non-thread-safe, get ip with fixed dns server */
-struct hostent *rt_gethostbyname_with_dns_server(const char *dns_server, const char *name);
+extern struct hostent *rt_gethostbyname_with_dns_server(const char *dns_server, const char *name);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif
+#endif /* __DNS_H__ */
 

@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <string.h>
 
+#include "rt_os.h"
 #include "file.h"
 
 #define MAX_RT_FILE_PATH        128

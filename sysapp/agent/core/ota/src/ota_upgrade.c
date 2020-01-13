@@ -655,11 +655,11 @@ static rt_bool ota_file_check(const void *arg)
     }
 
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
-    bytestring_to_charstring(hash_out, hash_result, MAX_FILE_HASH_BYTE_LEN);
+    bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
 
     MSG_PRINTF(LOG_WARN, "calc hash_result: %s\r\n", hash_result);
     MSG_PRINTF(LOG_WARN, "tail hash_result: %s\r\n", last_hash_buffer);
-    RT_CHECK_NEQ(strncpy_case_insensitive(hash_result, last_hash_buffer, MAX_FILE_HASH_LEN), RT_TRUE);
+    RT_CHECK_NEQ(strncmp_case_insensitive((const char *)hash_result, (const char *)last_hash_buffer, MAX_FILE_HASH_LEN), RT_TRUE);
     MSG_PRINTF(LOG_INFO, "private file hash check ok !\r\n");
     ret = RT_TRUE;
 

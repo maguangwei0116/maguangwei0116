@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "rt_os.h"
 #include "rt_type.h"
 #include "trigger.h"
 #include "card.h"

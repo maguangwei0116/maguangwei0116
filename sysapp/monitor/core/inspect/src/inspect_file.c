@@ -123,7 +123,7 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
     MSG_PRINTF(LOG_INFO, "file_info:%s\n", file_info);
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
 
-    bytestring_to_charstring(hash_out, hash_result, MAX_FILE_HASH_BYTE_LEN);
+    bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
 
     if (inspect_abstract_content(hash_result, sign_buffer) != RT_TRUE) {
         MSG_PRINTF(LOG_ERR, "file_name:%s, verify signature failed!!\n", file_name);

@@ -16,6 +16,7 @@
 #ifdef CFG_STANDARD_MODULE
 
 #include "agent_queue.h"
+#include "rt_os.h"
 #include "at_command.h"
 #include "customer_at.h"
 #include "ubi.h"

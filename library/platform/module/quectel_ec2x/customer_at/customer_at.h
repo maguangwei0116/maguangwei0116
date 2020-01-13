@@ -19,8 +19,8 @@
 typedef int32_t (*atcommand_callback)(const char *cmd, char *rsp, int32_t len);
 
 typedef struct AT_CMD {
-    char                    label[64];      // AT cmd name
-    atcommand_callback      handle;     // AT cmd handle function
+    char                    label[64];      // customer AT cmd name
+    atcommand_callback      handle;         // customer AT cmd handle function
 } at_cmd_t;
 
 int32_t init_customer_at(void *arg);

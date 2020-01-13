@@ -254,14 +254,15 @@ static int32_t rt_qmi_get_mcc_mnc_handle(void)
     return ret;
 }
 
-int32_t rt_qmi_get_current_iccid(uint8_t *iccid)
+int32_t rt_qmi_get_current_iccid(char *iccid, int32_t iccid_size)
 {
-    return jni_api_common(__func__, 1, iccid);
+    return jni_api_common(__func__, 2, iccid, iccid_size);
 }
 
 static int32_t rt_qmi_get_current_iccid_handle(void)
 {
     uint8_t *iccid = (uint8_t *)g_thread_data.param.param1;
+    int32_t iccid_size = (int32_t)g_thread_data.param.param2;
     int32_t ret = RT_SUCCESS;
 
     ret = jni_get_current_iccid(iccid);
@@ -269,14 +270,15 @@ static int32_t rt_qmi_get_current_iccid_handle(void)
     return ret;
 }
 
-int32_t rt_qmi_get_current_imsi(uint8_t *imsi)
+int32_t rt_qmi_get_current_imsi(char *imsi, int32_t imsi_size)
 {
-    return jni_api_common(__func__, 1, imsi);
+    return jni_api_common(__func__, 2, imsi, imsi_size);
 }
 
 static int32_t rt_qmi_get_current_imsi_handle(void)
 {
     uint8_t *imsi = (uint8_t *)g_thread_data.param.param1;
+    int32_t imsi_size = (int32_t)g_thread_data.param.param2;
     int32_t ret = RT_SUCCESS;
 
     ret = jni_get_current_imsi(imsi);
@@ -314,14 +316,15 @@ static int32_t rt_qmi_get_signal_level_handle(void)
     return ret;
 }
 
-int32_t rt_qmi_get_imei(uint8_t *imei)
+int32_t rt_qmi_get_imei(char *imei, int32_t imei_size)
 {
-    return jni_api_common(__func__, 1, imei);
+    return jni_api_common(__func__, 2, imei, imei_size);
 }
 
 static int32_t rt_qmi_get_imei_handle(void)
 {
     uint8_t *imei = (uint8_t *)g_thread_data.param.param1;
+    int32_t imei_size = (int32_t)g_thread_data.param.param2;
     int32_t ret = RT_SUCCESS;
 
     ret = jni_get_imei(imei);
@@ -329,7 +332,7 @@ static int32_t rt_qmi_get_imei_handle(void)
     return ret;
 }
 
-int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t pdp_type, int8_t *apn, int8_t *mcc_mnc)
+int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t pdp_type, const char *apn, const char *mcc_mnc)
 {
     (void)index;
     (void)profile_type;
@@ -344,19 +347,20 @@ static int32_t rt_qmi_modify_profile_handle(void)
     int8_t *mcc_mnc = (int8_t *)g_thread_data.param.param2;
     int32_t ret = RT_SUCCESS;
 
-    ret = jni_set_apn(apn, mcc_mnc);
+    ret = jni_set_apn((uint8_t *)apn, (uint8_t *)mcc_mnc);
 
     return ret;
 }
 
-int32_t rt_qmi_get_model(uint8_t *model)
+int32_t rt_qmi_get_model(char *model, int32_t model_size)
 {
-    return jni_api_common(__func__, 1, model);   
+    return jni_api_common(__func__, 2, model, model_size);   
 }
 
 static int32_t rt_qmi_get_model_handle(void)
 {
     uint8_t *model = (uint8_t *)g_thread_data.param.param1;
+    int32_t model_size = (int32_t)g_thread_data.param.param2;
     int32_t ret = RT_SUCCESS;
 
     ret = jni_get_model(model);
@@ -364,14 +368,15 @@ static int32_t rt_qmi_get_model_handle(void)
     return ret;
 }
 
-int32_t rt_qmi_get_network_type(uint8_t *network_type)
+int32_t rt_qmi_get_network_type(char *network_type, int32_t network_type_size)
 {
-    return jni_api_common(__func__, 1, network_type);
+    return jni_api_common(__func__, 2, network_type, network_type_size);
 }
 
 static int32_t rt_qmi_get_network_type_handle(void)
 {
     uint8_t *network_type = (uint8_t *)g_thread_data.param.param1;
+    int32_t network_type_size = (int32_t)g_thread_data.param.param2;
     int32_t ret = RT_SUCCESS;
 
     ret = jni_get_network_type(network_type);

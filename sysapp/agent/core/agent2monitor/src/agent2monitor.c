@@ -218,7 +218,7 @@ int32_t ipc_file_verify_by_monitor(const char *abs_file, char *real_file_name)
     }
 
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
-    bytestring_to_charstring(hash_out, hash_result, MAX_FILE_HASH_BYTE_LEN);
+    bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
 
     ret = ipc_sign_verify_by_monitor(hash_result, last_sign_buffer);
     if (!ret) {

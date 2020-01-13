@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include "rt_type.h"
+#include "rt_os.h"
 #include "customer_at.h"
 /* include quectel library header file */
 #include "ql_customer_at.h"
