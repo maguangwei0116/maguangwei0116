@@ -131,7 +131,7 @@ int main(int argc, char **argv)
     log_set_param(LOG_PRINTF_TERMINAL, g_log_level, 1*1024*1024); //debug in terminal
     rt_qmi_init(NULL);               // must init qmi
     get_uicc_mode();
-    init_apdu_channel(g_chan_mode);  // fore to eUICC mode
+    init_lpa(&g_chan_mode);         // fore to eUICC mode
     
     if (argc < 2) {
         display_usage();
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
                 
             case 'E':
                 g_chan_mode = LPA_CHANNEL_BY_QMI;
-                init_apdu_channel(g_chan_mode);
+                init_lpa(&g_chan_mode);
                 fprintf(stderr, "Force eUICC mode !!!\n");
                 break;
                 

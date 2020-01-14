@@ -4,21 +4,27 @@
 #include <stdint.h>
 
 typedef enum LPA_CHANNEL_TYPE {
-    LPA_CHANNEL_BY_IPC = 0,
-    LPA_CHANNEL_BY_QMI
+    LPA_CHANNEL_BY_IPC = 0,     // vUICC mode
+    LPA_CHANNEL_BY_QMI          // eUICC mode
 } lpa_channel_type_e;
 
 // See SGP.22_v2.2 for more information
 typedef struct PROFILE_INFO {
-    char iccid[21]; // 20-digit ICCID, padded with F
-    uint8_t class;  // 0 test, 1 provisioning, 2 operational
-    uint8_t state;  // 0 disabled, 1 enabled
+    char iccid[21];             // 20-digit ICCID, padded with F
+    uint8_t class;              // 0 test, 1 provisioning, 2 operational
+    uint8_t state;              // 0 disabled, 1 enabled
 } profile_info_t;
+
 int init_lpa(void *arg);
+
 int lpa_get_eid(uint8_t *eid);
+
 int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num);
+
 int lpa_get_eid_list(uint8_t (*eid_list)[33]);
+
 int lpa_switch_eid(const uint8_t *eid);
+
 /**
  @return:
     ok(0), iccidOrAidNotFound (1), profileNotInDisabledState(2),
@@ -77,4 +83,6 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21],uint8_t 
 int lpa_load_cert(const uint8_t *data, uint16_t data_len);
 
 int lpa_load_profile(const uint8_t *data, uint16_t data_len);
-#endif  // __LPA_H__
+
+#endif  /* __LPA_H__ */
+
