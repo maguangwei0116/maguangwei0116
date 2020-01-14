@@ -221,6 +221,7 @@ end:
 
     if (fp != NULL) {
         linux_fclose(fp);
+        fp = NULL;
     }
     return ret;
 }

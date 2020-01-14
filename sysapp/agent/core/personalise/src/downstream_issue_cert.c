@@ -176,7 +176,7 @@ static rt_bool on_issue_cert_cleanup(const void *arg)
 static rt_bool on_issue_cert_upload_event(const void *arg)
 {
     uint8_t *buf = NULL;
-    rt_fshandle_t fp;
+    rt_fshandle_t fp = NULL;
     int32_t length;
     int32_t ret = RT_ERROR;
     int32_t on_issue_cert_status = 0;
@@ -203,6 +203,7 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
         
         if (fp) {
             linux_fclose(fp);
+            fp = NULL;
         }
         linux_rt_delete_file(RT_CERTIFICATE);
     }else {

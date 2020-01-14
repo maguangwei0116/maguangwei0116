@@ -228,7 +228,7 @@ static int32_t config_write_file(const char *file, int32_t pair_num, const confi
 {
     int32_t i = 0;
     int32_t ret = RT_ERROR;
-    rt_fshandle_t fp;
+    rt_fshandle_t fp = NULL;
     char item_data[MAX_LINE_SIZE];
 
     fp = linux_rt_fopen(file, "w");
@@ -502,7 +502,7 @@ static int32_t config_get_key_value_fast(const char *app_path, const char *key, 
 { 
     char rt_file_name[128];
     int32_t file_len = 0;
-    rt_fshandle_t fd = NULL;
+    rt_fshandle_t fp = NULL;
     int32_t ret = RT_ERROR;
     uint8_t *file_data = NULL;
     char *p0 = NULL;
@@ -515,8 +515,8 @@ static int32_t config_get_key_value_fast(const char *app_path, const char *key, 
         goto exit_entry;
     }
 
-    fd = linux_fopen(rt_file_name, "r");
-    if (fd < 0) {
+    fp = linux_fopen(rt_file_name, "r");
+    if (!fp) {
         goto exit_entry;
     }
 
@@ -526,7 +526,7 @@ static int32_t config_get_key_value_fast(const char *app_path, const char *key, 
     }
     rt_os_memset(file_data, 0, file_len + 1);
 
-    ret = linux_fread(file_data, 1, file_len, fd);
+    ret = linux_fread(file_data, 1, file_len, fp);
     if (ret != file_len) {
         goto exit_entry;
     }
@@ -560,9 +560,9 @@ static int32_t config_get_key_value_fast(const char *app_path, const char *key, 
     
 exit_entry:
 
-    if (fd) {
-        linux_fclose(fd);
-        fd = NULL;
+    if (fp) {
+        linux_fclose(fp);
+        fp = NULL;
     }
 
     if (file_data) {

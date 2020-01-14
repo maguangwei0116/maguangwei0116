@@ -588,13 +588,13 @@ end:
 
 static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offset)
 {
-    rt_fshandle_t fp;
+    rt_fshandle_t fp = NULL;
     int32_t length = 0;
     uint8_t buf[128];
     uint8_t *buffer = NULL;
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
-    if (fp == NULL) {
+    if (!fp) {
         return RT_ERROR;
     }
 
@@ -609,8 +609,9 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
     if (data_len) {
         *data_len = length;
     }
-    if (fp != NULL) {
+    if (fp) {
         linux_fclose(fp);
+        fp = NULL;
     }
     return RT_SUCCESS;
 }
@@ -686,7 +687,7 @@ int32_t init_profile_file(const char *file)
 {
     int32_t ret = RT_ERROR;
     uint32_t len = 0;
-    rt_fshandle_t fp;
+    rt_fshandle_t fp = NULL;
 
     if (file) {
         snprintf(g_share_profile, sizeof(g_share_profile), "%s", (const char *)file);
@@ -703,7 +704,7 @@ int32_t init_profile_file(const char *file)
 #endif    
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
-    if (fp == NULL) {
+    if (!fp) {
         MSG_PRINTF(LOG_ERR, "g_share_profile: %s, fp is null !\n", g_share_profile);
         return RT_ERROR;
     }
@@ -717,8 +718,9 @@ int32_t init_profile_file(const char *file)
         g_data.operator_info_offset = rt_get_operator_profile_offset(fp, &len);
     }
     
-    if (fp != NULL) {
+    if (fp) {
         linux_fclose(fp);
+        fp = NULL;
     }
 
     g_data.priority = 0;
@@ -735,7 +737,7 @@ int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profil
     int32_t i = 0;
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
-    if (fp == NULL) {
+    if (!fp) {
         MSG_PRINTF(LOG_ERR, "Open file failed\n");
         return RT_ERROR;
     }
@@ -765,9 +767,12 @@ int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profil
 
     g_data.priority++;
     ret = RT_SUCCESS;
+    
 end:
-    if (fp != NULL) {
+    
+    if (fp) {
         linux_fclose(fp);
+        fp = NULL;
     }
     return ret;
 }
