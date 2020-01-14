@@ -312,7 +312,8 @@ void handle_sigsegv(int signo, siginfo_t *info, void *ucontext)
 #endif
 
 	g_backtrac_log_func("Signal Info:\r\n");
-	g_backtrac_log_func("si_errno:%d  si_code:%d(%s)\r\n", info->si_errno, info->si_code, si_codes[info->si_code]);
+	g_backtrac_log_func("si_errno:%d  si_code:%d(%s)\r\n", info->si_errno, info->si_code, \
+					(info->si_code >= 0 && info->si_code <= 3) ? si_codes[info->si_code] : "NULL");
 	/* this is void*, but using %p would print "(null)"
 	 * even for ptrs which are not exactly 0, but, say, 0x123:
 	 */
