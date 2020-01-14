@@ -170,6 +170,14 @@ ITEM(USAGE_FREQ,            config_usage_freq,      INTEGER,    "60",           
 };
 
 static config_info_t g_config_info;
+static const char * g_restart_reason = "";
+
+int32_t config_set_restart_reason(const char *reason)
+{
+    g_restart_reason = reason;   
+
+    return RT_SUCCESS;
+}
 
 static uint32_t msg_string_to_int(const char *str)
 {
@@ -430,7 +438,8 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
 #ifdef CFG_STANDARD_MODULE
     MSG_PRINTF(LOG_WARN, "Running standard module ...\r\n");
 #endif
-    MSG_PRINTF(LOG_WARN, "Agent version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
+    MSG_PRINTF(LOG_WARN, "Restart reason: %s\n", g_restart_reason);
+    MSG_PRINTF(LOG_WARN, "Agent version : %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     MSG_PRINTF(LOG_DBG, "OTI_ENVIRONMENT_ADDR  : %s\n", local_config_get_data("OTI_ENVIRONMENT_ADDR"));
     MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", local_config_get_data("EMQ_SERVER_ADDR"));
     MSG_PRINTF(LOG_DBG, "PROXY_SERVER_ADDR     : %s\n", local_config_get_data("PROXY_SERVER_ADDR"));

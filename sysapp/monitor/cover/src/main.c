@@ -27,6 +27,8 @@
 #include "file.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
+#define RT_MONITOR_RESTART          "monitor restart"
+#define RT_AGENT_RESTART            "agent restart"
 #define RT_DEBUG_IN_TERMINAL        "terminal"
 #define RT_AGENT_PTROCESS           "rt_agent"
 #define RT_AGENT_NAME               "agent"
@@ -296,7 +298,7 @@ exit_entry:
 }
 #endif
 
-static int32_t agent_task_check_start(void)
+static int32_t agent_task_check_start(rt_bool frist_start)
 {
     int32_t ret;
     int32_t status;
@@ -347,9 +349,10 @@ static int32_t agent_task_check_start(void)
             }
         }
         if (g_agent_debug_terminal) {
-            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, RT_DEBUG_IN_TERMINAL, NULL);
+            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, RT_DEBUG_IN_TERMINAL, 
+                            (frist_start ? RT_MONITOR_RESTART : RT_AGENT_RESTART), NULL);
         } else {
-            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, NULL);
+            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, (frist_start ? RT_MONITOR_RESTART : RT_AGENT_RESTART), NULL);
         }
         if (ret < 0) {
             MSG_PRINTF(LOG_ERR, "Excute %s fail, ret=%d, err(%d)=%s\n", RT_AGENT_PTROCESS, ret, errno, strerror(errno));
@@ -418,6 +421,7 @@ Run:
 int32_t main(int32_t argc, const char *argv[])
 {
     rt_bool keep_agent_alive = RT_TRUE;
+    rt_bool frist_start = RT_TRUE;
 
     /* check input param to debug in terminal */
     if (argc > 1 && !rt_os_strcmp(argv[1], RT_DEBUG_IN_TERMINAL)) {
@@ -483,8 +487,9 @@ int32_t main(int32_t argc, const char *argv[])
 
     /* start up agent */
     do {
-        agent_task_check_start();
+        agent_task_check_start(frist_start);
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
+        frist_start = RT_FALSE;
     } while(keep_agent_alive);
 
     /* stop here */
