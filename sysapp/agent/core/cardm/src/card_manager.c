@@ -489,8 +489,7 @@ int32_t card_ext_get_eid(char *eid, int32_t size)
     int32_t ret = RT_ERROR;
     
     if (eid && size > MAX_EID_LEN) {
-        rt_os_memset(eid, 0, size);  // clear
-        ret = lpa_get_eid((uint8_t *)eid);
+        snprintf(eid, size, "%s", g_p_info.eid);  // get eid from RAM
     } else {
         MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
     }
