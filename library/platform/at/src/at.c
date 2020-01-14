@@ -16,7 +16,7 @@
 #endif
 
 static char g_at_port_name[32];
-static pthread_mutex_t *g_at_mutex;
+static rt_pthread_mutex_t *g_at_mutex;
 
 static int32_t at_set_port_name(const char *at_port)
 {
