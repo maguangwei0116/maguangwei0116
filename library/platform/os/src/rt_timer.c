@@ -15,9 +15,9 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
-#include "rt_timer.h"
 
-typedef void (*cb_func)(void);
+#include "rt_os.h"
+#include "rt_timer.h"
 
 typedef struct RT_TIMER {
     struct RT_TIMER *   prev; 
@@ -80,7 +80,7 @@ static void timer_handler (int signo)
 }
 
 // A timer list from small to large
-int32_t register_timer(int sec, int usec, void (*action)())
+int32_t register_timer(int sec, int usec, cb_func action)
 {
     rt_timer_t *t, *p, *pre;
     struct itimerval itimer;
@@ -88,9 +88,13 @@ int32_t register_timer(int sec, int usec, void (*action)())
     if ((action == NULL) || ((sec == 0) && (usec == 0))) {
         return RT_ERROR;
     }
-
+    
     rt_mutex_lock(&g_mutex);
     t = (rt_timer_t *) rt_os_malloc(sizeof(rt_timer_t));
+    if (!t) {
+        return RT_ERROR;
+    }
+    
     t->next = t->prev = NULL;
     t->diff_sec = sec;
     t->diff_usec = usec;
@@ -132,7 +136,7 @@ int32_t register_timer(int sec, int usec, void (*action)())
     setitimer(ITIMER_REAL, &itimer, NULL);
     rt_mutex_unlock(&g_mutex);
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 int32_t init_timer(void *arg)

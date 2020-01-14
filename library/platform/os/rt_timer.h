@@ -20,8 +20,10 @@ extern "C" {
 
 #include "rt_type.h"
 
+typedef void (*cb_func)(void);
+
 extern int32_t  init_timer(void *arg);
-extern int32_t  register_timer(int sec, int usec, void (*action)(void));
+extern int32_t  register_timer(int sec, int usec, cb_func action);
 extern uint32_t rt_os_alarm(uint32_t seconds);
 
 #ifdef __cplusplus
