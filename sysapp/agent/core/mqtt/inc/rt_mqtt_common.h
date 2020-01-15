@@ -23,6 +23,7 @@ typedef int ssize_t;
 
 #include "rt_mqtt.h"
 #include "stdint.h"
+#include "http.h"
 
 /**
  * Default MQTT version to connect with.  Use 3.1.1 then fall back to 3.1
@@ -80,8 +81,6 @@ typedef enum PUBLISH2_TLV {
     PUBLISH2_TLV_MAX_NUM
 } PUBLISH2_TLV_e;
 
-typedef int32_t (*PCALLBACK)(const char *json_data);
-
 typedef struct REG_INFO {
     /* in MQTT v3.1,If the Client ID contains more than 23 characters, the server responds to
      * the CONNECT message with a CONNACK return code 2: Identifier Rejected.
@@ -125,8 +124,6 @@ typedef struct MQTT_OPTS {
     char        channel[10];            // the data channel of OTI upload
     char        ticket_server[200];     // the ticket server addr
 } mqtt_opts_t;
-
-DLLExport int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, char *path, PCALLBACK cb);
 
 DLLExport int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_opts_t *opts);
 

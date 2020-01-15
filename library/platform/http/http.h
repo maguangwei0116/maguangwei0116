@@ -27,9 +27,11 @@ extern "C" {
 #define HOST_ADDRESS_LEN        100
 #define HOST_PATH_LEN           100
 #define HTTP_CONNECT_TIMEOUT    30
-#define HTTP_RECV_TIMEOUT       60
+#define HTTP_RECV_TIMEOUT       30
 
 typedef int32_t (*socket_call_back)(const char *p);
+
+typedef int32_t (*PCALLBACK)(const char *json_data);
 
 typedef enum HTTP_RESULT {
     HTTP_SUCCESS = 0,           // 0
@@ -49,6 +51,7 @@ extern int32_t       http_tcpclient_recv(int32_t socket, uint8_t *lpbuff, int32_
 extern int32_t       http_tcpclient_close(int32_t socket);
 extern int32_t       http_parse_result(const char *lpbuf);
 extern int32_t       http_parse_url(const char *url, char *host, char *file, int32_t *port);
+extern int32_t       http_post_json(const char *json_data, char *hostname, uint16_t port, char *path, PCALLBACK cb);
 
 #ifdef __cplusplus
 }
