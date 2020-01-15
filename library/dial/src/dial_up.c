@@ -33,7 +33,7 @@ typedef enum LOCAL_DIAL_UP_STATE {
 typedef void (*dial_callback)(int32_t state);
 
 static dial_callback g_dial_state_func;
-static int32_t g_dsi_event_fd[2];
+static int32_t g_dsi_event_fd[2] = {-1, -1};
 
 static void dsi_net_init_cb_func(void *user_data)
 {
@@ -52,6 +52,8 @@ static void dsi_net_cb_fcn(dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt,
 
     /* Pass on the EVENT to upper application */
     write(g_dsi_event_fd[0], &signo, sizeof(signo));
+
+    MSG_PRINTF(LOG_INFO, "create a dsi event (%d) ...\r\n", signo);
 }
 
 static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
@@ -127,10 +129,12 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
     ds_system_call(command, strlen(command));
 #endif
 
-    snprintf(command, sizeof(command), " iptables -t filter -F ");
+#if !(CFG_STANDARD_MODULE) // unsupported on standard module
+    snprintf(command, sizeof(command), "iptables -t filter -F");
     ds_system_call(command, rt_os_strlen(command));
+#endif
 
-    snprintf(command, sizeof(command), " iptables -t nat -F ");
+    snprintf(command, sizeof(command), "iptables -t nat -F");
     ds_system_call(command, rt_os_strlen(command));
 
     snprintf(command, sizeof(command), "route add default dev rmnet_data0");
@@ -158,7 +162,8 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 
 static int32_t usage(const int8_t *progname)
 {
-    return 0;
+    (void)progname;
+    return RT_SUCCESS;
 }
 
 static int32_t set_dsi_net_info(dsi_call_info_t *dsi_net_hndl)
@@ -168,7 +173,8 @@ static int32_t set_dsi_net_info(dsi_call_info_t *dsi_net_hndl)
     int32_t opt = 1;
     dsi_net_hndl->apn = dsi_net_hndl->user = dsi_net_hndl->password = "";
     dsi_net_hndl->auth_pref = DSI_AUTH_PREF_CHAP_ONLY_ALLOWED;
-    return -1;
+    
+    return RT_ERROR;
 
     while  (opt < argc) {
         if (argv[opt][0] != '-')
@@ -218,7 +224,7 @@ static int32_t set_dsi_net_info(dsi_call_info_t *dsi_net_hndl)
 int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
 {
     dsi_call_param_value_t param_info;
-    int32_t rval = 0;
+    int32_t rval = RT_SUCCESS;
 
     rval = dsi_init(DSI_MODE_GENERAL);
     if (rval != DSI_SUCCESS) {
@@ -316,20 +322,36 @@ static int32_t dial_up_check_register_state(int32_t interval, int32_t max_cnt)
     return RT_SUCCESS;
 }
 
+#if 0  // only for debug
+#define DSI_CALL(func, handle) \
+({ \
+    int32_t __ret = RT_ERROR; \
+    static int32_t index = 0; \
+    __ret = func((handle)); \
+    index++; \
+    MSG_PRINTF(LOG_INFO, "----------------------------------- %25s --- %5d, ret=%d\n", #func, index, __ret); \
+    __ret; \
+})
+#else
+#define DSI_CALL(func, handle)  func((handle))
+#endif
+
 static int32_t dial_up_start(dsi_call_info_t *dsi_net_hndl, int32_t interval, int32_t max_cnt)
 {
     int32_t rval;
     int32_t dsi_start_cnt = 0;
 
-    socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
-    MSG_PRINTF(LOG_INFO, "< create two new sockets --- g_dsi_event_fd(%d,%d) >\n", g_dsi_event_fd[0], g_dsi_event_fd[1]);
+    if (g_dsi_event_fd[0] < 0 && g_dsi_event_fd[1] < 0) {
+        socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
+        MSG_PRINTF(LOG_INFO, "< create two new sockets --- g_dsi_event_fd(%d,%d) >\n", g_dsi_event_fd[0], g_dsi_event_fd[1]);
+    }
 
     while (1) {
-        rval = dsi_start_data_call(dsi_net_hndl->handle);        
+        rval = DSI_CALL(dsi_start_data_call, dsi_net_hndl->handle);        
         if (rval == RT_SUCCESS) {
             break;
         }
-        MSG_PRINTF(LOG_INFO, "dsi_start_data_call rval = %d\n", rval);
+        MSG_PRINTF(LOG_INFO, "dsi start data call rval = %d\n", rval);
         
         rt_os_sleep(interval);
         if (++dsi_start_cnt >= max_cnt) {
@@ -344,6 +366,8 @@ static int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
 {
     int32_t rval;
 
+#if 0
+    /* keep socket pair fd open */
     if (g_dsi_event_fd[0] > 0) {
         close(g_dsi_event_fd[0]);
         g_dsi_event_fd[0] = -1;
@@ -352,9 +376,10 @@ static int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
         close(g_dsi_event_fd[1]);
         g_dsi_event_fd[1] = -1;
     }
-    
-    rval = dsi_stop_data_call(dsi_net_hndl->handle);
-    MSG_PRINTF(LOG_INFO, "dsi_stop_data_call rval = %d\r\n", rval);
+#endif
+
+    rval = DSI_CALL(dsi_stop_data_call, dsi_net_hndl->handle);
+    MSG_PRINTF(LOG_INFO, "dsi stop data call rval = %d\r\n", rval);
     rt_os_sleep(2);
 
     return RT_SUCCESS;
@@ -379,19 +404,11 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
     nevents = sizeof(pollfds)/sizeof(pollfds[0]);
 
     while (1) {
-#if 0
-        do {
-            ret = poll(pollfds, nevents, 5);
-            MSG_PRINTF(LOG_INFO, "poll ret: %d\r\n", ret);
-            rt_os_sleep(2);
-        } while (ret < 0);
-#else
-        MSG_PRINTF(LOG_INFO, "< [BGN]: detect POLLIN event on sockets > \n");        
+        //MSG_PRINTF(LOG_INFO, "< [BGN]: detect POLLIN event on sockets > \n");        
         do {            
             ret = poll(pollfds, nevents, -1);        
         } while ((ret < 0) && (errno == EINTR));        
-        MSG_PRINTF(LOG_INFO, "< [END]: detect POLLIN event on sockets > \n");
-#endif
+        //MSG_PRINTF(LOG_INFO, "< [END]: detect POLLIN event on sockets > \n");
 
         for (ne = 0; ne < nevents; ne++) {
             fd = pollfds[0].fd;
@@ -406,16 +423,7 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
             }
 
             /* If the curerent event isn't POLLERR / POLLHUP / POLLNVAL / POLLIN, discard the event. */
-            if ((revents & POLLIN) == 0) {/*
-                if (dsi_net_hndl->call_state == DSI_STATE_CALL_CONNECTING) {
-                    ++count;
-                    MSG_PRINTF(LOG_DBG, "call_count:%d\n",count);
-                    if (count >= DAIL_UP_WAIT) {
-                        count = 0;
-                        dsi_net_hndl->call_state = DSI_STATE_CALL_DISCONNECTING;  // set disconnected state
-                        return RT_ERROR;
-                    }
-                }*/
+            if ((revents & POLLIN) == 0) {
                 MSG_PRINTF(LOG_DBG, "no pollin ...\r\n");
                 continue;
             }
