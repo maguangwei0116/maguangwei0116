@@ -93,6 +93,7 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
             ret = RT_ERROR;
             break;
         }
+        MSG_PRINTF(LOG_INFO, "new socket fd=%d\n", sockfd);
 
         //RT_MQTT_COMMAN_DEBUG("get host by name 1\r\n");
         host_entry = gethostbyname(hostname);
@@ -105,13 +106,13 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
 
         p = inet_ntoa(*((struct in_addr *)host_entry->h_addr));
         if(!p) {
-            MSG_PRINTF(LOG_WARN, "11p error\n");
+            MSG_PRINTF(LOG_WARN, "p error\n");
             ret = RT_ERROR;
             break;
         }
 
         if (inet_pton(AF_INET, p, &servaddr.sin_addr) <= 0) {
-            MSG_PRINTF(LOG_WARN, "22p error\n");
+            MSG_PRINTF(LOG_WARN, "p error\n");
             ret = RT_ERROR;
             break;
         }
@@ -120,7 +121,7 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
         timeout.tv_sec = HTTP_RECV_TIMEOUT;
         timeout.tv_usec = 0;
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
-            MSG_PRINTF(LOG_WARN, "setsockopt0 error\n");
+            MSG_PRINTF(LOG_WARN, "setsockopt error\n");
             break;
         }
 
@@ -133,7 +134,7 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
         //MSG_PRINTF(LOG_INFO, "sockfd:%d\n",sockfd);
         ret = connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
         if (ret < 0) {
-            MSG_PRINTF(LOG_ERR, "==========>connect ret=%d, err(%d): %s\n", ret, errno, strerror(errno));
+            MSG_PRINTF(LOG_WARN, "connect fail fd=%d, ret=%d, err(%d): %s\n", sockfd, ret, errno, strerror(errno));
             ret = RT_ERROR;
             break;
         }
@@ -236,6 +237,7 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
         closesocket(sockfd);
         WSACleanup();
     #else
+        MSG_PRINTF(LOG_INFO, "close sock fd=%d\r\n", sockfd);
         close(sockfd);
     #endif
     }
@@ -462,7 +464,7 @@ static size_t mqtt_get_broker_cb(const char *json_data)
     int32_t ret = RT_ERROR;
     cJSON *root;
    
-    MSG_PRINTF(LOG_INFO, "-------------------------- json_data: %s\n", json_data);
+    MSG_PRINTF(LOG_INFO, "json_data: %s\n", json_data);
     root = cJSON_Parse(json_data);  
     
 #if 0  // only for test
@@ -507,7 +509,7 @@ int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey
         snprintf(json_data, sizeof(json_data), "{\"nodeName\":\"%s\",\"appKey\":\"%s\"}", node_name, appkey);
     }
 
-    MSG_PRINTF(LOG_INFO, "-------------------------- json_data: %s\n", json_data);
+    MSG_PRINTF(LOG_INFO, "json_data: %s\n", json_data);
     ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
                             "/clientService/getNodes", (PCALLBACK)mqtt_get_broker_cb);
     if (ret < 0) {
