@@ -710,6 +710,7 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
             g_mqtt_param.opts.last_connect_status = MQTT_CONNECT_YUNBA_ERROR;
         }
         g_mqtt_param.mqtt_conn_state    = RT_FALSE;
+        MQTTClient_disconnect(*client, 0);  // release mqtt client
         MSG_PRINTF(LOG_WARN, "Connect mqtt fail, error:%d\r\n", c);
         return RT_FALSE;
     }
