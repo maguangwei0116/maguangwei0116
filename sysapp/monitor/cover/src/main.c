@@ -29,6 +29,7 @@
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_MONITOR_RESTART          "monitor restart"
 #define RT_AGENT_RESTART            "agent restart"
+#define RT_PARAM_LINK_STRING        " # "
 #define RT_DEBUG_IN_TERMINAL        "terminal"
 #define RT_AGENT_PTROCESS           "rt_agent"
 #define RT_AGENT_NAME               "agent"
@@ -54,6 +55,14 @@
 
 #ifdef CFG_SOFTWARE_TYPE_RELEASE
 #define RT_MONITOR_LOG_MAX_SIZE     (1 * 1024 * 1024)
+#endif
+
+/* config malloc check switch */
+#define RT_MALLOC_CHECK_ENABLE      0    
+#if (RT_MALLOC_CHECK_ENABLE)
+#define RT_LASTEST_INPUT_PARAM      "MALLOC_CHECK_=1", NULL
+#else
+#define RT_LASTEST_INPUT_PARAM      NULL
 #endif
 
 extern int init_file_ops(void);
@@ -340,7 +349,10 @@ static int32_t agent_task_check_start(rt_bool frist_start)
     if (child_pid < 0) {
         MSG_PRINTF(LOG_WARN, "error in fork, err(%d)=%s\r\n", errno, strerror(errno));
     } else if (child_pid == 0) {
+        char input_param[128];
+        
         MSG_PRINTF(LOG_INFO, "child process, pid %d\r\n", getpid());
+        
         {
             int32_t fd;
             /* close all fds (fd>=3) which are open in parent process */
@@ -348,15 +360,20 @@ static int32_t agent_task_check_start(rt_bool frist_start)
                 close(fd);
             }
         }
+        
         if (g_agent_debug_terminal) {
-            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, RT_DEBUG_IN_TERMINAL, 
-                            (frist_start ? RT_MONITOR_RESTART : RT_AGENT_RESTART), NULL);
+            snprintf(input_param, sizeof(input_param), "%s%s%s", 
+                (frist_start ? RT_MONITOR_RESTART : RT_AGENT_RESTART), RT_PARAM_LINK_STRING, RT_DEBUG_IN_TERMINAL);
+            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, input_param, RT_LASTEST_INPUT_PARAM);
         } else {
-            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, (frist_start ? RT_MONITOR_RESTART : RT_AGENT_RESTART), NULL);
+            snprintf(input_param, sizeof(input_param), "%s", (frist_start ? RT_MONITOR_RESTART : RT_AGENT_RESTART));
+            ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, input_param, RT_LASTEST_INPUT_PARAM);
         }
+        
         if (ret < 0) {
             MSG_PRINTF(LOG_ERR, "Excute %s fail, ret=%d, err(%d)=%s\n", RT_AGENT_PTROCESS, ret, errno, strerror(errno));
         }
+        
         exit(0);
     } else {
         MSG_PRINTF(LOG_INFO, "parent process, pid %d, child_pid %d\r\n", getpid(), child_pid);
