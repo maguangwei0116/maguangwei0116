@@ -110,16 +110,19 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
         }
 
         partlen = file_size + HASH_CHECK_BLOCK - check_size;
+        MSG_PRINTF(LOG_INFO, "%s, file_size: %d, check_size: %d, partlen:%d\n", file_name, file_size, check_size, partlen);
         if (partlen > 0) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             RT_CHECK_ERR(linux_fread(hash_buffer, partlen, 1, fp), 0);
             sha256_update(&sha_ctx, (uint8_t *)hash_buffer, partlen);
         }
-
-        RT_CHECK_ERR(linux_fread(sign_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
-        MSG_PRINTF(LOG_INFO, "signature_buffer:%s\n", sign_buffer);
     }
-    rt_os_memcpy(file_info, &hash_buffer[partlen - MAX_FILE_INFO_LEN], MAX_FILE_INFO_LEN);
+
+    RT_CHECK_ERR(linux_fread(sign_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
+    MSG_PRINTF(LOG_INFO, "signature_buffer:%s\n", sign_buffer);
+    
+    linux_fseek(fp, -(PRIVATE_HASH_STR_LEN + MAX_FILE_INFO_LEN), RT_FS_SEEK_END); 
+    RT_CHECK_ERR(linux_fread(file_info, MAX_FILE_INFO_LEN, 1, fp), 0);
     MSG_PRINTF(LOG_INFO, "file_info:%s\n", file_info);
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
 
