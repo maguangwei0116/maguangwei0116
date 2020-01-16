@@ -41,9 +41,26 @@ static void cfinish(int32_t sig)
     toStop = 1;
 }
 
+static void SIGPIPE_handler(int32_t signo)
+{
+    rt_os_signal(signo, SIGPIPE_handler);
+    
+    switch(signo) {
+        case RT_SIGPIPE:
+            MSG_PRINTF(LOG_DBG, "%d, SIGPIPE recv !\n", signo);
+            break;
+            
+        default:
+            MSG_PRINTF(LOG_DBG, "%d signal unregister\n", signo);
+            break;
+    }
+}
+
 static int32_t init_system_signal(void *arg)
 {
-    rt_os_signal(RT_SIGINT, cfinish);
+    rt_os_signal(RT_SIGINT, cfinish);    
+    rt_os_signal(RT_SIGPIPE, SIGPIPE_handler);
+    
     return RT_SUCCESS;
 }
 

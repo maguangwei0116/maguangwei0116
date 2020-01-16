@@ -30,6 +30,7 @@ extern "C" {
 #define  RT_CUR                             SEEK_CUR
 #define  RT_END                             SEEK_END
 #define  RT_SIGINT                          SIGINT
+#define  RT_SIGPIPE                         SIGPIPE
 #define  RT_SIGTERM                         SIGTERM
 #define  RT_SIGALRM                         SIGALRM
 #define  RT_SIGUSR1                         SIGUSR1
