@@ -102,6 +102,8 @@ void *rt_os_memset(void *mem, int32_t value, uint32_t len);
 void *rt_os_memcpy(void *mem_des, const void *mem_src, uint32_t len);
 void *rt_os_strcpy(char* dest, const char *src);
 void *rt_os_strncpy(char* dest, const char *src, uint32_t len);
+char *rt_os_strcat(char *dest, const char *src);
+char *rt_os_strncat(char *dest, const char *src, uint32_t n);
 
 //#define RT_OS_MEM_DEBUG 1
 

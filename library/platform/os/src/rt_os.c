@@ -384,6 +384,16 @@ int32_t rt_os_strcasecmp(const char *mem_des, const char *mem_src)
     return strcasecmp(mem_des,mem_src);
 }
 
+char *rt_os_strcat(char *dest, const char *src)
+{
+    return strcat(dest, src);
+}
+
+char *rt_os_strncat(char *dest, const char *src, uint32_t n)
+{
+    return strncat(dest, src, n);
+}
+
 void *rt_os_memcpy(void *mem_des, const void *mem_src, uint32_t len)
 {
     if ((NULL == mem_des) || (NULL == mem_src)) {
