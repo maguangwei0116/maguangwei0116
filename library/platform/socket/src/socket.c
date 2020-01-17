@@ -19,6 +19,7 @@
 #include <sys/un.h>
 #include <stddef.h>
 
+#include "rt_os.h"
 #include "socket.h"
 
 /* 
@@ -41,11 +42,11 @@ int32_t socket_connect(int32_t socket_id)
     struct sockaddr_un server_sai;
     socklen_t server_len;
 
-    memset(&server_sai, 0, sizeof(server_sai));
+    rt_os_memset(&server_sai, 0, sizeof(server_sai));
     server_sai.sun_family = AF_UNIX;  
     server_sai.sun_path[0] = '\0';  // must be '\0'
-    strcpy(server_sai.sun_path + 1, SERVER_PATH);
-    server_len = strlen(SERVER_PATH) + offsetof(struct sockaddr_un, sun_path);
+    rt_os_strcpy(server_sai.sun_path + 1, SERVER_PATH);
+    server_len = rt_os_strlen(SERVER_PATH) + offsetof(struct sockaddr_un, sun_path);
 
     return connect(socket_id, (struct sockaddr *)&server_sai, server_len);
 }
@@ -56,11 +57,11 @@ int32_t socket_bind(int32_t socket_id)
     struct sockaddr_un server_sai;
     socklen_t server_len;
 
-    memset(&server_sai, 0, sizeof(server_sai));
+    rt_os_memset(&server_sai, 0, sizeof(server_sai));
     server_sai.sun_family = AF_UNIX;
     server_sai.sun_path[0] = '\0';  // must be '\0'
-    strcpy(server_sai.sun_path + 1, SERVER_PATH);
-    server_len = strlen(SERVER_PATH) + offsetof(struct sockaddr_un, sun_path);
+    rt_os_strcpy(server_sai.sun_path + 1, SERVER_PATH);
+    server_len = rt_os_strlen(SERVER_PATH) + offsetof(struct sockaddr_un, sun_path);
     setsockopt(socket_id, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     return bind(socket_id, (struct sockaddr *)&server_sai, server_len);
@@ -72,9 +73,9 @@ int32_t socket_connect(int32_t socket_id)
 {
     struct sockaddr_un server_sai;
 
-    memset(&server_sai, 0, sizeof(server_sai));
+    rt_os_memset(&server_sai, 0, sizeof(server_sai));
     server_sai.sun_family = AF_UNIX;    
-    strcpy(server_sai.sun_path, SERVER_PATH);
+    rt_os_strcpy(server_sai.sun_path, SERVER_PATH);
 
     return connect(socket_id, (struct sockaddr *)&server_sai, sizeof(struct sockaddr_un));
 }
@@ -85,9 +86,9 @@ int32_t socket_bind(int32_t socket_id)
     struct sockaddr_un server_sai;
 
     rt_os_unlink(SERVER_PATH);  
-    memset(&server_sai, 0, sizeof(server_sai));
+    rt_os_memset(&server_sai, 0, sizeof(server_sai));
     server_sai.sun_family = AF_UNIX;    
-    strcpy(server_sai.sun_path, SERVER_PATH);
+    rt_os_strcpy(server_sai.sun_path, SERVER_PATH);
     setsockopt(socket_id, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     return bind(socket_id, (struct sockaddr *)&server_sai, sizeof(struct sockaddr_un));

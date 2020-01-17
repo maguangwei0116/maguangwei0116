@@ -12,6 +12,8 @@
  *******************************************************************************/
 
 #include <string.h>
+
+#include "rt_os.h"
 #include "convert.h"
 
 void swap_nibble(uint8_t *buf, uint16_t swap_cnt)
@@ -25,11 +27,11 @@ void swap_nibble(uint8_t *buf, uint16_t swap_cnt)
 void pad_F(char *raw_string, char *target, uint8_t size)
 {
     uint8_t i;
-    for (i = strlen(raw_string); i < size; i++) {
+    for (i = rt_os_strlen(raw_string); i < size; i++) {
         raw_string[i] = 'F';
     }
     raw_string[i] = '\0';
-    strcpy(target, (const char *) raw_string);
+    rt_os_strcpy(target, (const char *) raw_string);
     //MSG_PRINTF(LOG_DBG, "raw_string[%d]: %s\n", i, raw_string);
     //MSG_PRINTF(LOG_DBG, "target[%d]: %s\n", i, target);
 }
@@ -46,7 +48,7 @@ int hexstring2bytes(const char *hextring, uint8_t *bytes, uint16_t *length)
     }
 
     *length = 0;
-    if ((strlen(p) % 2) != 0) {
+    if ((rt_os_strlen(p) % 2) != 0) {
         MSG_PRINTF(LOG_ERR, "INVALID STRING LENGTH\n\n");
         return RT_ERR_CONVER_BAD_LEN;
     }

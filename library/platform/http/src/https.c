@@ -72,7 +72,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
 {
     int res = -1;
     
-    memset(https_ctx, 0, sizeof(https_ctx_t));
+    rt_os_memset(https_ctx, 0, sizeof(https_ctx_t));
 
     https_ctx->socket = connect_tcp(host, port);
     if (https_ctx->socket < 0) {
@@ -159,8 +159,8 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
 
 int https_post(https_ctx_t *https_ctx, const char *request)
 {
-    MSG_PRINTF(LOG_INFO, "request[%d]:\n%s\n\n\n", (int)strlen(request), request);
-    return SSL_write(https_ctx->ssl, request, strlen(request));
+    MSG_PRINTF(LOG_INFO, "request[%d]:\n%s\n\n\n", (int)rt_os_strlen(request), request);
+    return SSL_write(https_ctx->ssl, request, rt_os_strlen(request));
 }
 
 int https_read(https_ctx_t *https_ctx, char *buffer, int buffer_size)

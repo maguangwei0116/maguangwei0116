@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <memory.h>
 #include "md5.h"
+#include "log.h"
 
 static const unsigned char PADDING[] = {
     0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -148,7 +149,7 @@ void MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen)
     context->count[1] += inputlen >> 29;
 
     if (inputlen >= partlen) {
-        memcpy(&context->buffer[index], input,partlen);
+        rt_os_memcpy(&context->buffer[index], input,partlen);
         MD5Transform(context->state, context->buffer);
 
         for (i = partlen; i+64 <= inputlen; i+=64) {
@@ -158,7 +159,7 @@ void MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen)
     } else {
         i = 0;
     }
-    memcpy(&context->buffer[index], &input[i], inputlen-i);
+    rt_os_memcpy(&context->buffer[index], &input[i], inputlen-i);
 }
 
 void MD5Encode(unsigned char *output,unsigned int *input,unsigned int len)
@@ -216,12 +217,11 @@ void get_md5_string(const char *input, char *output)
     MD5_CTX md5;
     uint8_t md5_out[16] = {0};
     uint8_t i;
-
     const char *channel_key = "CQKWQzKEK37VKJZ219QZZ4w7E1BOiJto";
-
+    
     MD5Init(&md5);
-    MD5Update(&md5, (uint8_t *)input, strlen(input));
-    MD5Update(&md5, (uint8_t *)channel_key, strlen(channel_key));
+    MD5Update(&md5, (uint8_t *)input, rt_os_strlen(input));
+    MD5Update(&md5, (uint8_t *)channel_key, rt_os_strlen(channel_key));
     MD5Final(&md5, md5_out);
 
     for (i = 0; i < 16; i ++) {

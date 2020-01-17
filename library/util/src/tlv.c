@@ -12,14 +12,16 @@
  *******************************************************************************/
 
 #include <string.h>
+
 #include "tlv.h"
+#include "rt_os.h"
 
 #ifndef COS_MEMSET
-#define COS_MEMSET(s, c, n)    memset(s, c, n)
+#define COS_MEMSET(s, c, n)    rt_os_memset(s, c, n)
 #endif
 
 #ifndef COS_MEMCPY
-#define COS_MEMCPY(d, s, n)    memcpy(d, s, n)
+#define COS_MEMCPY(d, s, n)    rt_os_memcpy(d, s, n)
 #endif
 
 static tlv_t g_tlv;

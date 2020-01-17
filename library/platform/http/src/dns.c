@@ -296,7 +296,7 @@ static const char *dns_packet_rr_resovle(const struct DnsHeader *packet, const  
         if (ipout && iplen) {
             snprintf(ipout, *iplen, "%d.%d.%d.%d", (unsigned char)rr[0],(unsigned char)rr[1],
                                         (unsigned char)rr[2],(unsigned char)rr[3]);
-            *iplen = strlen(ipout);
+            *iplen = rt_os_strlen(ipout);
         }
         return (rr += 4);
     }
@@ -447,7 +447,7 @@ static int dns_packet_body_resolve(const char *packet, char ipout[][MAX_IP_LEN])
             DNS_PRINTF("\n=================response_resovle %d=============\n", header->anCount-cnt);
             ptr = dns_packet_response_resovle(header, ptr, tmpip, &tmpiplen);
             if (tmpiplen > 0 && ipindex < MAX_IP_CNT) {
-                strcpy(ipout[ipindex++], tmpip);
+                rt_os_strcpy(ipout[ipindex++], tmpip);
             }
         }
     }
@@ -560,14 +560,14 @@ static int get_ip_by_dns(const char *dns_server, const char *dns_addr,
     set_recv_timeout(soc, timeouts);
 
     addr_len = sizeof(raddr);
-    memset(&addr, 0, sizeof(addr));
+    rt_os_memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;  
     addr.sin_addr.s_addr = inet_addr(dns_server);  
     addr.sin_port = htons(DNS_SERVER_PORT);  
 
     /* fill domain name field */
     dns_packet_hdr_construct(&header);
-    memcpy(sbuf, (char *)&header, sizeof(header));
+    rt_os_memcpy(sbuf, (char *)&header, sizeof(header));
 
     len = dns_packet_body_construct(sbuf + sizeof(header), dns_addr);
 

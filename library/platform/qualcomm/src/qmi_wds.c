@@ -43,8 +43,8 @@ int qmi_modify_profile(qmi_wds_profile_info_t *info)
     //set userame pwd
     //req.username_valid = false;
     //req.password_valid = false;
-    //memcpy(req.username, info.usrname, sizeof(info.usrname));
-    //memcpy(req.password, info.passwd, sizeof(info.passwd));
+    //rt_os_memcpy(req.username, info.usrname, sizeof(info.usrname));
+    //rt_os_memcpy(req.password, info.passwd, sizeof(info.passwd));
 
     QMI_CLIENT_SEND_SYNC(err, wds_client, QMI_WDS_MODIFY_PROFILE_SETTINGS_REQ_V01, req, resp);
 

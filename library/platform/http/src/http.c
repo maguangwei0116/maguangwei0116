@@ -129,7 +129,7 @@ static void http_get_ip_addr(const char *domain, char *ip_addr)
     }
     
     for (i = 0; host->h_addr_list[i]; i++) {
-        strcpy(ip_addr, inet_ntoa( * (struct in_addr*) host->h_addr_list[i]));
+        rt_os_strcpy(ip_addr, inet_ntoa( * (struct in_addr*) host->h_addr_list[i]));
         break;
     }
 }
@@ -336,6 +336,10 @@ http_result_e http_post_raw(const char *host_ip, int32_t port, void *buffer, int
     return ret;
 }
 
+#ifndef MD5_STRING_LENGTH
+#define MD5_STRING_LENGTH   32
+#endif
+
 int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, char *path, PCALLBACK cb)
 {
     int32_t ret = RT_ERROR;
@@ -344,8 +348,8 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
     socklen_t len;
     fd_set   t_set1;
     struct sockaddr_in servaddr;
-    char buf[4096];
-    char md5_out[32+1];
+    char buf[BUFFER_SIZE * 4];
+    char md5_out[MD5_STRING_LENGTH+1];
     struct timeval timeout;
     struct hostent *host_entry;
     char *p = NULL;
@@ -358,25 +362,12 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
         }
         
         MSG_PRINTF(LOG_INFO, "json_data:%s\n",json_data);
-        get_md5_string((char *)json_data, md5_out);
-        md5_out[32] = '\0';
-
-    #if defined(WIN32) || defined(WIN64)
-        WORD wVersionRequested;
-        WSADATA wsaData;
-        wVersionRequested = MAKEWORD(2, 2);
-        if (WSAStartup(wVersionRequested, &wsaData) != 0) {
-            printf("Init Windows Socket Failed::%d\n", GetLastError());
-            ret = RT_ERROR;
-            break;
-        }
-    #else
-
-    #endif
+        get_md5_string((const char *)json_data, md5_out);
+        md5_out[MD5_STRING_LENGTH] = '\0';
 
         //MSG_PRINTF(LOG_INFO, "md5_out:%s\n",md5_out);
         //MSG_PRINTF(LOG_INFO, "hostname:%s,port:%d\n",hostname,port);
-        memset(&servaddr, 0, sizeof(servaddr));
+        rt_os_memset(&servaddr, 0, sizeof(servaddr));
         servaddr.sin_family = AF_INET;
         servaddr.sin_port = htons(port);
 
@@ -431,32 +422,27 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
             break;
         }
 
-        memset(buf, 0, sizeof(buf));
+        rt_os_memset(buf, 0, sizeof(buf));
         snprintf(temp, sizeof(temp), "POST %s HTTP/1.1", path);
-        strcat(buf, temp);
-        strcat(buf, "\r\n");
+        rt_os_strcat(buf, temp);
+        rt_os_strcat(buf, "\r\n");
         snprintf(temp, sizeof(temp), "Host: %s:%d", hostname, port),
-        strcat(buf, temp);
-        strcat(buf, "\r\n");
-        strcat(buf, "Accept: */*\r\n");
-        strcat(buf, "Content-Type: application/json;charset=UTF-8\r\n");
-        strcat(buf, "md5sum:");
+        rt_os_strcat(buf, temp);
+        rt_os_strcat(buf, "\r\n");
+        rt_os_strcat(buf, "Accept: */*\r\n");
+        rt_os_strcat(buf, "Content-Type: application/json;charset=UTF-8\r\n");
+        rt_os_strcat(buf, "md5sum:");
         snprintf(temp, sizeof(temp), "%s\r\n", md5_out);
-        strcat(buf, temp);
-        strcat(buf, "Content-Length: ");
-        snprintf(temp, sizeof(temp), "%d", strlen(json_data)),
-        strcat(buf, temp);
-        strcat(buf, "\r\n\r\n");
-        strcat(buf, json_data);
+        rt_os_strcat(buf, temp);
+        rt_os_strcat(buf, "Content-Length: ");
+        snprintf(temp, sizeof(temp), "%d", rt_os_strlen(json_data)),
+        rt_os_strcat(buf, temp);
+        rt_os_strcat(buf, "\r\n\r\n");
+        rt_os_strcat(buf, json_data);
 
-        //MSG_PRINTF(LOG_INFO, "json data len:%d\n", strlen(json_data));
+        //MSG_PRINTF(LOG_INFO, "json data len:%d\n", rt_os_strlen(json_data));
         MSG_PRINTF(LOG_INFO, "send buf:%s\n", buf);
-        
-    #if defined(WIN32) || defined(WIN64)
-        ret = send(sockfd, buf, strlen(buf), 0);
-    #else
-        ret = write(sockfd, buf, strlen(buf));
-    #endif
+        ret = write(sockfd, buf, rt_os_strlen(buf));
         if (ret < 0) {
             MSG_PRINTF(LOG_WARN, "write data error\n");
             ret = RT_ERROR;
@@ -467,12 +453,8 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
         FD_SET(sockfd, &t_set1);
         h = select(sockfd + 1, &t_set1, NULL, NULL, &timeout);
         if (h > 0) {
-            memset(buf, 0, sizeof(buf));
-    #if defined(WIN32) || defined(WIN64)
-            ret = recv(sockfd, buf, sizeof(buf), 0);
-    #else
+            rt_os_memset(buf, 0, sizeof(buf));
             ret = read(sockfd, buf, sizeof(buf));
-    #endif
             if (ret < 0) {
                 MSG_PRINTF(LOG_WARN, "read data error\n");
                 ret = RT_ERROR;
@@ -495,8 +477,8 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
                                 "<hr><center>nginx</center>\r\n"
                                 "</body>\r\n"
                                 "</html>\r\n";
-        memset(buf, 0, sizeof(buf));
-        rt_os_memcpy(buf, tmp_data, strlen(tmp_data));
+        rt_os_memset(buf, 0, sizeof(buf));
+        rt_os_memcpy(buf, tmp_data, rt_os_strlen(tmp_data));
     #endif
             /* get http body */
             MSG_PRINTF(LOG_INFO, "rcv buff: %s\n", buf);
@@ -525,13 +507,8 @@ int32_t http_post_json(const char *json_data, char *hostname, uint16_t port, cha
     }while(0);
 
     if(sockfd > 0){
-    #if defined(WIN32) || defined(WIN64)
-        closesocket(sockfd);
-        WSACleanup();
-    #else
         MSG_PRINTF(LOG_INFO, "close sock fd=%d\r\n", sockfd);
         close(sockfd);
-    #endif
     }
     
     return ret;

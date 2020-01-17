@@ -314,7 +314,7 @@ int32_t log_file_copy_out(const char* file_in, const char* file_out, log_level_e
 
     while(!linux_feof(fp_in)) {
         if (linux_fgets(data, LOG_MAX_LINE_SIZE, fp_in) != NULL) {
-            memcpy(header, data, LOG_LEVEL_LEN);
+            rt_os_memcpy(header, data, LOG_LEVEL_LEN);
             if (log_check_level(header, min_level)) {
                 //printf("line %d=== %s", ++i, data);
                 linux_fwrite(data, 1, rt_os_strlen(data), fp_out);

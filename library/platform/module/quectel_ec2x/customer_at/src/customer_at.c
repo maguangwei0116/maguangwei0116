@@ -91,8 +91,8 @@ static void customer_at_listen_sock(int32_t *sockfd)
         retval = select(*sockfd + 1, &rfds, NULL, NULL, &tv);
         if (retval > 0) {
             if(FD_ISSET(*sockfd, &rfds)) {
-                memset(buf, 0, sizeof(buf));
-                memset(&un, 0, sizeof(un));
+                rt_os_memset(buf, 0, sizeof(buf));
+                rt_os_memset(&un, 0, sizeof(un));
                 if (ql_customer_at_get_request(*sockfd, &un, buf, sizeof(buf))) {
                     MSG_PRINTF(LOG_ERR, "get at command request failed\n");
                     continue;

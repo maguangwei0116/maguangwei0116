@@ -14,13 +14,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "rt_os.h"
 #include "qmi_uim.h"
 #include "qmi_control_point.h"
 
 static qmi_client_type g_uim_client;
+
 int qmi_uim_init(void)
 {
     qmi_client_error_type err;
+    
     err = qmi_ctrl_point_init(uim_get_service_object_v01(), &g_uim_client, NULL, NULL);
     if(err != QMI_NO_ERR) {
         MSG_PRINTF(LOG_WARN, "failed to initialize control point of UIM: %d\n", err);
@@ -31,7 +34,6 @@ int qmi_uim_init(void)
 int qmi_get_elementary_iccid_file(uint8_t *iccid)
 {
     qmi_client_error_type err;
-
     uim_read_record_req_msg_v01 req = { 0 };
     uim_read_record_resp_msg_v01 resp = { 0 };
 
@@ -80,7 +82,7 @@ int qmi_get_elementary_imsi_file(uint8_t *imsi)
     req.read_record.record = 1;
     req.read_record.length = 0;
 
-    memset(&resp, 0, sizeof(resp));
+    rt_os_memset(&resp, 0, sizeof(resp));
 
     QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_READ_RECORD_REQ_V01, req, resp);
     if (err == QMI_NO_ERR) {
@@ -96,7 +98,7 @@ int qmi_get_elementary_imsi_file(uint8_t *imsi)
             if(resp.read_result.content_len > 0) {
                 len = resp.read_result.content[0];
                 get_ascii_data(&resp.read_result.content[1], len, imsi);
-                strcpy(imsi, imsi + 1);
+                rt_os_strcpy(imsi, imsi + 1);
             }
         }
     }
@@ -107,17 +109,16 @@ out:
 int qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *channel)
 {
     qmi_client_error_type err;
-
     uim_logical_channel_req_msg_v01 req = { 0 };
     uim_logical_channel_resp_msg_v01 resp = { 0 };
 
-    memset(&resp, 0, sizeof(resp));
-    memset(&req, 0, sizeof(req));
+    rt_os_memset(&resp, 0, sizeof(resp));
+    rt_os_memset(&req, 0, sizeof(req));
 
     req.slot = 1;
     req.aid_valid = 1;
     req.aid_len = aid_len;
-    memcpy(req.aid, aid, req.aid_len);
+    rt_os_memcpy(req.aid, aid, req.aid_len);
     QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_LOGICAL_CHANNEL_REQ_V01, req, resp);
     if(err == QMI_NO_ERR) {
         if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
@@ -134,9 +135,9 @@ int qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *channel)
 int qmi_close_channel(uint8_t channel)
 {
     qmi_client_error_type err;
-
     uim_logical_channel_req_msg_v01 req = { 0 };
     uim_logical_channel_resp_msg_v01 resp = { 0 };
+    
     req.slot = 1;
     req.channel_id_valid = 1;
     req.channel_id = channel;
@@ -165,7 +166,7 @@ int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t
 
     req.slot=1;
     req.apdu_len = data_len;
-    memcpy(req.apdu, data, data_len);
+    rt_os_memcpy(req.apdu, data, data_len);
     req.apdu[req.apdu_len] = '\0';
     req.channel_id_valid = 1;
     req.channel_id = channel;
@@ -178,7 +179,7 @@ int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t
         }
         if(resp.apdu_valid) {        //analyse respose
             *rsp_len = resp.apdu_len;
-            memcpy(rsp,resp.apdu,*rsp_len);
+            rt_os_memcpy(rsp,resp.apdu,*rsp_len);
             MSG_INFO_ARRAY("APDU RSP: ",resp.apdu,resp.apdu_len);
         }
     }

@@ -67,8 +67,8 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
     int32_t num_entries = 1;
 
     public_ip.s_addr = gw_addr.s_addr = pri_dns_addr.s_addr = sec_dns_addr.s_addr = 0;
-    memset(iface, 0, DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 2);
-    memset(&addr_info, 0, sizeof(dsi_addr_info_t));
+    rt_os_memset(iface, 0, DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 2);
+    rt_os_memset(&addr_info, 0, sizeof(dsi_addr_info_t));
 
     rval = dsi_get_device_name(phndl->handle, iface, DSI_CALL_INFO_DEVICE_NAME_MAX_LEN + 1);
     if (rval != DSI_SUCCESS) {
@@ -85,26 +85,26 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 
     if (addr_info.iface_addr_s.valid_addr) {
         if (SASTORAGE_FAMILY(addr_info.iface_addr_s.addr) == AF_INET) {
-            memset(ip_str, 0, sizeof(ip_str));
+            rt_os_memset(ip_str, 0, sizeof(ip_str));
             snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.iface_addr_s.addr)[0], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[1], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[2], SASTORAGE_DATA(addr_info.iface_addr_s.addr)[3]);
             public_ip.s_addr = inet_addr(ip_str);
         }
     }
 
     if (addr_info.gtwy_addr_s.valid_addr) {
-        memset(ip_str, 0, sizeof(ip_str));
+        rt_os_memset(ip_str, 0, sizeof(ip_str));
         snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[0], SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[1], SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[2], SASTORAGE_DATA(addr_info.gtwy_addr_s.addr)[3]);
         gw_addr.s_addr = inet_addr(ip_str);
     }
 
     if (addr_info.dnsp_addr_s.valid_addr) {
-        memset(ip_str, 0, sizeof(ip_str));
+        rt_os_memset(ip_str, 0, sizeof(ip_str));
         snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[0], SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[1], SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[2], SASTORAGE_DATA(addr_info.dnsp_addr_s.addr)[3]);
         pri_dns_addr.s_addr = inet_addr(ip_str);
     }
 
     if (addr_info.dnss_addr_s.valid_addr) {
-        memset(ip_str, 0, sizeof(ip_str));
+        rt_os_memset(ip_str, 0, sizeof(ip_str));
         snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[0], SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[1], SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[2], SASTORAGE_DATA(addr_info.dnss_addr_s.addr)[3]);
         sec_dns_addr.s_addr = inet_addr(ip_str);
     }
@@ -114,19 +114,19 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 #if 0
     snprintf(command, sizeof(command), "ip route add default via %s dev %s", inet_ntoa(gw_addr), iface);
     MSG_PRINTF(LOG_DBG, "%s\n", command);
-    ds_system_call(command, strlen(command));
+    ds_system_call(command, rt_os_strlen(command));
 #endif
 
 ///etc/iproute2/rt_tables
 #if 0
     snprintf(command, sizeof(command), "ip route del default dev %s table %s", iface, iface);
     MSG_PRINTF(LOG_DBG, "%s\n", command);
-    ds_system_call(command, strlen(command));
+    ds_system_call(command, rt_os_strlen(command));
 
 
     snprintf(command, sizeof(command), "ip route add default via %s dev %s table %s", inet_ntoa(gw_addr), iface, iface);
     MSG_PRINTF(LOG_DBG, "%s\n", command);
-    ds_system_call(command, strlen(command));
+    ds_system_call(command, rt_os_strlen(command));
 #endif
 
 #if !(CFG_STANDARD_MODULE) // unsupported on standard module
@@ -265,7 +265,7 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
 
     if (dsi_net_hndl->apn && dsi_net_hndl->apn[0]) {
         param_info.buf_val = dsi_net_hndl->apn;
-        param_info.num_val = strlen(param_info.buf_val);
+        param_info.num_val = rt_os_strlen(param_info.buf_val);
         dsi_set_data_call_param(dsi_net_hndl->handle, DSI_CALL_INFO_APN_NAME, &param_info);
         param_info.buf_val = NULL;
         param_info.num_val = dsi_net_hndl->auth_pref;

@@ -192,30 +192,30 @@ static int http_client_send_header(http_client_struct_t *obj)
 
     rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
     if (obj->http_header.method == 0) {
-        strcat(obj->buf, "POST");
+        rt_os_strcat(obj->buf, "POST");
     } else {
         MSG_PRINTF(LOG_WARN, "Unknow http request!!\n");
         return -1;
     }
-    strcat(obj->buf, " ");
-    strcat(obj->buf, obj->http_header.url_interface);
-    strcat(obj->buf, " ");
+    rt_os_strcat(obj->buf, " ");
+    rt_os_strcat(obj->buf, obj->http_header.url_interface);
+    rt_os_strcat(obj->buf, " ");
 
     if (obj->http_header.version == 0) {
-        strcat(obj->buf, "HTTP/1.1");
+        rt_os_strcat(obj->buf, "HTTP/1.1");
     } else {
         MSG_PRINTF(LOG_WARN, "Unknow http request Version!!\n");
         return -1;
     }
-    strcat(obj->buf, "\r\n");
+    rt_os_strcat(obj->buf, "\r\n");
 
     for (index = 0; index < obj->http_header.record_size; index++) {
-        strcat(obj->buf, obj->http_header.record[index].key);
-        strcat(obj->buf, ":");
-        strcat(obj->buf, obj->http_header.record[index].value);
-        strcat(obj->buf, "\r\n");
+        rt_os_strcat(obj->buf, obj->http_header.record[index].key);
+        rt_os_strcat(obj->buf, ":");
+        rt_os_strcat(obj->buf, obj->http_header.record[index].value);
+        rt_os_strcat(obj->buf, "\r\n");
     }
-    strcat(obj->buf, "\r\n");
+    rt_os_strcat(obj->buf, "\r\n");
 
     MSG_PRINTF(LOG_INFO, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
     obj->process_set = rt_os_strlen(obj->buf);
@@ -429,7 +429,7 @@ int http_set_header_record(http_client_struct_t *obj, const char *key, const cha
     }
 
     for (i = 0; i < obj->http_header.record_size; i++) {
-        if(rt_os_strncmp(obj->http_header.record[i].key, key, strlen(key)) == 0) {
+        if(rt_os_strncmp(obj->http_header.record[i].key, key, rt_os_strlen(key)) == 0) {
             rt_os_memset(obj->http_header.record[i].value, 0x00, MAX_VALUE_LEN + 1);
             rt_os_memcpy(obj->http_header.record[i].value, value, rt_os_strlen(value));
             return RT_SUCCESS;

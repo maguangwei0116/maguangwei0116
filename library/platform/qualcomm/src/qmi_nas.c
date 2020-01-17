@@ -1,8 +1,10 @@
-#include "qmi_nas.h"
-#include "qmi_control_point.h"
 
 #include <string.h>
 #include <stdlib.h>
+
+#include "rt_os.h"
+#include "qmi_nas.h"
+#include "qmi_control_point.h"
 
 static qmi_client_type g_nas_client;
 
@@ -21,13 +23,12 @@ int qmi_nas_init(void)
 int qmi_perform_network_scan(qmi_network_scan_result *scan_result, int timeout)
 {
     qmi_client_error_type err;
+    nas_perform_network_scan_req_msg_v01 req = { 0 };
+    nas_perform_network_scan_resp_msg_v01 resp = { 0 };
     int n, i;
 
     scan_result->n_networks = 0;
-    memset(scan_result->network_info, 0, sizeof(scan_result->network_info));
-
-    nas_perform_network_scan_req_msg_v01 req = { 0 };
-    nas_perform_network_scan_resp_msg_v01 resp = { 0 };
+    rt_os_memset(scan_result->network_info, 0, sizeof(scan_result->network_info));
 
     QMI_CLIENT_SEND_SYNC_TMO(err, g_nas_client, QMI_NAS_PERFORM_NETWORK_SCAN_REQ_MSG_V01, req, resp, timeout);
     if(err == QMI_NO_ERR) {
@@ -49,11 +50,12 @@ int qmi_perform_network_scan(qmi_network_scan_result *scan_result, int timeout)
         }
         scan_result->n_networks = n;
         for(i = 0; i < n; i ++) {
+            nas_3gpp_network_info_t *info = NULL;
             scan_result->network_info[i] = (nas_3gpp_network_info_t *)calloc(1, sizeof(nas_3gpp_network_info_t));
-            nas_3gpp_network_info_t *info = scan_result->network_info[i];
+            info = scan_result->network_info[i];
             info->mobile_country_code = resp.nas_3gpp_network_info[i].mobile_country_code;
             info->mobile_network_code = resp.nas_3gpp_network_info[i].mobile_network_code;
-            strcpy(info->network_description, resp.nas_3gpp_network_info[i].network_description);
+            rt_os_strcpy(info->network_description, resp.nas_3gpp_network_info[i].network_description);
 
             info->in_use_status = (resp.nas_3gpp_network_info[i].network_status) & 3;
             info->roaming_status = (resp.nas_3gpp_network_info[i].network_status >> 2) & 3;
@@ -69,6 +71,7 @@ out:
 void qmi_network_scan_result_dump(qmi_network_scan_result *scan_result)
 {
     int i;
+    
     for(i = 0; i < scan_result->n_networks; i ++) {
         nas_3gpp_network_info_t *info = scan_result->network_info[i];
         MSG_PRINTF(LOG_INFO, "Scanned Network[%d] MCC:%03d MNC:%03d IN-USE:%d ROAMING:%d FORBIDDEN:%d PREFERRED:%d DESC:'%s'\n",
@@ -86,9 +89,10 @@ void qmi_network_scan_result_dump(qmi_network_scan_result *scan_result)
 void qmi_network_scan_result_free(qmi_network_scan_result *scan_result)
 {
     int i;
+    
     for(i = 0; i < scan_result->n_networks; i ++)
         if(scan_result->network_info[i]) {
-            free(scan_result->network_info[i]);
+            rt_os_free(scan_result->network_info[i]);
             scan_result->network_info[i] = NULL;
         }
 }
@@ -96,11 +100,10 @@ void qmi_network_scan_result_free(qmi_network_scan_result *scan_result)
 int qmi_get_serving_system(qmi_serving_system_info_t *info)
 {
     qmi_client_error_type err;
-
-    memset(info, 0, sizeof(qmi_serving_system_info_t));
-
     nas_get_serving_system_req_msg_v01 req = { 0 };
     nas_get_serving_system_resp_msg_v01 resp = { 0 };
+
+    rt_os_memset(info, 0, sizeof(qmi_serving_system_info_t));
 
     QMI_CLIENT_SEND_SYNC(err, g_nas_client, QMI_NAS_GET_SERVING_SYSTEM_REQ_MSG_V01, req, resp);
     if(err == QMI_NO_ERR) {
@@ -109,12 +112,12 @@ int qmi_get_serving_system(qmi_serving_system_info_t *info)
             err = resp.resp.result;
             goto out;
         }
-        memcpy(&info->serving_system, &resp.serving_system, sizeof(info->serving_system));
+        rt_os_memcpy(&info->serving_system, &resp.serving_system, sizeof(info->serving_system));
         if(resp.roaming_indicator_valid) {
             info->roaming_indicator = resp.roaming_indicator;
         }
         if(resp.mnc_includes_pcs_digit_valid) {
-             memcpy(&info->mnc_includes_pcs_digit, &resp.mnc_includes_pcs_digit, sizeof(info->mnc_includes_pcs_digit));
+             rt_os_memcpy(&info->mnc_includes_pcs_digit, &resp.mnc_includes_pcs_digit, sizeof(info->mnc_includes_pcs_digit));
         }
 
     }
@@ -132,19 +135,16 @@ void qmi_serving_system_dump(qmi_serving_system_info_t *info)
             "Registration denied",
             "Unknown",
     };
-
     static const char *attach_str[] = {
             "Unknown",
             "Attached",
             "Detached",
     };
-
     static const char *selected_network_str[] = {
             "Unknown",
             "3GPP2",
             "3GPP",
     };
-
     static const char *radio_str[] = {
             "No Service",
             "cdma2000 1X",
@@ -157,6 +157,7 @@ void qmi_serving_system_dump(qmi_serving_system_info_t *info)
             "LTE",
             "TD-SCDMA",
     };
+    int i;
 
     MSG_PRINTF(LOG_WARN, "Registration State: %s\n",
             info->serving_system.registration_state <= 4 ?
@@ -174,7 +175,6 @@ void qmi_serving_system_dump(qmi_serving_system_info_t *info)
             info->serving_system.selected_network <= 2 ?
             selected_network_str[info->serving_system.selected_network] : "Invalid value");
 
-    int i;
     for(i = 0; i < info->serving_system.radio_if_len; i ++) {
         MSG_PRINTF(LOG_WARN, "Radio Interface %d: %s\n", i + 1,
                 info->serving_system.radio_if[i] <= 9 ?
@@ -185,15 +185,14 @@ void qmi_serving_system_dump(qmi_serving_system_info_t *info)
 int qmi_get_signal_strength(qmi_signal_strength_info_t *info)
 {
     qmi_client_error_type err;
-
-    memset(info, 0, sizeof(qmi_signal_strength_info_t));
-    info->error_rate = 0xffff;
-
     nas_get_signal_strength_req_msg_v01 req = {
             .request_mask_valid = 1,
             .request_mask = QMI_NAS_REQUEST_SIG_INFO_ERROR_RATE_MASK_V01,
     };
     nas_get_signal_strength_resp_msg_v01 resp = { 0 };
+
+    rt_os_memset(info, 0, sizeof(qmi_signal_strength_info_t));
+    info->error_rate = 0xffff;
 
     QMI_CLIENT_SEND_SYNC(err, g_nas_client, QMI_NAS_GET_SIGNAL_STRENGTH_REQ_MSG_V01, req, resp);
     if(err == QMI_NO_ERR) {
