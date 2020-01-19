@@ -28,11 +28,24 @@ enum LOG_LEVELS {
     LOG_FATAL,
 } Log_levels;
 
-
 /* config mqtt module log */
 #define MQTT_ALL_LOG_OFF                1       /* MQTT module all log off */
 #define REDTEA_MQTT_LOG_ON              1       /* MQTT module all log on with redtea log methord */
+#define MQTT_DEBUG_WITH_RT_LOG          1       /* debug MQTT module with MSG_PRINTF */
 #define REDTEA_MQTT_DEF_LOG_LEVEL       TRACE_MINIMUM
+
+#if (MQTT_DEBUG_WITH_RT_LOG)
+
+#include "rt_type.h"
+#include "log.h"
+
+#define RT_MQTT_LOG(level, fmt, arg...) MSG_PRINTF(level, fmt, ##arg)
+
+#else
+
+#define RT_MQTT_LOG(level, fmt, arg...) do {} while(0)
+
+#endif
 
 #if (MQTT_ALL_LOG_OFF)
 

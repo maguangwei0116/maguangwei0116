@@ -58,26 +58,26 @@
 #include <openssl/ssl.h>
 #endif
 
-#define URI_TCP "tcp://"
+#define URI_TCP                 "tcp://"
 
-#define BUILD_TIMESTAMP "Mon Apr 20 16:21:07 HKT 2015"
-#define CLIENT_VERSION  "1.0.3"
+#define BUILD_TIMESTAMP         "Mon Apr 20 16:21:07 HKT 2015"
+#define CLIENT_VERSION          "1.0.3"
 
-#define DEFAULT_QOS 1
-#define DEFAULT_RETAINED 0
+#define DEFAULT_QOS             1
+#define DEFAULT_RETAINED        0
 
-
-
+#if 0
 char* client_timestamp_eye = "MQTTClientV3_Timestamp " BUILD_TIMESTAMP;
 char* client_version_eye = "MQTTClientV3_Version " CLIENT_VERSION;
+#endif
 
 int MQTTClient_get(MQTTClient handle, EXTED_CMD cmd, int parameter_len, void* parameter,
-    int qos, int retained, MQTTClient_deliveryToken* deliveryToken);
+                        int qos, int retained, MQTTClient_deliveryToken* deliveryToken);
 
 static ClientStates ClientState =
 {
-    CLIENT_VERSION, /* version */
-    NULL /* client list */
+    CLIENT_VERSION,     /* version */
+    NULL                /* client list */
 };
 
 ClientStates* bstate = &ClientState;
@@ -85,11 +85,13 @@ ClientStates* bstate = &ClientState;
 MQTTProtocol state;
 
 #if defined(WIN32) || defined(WIN64)
+
 static mutex_type mqttclient_mutex = NULL;
 static mutex_type socket_mutex = NULL;
 extern mutex_type stack_mutex;
 extern mutex_type heap_mutex;
 extern mutex_type log_mutex;
+
 BOOL APIENTRY DllMain(HANDLE hModule,
                       DWORD  ul_reason_for_call,
                       LPVOID lpReserved)
@@ -115,7 +117,9 @@ BOOL APIENTRY DllMain(HANDLE hModule,
     }
     return TRUE;
 }
+
 #else
+
 static pthread_mutex_t mqttclient_mutex_store = PTHREAD_MUTEX_INITIALIZER;
 static mutex_type mqttclient_mutex = &mqttclient_mutex_store;
 static pthread_mutex_t socket_mutex_store = PTHREAD_MUTEX_INITIALIZER;
@@ -133,6 +137,7 @@ void MQTTClient_init()
 }
 
 #define WINAPI
+
 #endif
 
 static volatile int initialized = 0;
@@ -158,7 +163,6 @@ typedef struct
     unsigned int seqno; /* only used on restore */
 } qEntry;
 
-
 typedef struct
 {
     char* serverURI;
@@ -181,6 +185,7 @@ typedef struct
 
 } MQTTClients;
 
+
 void MQTTClient_sleep(long milliseconds)
 {
     FUNC_ENTRY;
@@ -191,7 +196,6 @@ void MQTTClient_sleep(long milliseconds)
 #endif
     FUNC_EXIT;
 }
-
 
 #if defined(WIN32) || defined(WIN64)
 #define START_TIME_TYPE DWORD
@@ -216,7 +220,6 @@ START_TIME_TYPE MQTTClient_start_clock(void)
     return start;
 }
 #endif
-
 
 #if defined(WIN32) || defined(WIN64)
 long MQTTClient_elapsed(DWORD milliseconds)
@@ -696,6 +699,8 @@ void MQTTClient_closeSession(Clients* client)
     FUNC_ENTRY;
     client->good = 0;
     client->ping_outstanding = 0;
+
+    RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d\r\n", __func__, client->net.socket);
     if (client->net.socket > 0)
     {
         if (client->connected)
@@ -950,6 +955,7 @@ exit:
     {
         Thread_unlock_mutex(mqttclient_mutex);
         Log(TRACE_MIN, -1, "mqtt client disconnect, millisecsTimeout=%ld ...\r\n", millisecsTimeout);
+        RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d\r\n", __func__, ((MQTTClients *)handle)->c->net.socket);
         MQTTClient_disconnect1(handle, 0, 0, (MQTTVersion == 3)); /* not "internal" because we don't want to call connection lost */
         Thread_lock_mutex(mqttclient_mutex);
     }
@@ -1125,6 +1131,8 @@ exit:
     }
     Thread_unlock_mutex(mqttclient_mutex);
     FUNC_EXIT_RC(rc);
+    RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d, rc: %d\r\n", __func__, ((MQTTClients *)handle)->c->net.socket, rc);
+  
     return rc;
 }
 
@@ -1145,6 +1153,7 @@ int MQTTClient_disconnect1(MQTTClient handle, int timeout, int internal, int sto
     }
     if (m->c->connected == 0 && m->c->connect_state == 0)
     {
+        MQTTClient_closeSession(m->c);
         rc = MQTTCLIENT_DISCONNECTED;
         goto exit;
     }
@@ -1173,7 +1182,9 @@ int MQTTClient_disconnect1(MQTTClient handle, int timeout, int internal, int sto
         Thread_wait_sem(m->suback_sem, 100);
     while (Thread_check_sem(m->unsuback_sem))
         Thread_wait_sem(m->unsuback_sem, 100);
+
 exit:
+    
     if (stop)
         MQTTClient_stop();
     if (internal && m->cl && was_connected)
@@ -1189,6 +1200,11 @@ exit:
 
 int MQTTClient_disconnect_internal(MQTTClient handle, int timeout)
 {
+    if (handle) {
+        RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d, connected: %d\r\n", __func__, \
+            ((MQTTClients *)handle)->c->net.socket, ((MQTTClients *)handle)->c->connected);
+    }
+    
     return MQTTClient_disconnect1(handle, timeout, 1, 1);
 }
 
@@ -1201,6 +1217,10 @@ void MQTTProtocol_closeSession(Clients* c, int sendwill)
 
 int MQTTClient_disconnect(MQTTClient handle, int timeout)
 {
+    if (handle) {
+        RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d, connected: %d\r\n", __func__, \
+            ((MQTTClients *)handle)->c->net.socket, ((MQTTClients *)handle)->c->connected);
+    }
     return MQTTClient_disconnect1(handle, timeout, 0, 1);
 }
 
