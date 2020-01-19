@@ -10,14 +10,12 @@
 #include "cJSON.h"
 
 #define MAX_UPLOAD_TIMES                    3
-#define MAX_OTI_URL_LEN                     100
 #define MAX_BOOT_INFO_INTERVAL              5       // unit: second
+#define MAX_FILE_NAME_LEN                   128
+#ifndef MAX_URL_LEN
+#define MAX_URL_LEN                         128
+#endif
 #define MQTT_UPLOAD_SWITCH_STATE            0       // turn off now !!!
-
-#define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
-do{                 \
-   snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
-}while(0)
 
 #define HTTP_POST "POST %s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n"\
     "Content-Type:application/json;charset=UTF-8\r\n"\
@@ -26,7 +24,9 @@ do{                 \
 
 static const char *g_upload_eid             = NULL;
 static const char *g_upload_deviceid        = NULL;
-static const char *g_upload_oti_addr        = NULL;
+static const char *g_upload_addr            = NULL;
+static uint32_t g_upload_port               = 0;
+static const char *g_upload_api             = "/api/v2/report";
 const char *g_push_channel                  = NULL;
 const devicde_info_t *g_upload_device_info  = NULL;
 const card_info_t *g_upload_card_info       = NULL;
@@ -72,8 +72,8 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
 {
     int32_t ret = RT_ERROR;
     char md5_out[MD5_STRING_LENGTH + 1];
-    char upload_url[MAX_OTI_URL_LEN + 1];
-    char file[100] = {0};
+    char upload_url[MAX_URL_LEN];
+    char file[MAX_FILE_NAME_LEN] = {0};
     char host_addr[HOST_ADDRESS_LEN];
     int32_t port = 0;
     uint8_t lpbuf[BUFFER_SIZE * 4] = {0};
@@ -91,7 +91,7 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
     md5_out[MD5_STRING_LENGTH] = '\0';
 
     //send report by http
-    STRUCTURE_OTI_URL(upload_url, MAX_OTI_URL_LEN + 1, g_upload_oti_addr, 7082, "/api/v2/report");
+    snprintf(upload_url, sizeof(upload_url), "http://%s:%d%s", g_upload_addr, g_upload_port, g_upload_api);
     MSG_PRINTF(LOG_INFO, "upload_url: %s\r\n", upload_url);
     if (http_parse_url(upload_url, host_addr, file, &port)) {
         MSG_PRINTF(LOG_WARN, "http_parse_url failed!\n");
@@ -118,7 +118,7 @@ static int32_t upload_wait_network_connected(void)
         rt_os_msleep(100);
     }
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 static int32_t upload_send_mqtt_request(const char *data, int32_t data_len)
@@ -147,7 +147,7 @@ static int32_t upload_send_final_request(const char *data, int32_t data_len)
 
 int32_t upload_event_final_report(void *buffer, int32_t len)
 {
-    int32_t ret = RT_FALSE;
+    int32_t ret = RT_ERROR;
     int32_t i = 0;
 
     for (i = 0; i < MAX_UPLOAD_TIMES; i++) {
@@ -298,19 +298,18 @@ static int32_t upload_packet_header_info(cJSON *upload, const char *tran_id, upl
     CJSON_ADD_NEW_INT_OBJ(upload, timestamp);
     CJSON_ADD_NEW_STR_OBJ(upload, topic);
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t status, const cJSON *content)
 {
-    int32_t ret;
+    int32_t ret = RT_ERROR;
     cJSON *payload_json = NULL;
     char *payload = NULL;
 
     payload_json = cJSON_CreateObject();
     if (!payload_json) {
         MSG_PRINTF(LOG_WARN, "The payload_json is error\n");
-        ret = -1;
         goto exit_entry;
     }
 
@@ -322,7 +321,7 @@ static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t s
 
     CJSON_ADD_NEW_STR_OBJ(upload, payload);
 
-    ret = 0;
+    ret = RT_SUCCESS;
 
     exit_entry:
 
@@ -342,20 +341,19 @@ static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t s
 static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t status, 
                                         upload_topic_e topic, const cJSON *content)
 {
-    int32_t ret;
+    int32_t ret = RT_ERROR;
     cJSON *upload = NULL;
 
     upload = cJSON_CreateObject();
     if (!upload) {
         MSG_PRINTF(LOG_WARN, "The upload is error\n");
-        ret = -1;
         goto exit_entry;
     }
 
     upload_packet_header_info(upload, tran_id, topic);
     upload_packet_payload(upload, event, status, content);
 
-    ret = 0;
+    ret = RT_SUCCESS;
 
     exit_entry:
 
@@ -374,7 +372,7 @@ static int32_t init_upload_obj(void)
         ret = obj->packer(NULL);
     }
 
-    return 0;
+    return RT_SUCCESS;
 }
 #endif
 
@@ -388,7 +386,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             char *upload_json_pag = NULL;
             cJSON *upload = NULL;
             cJSON *content = NULL;
-            int32_t ret;
+            int32_t ret = RT_ERROR;
 
             MSG_PRINTF(LOG_WARN, "------->%s\n", event);
             
@@ -413,7 +411,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
     }
 
     MSG_PRINTF(LOG_WARN, "Unknow upload event [%s] !!!\r\n", event);
-    return 0;
+    return RT_SUCCESS;
 }
 
 int32_t init_upload(void *arg)
@@ -425,13 +423,14 @@ int32_t init_upload(void *arg)
     g_upload_eid            = (const char *)public_value_list->card_info->eid;
     g_upload_card_info      = (const card_info_t *)public_value_list->card_info->info;
     g_upload_deviceid       = (const char *)g_upload_device_info->device_id;
-    g_upload_oti_addr       = (const char *)public_value_list->config_info->oti_addr;
+    g_upload_addr           = (const char *)public_value_list->config_info->oti_addr;
+    g_upload_port           = public_value_list->config_info->oti_port;
     g_upload_ver_info       = (const target_versions_t *)public_value_list->version_info;
 
     //MSG_PRINTF(LOG_INFO, "imei: %p, %s\n", g_upload_device_info->imei, g_upload_device_info->imei);
     //MSG_PRINTF(LOG_INFO, "eid : %p, %s\n", g_upload_eid, g_upload_eid);
 
-    return 0;
+    return RT_SUCCESS;
 }
 
 static int32_t upload_boot_info_event(void)

@@ -21,18 +21,16 @@
 #include "config.h"
 #include "agent_queue.h"
 
-#define MAX_FILE_PATH_LEN               100
-#define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
-#define MAX_DOWNLOAD_RETRY_CNT          9       /* plus 1 for max total download times */
-#define DEFAULT_OTI_ENVIRONMENT_PORT    7082
+#define MAX_FILE_PATH_LEN                   100
+#define MAX_BUF_LEN                         128
+#define HASH_CHECK_BLOCK                    1024    /* block size for HASH check */
+#define MAX_DOWNLOAD_RETRY_CNT              9       /* plus 1 for max total download times */
 
-#define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
-do {                 \
-    snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
-} while(0)
-
-static const char *g_upgrade_oti_addr   = NULL;
-static const char *g_upgrade_imei       = NULL;
+static const char *g_upgrade_addr           = NULL;
+static uint32_t g_upgrade_port              = 0;
+static const char *g_upgrade_api            = "/api/v1/download";
+static const char *g_upgrade_def_agent_api  = "/default/agent/download";
+static const char *g_upgrade_imei           = NULL;
 
 static int32_t get_system_tf_free(uint32_t *free_byte)
 {
@@ -84,7 +82,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     http_client_struct_t dw_struct = {0};
     cJSON  *post_info = NULL;
     int8_t *out;
-    int8_t  buf[100];
+    int8_t  buf[MAX_BUF_LEN];
     uint8_t down_try = 0;
     int32_t cnt = -1;  // used to count the number of download
 
@@ -96,11 +94,11 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     
     /* check target type frsit */
     if (d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
-        STRUCTURE_OTI_URL(buf, sizeof(buf), g_upgrade_oti_addr, DEFAULT_OTI_ENVIRONMENT_PORT, "/default/agent/download");  // Build the OTI address
+        snprintf(buf, sizeof(buf), "http://%s:%d%s", g_upgrade_addr, g_upgrade_port, g_upgrade_def_agent_api);
         cJSON_AddItemToObject(post_info, "swType", cJSON_CreateNumber(DEF_TARGET_TYPE_DEF_SHARE_PROFILE));
         cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(g_upgrade_imei));  // must have a real "imei"
     } else {
-        STRUCTURE_OTI_URL(buf, sizeof(buf), g_upgrade_oti_addr, DEFAULT_OTI_ENVIRONMENT_PORT, "/api/v1/download");  // Build the OTI address
+        snprintf(buf, sizeof(buf), "http://%s:%d%s", g_upgrade_addr, g_upgrade_port, g_upgrade_api);  // Build the OTI address
         cJSON_AddItemToObject(post_info, "ticket", cJSON_CreateString((char *)d_info->ticket));
         cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(""));  // must have a empty "imei"
     }
@@ -118,7 +116,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
     cJSON_free(out);
 
-    snprintf((char *)buf, sizeof(buf), "%s:%d", g_upgrade_oti_addr, DEFAULT_OTI_ENVIRONMENT_PORT);
+    snprintf((char *)buf, sizeof(buf), "%s:%d", g_upgrade_addr, g_upgrade_port);
     http_set_header_record(&dw_struct, "HOST", buf);
 
     http_set_header_record(&dw_struct, "Content-Type", "application/json");
@@ -340,7 +338,8 @@ int32_t upgrade_process_start(upgrade_struct_t *d_info)
 int32_t init_upgrade(void *arg)
 {
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
-    g_upgrade_oti_addr  = (const char *)public_value_list->config_info->oti_addr;
+    g_upgrade_addr      = (const char *)public_value_list->config_info->oti_addr;
+    g_upgrade_port      = public_value_list->config_info->oti_port;
     g_upgrade_imei      = (const char *)public_value_list->device_info->imei;
 
     return RT_SUCCESS;

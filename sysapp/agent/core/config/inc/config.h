@@ -12,15 +12,18 @@
 #include "stdint.h"
 
 typedef struct CONFIG_INFO {
-    char *              oti_addr;
-    char *              emq_addr;
-    char *              proxy_addr;
+    char *              oti_addr;           // OTI server addr
+    char *              emq_addr;           // EMQ server addr
+    char *              proxy_addr;         // proxy server addr
     uint8_t             lpa_channel_type;   // @ref lpa_channel_type_e
     uint32_t            log_max_size;       // unit: MB
     uint8_t             monitor_log_level;  // @ref log_level_e in log.h
     uint8_t             agent_log_level;    // @ref log_level_e in log.h
     uint8_t             init_profile_type;  // @ref init_profile_type_e in card_manager.h
     uint8_t             mbn_enable;         // 0: disable   1: enable
+
+    /* some config item which never changed dynamically */
+    uint32_t            oti_port;           // port for OTI server
 } config_info_t;
 
 int32_t init_config(void *arg);

@@ -145,7 +145,11 @@ exit_entry:
     return ret;
 }
 
-#define MAX_OTI_URL_LEN             128
+#define MAX_UPLOAD_RETRY_TIMES      3
+#define MAX_FILE_LEN_CHAR           16
+#define MAX_FILE_NAME_LEN           128
+#define MAX_HEAD_LEN                512
+
 #define BOUNDARY                    "2128e33d-b5b5-40e8-a5a6-aadd7db1c23f"
 
 #define RT_LOG_HEAD                 "--%s\r\n"\
@@ -154,25 +158,18 @@ exit_entry:
 
 #define CONTENT_TYPE                "multipart/form-data;boundary=\"2128e33d-b5b5-40e8-a5a6-aadd7db1c23f\""
 
-#define LOG_API                     "/api/v2/log"
-#define OTI_ENVIRONMENT_PORT        7082
-#define MAX_UPLOAD_RETRY_TIMES      3
-
-#define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
-do {                 \
-    snprintf((char *)buf, buf_len, "http://%s:%d%s", addr, port, interface);     \
-} while(0)
-
 static const char *g_upload_log_eid         = NULL;
-static const char *g_upload_log_oti_addr    = NULL;
+static const char *g_upload_log_addr        = NULL;
+static uint32_t g_upload_log_port           = 0;
+static const char *g_upload_log_api         = "/api/v2/log";
 
 static int32_t log_file_cut(const char *file_name, log_level_e log_level)
 {
-    char buf[512];
-    int32_t offset;
-    int32_t ret;
-    char log_name[128];
-    char tmp_file_name[128];
+    int32_t offset = 0;
+    int32_t ret = RT_ERROR;
+    char buf[MAX_HEAD_LEN];
+    char log_name[MAX_FILE_NAME_LEN];
+    char tmp_file_name[MAX_FILE_NAME_LEN];
 
     /* create a tmp log file */
     log_get_log_file_name(log_name, sizeof(log_name));
@@ -223,13 +220,13 @@ static void log_file_upload(void *arg)
     http_client_struct_t *obj;
     int32_t log_length;
     int32_t up_try_count = 0;
-    char log_length_char[10];
-    char log_url[MAX_OTI_URL_LEN + 1];
-    char log_host[MAX_OTI_URL_LEN + 1];
+    char log_length_char[MAX_FILE_LEN_CHAR];
+    char log_url[MAX_URL_LEN];
+    char log_host[MAX_URL_LEN];
     const log_param_t *param = (log_param_t *)arg;
     const char *tranId;
-    char log_name[128];
-    char log_cut_file[128];
+    char log_name[MAX_FILE_NAME_LEN];
+    char log_cut_file[MAX_FILE_NAME_LEN];
 
     /* create a tmp log file */
     log_get_log_file_name(log_name, sizeof(log_name));
@@ -240,12 +237,12 @@ static void log_file_upload(void *arg)
     RT_CHECK_NEQ(log_file_cut(log_cut_file, param->log_level), 0);  // log cut
     RT_CHECK_LESE(log_length = linux_rt_file_size(log_cut_file), 0);  // get log file size
 
-    snprintf((char *)log_length_char, sizeof(log_length_char), "%d", log_length);
+    snprintf(log_length_char, sizeof(log_length_char), "%d", log_length);
     obj->manager_type = 0;  // uoload
     obj->http_header.method = 0;  // POST
 
-    STRUCTURE_OTI_URL(log_url, MAX_OTI_URL_LEN + 1, g_upload_log_oti_addr, OTI_ENVIRONMENT_PORT, LOG_API);
-    snprintf((char *)log_host, MAX_OTI_URL_LEN + 1, "%s:%d", g_upload_log_oti_addr, OTI_ENVIRONMENT_PORT);
+    snprintf(log_url, sizeof(log_url), "http://%s:%d%s", g_upload_log_addr, g_upload_log_port, g_upload_log_api); 
+    snprintf(log_host, sizeof(log_host), "%s:%d", g_upload_log_addr, g_upload_log_port);
 
     rt_os_memcpy(obj->http_header.url, log_url, rt_os_strlen(log_url));
     obj->http_header.url[rt_os_strlen(log_url)] = '\0';
@@ -286,7 +283,7 @@ static void downstream_log_start(const log_param_t *param)
 
 static int32_t downstream_log_handler(const void *in, const char *event, void **out)
 {
-    int32_t ret = 0;
+    int32_t ret = RT_SUCCESS;
     const log_param_t *param = (log_param_t *)in;
 
     (void)event;
@@ -312,9 +309,10 @@ DOWNSTREAM_METHOD_OBJ_INIT(LOG, MSG_ID_IDLE, NULL, downstream_log_parser, downst
 int32_t init_logm(void *arg)
 {
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
-    g_upload_log_eid = (const char *)public_value_list->card_info->eid;
-    g_upload_log_oti_addr = (const char *)public_value_list->config_info->oti_addr;
+    g_upload_log_eid  = (const char *)public_value_list->card_info->eid;
+    g_upload_log_addr = (const char *)public_value_list->config_info->oti_addr;
+    g_upload_log_port = public_value_list->config_info->oti_port;
 
-    return 0;
+    return RT_SUCCESS;
 }
 

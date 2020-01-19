@@ -12,7 +12,6 @@
 #include "personalise.h"
 
 #define ADAPTER_APPKEY                  "D358134D21684E8FA23CC25740506A82"
-#define ADAPTER_PORT                    7082
 
 #define YUNBA_APPKEY                    "596882bf2a9275716fe3c1e2"  // APPKET of YUNBA server
 #define YUNBA_SERVER_IP                 "23.91.101.68"  // the IP address of yunba server
@@ -126,6 +125,7 @@ typedef struct MQTT_INFO {
     const char *                device_id;
     const char *                emq_addr;
     const char *                oti_addr;
+    uint32_t                    oti_port;
     mqtt_subcribe_info_t        sub_info;
 } mqtt_info_t;
 
@@ -287,8 +287,8 @@ static rt_bool mqtt_connect_adapter(mqtt_param_t *param)
         eid = g_mqtt_info.eid;
     }
 
-    mqtt_set_reg_url(g_mqtt_info.oti_addr, ADAPTER_PORT);
-    MSG_PRINTF(LOG_INFO, "OTI server addr:%s, port:%d\r\n", g_mqtt_info.oti_addr, ADAPTER_PORT);
+    mqtt_set_reg_url(g_mqtt_info.oti_addr, g_mqtt_info.oti_port);
+    MSG_PRINTF(LOG_INFO, "OTI server addr:%s, port:%d\r\n", g_mqtt_info.oti_addr, g_mqtt_info.oti_port);
 
     /* connect redtea adpater server with max 3 times to get ticket server addr and port */
     do {
@@ -1149,6 +1149,7 @@ int32_t init_mqtt(void *arg)
     g_mqtt_info.imei                = (const char *)public_value_list->device_info->imei;
     g_mqtt_info.emq_addr            = (const char *)public_value_list->config_info->emq_addr;
     g_mqtt_info.oti_addr            = (const char *)public_value_list->config_info->oti_addr;
+    g_mqtt_info.oti_port            = public_value_list->config_info->oti_port;
 
     mqtt_init_param();
 

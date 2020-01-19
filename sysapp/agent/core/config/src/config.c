@@ -22,6 +22,8 @@
 #define ARRAY_SIZE(a)                       (sizeof((a)) / sizeof((a)[0]))
 #endif
 
+#define RT_OTI_SERVER_PORT                  7082
+
 #define M_BYTES                             (1024 * 1024)
 #define MAX_LINE_SIZE                       384
 #define MAX_VALUE_SIZE                      30
@@ -460,6 +462,9 @@ int32_t init_config(void *arg)
     int32_t pair_num = ARRAY_SIZE(g_config_items);
     config_item_t *items = g_config_items;
     config_info_t *infos = &g_config_info;
+
+    /* load some default param */
+    infos->oti_port = RT_OTI_SERVER_PORT;
 
     while (1) {
         config_init_file(CONFIG_FILE_PATH, pair_num, items);
