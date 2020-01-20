@@ -1929,7 +1929,7 @@ int MQTTClient_set_authkey(char *cid, char *appkey, char* authkey, int *ret_stat
     snprintf(json_data, sizeof(json_data), "{\"cmd\":\"authkey_set\",\"cid\":\"%s\",\"appkey\":\"%s\",\"authkey\":\"%s\"}",
             cid, appkey, authkey);
 
-    ret = http_post_json((const char *)json_data, "abj-redismsg-4.yunba.io", 8060, "/", (PCALLBACK)get_ret_status);
+    ret = mqtt_http_post_json((const char *)json_data, "abj-redismsg-4.yunba.io", 8060, "/", (PCALLBACK)get_ret_status);
     if (ret < 0)
         return -1;
     *ret_status = retstatus;
@@ -1967,7 +1967,7 @@ int MQTTClient_get_authkey(char *cid, char *appkey, char* authkey, int *ret_stat
     sprintf(json_data, "{\"cmd\":\"authkey_get\",\"cid\":\"%s\",\"appkey\":\"%s\"}",
             cid, appkey);
 
-    ret = http_post_json((const char *)json_data, "abj-redismsg-4.yunba.io", 8060, "/", (PCALLBACK)get_authkey_status);
+    ret = mqtt_http_post_json((const char *)json_data, "abj-redismsg-4.yunba.io", 8060, "/", (PCALLBACK)get_authkey_status);
     if (ret < 0)
         return -1;
     *ret_status = retstatus;

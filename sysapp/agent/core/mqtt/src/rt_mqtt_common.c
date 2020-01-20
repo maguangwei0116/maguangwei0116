@@ -29,6 +29,7 @@
 #include "rt_os.h"
 #include "log.h"
 #include "rt_mqtt_common.h"
+#include "http.h"
 
 #if defined(OPENSSL)
 #include <openssl/ssl.h>
@@ -168,7 +169,7 @@ int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char
         snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
     }
     
-    ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, "/device/reg/", (PCALLBACK)mqtt_yunba_ticket_server_cb);
+    ret = mqtt_http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, "/device/reg/", (PCALLBACK)mqtt_yunba_ticket_server_cb);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "http post json yunba error, %s:%d, ret=%d\r\n", g_mqtt_reg_url, g_mqtt_reg_port, ret);
         ret = RT_ERROR;
@@ -199,7 +200,7 @@ int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_opts_t *opts)
 
     snprintf(json_data, sizeof(json_data), "{\"appKey\":\"%s\"}", appkey);
 
-    ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
+    ret = mqtt_http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
                             "/clientService/getEmqUser", (PCALLBACK)mqtt_emq_ticket_server_cb);
     if (ret < 0) {
         return RT_ERROR;
@@ -231,7 +232,7 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
     }
 
     MSG_PRINTF(LOG_INFO, "reg_url:%s, reg_port:%d\r\n", g_mqtt_reg_url, g_mqtt_reg_port);
-    ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
+    ret = mqtt_http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
                             "/api/v1/ticket", (PCALLBACK)mqtt_redtea_ticket_server_cb);
     if (ret < 0){
         MSG_PRINTF(LOG_ERR, "http post json error, ret=%d\r\n", ret);
@@ -307,7 +308,7 @@ int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey
     }
 
     MSG_PRINTF(LOG_INFO, "json_data: %s\n", json_data);
-    ret = http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
+    ret = mqtt_http_post_json((const char *)json_data, g_mqtt_reg_url, g_mqtt_reg_port, \
                             "/clientService/getNodes", (PCALLBACK)mqtt_get_broker_cb);
     if (ret < 0) {
         return RT_ERROR;
@@ -315,5 +316,114 @@ int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey
     
     sprintf(url, "%s:%s", g_mqtt_url_host, g_mqtt_url_port);
     return RT_SUCCESS;
+}
+
+int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t port, const char *path, PCALLBACK cb)
+{
+    int32_t ret = RT_ERROR;
+    int32_t socket_fd = RT_ERROR;
+    char buf[BUFFER_SIZE * 4];
+    char md5_out[MD5_STRING_LENGTH+1];
+    char *p = NULL;
+    char temp[128];
+
+    do{
+        if(!json_data || !host_ip || !path) {
+            MSG_PRINTF(LOG_DBG, "path json data error\n");
+            break;
+        }
+        
+        MSG_PRINTF(LOG_INFO, "json_data:%s\n",json_data);
+        get_md5_string((const char *)json_data, md5_out);
+        md5_out[MD5_STRING_LENGTH] = '\0';
+
+        MSG_PRINTF(LOG_INFO, "host_ip:%s, port:%d\r\n", host_ip, port);
+        socket_fd = http_tcpclient_create(host_ip, port);       // connect network
+        if (socket_fd < 0) {
+            ret = HTTP_SOCKET_CONNECT_ERROR;
+            MSG_PRINTF(LOG_WARN, "http tcpclient create failed\n");
+            break;
+        }
+
+        rt_os_memset(buf, 0, sizeof(buf));
+        snprintf(temp, sizeof(temp), "POST %s HTTP/1.1", path);
+        rt_os_strcat(buf, temp);
+        rt_os_strcat(buf, "\r\n");
+        snprintf(temp, sizeof(temp), "Host: %s:%d", host_ip, port),
+        rt_os_strcat(buf, temp);
+        rt_os_strcat(buf, "\r\n");
+        rt_os_strcat(buf, "Accept: */*\r\n");
+        rt_os_strcat(buf, "Content-Type: application/json;charset=UTF-8\r\n");
+        rt_os_strcat(buf, "md5sum:");
+        snprintf(temp, sizeof(temp), "%s\r\n", md5_out);
+        rt_os_strcat(buf, temp);
+        rt_os_strcat(buf, "Content-Length: ");
+        snprintf(temp, sizeof(temp), "%d", rt_os_strlen(json_data)),
+        rt_os_strcat(buf, temp);
+        rt_os_strcat(buf, "\r\n\r\n");
+        rt_os_strcat(buf, json_data);
+
+        MSG_PRINTF(LOG_INFO, "send buf:%s\n", buf);
+        if (http_tcpclient_send(socket_fd, buf, rt_os_strlen(buf)) < 0) {      // send data
+            ret = HTTP_SOCKET_SEND_ERROR;
+            MSG_PRINTF(LOG_WARN, "http tcpclient send failed..\n");
+            break;
+        }
+
+        /*it's time to recv from server*/
+        rt_os_memset(buf, 0, sizeof(buf));        
+        if (http_tcpclient_recv(socket_fd, buf, sizeof(buf)) <= 0) {     // recv data
+            ret = HTTP_SOCKET_RECV_ERROR;
+            MSG_PRINTF(LOG_WARN, "http tcpclient recv failed\n");
+            break;
+        } else {
+        #if 0  // only for test
+            const char *tmp_data =  "HTTP/1.1 502 Bad Gateway\r\n"
+                                    "Server: nginx\r\n"
+                                    "Date: Mon, 16 Sep 2019 09:02:08 GMT\r\n"
+                                    "Content-Type: text/html\r\n"
+                                    "Content-Length: 166\r\n"
+                                    "Connection: keep-alive\r\n"
+                                    "Keep-Alive: timeout=20\r\n"
+                                    "\r\n"
+                                    "<html>\r\n"
+                                    "<head><title>502 Bad Gateway</title></head>\r\n"
+                                    "<body bgcolor=\"white\">\r\n"
+                                    "<center><h1>502 Bad Gateway</h1></center>\r\n"
+                                    "<hr><center>nginx</center>\r\n"
+                                    "</body>\r\n"
+                                    "</html>\r\n";
+            rt_os_memset(buf, 0, sizeof(buf));
+            rt_os_memcpy(buf, tmp_data, rt_os_strlen(tmp_data));
+        #endif
+        
+            /* get http body */
+            MSG_PRINTF(LOG_INFO, "recv buff: %s\n", buf);
+            p = rt_os_strstr(buf, "\r\n\r\n");
+            if (p) {
+                p += 4;
+                char *tran = rt_os_strstr(buf, "Transfer-Encoding");
+                if(tran) {
+                    p = rt_os_strstr(p, "\r\n");
+                }
+                ret = cb(p);
+                MSG_PRINTF(LOG_DBG, "cb ret:%d\n", ret);
+                ret = RT_SUCCESS;
+                break;
+            } else {
+                MSG_PRINTF(LOG_ERR, "error recv data\n");
+                ret = RT_ERROR;
+                break;
+            }
+        }        
+        break;
+    } while(0);
+
+    if(socket_fd > 0){
+        MSG_PRINTF(LOG_INFO, "close sock fd=%d\r\n", socket_fd);
+        http_tcpclient_close(socket_fd);
+    }
+    
+    return ret;
 }
 

@@ -125,6 +125,8 @@ typedef struct MQTT_OPTS {
     char        ticket_server[200];     // the ticket server addr
 } mqtt_opts_t;
 
+typedef int32_t (*PCALLBACK)(const char *json_data);
+
 DLLExport int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_opts_t *opts);
 
 DLLExport int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey);
@@ -134,6 +136,8 @@ DLLExport int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_opts_t *
 DLLExport void    mqtt_set_reg_url(const char url[20], int port);
 
 DLLExport int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, const char *eid);
+
+DLLExport int32_t mqtt_http_post_json(const char *json_data, const char *hostname, uint16_t port, const char *path, PCALLBACK cb);
 
 #endif /* __RT_MQTT_COMMON_H__ */
 
