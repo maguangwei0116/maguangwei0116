@@ -46,7 +46,7 @@ void network_update_state(int32_t state)
 #include "card_detection.h"
 #include "bootstrap.h"
 
-#define MAX_INIT_RETRY_CNT              3
+#define MAX_INIT_RETRY_CNT              5
 #define DELAY_100MS                     100
 #define MAX_WAIT_BOOTSTRAP_TIME         150  // 150 * 100ms = 15000ms = 15S
 
@@ -93,28 +93,40 @@ static void network_detection_task(void *arg)
         operational_network_start_timer();
     }
 
+    /* set callback function */
+    dial_up_set_dial_callback((void *)network_update_state);
+
     /* add retry more times */
     while (1) {
+        /* init dial up */
         ret = dial_up_init(&dsi_net_hndl);
         if (ret != RT_SUCCESS) {            
-            if (++cnt <= MAX_INIT_RETRY_CNT) {
+            if (++cnt < MAX_INIT_RETRY_CNT) {
                 MSG_PRINTF(LOG_ERR, "dial up init error (%d)\r\n", cnt);
                 rt_os_sleep(3);
                 continue;
             }
             MSG_PRINTF(LOG_ERR, "dial up init final error\r\n");
-            goto  exit_entry;
+            goto  dial_up_init_error_entry;
         }
-        break;
+        cnt = 0;
+
+        /* do dial up */
+        dial_up_to_connect(&dsi_net_hndl);
+
+        /* release dial up */
+        dial_up_deinit(&dsi_net_hndl);
+
+        rt_os_sleep(5);
     }
+
+dial_up_init_error_entry:
     
-    while (1) {  
-        dial_up_to_connect(&dsi_net_hndl);  // it will never exit !
-    }
+    MSG_PRINTF(LOG_WARN, "sleep 10 seconds to reboot terminal ...\r\n");
+    rt_os_sleep(10);
+    rt_os_reboot();
 
 exit_entry:
-
-    dial_up_deinit(&dsi_net_hndl);
 
     rt_exit_task(NULL);
 }
@@ -133,8 +145,6 @@ int32_t init_network_detection(void *arg)
     g_task_param.type               = &(((public_value_list_t *)arg)->card_info->type);
     g_task_param.profile_damaged    = ((public_value_list_t *)arg)->profile_damaged;
 
-    dial_up_set_dial_callback((void *)network_update_state);
-    
     ret = rt_create_task(&task_id, (void *)network_detection_task, &g_task_param);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");
