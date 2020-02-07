@@ -43,7 +43,7 @@ typedef struct UPLOAD_QUEUE {
     int32_t             data_len;
 } upload_que_t;
 
-#define MAX_RECV_QUEUE_CNT  100
+#define MAX_RECV_QUEUE_CNT  10000
 
 static int32_t g_queue_id = -1;
 static int32_t g_upload_queue_id = -1;
@@ -221,6 +221,7 @@ static void upload_queue_task(void)
                 MSG_PRINTF(LOG_WARN, "upload http post fail, ret=%d\r\n", ret);
             }
             if (que_t.data_buf && que_t.data_len != 0) {
+                //MSG_PRINTF(LOG_INFO, "free %p, len: %d\r\n", que_t.data_buf, que_t.data_len);
                 rt_os_free(que_t.data_buf);
             }
         }
@@ -246,7 +247,11 @@ static int32_t agent_queue_clear_msg(int32_t time_cnt)
         if (ret == RT_ERROR && !agent_queue.data_buf) {
             break;
         }
-        rt_os_msleep(10);  // delay 10ms
+        rt_os_msleep(1);  // delay 1ms
+    }
+
+    if (i != 0) {
+        MSG_PRINTF(LOG_WARN, "clear %d msgs on msg queue !\n", i);
     }
 
     return RT_SUCCESS;
@@ -269,7 +274,12 @@ static int32_t upload_queue_clear_msg(int32_t time_cnt)
         if (ret == RT_ERROR && !upload_queue.data_buf) {
             break;
         }
-        rt_os_msleep(10);  // delay 10ms
+        
+        rt_os_msleep(1);  // delay 1ms
+    }
+
+    if (i != 0) {
+        MSG_PRINTF(LOG_WARN, "clear %d msgs on msg queue !\n", i);
     }
 
     return RT_SUCCESS;
@@ -346,6 +356,7 @@ int32_t msg_send_upload_queue(void *buffer, int32_t len)
     que_t.data_len  = len;
     que_t.data_buf  = (void *)rt_os_malloc(que_t.data_len + 1);
     rt_os_memcpy(que_t.data_buf, buffer, len);
+    //MSG_PRINTF(LOG_ERR, "que_t.data_buf: %p, buffer: %p, len: %d\n", que_t.data_buf, buffer, len);
     *(((uint8_t *)que_t.data_buf) + len) = '\0';
     len = sizeof(upload_que_t) - sizeof(long);
     ret = rt_send_msg_queue(g_upload_queue_id, (const void *)&que_t, len, 0);
