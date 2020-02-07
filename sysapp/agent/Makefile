@@ -39,6 +39,9 @@ LOCAL_CFLAGS                        += -DLOCAL_TARGET_OEMAPP_NAME=\"$(LOCAL_TARG
 LOCAL_CFLAGS                        += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
 LOCAL_CFLAGS                        += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
+# Config MQTTS (MQTT with SSL/TLS)
+LOCAL_CFLAGS                        += -DOPENSSL=1
+
 # Config your own libraries
 ifeq ($(SYSAPP_PLATFORM_9X07), y)
 QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices 
