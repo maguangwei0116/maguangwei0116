@@ -18,6 +18,8 @@
 #include <time.h>
 #include <stdarg.h>
 #include <string.h>
+
+#include "rt_os.h"
 #include "log.h"
 #include "file.h"
 
@@ -69,6 +71,7 @@ static log_param_t g_log_param =
 };
 
 static log_func g_log_ex_func = NULL;
+static rt_pthread_mutex_t *g_log_mutex = NULL;
 
 int32_t log_set_param(log_mode_e mode, log_level_e level, unsigned int max_size)
 {
@@ -112,6 +115,12 @@ int32_t init_log_file(void *arg)
 
     log_file_open();
 
+    g_log_mutex = linux_mutex_init();
+    if (g_log_mutex) {
+        printf("log mutex init fail\n"); 
+        return RT_ERROR;
+    }
+
     return RT_SUCCESS;
 }
 
@@ -142,6 +151,8 @@ static void log_local_print(const char *data, int32_t len)
 {
     int32_t size = 0;
 
+    linux_mutex_lock(g_log_mutex);
+
     if (g_log_ex_func) {
         /* external logger function */
         g_log_ex_func(data);
@@ -166,6 +177,8 @@ static void log_local_print(const char *data, int32_t len)
 #endif
 
     }
+
+    linux_mutex_unlock(g_log_mutex);
 }
 
 int32_t log_print(log_level_e level, log_level_flag_e level_flag, const char *msg, ...)
