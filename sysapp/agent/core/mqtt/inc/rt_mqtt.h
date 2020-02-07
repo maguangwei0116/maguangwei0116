@@ -19,6 +19,9 @@
 #define MQTT_PUBLISH_NO_YUNBA           -88
 #define MQTT_PUBLISH_NO_CONNECTED       -89
 
+/* switch for EMQ MQTTS */
+#define EMQ_MQTTS_ENABLE                0
+
 typedef enum NETWORK_STATE {
     NETWORK_IDLE = 0,           // network idle state
     NETWORK_CONNECTED,          // network is connected

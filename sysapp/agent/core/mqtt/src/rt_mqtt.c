@@ -24,13 +24,6 @@
 
 #define MQTT_KEEP_ALIVE_INTERVAL        300 // seconds, about 5 mins
 
-/* switch for EMQ MQTTS test */
-#define EMQ_MQTTS_ENABLE                0
-
-#if (EMQ_MQTTS_ENABLE)
-#define EMQ_MQTTS_TEST_URL              "ssl://13.229.31.234:8883"
-#endif
-
 /*
 max wait time: 
 MQTT_RECONNECT_MAX_CNT * ((30 seconds, connect timeout) * (retry 3 times) * (server addr type 3 cnt)) ~= 15 mins
@@ -476,10 +469,6 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_info.device_id);
     }
 
-#if (EMQ_MQTTS_ENABLE)
-    snprintf(opts->url, sizeof(opts->url), "%s", EMQ_MQTTS_TEST_URL);
-#endif
-
     MSG_PRINTF(LOG_DBG, "MQTT broker: addr [%s] id [%s] user [%s] passwd [%s]\n",
                     (const char *)opts->url,
                     (const char *)opts->client_id,
@@ -705,6 +694,7 @@ static void mqtt_client_state_mechine(void)
                         reconnect_cnt = 0;
                         if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
                             network_force_down();
+                            g_mqtt_param.network_state = NETWORK_DISCONNECTED;
                         }
                     }
                     delay_s = 3;
@@ -735,6 +725,7 @@ static void mqtt_client_state_mechine(void)
                         reconnect_cnt = 0;
                         if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
                             network_force_down();
+                            g_mqtt_param.network_state = NETWORK_DISCONNECTED;
                         }
                     }
                     delay_s = 3;
@@ -833,8 +824,8 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.last_connect_status   = MQTT_CONNECT_SUCCESS;  // Initialize the last link push the state of the system
 
 #if (EMQ_MQTTS_ENABLE)
-    /* EMQ MQTTS test */
-    g_mqtts_opts.enableServerCertAuth       = 0;  // 0: disable verify server cert !!!
+    /* 0: disable verify server cert; 1: enable verify server cert, need CA cert input !!! */
+    g_mqtts_opts.enableServerCertAuth       = 0;
     g_mqtt_param.conn_opts.ssl              = &g_mqtts_opts;
 #endif
 

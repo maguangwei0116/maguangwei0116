@@ -36,7 +36,11 @@ static int32_t mqtt_redtea_ticket_server_cb(const char *json_data)
                 snprintf(reg_info->password, sizeof(reg_info->password), password->valuestring);
                 snprintf(reg_info->channel, sizeof(reg_info->channel), channel->valuestring);
                 snprintf(reg_info->ticket_server, sizeof(reg_info->ticket_server), ticket_url->valuestring);
-                snprintf(reg_info->url, sizeof(reg_info->url), "%s:%d", host->valuestring, port->valueint);
+#if (EMQ_MQTTS_ENABLE)
+                snprintf(reg_info->url, sizeof(reg_info->url), "ssl://%s:%d", host->valuestring, port->valueint);
+#else
+                snprintf(reg_info->url, sizeof(reg_info->url), "tcp://%s:%d", host->valuestring, port->valueint);
+#endif
                 ret = 0;
             }
 
@@ -64,12 +68,22 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
         return RT_ERROR;
     }
 
+#if (EMQ_MQTTS_ENABLE)
     if (!opts->device_id) {
-        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\"}", appkey);
+        snprintf(json_data, sizeof(json_data), "{\"a\":\"%s\",\"ssl_enabled\":true}", appkey);
     } else {
-        snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\",\"d\": \"%s\",\"c\":\"%s\",\"s\":\"%d\"}", \
+        snprintf(json_data, sizeof(json_data), \
+            "{\"a\":\"%s\",\"d\":\"%s\",\"c\":\"%s\",\"s\":\"%d\",\"ssl_enabled\":true}", \
             appkey, opts->device_id, eid, opts->last_connect_status);
     }
+#else
+    if (!opts->device_id) {
+        snprintf(json_data, sizeof(json_data), "{\"a\":\"%s\"}", appkey);
+    } else {
+        snprintf(json_data, sizeof(json_data), "{\"a\":\"%s\",\"d\":\"%s\",\"c\":\"%s\",\"s\":\"%d\"}", \
+            appkey, opts->device_id, eid, opts->last_connect_status);
+    }
+#endif
 
     ret = mqtt_http_post_json((const char *)json_data, reg_url->url, reg_url->port, \
                             "/api/v1/ticket", mqtt_redtea_ticket_server_cb);
