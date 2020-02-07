@@ -10,24 +10,7 @@
 #include "MQTTClientPersistence.h"
 #include "downstream.h"
 #include "personalise.h"
-
-#define ADAPTER_APPKEY                  "D358134D21684E8FA23CC25740506A82"
-
-#define YUNBA_APPKEY                    "596882bf2a9275716fe3c1e2"  // APPKET of YUNBA server
-#define YUNBA_SERVER_IP                 "23.91.101.68"  // the IP address of yunba server
-#define YUNBA_URL                       "tcp://23.91.101.68:1883"
-#define YUNBA_SERVER_PORT               8085  // the port of yunba server
-#define YUNBA_SERVER_PORT2              8383
-
-#define EMQ_APPKEY                      "12345"  // APPKET of EMQ server
-#define EMQ_SERVER_PORT                 8085  // the port of EMQ server
-
-#define MQTT_CONNECT_YUNBA_ERROR        -1
-#define MQTT_CONNECT_EMQ_ERROR          1
-#define MQTT_CONNECT_SUCCESS            0
-
-#define TICKET_SERVER_CACHE             "rt_ticket_server"
-#define MAX_CONNECT_SERVER_TIMER        3
+#include "rt_mqtt.h"
 
 #define USE_ADAPTER_SERVER              1  // use mqtt ticket adapter proxy server ?
 
@@ -41,6 +24,13 @@
 
 #define MQTT_KEEP_ALIVE_INTERVAL        300 // seconds, about 5 mins
 
+/* switch for EMQ MQTTS test */
+#define EMQ_MQTTS_ENABLE                0
+
+#if (EMQ_MQTTS_ENABLE)
+#define EMQ_MQTTS_TEST_URL              "ssl://13.229.31.234:8883"
+#endif
+
 /*
 max wait time: 
 MQTT_RECONNECT_MAX_CNT * ((30 seconds, connect timeout) * (retry 3 times) * (server addr type 3 cnt)) ~= 15 mins
@@ -48,8 +38,6 @@ MQTT_RECONNECT_MAX_CNT * ((30 seconds, connect timeout) * (retry 3 times) * (ser
 #define MQTT_RECONNECT_MAX_CNT          3
 
 #define MQTT_SUBSCRIBE_MAX_CNT          3
-
-#define MQTT_ALIAS_MAX_LEN              40
 
 #define GET_EID_FLAG(flag)              (((flag) >> 0) & 0x01)
 #define GET_AGENT_FLAG(flag)            (((flag) >> 1) & 0x01)
@@ -65,30 +53,17 @@ MQTT_RECONNECT_MAX_CNT * ((30 seconds, connect timeout) * (retry 3 times) * (ser
 #define CLR_IMEI_FLAG(flag)             ((flag) &= ~(0x01 << 3))
 #define CLR_SUBSCRIBE_FLAG(flag)        ((flag) = 0x00)
 
+typedef enum MQTT_CONNECT_RESULT {
+    MQTT_CONNECT_SUCCESS                = 0,
+    MQTT_CONNECT_YUNBA_ERROR            = -1,
+    MQTT_CONNECT_EMQ_ERROR              = 1,  
+} mqtt_connect_result_e;
+
 typedef enum MQTT_QOS {
     MQTT_QOS_0 = 0, 
     MQTT_QOS_1 = 1,
     MQTT_QOS_2 = 2,
 } mqtt_qos_e;
-
-typedef enum NETWORK_STATE {
-    NETWORK_IDLE = 0,           // network idle state
-    NETWORK_CONNECTED,          // network is connected
-    NETWORK_DISCONNECTED,       // network is disconnected
-} network_state_info_e;
-
-typedef enum MQTT_STATE {
-    MQTT_IDLE = 0,              // mqtt idle state, it's a instable state !
-    MQTT_CHECK_NETWORK,         // mqtt client check network connected or disconnected, it's a instable state !
-    MQTT_GET_SERVER_ADDR,       // mqtt client get mqtt server addr, it's a instable state !
-    MQTT_CONNECTING,            // mqtt client connectiong broker server, it's a instable state !
-    MQTT_CONNECTED,             // mqtt client connecte broker server ok, it's a instable state !
-    MQTT_SET_ALIAS,             // mqtt client set alias, it's a instable state !
-    MQTT_SUBSCRIBED,            // mqtt client can subscribe topic, it's a instable state !
-    MQTT_WAIT_EVENT,            // mqtt client wait event (network connected/disconnected/subscribe eid ...), it's a stable state !
-    MQTT_FAST_RECONNECT,        // mqtt client fast reconnect when the last connect lost, it's a stable state !
-    MQTT_DISCONNECTED,          // mqtt client disconnected, it's a instable state !
-} mqtt_state_info_e;
 
 typedef enum MQTT_EVENT {
     MQTT_IDLE_EVENT = 0,        // mqtt idle
@@ -97,22 +72,6 @@ typedef enum MQTT_EVENT {
     MQTT_CONNECTED_LOST,        // mqtt connected lost
     MQTT_SUBSCRIBE_EID,         // mqtt subscribe topic (eid)
 } mqtt_event_e;
-
-typedef struct MQTT_PARAM {
-    MQTTClient_connectOptions   conn_opts;
-    mqtt_opts_t                 opts;
-    MQTTClient                  client;
-    network_state_info_e        network_state;
-    mqtt_state_info_e           mqtt_state;
-    char                        alias[MQTT_ALIAS_MAX_LEN];
-    rt_bool                     mqtt_get_addr;
-    rt_bool                     mqtt_conn_state;    // mqtt connect state flag
-    rt_bool                     mqtt_flag;          // mqtt connect ok flag
-    rt_bool                     lost_flag;          // mqtt connect lost flag
-    rt_bool                     alias_rc;           // need set alias flag
-    rt_bool                     subscribe_eid;      // need to subscribe eid
-    uint8_t                     subscribe_flag;     // subscribe ok flag
-} mqtt_param_t;
 
 typedef struct MQTT_SUBCRIBE_INFO {
     int32_t                     cnt;
@@ -130,6 +89,9 @@ typedef struct MQTT_INFO {
 } mqtt_info_t;
 
 static mqtt_param_t g_mqtt_param = {MQTTClient_connectOptions_initializer, 0};
+#if (EMQ_MQTTS_ENABLE)
+static MQTTClient_SSLOptions g_mqtts_opts = MQTTClient_SSLOptions_initializer; 
+#endif
 static mqtt_info_t g_mqtt_info;
 
 static rt_bool mqtt_eid_check_memory(const void *buf, int32_t len, int32_t value)
@@ -142,262 +104,6 @@ static rt_bool mqtt_eid_check_memory(const void *buf, int32_t len, int32_t value
             return RT_FALSE;
         }
     }
-    return RT_TRUE;
-}
-
-/* save cache ticket server which got from adapter into cache file */
-static rt_bool mqtt_save_ticket_server(const mqtt_opts_t *opts)
-{
-    cJSON   *obj = NULL;
-    uint8_t  *save_info = NULL;
-    uint8_t  data_len[2] = {0}; // frist 2 byte store length !!!
-    int16_t length = 0;
-    rt_bool ret = RT_FALSE;
-
-    if ((obj = cJSON_CreateObject()) == NULL) {
-        MSG_PRINTF(LOG_WARN, "cJSON_CreateObject error\n");
-        goto exit_entry;
-    }
-
-    cJSON_AddItemToObject(obj, "channel", cJSON_CreateString(opts->channel));
-    cJSON_AddItemToObject(obj, "ticketServer", cJSON_CreateString(opts->ticket_server));
-    save_info = (uint8_t *)cJSON_PrintUnformatted(obj);
-    if (!save_info) {
-        MSG_PRINTF(LOG_WARN, "save_info is NULL\n");
-        goto exit_entry;
-    }
-
-    length = rt_os_strlen(save_info);
-    data_len[0] = (length >> 8) & 0xff;
-    data_len[1] = length & 0xff;
-
-    if (rt_create_file(TICKET_SERVER_CACHE) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt create_file  error\n");
-        goto exit_entry;
-    }
-
-    if (rt_write_data(TICKET_SERVER_CACHE, 0, data_len, sizeof(data_len)) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt write_data data_len error\n");
-        goto exit_entry;
-    }
-
-    if (rt_write_data(TICKET_SERVER_CACHE, sizeof(data_len), save_info, rt_os_strlen(save_info)) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt write_data TICKET_SERVER_CACHE error\n");
-        goto exit_entry;
-    }
-
-    ret = RT_TRUE;
-
-exit_entry:
-
-    if (save_info) {
-        cJSON_free(save_info);
-    }
-    if (obj) {
-        cJSON_Delete(obj);
-    }
-
-    return ret;
-}
-
-/* get cache ticket server which got from adapter from cache file */
-static rt_bool mqtt_get_ticket_server(mqtt_opts_t *opts)
-{
-    uint8_t  *save_info = NULL;
-    uint8_t  data_len[2] = {0};  // frist 2 byte store length !!!
-    int16_t length = 0;
-    cJSON   *obj = NULL;
-    cJSON   *channel = NULL;
-    cJSON   *ticket_server = NULL;
-    rt_bool ret = RT_FALSE;
-
-    if (rt_read_data(TICKET_SERVER_CACHE, 0, data_len, sizeof(data_len)) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt read_data data_len error\n");
-        goto exit_entry;
-    }
-
-    length = (data_len[0] << 8) | data_len[1];
-
-    if ((save_info = (uint8_t *)rt_os_malloc(length)) == NULL) {
-        MSG_PRINTF(LOG_ERR, "rt_os_malloc error\n");
-        goto exit_entry;
-    }
-
-    if (rt_read_data(TICKET_SERVER_CACHE, sizeof(data_len), save_info, length) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt read_data save_info error\n");
-        goto exit_entry;
-    }
-
-    if ((obj = cJSON_Parse(save_info)) == NULL) {
-        MSG_PRINTF(LOG_WARN, "cJSON_Parse error\n");
-        goto exit_entry;
-    }
-    channel = cJSON_GetObjectItem(obj, "channel");
-    ticket_server = cJSON_GetObjectItem(obj, "ticketServer");
-
-    if (!channel || !ticket_server) {
-        MSG_PRINTF(LOG_WARN, "channel or ticket_server is NULL\n");
-        goto exit_entry;
-    }
-
-    snprintf((char *)opts->channel, sizeof(opts->channel), "%s", channel->valuestring);
-    snprintf((char *)opts->ticket_server, sizeof(opts->ticket_server), "%s", ticket_server->valuestring);
-
-    ret = RT_TRUE;
-
-exit_entry:
-
-    if (save_info) {
-        rt_os_free(save_info);
-    }
-    if (obj) {
-        cJSON_Delete(obj);
-    }
-
-    return ret;
-}
-
-static rt_bool mqtt_get_ip_pair(const char *url, int8_t *addr, int32_t *port)
-{
-    char *p = (int8_t *)strstr((char *)url, "http://");
-    if (p) {
-        p += 7;
-        char *q = (int8_t *)strstr((char *)p, ":");
-        if (q) {
-            int32_t len = rt_os_strlen(p) - rt_os_strlen(q);
-            if (len > 0) {
-                sprintf((char *)addr, "%.*s", len, p);
-                *port = atoi((char *)(q + 1));
-                return RT_TRUE;
-            }
-        }
-    }
-    return RT_FALSE;
-}
-
-static rt_bool mqtt_connect_adapter(mqtt_param_t *param)
-{
-    uint8_t num = 0;
-    MQTTClient *c = &param->client;
-    mqtt_opts_t *opts = &param->opts;
-    const char *alias = param->alias;
-    const char *eid = "";  // OTI server required: Request with [eid=""] when eid isn't exist !!!
-
-    if (!mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, 'F') && !mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
-        eid = g_mqtt_info.eid;
-    }
-
-    mqtt_set_reg_url(g_mqtt_info.oti_addr, g_mqtt_info.oti_port);
-    MSG_PRINTF(LOG_INFO, "OTI server addr:%s, port:%d\r\n", g_mqtt_info.oti_addr, g_mqtt_info.oti_port);
-
-    /* connect redtea adpater server with max 3 times to get ticket server addr and port */
-    do {
-        if (mqtt_adapter_setup_with_appkey(ADAPTER_APPKEY, opts, eid) == 0) {
-            break;
-        }
-        MSG_PRINTF(LOG_DBG, "rt_mqtt_setup_with appkey num:%d\n", num++);
-        rt_os_sleep(1);
-    } while (num != MAX_CONNECT_SERVER_TIMER);
-
-    if (num == MAX_CONNECT_SERVER_TIMER) {
-        MSG_PRINTF(LOG_WARN, "rt_mqtt_connect adapter error\n");
-        return RT_FALSE;
-    }
-
-    if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
-        MSG_PRINTF(LOG_INFO, "mqtt alias: %s\r\n", alias);
-        snprintf(opts->client_id, sizeof(opts->client_id), "%s", alias);
-    }
-
-    /* save ticket server into cache file */
-    mqtt_save_ticket_server((const mqtt_opts_t *)opts);
-
-    return RT_TRUE;
-}
-
-//connect yunba server
-static rt_bool mqtt_connect_yunba(mqtt_param_t *param, const char *ticket_server)
-{
-    uint8_t num = 0;
-    int32_t ret;
-    MQTTClient *c = &param->client;
-    mqtt_opts_t *opts = &param->opts;
-    const char *alias = param->alias;
-
-    if (ticket_server == NULL) {
-        mqtt_set_reg_url((const char *)YUNBA_SERVER_IP, YUNBA_SERVER_PORT2);
-    } else {
-        int8_t addr[20];
-        int32_t port;
-        if (mqtt_get_ip_pair(ticket_server, addr, &port) == RT_TRUE) {
-            mqtt_set_reg_url((char *)addr, port);
-        } else {
-            MSG_PRINTF(LOG_WARN, "mqtt_get_ip_pair error ticket_serverL:%s\n", ticket_server);
-            return RT_FALSE;
-        }
-        MSG_PRINTF(LOG_WARN, "ticket_server:%s, yunba addr:%s, port:%d\n", ticket_server, addr, port);
-    }
-
-    /* connect yunba mqtt server with max 3 times */
-    do {
-        if ((ret = MQTTClient_setup_with_appkey_and_deviceid(YUNBA_APPKEY, (char *)opts->device_id, opts)) == 0) {
-            break;
-        }
-        MSG_PRINTF(LOG_DBG, "MQTTClient setup_with_appkey_and deviceid num:%d, error ret:%d\n", num++, ret);
-        rt_os_sleep(1);
-    } while (num != MAX_CONNECT_SERVER_TIMER);
-
-    if (num == MAX_CONNECT_SERVER_TIMER) {
-        MSG_PRINTF(LOG_WARN, "rt_mqtt_connect yunba error\n");
-        return RT_FALSE;
-    }
-
-    snprintf(opts->channel, sizeof(opts->channel), "%s", "YUNBA");
-    snprintf(opts->url, sizeof(opts->url), "%s", YUNBA_URL);
-
-    return RT_TRUE;
-}
-
-//connect EMQ server
-static rt_bool mqtt_connect_emq(mqtt_param_t *param, const char *ticket_server)
-{
-    uint8_t num = 0;
-    MQTTClient *c = &param->client;
-    mqtt_opts_t *opts = &param->opts;
-    const char *alias = param->alias;
-
-    if (ticket_server == NULL) {
-        mqtt_set_reg_url(g_mqtt_info.emq_addr, EMQ_SERVER_PORT);
-    } else {
-        int8_t addr[20];
-        int32_t port;
-        if (mqtt_get_ip_pair(ticket_server, addr, &port) == RT_TRUE) {
-            mqtt_set_reg_url((char *)addr, port);
-        } else {
-            MSG_PRINTF(LOG_WARN, "mqtt_get_ip_pair error ticket_serverL:%s\n", ticket_server);
-            return RT_FALSE;
-        }
-        MSG_PRINTF(LOG_WARN, "ticket_server:%s, EMQ addr:%s, port:%d\n", ticket_server, addr, port);
-    }
-
-    /* connect EMQ mqtt server with max 3 times */
-    do {
-        if ((MQTTClient_setup_with_appkey(EMQ_APPKEY, opts) == 0) &&
-           (MQTTClient_get_host((const char *)opts->node_name, (char *)opts->url, EMQ_APPKEY) == 0)) {
-            break;
-        }
-        MSG_PRINTF(LOG_DBG, "MQTTClient_setup_with appkey num:%d\n", num++);
-        rt_os_sleep(1);
-    } while (num != MAX_CONNECT_SERVER_TIMER);
-
-    if (num == MAX_CONNECT_SERVER_TIMER) {
-        MSG_PRINTF(LOG_WARN, "rt_mqtt_connect _emq error\n");
-        return RT_FALSE;
-    }
-
-    snprintf(opts->channel, sizeof(opts->channel), "%s", "EMQ");
-    snprintf(opts->client_id, sizeof(opts->client_id), "%s", alias);
-
     return RT_TRUE;
 }
 
@@ -420,6 +126,12 @@ do {\
 //used to get mqtt server addr
 static rt_bool mqtt_get_server_addr(mqtt_param_t *param)
 {
+    const char *eid = "";  // OTI server required: Request with [eid=""] when eid isn't exist !!!
+
+    if (!mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, 'F') && !mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
+        eid = g_mqtt_info.eid;
+    }
+    
     //attemp to connect adapter
     do{
         MQTT_PASSAGEWAY_DEFINITION(FORCE_TO_ADAPTER);
@@ -428,7 +140,7 @@ static rt_bool mqtt_get_server_addr(mqtt_param_t *param)
 
 FORCE_TO_ADAPTER:
         if (USE_ADAPTER_SERVER){
-            if (mqtt_connect_adapter(param) == RT_TRUE) {
+            if (mqtt_connect_adapter(param, g_mqtt_info.oti_addr, g_mqtt_info.oti_port, eid) == RT_TRUE) {
                 MSG_PRINTF(LOG_DBG, "connect adapter server to get mqtt server address EMQ or YUNBA successfully\n");
                 goto ok_exit_entry;
             }
@@ -443,7 +155,7 @@ FORCE_TO_ADAPTER:
 
                 /* If connect EMQ ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.channel, "EMQ", 3) &&
-                      (mqtt_connect_emq(param, param->opts.ticket_server) == RT_TRUE)) {
+                      (mqtt_connect_emq(param, g_mqtt_info.emq_addr, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_DBG, "get EMQ mqtt server connect param successfully\n");
                     goto ok_exit_entry;
                 }
@@ -453,7 +165,7 @@ FORCE_TO_ADAPTER:
         /* If connect adapter and ticket server all fail, and then try dead yunba server or EMQ server */
         if (!rt_os_strncmp(param->opts.channel, "YUNBA", 5)) {
 FORCE_TO_EMQ:
-            if (mqtt_connect_emq(param, NULL) == RT_TRUE) {
+            if (mqtt_connect_emq(param, g_mqtt_info.emq_addr, NULL) == RT_TRUE) {
                 MSG_PRINTF(LOG_DBG, "get EMQ mqtt server connect param successfully\n");
                 goto ok_exit_entry;
             }
@@ -696,7 +408,8 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
 {
     int32_t c = 0;
 
-    //MSG_PRINTF(LOG_WARN, "Connect mqtt broker [%s] !\n", opts->serverURIs);
+    //MSG_PRINTF(LOG_INFO, "Connect mqtt broker [%s] !\n", opts->serverURIs);
+    //MSG_PRINTF(LOG_INFO, "Connect mqtt ssl %p !\n", opts->ssl);
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
         g_mqtt_param.mqtt_conn_state    = RT_TRUE;
         g_mqtt_param.mqtt_flag          = RT_TRUE;
@@ -762,6 +475,10 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_info.device_id);
     }
+
+#if (EMQ_MQTTS_ENABLE)
+    snprintf(opts->url, sizeof(opts->url), "%s", EMQ_MQTTS_TEST_URL);
+#endif
 
     MSG_PRINTF(LOG_DBG, "MQTT broker: addr [%s] id [%s] user [%s] passwd [%s]\n",
                     (const char *)opts->url,
@@ -986,7 +703,9 @@ static void mqtt_client_state_mechine(void)
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
                         reconnect_cnt = 0;
-                        network_force_down();
+                        if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
+                            network_force_down();
+                        }
                     }
                     delay_s = 3;
                 }
@@ -1014,7 +733,9 @@ static void mqtt_client_state_mechine(void)
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
                         reconnect_cnt = 0;
-                        network_force_down();
+                        if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
+                            network_force_down();
+                        }
                     }
                     delay_s = 3;
                 }
@@ -1110,6 +831,13 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.node_name             = NULL;
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
     g_mqtt_param.opts.last_connect_status   = MQTT_CONNECT_SUCCESS;  // Initialize the last link push the state of the system
+
+#if (EMQ_MQTTS_ENABLE)
+    /* EMQ MQTTS test */
+    g_mqtts_opts.enableServerCertAuth       = 0;  // 0: disable verify server cert !!!
+    g_mqtt_param.conn_opts.ssl              = &g_mqtts_opts;
+#endif
+
     mqtt_config_global_alias(g_mqtt_info.eid, g_mqtt_info.device_id, RT_TRUE);
     MQTTClient_init();
 }

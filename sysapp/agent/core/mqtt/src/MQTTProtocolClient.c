@@ -114,8 +114,9 @@ uint64_t MQTTProtocol_assignMsgId(Clients* client)
 {
     uint64_t msgid;
     int mqtt_version = get_client_mqtt_version_from_network_handler(&client->net);
+    
     FUNC_ENTRY;
-    if(mqtt_version == MQTTVERSION_YUNBA_3_1)
+    if(MQTTVERSION_YUNBA_3_1 == mqtt_version)
     {
         msgid = generate_uuid();
         client->msgID = msgid;

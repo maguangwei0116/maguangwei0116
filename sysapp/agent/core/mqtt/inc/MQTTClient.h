@@ -519,8 +519,8 @@ typedef struct
   */
   const char* enabledCipherSuites;
 
-    /** True/False option to enable verification of the server certificate **/
-    int enableServerCertAuth;
+  /** True/False option to enable verification of the server certificate **/
+  int enableServerCertAuth;
 
 } MQTTClient_SSLOptions;
 
