@@ -18,12 +18,14 @@
 
 #define DAIL_UP_WAIT                5           // timers
 #define CHK_REG_STATE_INTERVAL      2           // seconds
-#define MAX_CHK_REG_STATE          (5 * 60)    // for total 5 mins
+#define MAX_CHK_REG_STATE          (5 * 60)     // for total 5 mins
 #define MAX_CHK_REG_STATE_CNT      (MAX_CHK_REG_STATE / CHK_REG_STATE_INTERVAL) 
 #define DIAL_UP_INTERVAL            5           // seconds
 #define MAX_CHK_DIAL_STATE          (5 * 60)    // for total 5 mins
 #define MAX_CHK_DIAL_STATE_CNT      (MAX_CHK_DIAL_STATE / DIAL_UP_INTERVAL) 
-#define has_more_argv()             ((opt < argc) && (argv[opt][0] != '-'))
+#define HAS_MORE_ARGV()             ((opt < argc) && (argv[opt][0] != '-'))
+#define MAX_BAD_DSI_CALL_CNT        10      
+#define RT_FORCE_DSI_EVT_NET_NO_NET 99          // others see dsi_net_evt_t at dsi_netctrl.h
 
 typedef enum LOCAL_DIAL_UP_STATE {
     LOCAL_DIAL_UP_NO_NET = 0,
@@ -142,7 +144,6 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
 
 #if 1
     snprintf(command, sizeof(command), "echo 1 > /proc/sys/net/ipv4/ip_forward");
-    MSG_PRINTF(LOG_DBG, "%s\n", command);
     ds_system_call(command, rt_os_strlen(command));
 
     snprintf(command, sizeof(command), "iptables -t nat -A POSTROUTING -o rmnet_data0 -j MASQUERADE --random");
@@ -184,26 +185,26 @@ static int32_t set_dsi_net_info(dsi_call_info_t *dsi_net_hndl)
             case 's': {
                 dsi_net_hndl->apn = dsi_net_hndl->user = dsi_net_hndl->password = "";
                 dsi_net_hndl->auth_pref = DSI_AUTH_PREF_CHAP_ONLY_ALLOWED;
-                if (has_more_argv()) {
+                if (HAS_MORE_ARGV()) {
                     dsi_net_hndl->apn = argv[opt++];
                 }
-                if (has_more_argv()) {
+                if (HAS_MORE_ARGV()) {
                     dsi_net_hndl->user = argv[opt++];
                 }
-                if (has_more_argv()) {
+                if (HAS_MORE_ARGV()) {
                     dsi_net_hndl->password = argv[opt++];
                     if (dsi_net_hndl->password && dsi_net_hndl->password[0]) {
                         dsi_net_hndl->auth_pref = DSI_AUTH_PREF_CHAP_ONLY_ALLOWED; //default chap, customers may miss auth
                     }
                 }
-                if (has_more_argv()) {
+                if (HAS_MORE_ARGV()) {
                     dsi_net_hndl->auth_pref = argv[opt++][0] - '0';
                 }
                 break;
             }
 
             case 'n': {
-                if (has_more_argv()) {
+                if (HAS_MORE_ARGV()) {
                     dsi_net_hndl->cdma_profile_index = dsi_net_hndl->umts_profile_index = argv[opt++][0] - '0';
                 }
                 break;
@@ -225,16 +226,24 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
 {
     dsi_call_param_value_t param_info;
     int32_t rval = RT_SUCCESS;
+    static rt_bool dsi_init_flag = RT_FALSE;
 
-    rval = dsi_init(DSI_MODE_GENERAL);
-    if (rval != DSI_SUCCESS) {
-        MSG_PRINTF(LOG_ERR, "dsi init failed!!!\n");
-        return RT_ERROR;
+    if (!dsi_init_flag) {
+        rval = dsi_init(DSI_MODE_GENERAL);
+        if (rval != DSI_SUCCESS) {
+            MSG_PRINTF(LOG_ERR, "dsi init failed, rval=%d\n", rval);
+            return RT_ERROR;
+        }
+        dsi_init_flag = RT_TRUE;
     }
 
-    dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
-    set_dsi_net_info(dsi_net_hndl);
+    if (dsi_net_hndl->handle) {
+        dial_up_deinit(dsi_net_hndl);
+    }
+
     rt_os_memset(dsi_net_hndl, 0x00, sizeof(dsi_call_info_t));
+    dsi_net_hndl->call_state = DSI_STATE_CALL_IDLE;
+    set_dsi_net_info(dsi_net_hndl);    
     dsi_net_hndl->cdma_profile_index = dsi_net_hndl->umts_profile_index = 0;
     dsi_net_hndl->ip_version = DSI_IP_VERSION_4_6;
     dsi_net_hndl->apn = NULL;
@@ -278,6 +287,7 @@ int32_t dial_up_init(dsi_call_info_t *dsi_net_hndl)
 int32_t dial_up_deinit(dsi_call_info_t *dsi_net_hndl)
 {
     dsi_rel_data_srvc_hndl(dsi_net_hndl->handle);  // it will release all handle, and you should reinit again !!! 
+    dsi_net_hndl->handle = NULL;
 
     return RT_SUCCESS;
 }
@@ -285,12 +295,13 @@ int32_t dial_up_deinit(dsi_call_info_t *dsi_net_hndl)
 /* force to create a NO_NET event */
 int32_t dial_up_reset(void)
 {
-    int32_t signo = DSI_EVT_NET_NO_NET;
+    /* should diffirent from DSI_EVT_NET_NO_NET */
+    int32_t signo = RT_FORCE_DSI_EVT_NET_NO_NET;
     
     /* Pass on the EVENT to upper application */
     write(g_dsi_event_fd[0], &signo, sizeof(signo));
 
-    MSG_PRINTF(LOG_ERR, "force to create a NO_NET event ...\r\n");
+    MSG_PRINTF(LOG_ERR, "force to create a local NO_NET event ...\r\n");
 }
 
 static rt_bool dial_up_get_regist_state(void)
@@ -322,14 +333,14 @@ static int32_t dial_up_check_register_state(int32_t interval, int32_t max_cnt)
     return RT_SUCCESS;
 }
 
-#if 0  // only for debug
+#if 1  // only for debug
 #define DSI_CALL(func, handle) \
 ({ \
     int32_t __ret = RT_ERROR; \
     static int32_t index = 0; \
     __ret = func((handle)); \
     index++; \
-    MSG_PRINTF(LOG_INFO, "----------------------------------- %25s --- %5d, ret=%d\n", #func, index, __ret); \
+    MSG_PRINTF(LOG_INFO, "------> %25s ---> %5d, ret=%d\n", #func, index, __ret); \
     __ret; \
 })
 #else
@@ -343,7 +354,7 @@ static int32_t dial_up_start(dsi_call_info_t *dsi_net_hndl, int32_t interval, in
 
     if (g_dsi_event_fd[0] < 0 && g_dsi_event_fd[1] < 0) {
         socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
-        MSG_PRINTF(LOG_INFO, "< create two new sockets --- g_dsi_event_fd(%d,%d) >\n", g_dsi_event_fd[0], g_dsi_event_fd[1]);
+        MSG_PRINTF(LOG_INFO, "< create two new sockets g_dsi_event_fd(%d,%d) >\n", g_dsi_event_fd[0], g_dsi_event_fd[1]);
     }
 
     while (1) {
@@ -364,7 +375,7 @@ static int32_t dial_up_start(dsi_call_info_t *dsi_net_hndl, int32_t interval, in
 
 static int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
 {
-    int32_t rval;
+    int32_t rval = RT_ERROR;
 
 #if 0
     /* keep socket pair fd open */
@@ -379,9 +390,55 @@ static int32_t dial_up_stop(dsi_call_info_t *dsi_net_hndl)
 #endif
 
     rval = DSI_CALL(dsi_stop_data_call, dsi_net_hndl->handle);
-    MSG_PRINTF(LOG_INFO, "dsi stop data call rval = %d\r\n", rval);
-    rt_os_sleep(2);
+    if (rval != RT_SUCCESS) {
+        MSG_PRINTF(LOG_INFO, "dsi stop data call rval = %d\r\n", rval);
+    }
 
+    return rval;
+}
+
+static int32_t dial_up_signo_check(int32_t cur_signo)
+{
+    static int32_t last_signo = -1;
+    static int32_t chk_counter = 0;
+
+    #if 1
+    if (last_signo == DSI_EVT_WDS_CONNECTED && cur_signo == DSI_EVT_NET_NO_NET) {
+        chk_counter++;
+    } 
+    
+    if (cur_signo == DSI_EVT_NET_IS_CONN) {
+        chk_counter = 0;
+    }
+    #else  // only for test
+    if (last_signo == DSI_EVT_NET_IS_CONN && cur_signo == DSI_EVT_NET_NO_NET) {
+        chk_counter++;
+    }
+    #endif
+
+    if (chk_counter >= MAX_BAD_DSI_CALL_CNT) {
+        MSG_PRINTF(LOG_WARN, "too many dsi call (%d) !!!\r\n", chk_counter);
+        goto too_many_bad_dsi_call_entry; 
+    }
+
+    MSG_PRINTF(LOG_INFO, "cur_signo: %d, last_signo: %d, counter: %d\r\n", cur_signo, last_signo, chk_counter);
+
+    last_signo = cur_signo;
+
+    return RT_SUCCESS;
+
+too_many_bad_dsi_call_entry:
+    
+    /* stop */
+    chk_counter = 0;
+    MSG_PRINTF(LOG_WARN, "sleep 10 seconds to reboot terminal ...\r\n");
+    rt_os_sleep(10);
+    rt_os_reboot();
+
+    while (1) {
+        rt_os_sleep(1);
+    }
+    
     return RT_SUCCESS;
 }
 
@@ -431,7 +488,15 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
             /* Handle the POLLIN event. */
             if (fd == g_dsi_event_fd[1]) {
                 if (read(fd, &signo, sizeof(signo)) == sizeof(signo)) {
+                    dial_up_signo_check(signo);
                     switch (signo) {
+                        /* redtea force DSI NO_NET */
+                        case RT_FORCE_DSI_EVT_NET_NO_NET:
+                            MSG_PRINTF(LOG_DBG, "RT_FORCE_DSI_EVT_NET_NO_NET\n");
+                            exit_flag = RT_TRUE;
+                            *state = LOCAL_DIAL_UP_NO_NET;
+                            break;
+                            
                         /* Data call is disconnected */
                         case DSI_EVT_NET_NO_NET:
                             MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NO_NET\n");
@@ -439,8 +504,8 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                             *state = LOCAL_DIAL_UP_NO_NET;
                             if (dsi_get_call_end_reason(dsi_net_hndl->handle, &dsicallend, dsi_net_hndl->ip_type) == DSI_SUCCESS) {
                                 MSG_PRINTF(LOG_DBG, "dsi_get_call_end_reason handle reason type=%d, reason code=%d\n",
-                                    dsicallend.reason_type,dsicallend.reason_code);
-                            }
+                                    dsicallend.reason_type, dsicallend.reason_code);
+                            }                            
                         break;
 
                         /* WDS connected */
@@ -503,6 +568,7 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
 static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
 {
     local_dial_up_e state;
+    int32_t ret = RT_ERROR;
 
     while (1) {
         switch (dsi_net_hndl->call_state) {
@@ -543,13 +609,26 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
                     dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_DISCONNECTING);
                 } else if (state == LOCAL_DIAL_UP_IS_CONN) {
                     dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTED);
-                }
+                } 
                 break;
 
             case DSI_STATE_CALL_DISCONNECTING:
-                dial_up_stop(dsi_net_hndl);
-                dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_IDLE);
-                rt_os_sleep(5);  // wait some time to start a new dial-up operation !!!
+                ret = dial_up_stop(dsi_net_hndl);
+                if (ret == RT_SUCCESS) {
+                    dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_WAIT_NO_NET);
+                } else {
+                    dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_IDLE);
+                    rt_os_sleep(5);  // wait some time to start a new dial-up operation !!!
+                }                
+                break;
+
+            case DSI_STATE_CALL_WAIT_NO_NET:
+                dial_up_check_connect_state(dsi_net_hndl, &state);
+                if (state == LOCAL_DIAL_UP_NO_NET) {
+                    dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_IDLE);
+                } else if (state == LOCAL_DIAL_UP_IS_CONN) {
+                    dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTED);
+                } 
                 break;
 
             default:
@@ -558,6 +637,8 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
                 break;
         }
     }
+
+exit_entry:
 
     return RT_SUCCESS;
 }
