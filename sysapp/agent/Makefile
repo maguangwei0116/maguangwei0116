@@ -44,7 +44,7 @@ LOCAL_CFLAGS                        += -DOPENSSL=1
 
 # Config your own libraries
 ifeq ($(SYSAPP_PLATFORM_9X07), y)
-QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices 
+QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices
 COMM-LIB                            = comm ssl crypto pthread dl
 ifeq ($(CFG_STANDARD_MODULE),y)
 QMI-LIB                             += ql_softsim_extsdk
@@ -72,6 +72,7 @@ vpath %.c ./core/personalise
 vpath %.c ./core/mqtt
 vpath %.c ./core/config
 vpath %.c ./core/queue
+vpath %.c ./core/cardflow
 vpath %.c ./core/cardm
 vpath %.c ./core/logm
 vpath %.c ./core/networkd
@@ -103,6 +104,7 @@ SRC-y                                   += src/agent_main.c
 SRC-y                                   += src/agent_queue.c
 SRC-y                                   += src/card_manager.c
 SRC-y                                   += src/card_detection.c
+SRC-y                                   += src/card_flow_control.c
 SRC-y                                   += src/msg_process.c
 SRC-y                                   += src/ipc_socket_client.c
 SRC-y                                   += src/network_detection.c
@@ -176,6 +178,7 @@ INC-PATH-y 		                        += ./core/downstream/
 INC-PATH-y 		                        += ./core/logm/
 INC-PATH-y 		                        += ./core/agent2monitor/
 INC-PATH-y 		                        += ./core/at/
+INC-PATH-y 		                        += ./core/cardflow/
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)

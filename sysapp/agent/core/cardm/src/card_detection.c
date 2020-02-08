@@ -61,7 +61,7 @@ static int32_t card_check_provisoning_conflict(rt_bool clear_flg)
         cur_time[index++] = time(NULL);
     } else {
         for (i = 0; i < (SUCCESSIVE_NO_NET_NUM - 1); i++) {
-            cur_time[i] = cur_time[i + 1];  
+            cur_time[i] = cur_time[i + 1];
         }
         cur_time[i] = time(NULL);
     }
@@ -105,13 +105,13 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
             MSG_PRINTF(LOG_WARN, "provionsing iccid detected [%d] ==> [%d]\r\n", *type, *g_cur_profile_type);
             *type = *g_cur_profile_type;
             return RT_SUCCESS;
-        } else {     
+        } else {
             MSG_PRINTF(LOG_INFO, "provionsing iccid detected ...\r\n");
             *type = *g_cur_profile_type;
             return RT_ERROR;
         }
     }
-    
+
     if (PROFILE_TYPE_OPERATIONAL == *g_cur_profile_type) {
         if ((rt_os_strcmp(iccid, g_cur_iccid)) || (*type != *g_cur_profile_type)) {
             MSG_PRINTF(LOG_WARN, "iccid changed: (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_cur_iccid, *g_cur_profile_type);
@@ -119,7 +119,7 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
             *type = *g_cur_profile_type;
             return RT_SUCCESS;
         }
-    } 
+    }
 
     return RT_ERROR;
 }
@@ -135,7 +135,7 @@ static int32_t card_changed_handle(const char *iccid, profile_type_e type)
         msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
         card_detection_disable();
         card_check_provisoning_conflict(RT_TRUE);
-    } else { 
+    } else {
         ;
     }
 
@@ -146,11 +146,11 @@ static void card_detection_task(void)
 {
     profile_type_e  type = PROFILE_TYPE_TEST;
     char            iccid[THE_ICCID_LENGTH+1] = {0};
-    
+
     rt_os_sleep(5);
     card_load_using_card(iccid, sizeof(iccid), &type);
     MSG_PRINTF(LOG_INFO, "g_cur_iccid: %s, g_cur_profile_type: %d\r\n", g_cur_iccid, *g_cur_profile_type);
-    
+
     while (1) {
         if (g_card_detecting_flg) {
             msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_UPDATE, NULL, 0);
@@ -172,13 +172,16 @@ int32_t card_detection_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t ret = RT_ERROR;
 
+    if ((buf != NULL) && (len >0)) {  // Reserve for refinement parament
+        return RT_SUCCESS;
+    }
     switch (mode) {
         case MSG_NETWORK_DISCONNECTED:
             if (RT_SUCCESS == card_check_provisoning_conflict(RT_FALSE)) {
-                card_changed_handle("", PROFILE_TYPE_PROVISONING);   
+                card_changed_handle("", PROFILE_TYPE_PROVISONING);
             }
             break;
-            
+
         case MSG_NETWORK_CONNECTED:
             break;
     }
@@ -198,7 +201,7 @@ int32_t init_card_detection(void *arg)
     if (ret == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "create card detection task error, err(%d)=%s\r\n", errno, strerror(errno));
     }
-    
+
     return ret;
 }
 

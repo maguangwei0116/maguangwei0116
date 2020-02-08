@@ -15,17 +15,28 @@
 #include "network_detection.h"
 #include "agent_queue.h"
 
+static network_update_switch_e g_update_network_state = NETWORK_UPDATE_ENABLE;
+
+void network_update_switch(network_update_switch_e state)
+{
+    g_update_network_state = state;
+}
+
 void network_update_state(int32_t state)
 {
     #define NETWORK_STATE_NOT_READY     -1
-    
+
     static int32_t g_network_state      = NETWORK_STATE_NOT_READY;
-    
+
     if (state == g_network_state) {
+        return;
+    } else if (g_update_network_state == NETWORK_UPDATE_DISABLE) {
+        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, &g_update_network_state, sizeof(g_update_network_state));
+        card_detection_disable();
         return;
     }
 
-    MSG_PRINTF(LOG_INFO, "network state changed: %d -> %d\r\n", g_network_state, state);
+    MSG_PRINTF(LOG_INFO, "network state changed: %d -> %d, g_update_network_state:%d\r\n", g_network_state, state, sizeof(g_update_network_state));
     g_network_state = state;
 
     if (g_network_state == RT_DSI_STATE_CALL_CONNECTED) {  // network connected
@@ -80,9 +91,9 @@ static void network_detection_task(void *arg)
     dsi_call_info_t dsi_net_hndl;
     profile_type_e *type = ((task_param_t *)arg)->type;
     int32_t *profile_damaged = ((task_param_t *)arg)->profile_damaged;
-    
+
     MSG_PRINTF(LOG_INFO, "start with profile (%d,%d) ...\r\n", *type, *profile_damaged);
-    
+
     /* non-operational profile && share profile ok */
     if (*type != PROFILE_TYPE_OPERATIONAL && *profile_damaged == RT_SUCCESS) {
         network_wait_bootstrap_start(MAX_WAIT_BOOTSTRAP_TIME);
@@ -140,7 +151,7 @@ void network_force_down(void)
 int32_t init_network_detection(void *arg)
 {
     rt_task task_id = 0;
-    int32_t ret = RT_ERROR;    
+    int32_t ret = RT_ERROR;
 
     g_task_param.type               = &(((public_value_list_t *)arg)->card_info->type);
     g_task_param.profile_damaged    = ((public_value_list_t *)arg)->profile_damaged;

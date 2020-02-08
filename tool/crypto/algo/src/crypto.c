@@ -138,8 +138,8 @@ int ecc_verify(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_
         return 0;
     }
     //LOGI_STR("verify beginning...");
-    fnHexToAsc(ca_public_key_x, 64, (SZ_UBYTE1 *)pubkey+1, 32);
-    fnHexToAsc(ca_public_key_y, 64, (SZ_UBYTE1 *)pubkey+33, 32);
+    fnHexToAsc(ca_public_key_x, 64, (SZ_UBYTE1 *)pubkey + 1, 32);
+    fnHexToAsc(ca_public_key_y, 64, (SZ_UBYTE1 *)pubkey + 33, 32);
     if ( CheckPublicKey( ca_public_key_x , ca_public_key_y ) != 1 ) {
         return 0;
     }
@@ -195,8 +195,8 @@ int ecc_sign( uint8_t *input, int input_len, uint8_t *privkey, int privkey_len, 
         return 0;
     }
 
-    fnAscToHex(output,32,car,strlen(car));
-    fnAscToHex(output+32,32,cas,strlen(cas));
+    fnAscToHex(output, 32, car, strlen(car));
+    fnAscToHex(output + 32, 32, cas, strlen(cas));
 
     *output_len = 64 ;
     return 1;
@@ -228,7 +228,7 @@ int ecc_sign_hash( uint8_t *input, int input_len, uint8_t *privkey, int privkey_
     }
 
     fnAscToHex(output, 32, car, strlen(car));
-    fnAscToHex(output+32, 32, cas, strlen(cas));
+    fnAscToHex(output + 32, 32, cas, strlen(cas));
     *output_len = 64 ;
 
     return 1;

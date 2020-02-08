@@ -35,6 +35,11 @@ typedef enum PROFILE_TYPE {
     PROFILE_TYPE_OPERATIONAL        = 2,
 } profile_type_e;
 
+typedef enum CARD_STATE {
+    CARD_STATE_DISABLED             = 0,
+    CARD_STATE_ENABLED              = 1,
+} card_state_e;
+
 typedef enum INIT_PROFILE_TYPE {
     INIT_PROFILE_TYPE_PROVISONING   = 0,
     INIT_PROFILE_TYPE_OPERATIONAL   = 1,
@@ -45,8 +50,9 @@ typedef struct CARD_INFO {
     profile_info_t                  info[THE_MAX_CARD_NUM];
     uint8_t                         num;
     uint8_t                         eid[MAX_EID_LEN + 1];
-    profile_type_e                  type;
-    uint8_t                         iccid[THE_ICCID_LENGTH+1];
+    profile_type_e                  type;                      // used card type
+    profile_type_e                  last_type;                 // used card type
+    uint8_t                         iccid[THE_ICCID_LENGTH+1]; // used card iccid
 } card_info_t;
 
 int32_t init_card_manager(void *arg);

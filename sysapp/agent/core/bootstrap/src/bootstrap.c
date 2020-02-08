@@ -65,17 +65,17 @@ static void bootstrap_network_start_timer(void)
 /* only work in share profile damaged */
 void operational_network_start_timer(void)
 {
-    bootstrap_network_start_timer();  
+    bootstrap_network_start_timer();
 }
 
 int32_t bootstrap_select_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *profile_len)
 {
-    return selected_profile(mcc, apn, mcc_mnc, profile, profile_len);    
+    return selected_profile(mcc, apn, mcc_mnc, profile, profile_len);
 }
 
 int32_t bootstrap_init_profile(const char *file)
 {
-    return init_profile_file(file);   
+    return init_profile_file(file);
 }
 
 static void bootstrap_local_select_profile(void)
@@ -84,17 +84,17 @@ static void bootstrap_local_select_profile(void)
         g_retry_times           = 0;
         g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME;
         MSG_PRINTF(LOG_ERR, "bootstrap select un-work profiles too many times\r\n");
-    } else { 
+    } else {
         uint16_t mcc = 0;
         char mcc_mnc[32] = {0};
         char apn[128] = {0};
         uint8_t profile_buffer[1024] = {0};
         uint16_t profile_len = 0;
-        
+
         #if 0  // only for debug
         unsigned long cur_time = time(NULL);
         static unsigned long last_time = 0;
-        
+
         if (!last_time) {
             last_time = cur_time;
         }
@@ -105,13 +105,13 @@ static void bootstrap_local_select_profile(void)
         #endif
 
         rt_qmi_get_mcc_mnc(&mcc, NULL);
-        bootstrap_select_profile(mcc, apn, mcc_mnc, profile_buffer, &profile_len); 
+        bootstrap_select_profile(mcc, apn, mcc_mnc, profile_buffer, &profile_len);
         rt_qmi_modify_profile(1, 0, 0, apn, mcc_mnc);
-        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer, profile_len);       
+        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer, profile_len);
         msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_START_NETWORK_DETECTION, NULL, 0);
-        if (g_retry_times < g_max_retry_times) {            
-            g_single_interval_time = g_time_table[g_retry_times];                        
-        } 
+        if (g_retry_times < g_max_retry_times) {
+            g_single_interval_time = g_time_table[g_retry_times];
+        }
         g_retry_times++;
         MSG_PRINTF(LOG_INFO, "next single interval time(%d)=%d\r\n", g_retry_times, g_single_interval_time);
     }
@@ -120,10 +120,10 @@ static void bootstrap_local_select_profile(void)
 static void bootstrap_download_default_share_profile_once(void)
 {
     static rt_bool g_start_download_profile = RT_FALSE;
-    
+
     if (!g_start_download_profile) {
         MSG_PRINTF(LOG_WARN, "download default share profile ...\r\n");
-        g_start_download_profile = RT_TRUE;  
+        g_start_download_profile = RT_TRUE;
 #if (CFG_OPEN_MODULE)
         ota_download_default_share_profile();
 #endif
@@ -132,8 +132,8 @@ static void bootstrap_download_default_share_profile_once(void)
 
 int32_t init_bootstrap(void *arg)
 {
-    g_public_value = (public_value_list_t *)arg;    
-    g_public_value->profile_damaged = &g_is_profile_damaged;    
+    g_public_value = (public_value_list_t *)arg;
+    g_public_value->profile_damaged = &g_is_profile_damaged;
     g_is_profile_damaged = bootstrap_init_profile(SHARE_PROFILE);
 
     return g_is_profile_damaged;
@@ -143,6 +143,11 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     if (g_is_profile_damaged == RT_SUCCESS) {
         if (g_public_value->card_info->type != PROFILE_TYPE_PROVISONING && g_public_value->card_info->type != PROFILE_TYPE_TEST) {
+            return;
+        }
+        if ((buf != NULL) && (len > 0)) {  // Disable bootstrap
+            MSG_PRINTF(LOG_INFO, "g_bootstrap_network:%d\n", g_bootstrap_network);
+            g_bootstrap_network     = RT_TRUE;
             return;
         }
         if (mode == MSG_BOOTSTRAP_SELECT_CARD) {
@@ -160,8 +165,8 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
             g_bootstrap_network     = RT_FALSE;
         } else if (mode == MSG_START_NETWORK_DETECTION) {
             bootstrap_network_start_timer();
-        }     
-    } else {        
+        }
+    } else {
         MSG_PRINTF(LOG_INFO, "share profile damaged, mode:%d, type:%d\n", mode, g_public_value->card_info->type);
         if (mode == MSG_BOOTSTRAP_SELECT_CARD) {
             static int32_t frist_bootstrap_msg = 1;
@@ -172,21 +177,21 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
                 bootstrap_network_start_timer();
             } else {
                 ipc_select_profile_by_monitor();
-            }         
+            }
         } else if (mode == MSG_BOOTSTRAP_DISCONNECTED) {
             if (g_public_value->card_info->type == PROFILE_TYPE_OPERATIONAL) {
                 /* switch to provisoning profile and update profile list, and check again */
                 card_force_enable_provisoning_profile_update();
                 bootstrap_network_start_timer();
             } else if (g_public_value->card_info->type == PROFILE_TYPE_PROVISONING) {
-                ipc_select_profile_by_monitor();                
+                ipc_select_profile_by_monitor();
             }
-        } else if (mode == MSG_NETWORK_CONNECTED) { 
+        } else if (mode == MSG_NETWORK_CONNECTED) {
             g_bootstrap_network     = RT_TRUE;
-            bootstrap_download_default_share_profile_once();  
+            bootstrap_download_default_share_profile_once();
         } else if (mode == MSG_NETWORK_DISCONNECTED) {
             g_bootstrap_network     = RT_FALSE;
-        } 
+        }
     }
 }
 
@@ -194,13 +199,13 @@ int32_t bootstrap_get_profile_version(char *batch_code, int32_t b_size, char *ve
 {
     if (g_is_profile_damaged == RT_SUCCESS) {
         return get_share_profile_version(batch_code, b_size, version, v_size);
-    } else {        
+    } else {
         /* set a temp batch code and version */
         snprintf(batch_code, b_size, "%s", "Bxxxxxxxxxxxxxxxxxx");
         snprintf(version, v_size, "%s", "0.0.0.0");
         return RT_ERROR;
     }
-}   
+}
 
 int32_t bootstrap_get_profile_name(char *file_name, int32_t len)
 {

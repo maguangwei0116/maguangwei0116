@@ -112,22 +112,22 @@ static char g_share_profile[128];
 #define SHARED_PROFILE_NAME     "sharedprofile"
 
 static rt_fshandle_t open_share_profile(const char *file_name, rt_fsmode_t mode)
-{    
+{
 #if (CFG_OPEN_MODULE)
-    return linux_rt_fopen(file_name, mode); 
+    return linux_rt_fopen(file_name, mode);
 #elif (CFG_STANDARD_MODULE)  // standard
-    return linux_fopen(file_name, mode); 
+    return linux_fopen(file_name, mode);
 #endif
 }
 
 static int32_t sizeof_share_profile(const char *file_name)
-{    
+{
     int32_t file_size = 0;
-    
+
 #if (CFG_OPEN_MODULE)
-    file_size = linux_rt_file_size(file_name); 
+    file_size = linux_rt_file_size(file_name);
 #elif (CFG_STANDARD_MODULE)  // standard
-    file_size = linux_file_size(file_name); 
+    file_size = linux_file_size(file_name);
 #endif
 
     return file_size;
@@ -296,7 +296,7 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     len         = get_length(head_buf, 1);  // (tag + len) bytes
     l_len       = get_length(head_buf, 0);  // length bytes
     calc_len    = l_len - sizeof(tail_buf); // hash calc len
-    
+
     //MSG_PRINTF(LOG_INFO, "tag_len: %d, l_len: %d, file_len: %d, calc_len: %d\r\n", len, l_len, file_size, calc_len);
 
     /* check lengths value */
@@ -408,7 +408,7 @@ static int32_t update_hash(uint8_t *buf, int32_t profile_len, uint8_t *profile_h
     return RT_SUCCESS;
 }
 
-static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index, 
+static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index,
                             BOOLEAN_t sequential, uint16_t mcc, uint8_t *profile, uint16_t *len_out)
 {
     BootstrapRequest_t *bootstrap_request = NULL;
@@ -520,7 +520,6 @@ static uint32_t get_selecte_profile_index(uint32_t total_num)
         if (total_num == 1) {
             break;
         }
-
         rt_os_msleep(100);
     }
 
@@ -655,7 +654,7 @@ int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *versio
 int32_t verify_profile_file(rt_bool absolute_path, const char *file)
 {
     int32_t ret = RT_SUCCESS;
-    
+
 #ifdef CFG_SHARE_PROFILE_ECC_VERIFY
     char real_file_name[32] = {0};
     char absolute_file_path[256] = {0};
@@ -676,9 +675,9 @@ int32_t verify_profile_file(rt_bool absolute_path, const char *file)
 
     if (rt_os_strcmp(SHARED_PROFILE_NAME, real_file_name)) {
         MSG_PRINTF(LOG_ERR, "share profile name unmatched !\n");
-        ret = RT_ERROR;   
-    }    
-#endif 
+        ret = RT_ERROR;
+    }
+#endif
 
     return ret;
 }
@@ -701,7 +700,7 @@ int32_t init_profile_file(const char *file)
     if ((ret = verify_profile_file(RT_TRUE, g_share_profile)) == RT_ERROR) {
         return RT_ERROR;
     }
-#endif    
+#endif
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
     if (!fp) {
@@ -717,8 +716,8 @@ int32_t init_profile_file(const char *file)
         g_data.aes_key_offset = rt_get_aes_key_offset(fp, &len);
         g_data.operator_info_offset = rt_get_operator_profile_offset(fp, &len);
     }
-    
-    if (fp) {
+
+    if (fp != NULL) {
         linux_fclose(fp);
         fp = NULL;
     }

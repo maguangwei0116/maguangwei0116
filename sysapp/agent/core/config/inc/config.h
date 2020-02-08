@@ -21,6 +21,7 @@ typedef struct CONFIG_INFO {
     uint8_t             agent_log_level;    // @ref log_level_e in log.h
     uint8_t             init_profile_type;  // @ref init_profile_type_e in card_manager.h
     uint8_t             mbn_enable;         // 0: disable   1: enable
+    uint8_t             flow_control_switch;// 0: close     1: open
 
     /* some config item which never changed dynamically */
     uint32_t            oti_port;           // port for OTI server

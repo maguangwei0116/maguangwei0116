@@ -42,6 +42,11 @@ typedef enum DSI_STATE_CALL_STATE {
 
 #endif
 
+typedef enum NETWORK_UPDATE_SWITCH {
+    NETWORK_UPDATE_ENABLE = 0,
+    NETWORK_UPDATE_DISABLE
+} network_update_switch_e;
+
 int32_t init_network_detection(void *arg);
 
 /**
@@ -49,9 +54,11 @@ int32_t init_network_detection(void *arg);
  param[in]: state @ref dsi_state_call_state_e
  note:      agent only pay close attention to 2 state: [RT_DSI_STATE_CALL_CONNECTED and RT_DSI_STATE_CALL_IDLE]
  */
-void    network_update_state(int32_t state); 
+void    network_update_state(int32_t state);
 
 void    network_force_down(void);
+
+void network_update_switch(network_update_switch_e state);
 
 #endif // __NETWORK_DETECTION_H__
 

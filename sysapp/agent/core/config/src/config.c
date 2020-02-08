@@ -137,6 +137,12 @@ static int32_t config_uicc_mode(const void *in, char *out)
     return config_range_int_value(in, 0, 1, out);
 }
 
+/* value: [0,1] */
+static int32_t config_card_flow_switch(const void *in, char *out)
+{
+    return config_range_int_value(in, 0, 1, out);
+}
+
 /* value: [60,1440] (60mins -- 1 hour) */
 static int32_t config_usage_freq(const void *in, char *out)
 {
@@ -145,30 +151,31 @@ static int32_t config_usage_freq(const void *in, char *out)
 
 static config_item_t g_config_items[] =
 {
-/*     item_name            config_func             data_type   default_value           annotation          */
+/*     item_name            config_func                 data_type   default_value           annotation          */
 #if (CFG_ENV_TYPE_PROD)
-ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "52.220.34.227",        "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-ITEM(EMQ_SERVER_ADDR,       NULL,                   STRING,     "18.136.190.97",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     NULL,                   STRING,     "smdp.redtea.io",       "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                       STRING,     "52.220.34.227",        "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
+ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "18.136.190.97",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
+ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp.redtea.io",       "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
 #else
-ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "54.222.248.186",       "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-ITEM(EMQ_SERVER_ADDR,       NULL,                   STRING,     "13.229.31.234",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     NULL,                   STRING,     "smdp-test.redtea.io",  "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                       STRING,     "54.222.248.186",       "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
+ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "13.229.31.234",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
+ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp-test.redtea.io",  "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
 #endif
-ITEM(MBN_CONFIGURATION,     config_switch_value,    INTEGER,    "1",                    "Whether config MBN (0:disable  1:enable)"),
-ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,   INTEGER,    "2",                    "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
-ITEM(RPLMN_ENABLE,          NULL,                   INTEGER,    "1",                    "Whether set rplmn (0:disable  1:enable)"),
-ITEM(LOG_FILE_SIZE,         config_log_size,        INTEGER,    "1",                    "The max size of rt_log file (MB)"),
-ITEM(UICC_MODE,             config_uicc_mode,       INTEGER,    "1",                    "The mode of UICC (0:vUICC  1:eUICC)"),
+ITEM(MBN_CONFIGURATION,     config_switch_value,        INTEGER,    "1",                    "Whether config MBN (0:disable  1:enable)"),
+ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,       INTEGER,    "2",                    "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
+ITEM(RPLMN_ENABLE,          NULL,                       INTEGER,    "1",                    "Whether set rplmn (0:disable  1:enable)"),
+ITEM(LOG_FILE_SIZE,         config_log_size,            INTEGER,    "1",                    "The max size of rt_log file (MB)"),
+ITEM(UICC_MODE,             config_uicc_mode,           INTEGER,    "0",                    "The mode of UICC (0:vUICC  1:eUICC)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,       STRING,     "LOG_WARN",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,       STRING,     "LOG_WARN",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_WARN",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_WARN",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
 #else
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,       STRING,     "LOG_INFO",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,       STRING,     "LOG_INFO",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_INFO",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_INFO",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
 #endif
-ITEM(USAGE_ENABLE,          config_switch_value,    INTEGER,    "0",                    "Whether enable upload user traffic (0:disable  1:enable)"),
-ITEM(USAGE_FREQ,            config_usage_freq,      INTEGER,    "60",                   "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
+ITEM(USAGE_ENABLE,          config_switch_value,        INTEGER,    "0",                    "Whether enable upload user traffic (0:disable  1:enable)"),
+ITEM(USAGE_FREQ,            config_usage_freq,          INTEGER,    "60",                   "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
+ITEM(CARD_FLOW_SWITCH,      config_card_flow_switch,    INTEGER,    "0",                    "The switch of seed card flow control(0:close 1:open)"),
 };
 
 static config_info_t g_config_info;
@@ -413,7 +420,7 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
         MSG_PRINTF(LOG_WARN, "Necessary config param is empty !!!\r\n");
         return RT_ERROR;
     }
-    
+
     infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
                                                     LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
 
@@ -431,6 +438,8 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
 
     log_level = log_get_level(local_config_get_data("AGENT_LOG_LEVEL"));
     infos->agent_log_level = (LOG_UNKNOW == log_level) ? LOG_INFO : log_level;
+
+    infos->flow_control_switch = msg_string_to_int(local_config_get_data("CARD_FLOW_SWITCH"));
 
     return RT_SUCCESS;
 }
@@ -454,6 +463,7 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_DBG, "AGENT_LOG_LEVEL       : %s\n", local_config_get_data("AGENT_LOG_LEVEL"));
     MSG_PRINTF(LOG_DBG, "USAGE_ENABLE          : %s\n", local_config_get_data("USAGE_ENABLE"));
     MSG_PRINTF(LOG_DBG, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
+    MSG_PRINTF(LOG_DBG, "CARD_FLOW_SWITCH      : %s\n", local_config_get_data("CARD_FLOW_SWITCH"));
 }
 
 int32_t init_config(void *arg)
@@ -504,7 +514,7 @@ int32_t config_update_uicc_mode(int32_t mode)
 }
 
 static int32_t config_get_key_value_fast(const char *app_path, const char *key, char *value)
-{ 
+{
     char rt_file_name[128];
     int32_t file_len = 0;
     rt_fshandle_t fp = NULL;
@@ -538,7 +548,7 @@ static int32_t config_get_key_value_fast(const char *app_path, const char *key, 
 
     p0 = rt_os_strstr(file_data, key);
     if (!p0) {
-        goto exit_entry;  
+        goto exit_entry;
     }
     p0 += rt_os_strlen(key);
 
@@ -553,7 +563,7 @@ static int32_t config_get_key_value_fast(const char *app_path, const char *key, 
 
     p1 = p0;
     while (1) {
-        if (*p1 == ' ' || *p1 == '\r'|| *p1 == '\n' || *p1 == '\t') {            
+        if (*p1 == ' ' || *p1 == '\r'|| *p1 == '\n' || *p1 == '\t') {
             break;
         }
         p1++;
@@ -562,7 +572,7 @@ static int32_t config_get_key_value_fast(const char *app_path, const char *key, 
     rt_os_memcpy(value, p0, p1-p0);
 
     ret = RT_SUCCESS;
-    
+
 exit_entry:
 
     if (fp) {

@@ -56,7 +56,7 @@ static int32_t idle_event(const uint8_t *buf, int32_t len, int32_t mode)
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
     (void)mode;
-    
+
     ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
     if (downstream_msg->msg) {
         rt_os_free(downstream_msg->msg);
@@ -79,7 +79,7 @@ static int32_t issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
     downstream_msg_t *downstream_msg = (downstream_msg_t *)buf;
 
     (void)mode;
-    
+
     ret = downstream_msg->parser(downstream_msg->msg, downstream_msg->tranId, &downstream_msg->private_arg);
     if (downstream_msg->msg) {
         rt_os_free(downstream_msg->msg);
@@ -94,7 +94,7 @@ static int32_t issue_cert_event(const uint8_t *buf, int32_t len, int32_t mode)
 }
 
 #if (AGENT_MSG_DEBUG)
-const char * g_msg_id_e[] = 
+const char * g_msg_id_e[] =
 {
     "MSG_ID_CARD_MANAGER",
     "MSG_ID_LOG_MANAGER",
@@ -108,7 +108,7 @@ const char * g_msg_id_e[] =
     "MSG_ID_IDLE",
     "MSG_ID_DETECT_NETWORK",  // 10
 };
-const char * g_msg_mode_e[] = 
+const char * g_msg_mode_e[] =
 {
     "MSG_FROM_MQTT",      // public for all module
     "MSG_CARD_SETTING_KEY",
@@ -125,6 +125,8 @@ const char * g_msg_mode_e[] =
     "MSG_MQTT_DISCONNECTED",
     "MSG_BOOTSTRAP_START_TIMER",
     "MSG_CARD_UPDATE",
+    "MSG_CARD_DISABLE_EXIST_CARD",
+    "MSG_CARD_UPDATE_SEED",
 };
 #endif
 
@@ -171,9 +173,9 @@ static void agent_queue_task(void)
 
                 case MSG_ID_BROAD_CAST_NETWORK:
                     card_manager_update_profiles_event(que_t.data_buf, que_t.data_len, que_t.mode); // Update profiles frist
-                    upload_event(que_t.data_buf, que_t.data_len, que_t.mode);                    
+                    upload_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     mqtt_connect_event(que_t.data_buf, que_t.data_len, que_t.mode);
-                    ota_upgrade_task_check_event(que_t.data_buf, que_t.data_len, que_t.mode);                    
+                    ota_upgrade_task_check_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode); // It will waste a few time
@@ -192,7 +194,7 @@ static void agent_queue_task(void)
                     break;
 
                 default:
-                    break;                
+                    break;
             }
 
             // MSG_PRINTF(LOG_INFO, "que_t.data_len:%d, que_t.data_buf:%p\n", que_t.data_len, que_t.data_buf);
@@ -270,7 +272,7 @@ static int32_t upload_queue_clear_msg(int32_t time_cnt)
 
     for (i = 0; i < time_cnt; i++) {
         rt_os_memset(&upload_queue, 0, sizeof(upload_queue));
-        ret = rt_receive_msg_queue(g_upload_queue_id, &upload_queue, upload_queue_len, UPLOAD_QUEUE_MSG_TYPE, RT_IPC_NOWAIT); 
+        ret = rt_receive_msg_queue(g_upload_queue_id, &upload_queue, upload_queue_len, UPLOAD_QUEUE_MSG_TYPE, RT_IPC_NOWAIT);
         if (ret == RT_ERROR && !upload_queue.data_buf) {
             break;
         }
@@ -331,7 +333,7 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
 #endif
 {
     agent_que_t que_t;
-
+    
     que_t.msg_typ = AGENT_QUEUE_MSG_TYPE;
     que_t.msg_id = msgid;
     que_t.mode = mode;

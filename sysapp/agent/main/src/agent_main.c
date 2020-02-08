@@ -36,6 +36,7 @@
 #include "customer_at.h"
 #include "at_command.h"
 #endif
+#include "card_flow_control.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
 
@@ -79,7 +80,7 @@ static int32_t get_monitor_version(char *name, int32_t n_size, char *version, \
     extern int32_t rt_qmi_get_monitor_version(uint8_t *version);
     char m_version[128] = {0};
     int32_t ret = RT_SUCCESS;
-    
+
     ret = rt_qmi_get_monitor_version(m_version);
     if (!ret) {
         char m_target_name[128] = {0};
@@ -100,7 +101,7 @@ static int32_t get_monitor_version(char *name, int32_t n_size, char *version, \
     }
 
     return ret;
-    
+
 #undef RT_AGENT_NAME
 #undef RT_MONITOR
 #else
@@ -251,12 +252,13 @@ static const init_obj_t g_init_objs[] =
 #endif
     INIT_OBJ(init_monitor,              (void *)&g_value_list),
     INIT_OBJ(init_lpa_channel,          (void *)&g_value_list),
-    INIT_OBJ(init_timer,                NULL),    
+    INIT_OBJ(init_timer,                NULL),
     INIT_OBJ(init_queue,                (void *)&g_value_list),
     INIT_OBJ(init_personalise,          (void *)&g_value_list),
     INIT_OBJ(init_card_manager,         (void *)&g_value_list),
     INIT_OBJ(init_card_detection,       (void *)&g_value_list),
     INIT_OBJ(init_network_detection,    (void *)&g_value_list),
+    INIT_OBJ(init_flow_control,         (void *)&g_value_list),
     INIT_OBJ(init_mqtt,                 (void *)&g_value_list),
     INIT_OBJ(init_upload,               (void *)&g_value_list),
     INIT_OBJ(init_upgrade,              (void *)&g_value_list),

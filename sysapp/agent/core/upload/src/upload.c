@@ -22,17 +22,18 @@
     "md5sum:%s\r\n"\
     "Content-Length: %d\r\n\r\n%s"
 
-static const char *g_upload_eid             = NULL;
-static const char *g_upload_deviceid        = NULL;
-static const char *g_upload_addr            = NULL;
-static uint32_t g_upload_port               = 0;
-static const char *g_upload_api             = "/api/v2/report";
-const char *g_push_channel                  = NULL;
-const devicde_info_t *g_upload_device_info  = NULL;
-const card_info_t *g_upload_card_info       = NULL;
-const target_versions_t *g_upload_ver_info  = NULL;
-static rt_bool g_upload_network             = RT_FALSE;
-static rt_bool g_upload_mqtt                = RT_FALSE;
+static const char *g_upload_eid                 = NULL;
+static const char *g_upload_deviceid            = NULL;
+static const char *g_upload_addr                = NULL;
+static uint32_t g_upload_port                   = 0;
+static const char *g_upload_api                 = "/api/v2/report";
+static const profile_type_e *g_last_card_type   = NULL;
+const char *g_push_channel                      = NULL;
+const devicde_info_t *g_upload_device_info      = NULL;
+const card_info_t *g_upload_card_info           = NULL;
+const target_versions_t *g_upload_ver_info      = NULL;
+static rt_bool g_upload_network                 = RT_FALSE;
+static rt_bool g_upload_mqtt                    = RT_FALSE;
 
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
@@ -100,7 +101,7 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
     }
 
     snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, md5_out, data_len, data);
-    send_len = rt_os_strlen(lpbuf);    
+    send_len = rt_os_strlen(lpbuf);
     ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
     //MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
 
@@ -122,7 +123,7 @@ static int32_t upload_wait_network_connected(void)
 }
 
 static int32_t upload_send_mqtt_request(const char *data, int32_t data_len)
-{    
+{
     return mqtt_pulish_msg((const char *)data, data_len);
 }
 
@@ -170,7 +171,7 @@ int32_t upload_event_final_report(void *buffer, int32_t len)
 static int32_t upload_send_request(const void *data, int32_t data_len)
 {
     int32_t ret = RT_ERROR;
-    
+
     ret = msg_send_upload_queue((void *)data, data_len);
 
     return ret;
@@ -196,7 +197,7 @@ static char *random_uuid(char *uuid, int32_t len)
             case 6:
                 sprintf(p, "4%x", b%15);
                 break;
-                
+
             case 8:
                 sprintf(p, "%c%x", magic[rt_get_random_num() % rt_os_strlen( magic )], b%15 );
                 break;
@@ -223,7 +224,7 @@ static char *random_uuid(char *uuid, int32_t len)
 }
 
 static void upload_get_random_tran_id(char *tran_id, uint16_t size)
-{       
+{
     random_uuid(tran_id, size);
 }
 
@@ -257,7 +258,7 @@ static rt_bool upload_check_memory(const void *buf, int32_t len, int32_t value)
 rt_bool upload_check_eid_empty(void)
 {
     return (upload_check_memory(g_upload_eid, MAX_EID_LEN, 'F') || \
-                upload_check_memory(g_upload_eid, MAX_EID_LEN, '0')) ? RT_TRUE : RT_FALSE;   
+                upload_check_memory(g_upload_eid, MAX_EID_LEN, '0')) ? RT_TRUE : RT_FALSE;
 }
 
 static const char *upload_get_topic_name(upload_topic_e upload_topic)
@@ -338,7 +339,7 @@ static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t s
     return ret;
 }
 
-static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t status, 
+static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t status,
                                         upload_topic_e topic, const cJSON *content)
 {
     int32_t ret = RT_ERROR;
@@ -389,7 +390,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             int32_t ret = RT_ERROR;
 
             MSG_PRINTF(LOG_WARN, "------->%s\n", event);
-            
+
             content = obj->packer(private_arg);
             //MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
             upload = upload_packet_all(tran_id, event, status, obj->topic, content);
@@ -426,6 +427,7 @@ int32_t init_upload(void *arg)
     g_upload_addr           = (const char *)public_value_list->config_info->oti_addr;
     g_upload_port           = public_value_list->config_info->oti_port;
     g_upload_ver_info       = (const target_versions_t *)public_value_list->version_info;
+    g_last_card_type        = (const profile_type_e *)&(public_value_list->card_info->last_type);
 
     //MSG_PRINTF(LOG_INFO, "imei: %p, %s\n", g_upload_device_info->imei, g_upload_device_info->imei);
     //MSG_PRINTF(LOG_INFO, "eid : %p, %s\n", g_upload_eid, g_upload_eid);
@@ -438,8 +440,8 @@ static int32_t upload_boot_info_event(void)
     static rt_bool g_report_boot_event = RT_FALSE;
     static time_t g_boot_timestamp;
     time_t tmp_timestamp = time(NULL);
-    
-    if (g_report_boot_event == RT_FALSE) {
+
+    if ((g_report_boot_event == RT_FALSE) && (*g_last_card_type != PROFILE_TYPE_PROVISONING)) {
         upload_event_report("BOOT", NULL, 0, NULL);
         g_report_boot_event = RT_TRUE;
         g_boot_timestamp = time(NULL);
@@ -449,7 +451,7 @@ static int32_t upload_boot_info_event(void)
             rt_bool report_all_info = RT_FALSE;
             upload_event_report("INFO", NULL, 0, &report_all_info);
         }
-    } 
+    }
 
     return RT_SUCCESS;
 }
@@ -462,7 +464,7 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
     if (MSG_NETWORK_CONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv network connected\r\n");
         g_upload_network = RT_TRUE;
-        upload_boot_info_event();      
+        upload_boot_info_event();
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_INFO, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;

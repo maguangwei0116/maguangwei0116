@@ -173,22 +173,22 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
         }
     }
 
-    apdu->cla = 0x80;     //cla
-    apdu->ins = 0xE2;     //ins
+    apdu->cla = 0x80;     // cla
+    apdu->ins = 0xE2;     // ins
     apdu->cla |= channel;
     for (i = 0; i < cnt; i++) {
-        apdu->p2 = i;            //p2
+        apdu->p2 = i;            // p2
         if (i == (cnt - 1)) {    // Last block
-            apdu->p1 = 0x91;     //p1
+            apdu->p1 = 0x91;     // p1
             apdu->lc = (left == 0 ? APDU_BLOCK_SIZE : left);
         } else {                 // More blocks
-            apdu->p1 = 0x11;     //p1
+            apdu->p1 = 0x11;     // p1
             apdu->lc = APDU_BLOCK_SIZE;
         }
-        memset(&apdu->data,0x00,apdu->lc);
+        memset(&apdu->data, 0x00, apdu->lc);
         memcpy(&apdu->data,data + i * APDU_BLOCK_SIZE, apdu->lc);
         cbuf[apdu->lc+5] = 0x00;
-        ret = send_apdu(cbuf, apdu->lc+6, rsp, rsp_len, channel);
+        ret = send_apdu(cbuf, apdu->lc + 6, rsp, rsp_len, channel);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
