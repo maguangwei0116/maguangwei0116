@@ -333,7 +333,7 @@ static int32_t dial_up_check_register_state(int32_t interval, int32_t max_cnt)
     return RT_SUCCESS;
 }
 
-#if 1  // only for debug
+#if 1
 #define DSI_CALL(func, handle) \
 ({ \
     int32_t __ret = RT_ERROR; \
@@ -403,7 +403,8 @@ static int32_t dial_up_signo_check(int32_t cur_signo)
     static int32_t chk_counter = 0;
 
     #if 1
-    if (last_signo == DSI_EVT_WDS_CONNECTED && cur_signo == DSI_EVT_NET_NO_NET) {
+    if ((last_signo == DSI_EVT_WDS_CONNECTED && cur_signo == DSI_EVT_NET_NO_NET) || \
+        (last_signo == DSI_EVT_NET_NO_NET && cur_signo == DSI_EVT_NET_NO_NET)) {
         chk_counter++;
     } 
     
