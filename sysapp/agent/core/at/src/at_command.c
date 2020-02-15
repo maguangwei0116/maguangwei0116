@@ -12,8 +12,8 @@
  *******************************************************************************/
 
 #include "rt_type.h"
- 
-#ifdef CFG_STANDARD_MODULE
+
+#ifdef   CFG_STANDARD_MODULE
 
 #include "agent_queue.h"
 #include "rt_os.h"
@@ -115,7 +115,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], \
                         AT_CONTENT_DELIMITER, (char *)g_p_value_list->card_info->eid);
                 ret = RT_SUCCESS;
-            } else if (cmd[3] == AT_GET_ICCIDS) {  // get iccids 
+            } else if (cmd[3] == AT_GET_ICCIDS) {  // get iccids
                 char num_string[8];
 
                 snprintf(num_string, sizeof(num_string), "%d", g_p_value_list->card_info->num);
@@ -144,8 +144,8 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
                 uint8_t iccid[THE_ICCID_LENGTH+1] = {0};
-                
-                rt_os_memcpy(iccid, &cmd[5], THE_ICCID_LENGTH);   
+
+                rt_os_memcpy(iccid, &cmd[5], THE_ICCID_LENGTH);
                 MSG_PRINTF(LOG_INFO, "iccid: %s\n", iccid);
                 if (cmd[3] == AT_SWITCH_TO_PROVISIONING) {
                     ret = uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
@@ -171,14 +171,14 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 char ubi_abs_file[128] = {0};
                 char real_file_name[32] = {0};
                 char *p0 = NULL;
-                char *p1 = NULL;    
-                
+                char *p1 = NULL;
+
                 MSG_PRINTF(LOG_INFO, "ubi file input: %s\n", &cmd[5]);
                 p0 = rt_os_strchr(&cmd[5], '"');
                 if (p0) {
-                    p1 = rt_os_strchr(p0 + 1, '"'); 
+                    p1 = rt_os_strchr(p0 + 1, '"');
                     if (p1) {
-                        rt_os_memcpy(ubi_abs_file, p0 + 1, p1 - p0 - 1);  
+                        rt_os_memcpy(ubi_abs_file, p0 + 1, p1 - p0 - 1);
                         MSG_PRINTF(LOG_INFO, "ubi_abs_file: %s\n", ubi_abs_file);
                     }
                 }
@@ -203,13 +203,29 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     return ret;
 }
 
+static int32_t apdu_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
+{
+    int32_t ret = RT_ERROR;
+    int32_t ii = 0, tmp_len = 0, size = 0;
+    uint8_t buf[1024] = {0};
+
+    MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
+    if (*cmd == AT_CONTENT_DELIMITER) {
+
+    }
+
+}
+
 int32_t init_at_command(void *arg)
 {
     g_p_value_list = ((public_value_list_t *)arg);
 
     /* install "UICC" at command */
     AT_CMD_INSTALL(uicc);
-    
+
+    /* install "APDU" at command */
+    AT_CMD_INSTALL(apdu);
+
     return RT_SUCCESS;
 }
 
@@ -218,7 +234,7 @@ int32_t init_at_command(void *arg)
 int32_t init_at_command(void *arg)
 {
     (void)arg;
-    
+
     return RT_SUCCESS;
 }
 

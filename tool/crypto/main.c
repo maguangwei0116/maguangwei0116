@@ -8,9 +8,10 @@
 #include <string.h>
 #include "types.h"
 #include "crypto.h"
+#include "base64.h"
 
 extern const char curve_parameter[192];
-static const char *opt_string = "glll:s:?:v:h:i:s:p:";
+static const char *opt_string = "glll:s:?:v:h:i:s:p:f:b:t:";
 volatile int32_t toStop = 0;
 
 static void display_usage(void)
@@ -22,6 +23,9 @@ static void display_usage(void)
     fprintf(stderr, "  -i\thash signature\n");
     fprintf(stderr, "  -p\tpublic key\n");
     fprintf(stderr, "  -s\tsecuret key\n");
+
+    fprintf(stderr, "  -f\thash signature base64 format\n");
+    fprintf(stderr, "  -b\tpublic key base64 format\n");
 }
 
 int softsim_printf (int leve, int flag, const char *msg, ...)
@@ -47,6 +51,7 @@ int main(int argc, char * const *argv)
     uint8_t *signature = NULL;
     uint8_t *sk_key = NULL;
     uint8_t *pk_key = NULL;
+    uint8_t *input_text = NULL;
     uint8_t pk[64];
     uint8_t sk[64];
     int pk_len = 0;
@@ -54,7 +59,9 @@ int main(int argc, char * const *argv)
     int s_len = 0;
     int h_len = 0;
     uint8_t output[64];
+    uint8_t base64_out[512];
     int output_len = 0;
+    int input_len = 0;
 
     init_curve_parameter(curve_parameter);
 
@@ -92,6 +99,26 @@ int main(int argc, char * const *argv)
                 pk_len = (int)strlen((char *)pk_key);
                 printf("pk:%s, len:%d\n", pk_key, pk_len);
                 break;
+
+            case 'f':
+                signature = (uint8_t *)optarg;
+                rt_base64_decode(signature, base64_out, &s_len);
+                bytes2hexstring(base64_out, s_len, signature);
+                s_len = (int)strlen((char *)signature);
+                printf("signature:%s, len:%d\n", signature, s_len);
+                break;
+            case 'b':
+                pk_key = (uint8_t *)optarg;
+                rt_base64_decode(pk_key, base64_out, &pk_len);
+                bytes2hexstring(base64_out, pk_len, pk_key);
+                pk_len = (int)strlen((char *)pk_key);
+                printf("pk:%s, len:%d\n", pk_key, pk_len);
+                break;
+            case 't':
+                input_text = (uint8_t *)optarg;
+                input_len = (int)strlen((char *)input_text);
+                printf("string:%s, len:%d\n", input_text, input_len);
+                break;
             case '?':
                 display_usage();
                 break;
@@ -106,6 +133,8 @@ int main(int argc, char * const *argv)
     } else if ((hash != NULL) && (signature == NULL) && (sk_key != NULL)) {
         ecc_sign_hash( hash, h_len, sk_key, sk_len, output, &output_len);
         LOG_INFO_ARRAY(output, output_len, "signature:");
+    } else if ((input_text != NULL) && (signature != NULL) && (pk_key != NULL)) {
+        ecc_verify(input_text, input_len, pk_key, pk_len, signature, s_len);
     } else if (pk_len == 0) {
         printf("Input parameter error!!\n");
     }

@@ -141,6 +141,7 @@ int ecc_verify(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_
     fnHexToAsc(ca_public_key_x, 64, (SZ_UBYTE1 *)pubkey + 1, 32);
     fnHexToAsc(ca_public_key_y, 64, (SZ_UBYTE1 *)pubkey + 33, 32);
     if ( CheckPublicKey( ca_public_key_x , ca_public_key_y ) != 1 ) {
+        LOGE("Check pk failed\n");
         return 0;
     }
     //printByteString(input,input_len);
