@@ -138,8 +138,8 @@ int ecc_verify(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_
         return 0;
     }
     //LOGI_STR("verify beginning...");
-    fnHexToAsc(ca_public_key_x, 64, (SZ_UBYTE1 *)pubkey + 1, 32);
-    fnHexToAsc(ca_public_key_y, 64, (SZ_UBYTE1 *)pubkey + 33, 32);
+    memcpy(ca_public_key_x, (SZ_UBYTE1 *)pubkey, 64);
+    memcpy(ca_public_key_y, (SZ_UBYTE1 *)pubkey + 64, 64);
     if ( CheckPublicKey( ca_public_key_x , ca_public_key_y ) != 1 ) {
         LOGE("Check pk failed\n");
         return 0;
@@ -147,8 +147,9 @@ int ecc_verify(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_
     //printByteString(input,input_len);
     Sha256Calc_calculate(input , input_len, sha);
     fnHexToAsc(ca_hm, 64, sha, 32);
-    fnHexToAsc(car, 64, sigBuff, 32);
-    fnHexToAsc(cas, 64, sigBuff + 32, 32);
+    printf("ca_hm:%s, len:64\n", ca_hm);
+    memcpy(car, sigBuff, 64);
+    memcpy(cas, sigBuff + 64, 64);
     if ( Verify( ca_hm , ca_public_key_x , ca_public_key_y , car , cas ) ) {
         LOGD("verify sucess");
         return 1;

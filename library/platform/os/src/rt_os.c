@@ -54,7 +54,7 @@ void _rt_exit_task(void * args)
 void rt_exit_task(void * args)
 #endif
 {
-    return pthread_exit(args);  
+    return pthread_exit(args);
 }
 
 rt_task rt_get_pid(void)
@@ -160,9 +160,9 @@ rt_sem_t *linux_sem_init(int32_t pshared, uint32_t value)
     if (!sem) {
         return NULL;
     }
-    sem_init(sem, pshared, value); 
+    sem_init(sem, pshared, value);
 
-    return sem; 
+    return sem;
 }
 
 int32_t linux_sem_wait(rt_sem_t *sem)
@@ -490,7 +490,7 @@ void rt_os_reboot(void)
 {
     sync();
     sync();
-    reboot(LINUX_REBOOT_CMD_POWER_OFF);
+    reboot(LINUX_REBOOT_CMD_RESTART);
 }
 
 void rt_os_exit(int status)
