@@ -23,7 +23,7 @@ static void display_usage(void)
     fprintf(stderr, "  -i\thash signature\n");
     fprintf(stderr, "  -p\tpublic key\n");
     fprintf(stderr, "  -s\tsecuret key\n");
-
+    fprintf(stderr, "  -t\tfile data\n");
     fprintf(stderr, "  -f\thash signature base64 format\n");
     fprintf(stderr, "  -b\tpublic key base64 format\n");
     fprintf(stderr, "  -r\trequest signature from server\n");

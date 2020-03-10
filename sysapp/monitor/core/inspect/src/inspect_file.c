@@ -23,8 +23,8 @@
 #define MAX_PK_LEN                      128
 #define RT_CHECK_ERR(process, result)   if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
-static const uint8_t *g_verify_pk = "B37F3BAD94DFCC1FBDB0FBF608802FA72D38FAEE3AB8CBBF63BF6C99DA9E31FAE1465F1BCFCAF85A6626B938D1BD12D6901833047C50FE8ED67B84CFCFECCFEA";
-
+// static const uint8_t *g_verify_pk = "B37F3BAD94DFCC1FBDB0FBF608802FA72D38FAEE3AB8CBBF63BF6C99DA9E31FAE1465F1BCFCAF85A6626B938D1BD12D6901833047C50FE8ED67B84CFCFECCFEA";
+static const uint8_t *g_verify_pk = "00B7EE6A549EB9F3FA3BA337AAC91FC35A135E2E606CA623C9FF4C85A7552FB499987E665D0A3D3108CFB46297F5D90827D34C1F47F6F05E10376AE16C3EED29";
 /**
  * function: verify a section data by input public key
  * return value: 
@@ -32,7 +32,10 @@ static const uint8_t *g_verify_pk = "B37F3BAD94DFCC1FBDB0FBF608802FA72D38FAEE3AB
  * - 1 (true)  : verify ok
  * notes: This function was defined in libvuicc.a
  */
-extern int ecc_hash_verify_signature(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_len, uint8_t *sigBuff, int sig_len);
+
+
+extern int ecc_verify(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_len, uint8_t *sigBuff, int  sig_len);
+// extern int ecc_hash_verify_signature(uint8_t *input, int input_len, const uint8_t *pubkey, int pubkey_len, uint8_t *sigBuff, int sig_len);
 
 rt_bool monitor_get_file_sign_data(const char *file_name, uint8_t *sign, int32_t *len)
 {
@@ -86,6 +89,8 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
     int8_t hash_out[MAX_FILE_HASH_BYTE_LEN + 1];
     int8_t file_info[MAX_FILE_INFO_LEN + 1] = {0};
     int8_t sign_buffer[PRIVATE_HASH_STR_LEN + 1] = {0};
+    int8_t sign_buffer_out[PRIVATE_HASH_STR_LEN/2 + 1] = {0};
+    uint16_t sign_buffer_out_len = 0;
     int32_t file_size = 0;
     uint32_t check_size;
     int32_t partlen;
@@ -126,9 +131,11 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
     MSG_PRINTF(LOG_INFO, "file_info:%s\n", file_info);
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
 
-    bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
+    // bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
 
-    if (inspect_abstract_content(hash_result, sign_buffer) != RT_TRUE) {
+    hexstring2bytes(sign_buffer, sign_buffer_out, &sign_buffer_out_len);
+
+    if (inspect_abstract_content(hash_out, sign_buffer_out) != RT_TRUE) {
         MSG_PRINTF(LOG_ERR, "file_name:%s, verify signature failed!!\n", file_name);
         goto end;
     }
@@ -153,8 +160,12 @@ rt_bool inspect_abstract_content(uint8_t *hash, uint8_t *signature)
 {
     rt_bool ret = RT_FALSE;
 
-    ret = ecc_hash_verify_signature(hash, MAX_FILE_HASH_LEN, \
-        g_verify_pk, MAX_PK_LEN, signature, PRIVATE_HASH_STR_LEN);
+    uint8_t pk_base64_out[MAX_PK_LEN/2 + 1] = {0};
+    uint16_t p_len = 0;
+
+    hexstring2bytes(g_verify_pk, pk_base64_out, &p_len);
+
+    ret = ecc_verify(hash, MAX_FILE_HASH_LEN/2, pk_base64_out, MAX_PK_LEN/2, signature, PRIVATE_HASH_STR_LEN/2);
 
     return ret;
 }
