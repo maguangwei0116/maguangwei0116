@@ -42,7 +42,7 @@ ifeq ($(CFG_STANDARD_MODULE),y)
 QMI-LIB                             += ql_softsim_extsdk
 endif
 COMM-LIB                            = crypto ssl pthread m dl
-VUICC-LIB                           = libvuicc.a
+VUICC-LIB                           = xUICC SecureKeyBox SkbPlatform SecureKeyBox SkbInternalHelpers  stdc++
 ############################################################################
 ### path
 ############################################################################
@@ -84,7 +84,8 @@ LIB-y 		+= $(patsubst %,-l%,$(QMI-LIB))
 # Config comm library and vuicc library, keep libvuicc.a before libcomm.a
 # set LIBCOMM_STATIC to 'y'(YES) or 'n'(NO)
 LIBCOMM_STATIC  = n
-LIB-y           += -l$(shell pwd)/vuicc/lib/$(VUICC-LIB)
+LIB-y           += -L$(shell pwd)/vuicc/lib
+LIB-y           += $(patsubst %,-l%,$(VUICC-LIB))
 ifeq ($(LIBCOMM_STATIC),y)
 LIB-y           += -l$(O)/../../../system/sdk/lib/libcomm.a
 else

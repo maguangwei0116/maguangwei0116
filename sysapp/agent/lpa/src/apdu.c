@@ -6,7 +6,7 @@
 #include "lpa_config.h"
 #include "lpa_error_codes.h"
 #include "rt_qmi.h"
-#include "ipc_socket_client.h"
+#include "agent2monitor.h"
 #include "lpa.h"
 
 #define SW_BUFFER_LEN               100
@@ -22,8 +22,8 @@ static int32_t local_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8
     extern int32_t rt_qmi_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
     return rt_qmi_exchange_apdu(data, data_len, rsp, rsp_len);
 #else
-    return ipc_send_data(data, data_len, rsp, rsp_len);   
-#endif    
+    return ipc_send_lpa_cmd(data, data_len, rsp, rsp_len);
+#endif
 }
 
 void init_apdu_channel(lpa_channel_type_e channel_mode)
@@ -54,7 +54,7 @@ int open_channel(uint8_t *channel)
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         uint8_t sw_61xx_req_cmd[5] = {0x80, 0xC0, 0x00, 0x00, 0x00};
         const uint8_t open_channel_cmd[] = {0x00, 0x70, 0x00, 0x00, 0x01};
-        uint8_t rsp[SW_BUFFER_LEN + 2] = {0};        
+        uint8_t rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len = sizeof(rsp);
 
@@ -62,7 +62,7 @@ int open_channel(uint8_t *channel)
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
-        
+
         sw = get_sw(rsp, len);
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
@@ -73,7 +73,7 @@ int open_channel(uint8_t *channel)
             }
             sw = get_sw(rsp, len);
         }
-        
+
         if (sw != SW_NORMAL) {
             return RT_ERR_UNKNOWN_ERROR;
         }
@@ -87,7 +87,7 @@ int open_channel(uint8_t *channel)
 
 int close_channel(uint8_t channel)
 {
-    int ret = RT_SUCCESS;    
+    int ret = RT_SUCCESS;
 
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         uint8_t sw_61xx_req_cmd[5] = {0x80, 0xC0, 0x00, 0x00, 0x00};
@@ -95,13 +95,13 @@ int close_channel(uint8_t channel)
         uint8_t rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
         uint16_t len = sizeof(rsp);
-        
+
         close_channel_cmd[3] = channel;  // channel id fill into p2
         ret = local_exchange_apdu(close_channel_cmd, sizeof(close_channel_cmd), rsp, &len);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;
         }
-        
+
         sw = get_sw(rsp, len);
         if ((sw & 0xFF00) == 0x6100) {
             len = (sw & 0xFF);
@@ -113,7 +113,7 @@ int close_channel(uint8_t channel)
             }
             sw = get_sw(rsp, len);
         }
-        
+
         if (sw != SW_NORMAL) {
             return RT_ERR_UNKNOWN_ERROR;
         }
@@ -140,15 +140,15 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
     if (left != 0) {
         cnt++;
     }
-    
+
     if (channel < 0) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
-    
+
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         // select aid
         uint8_t sw_61xx_req_cmd[5] = {0x80, 0xC0, 0x00, 0x00, 0x00};
-        
+
         apdu->cla = channel & 0x03;
         apdu->ins = 0xA4;
         apdu->p1 = 0x04;
@@ -202,7 +202,7 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
             if ((sw & 0xFF00) == 0x6100) {
                 uint16_t size;
                 uint8_t sw_61xx_req_cmd[5] = {0x80, 0xC0, 0x00, 0x00, 0x00};
-                
+
                 size = (sw & 0xFF);
                 sw_61xx_req_cmd[0] = (channel & 0x03) | 0x80;   // Channel should be 0~3, and convert to hexstring
                 sw_61xx_req_cmd[4] = size;
@@ -217,7 +217,7 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
                 break;
             }
         } while (1);
-        
+
         if ((sw & 0xF000) != SW_NORMAL) {
                 rsp[0] = (sw & 0xFF00) >> 8;
                 rsp[1] = sw & 0xFF;

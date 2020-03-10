@@ -5,10 +5,59 @@
 #include "agent2monitor.h"
 #include "hash.h"
 #include "file.h"
+#include "lpa.h"
 #ifdef CFG_PLATFORM_ANDROID
 #include "rt_qmi.h"
-#include "lpa.h"
+#else
+#include "trigger.h"
 #endif
+
+int32_t ipc_get_uicc_atr(uint8_t *atr, uint8_t *atr_size)
+{
+    uint8_t *data = {0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xEE};
+    ipc_send_data((const uint8_t *)data, sizeof(data), atr, atr_size);
+}
+
+int32_t ipc_send_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
+{
+    uint16_t cmd = 0;
+    uint16_t sw = 0;
+    static rt_bool reset_flag = RT_FALSE;
+
+    cmd = (data[5] << 8) + data[6];
+    ipc_send_data(data, data_len, rsp, rsp_len);
+
+    /* enable profile and load bootstrap profile, need to reset */
+    if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
+        cmd = (rsp[0] << 8) + rsp[1];
+        if ((cmd & 0xFF00) == 0x6100) {
+            reset_flag = RT_TRUE;
+            return RT_SUCCESS;
+        } else {
+            reset_flag = RT_TRUE;
+        }
+    }
+
+    if (reset_flag == RT_TRUE) {
+        reset_flag = RT_FALSE;
+        trigger_swap_card(1);
+    }
+}
+
+
+int32_t ipc_send_trigger_cmd(const uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len)
+{
+    ipc_send_data((const uint8_t *)apdu, apdu_len, rsp, rsp_len);
+}
+
+void init_trigger(uint8_t uicc_switch)
+{
+    if (uicc_switch == LPA_CHANNEL_BY_IPC) {
+        trigegr_regist_reset(ipc_get_uicc_atr);
+        trigegr_regist_cmd(ipc_send_trigger_cmd);
+        trigger_swap_card(1);
+    }
+}
 
 int32_t ipc_set_monitor_param(config_info_t *config_info)
 {
@@ -34,7 +83,7 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
     len += c_data.data_len;
 
     //MSG_PRINTF(LOG_INFO, "len:%d, log_max_size:%d, %08x\n", len, info.log_size, info.log_level);
-    
+
 #ifdef CFG_PLATFORM_ANDROID
     {
         extern int32_t rt_qmi_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
@@ -42,11 +91,12 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
         if (config_info->lpa_channel_type == LPA_CHANNEL_BY_QMI) {
             return RT_SUCCESS; /* neend't config monitor param */
         }
-        
+
         rt_qmi_exchange_apdu((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
     }
 #else
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
+    init_trigger(info.vuicc_switch);
 #endif
 
     if (ret_len == 1 && buf[0] == RT_TRUE) {
@@ -73,14 +123,14 @@ int32_t ipc_get_monitor_version(char *name, int32_t n_size, char *version, \
     rt_os_memcpy(&buf[0], &c_data, len);
     len += c_data.data_len;
 
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
 
     if (ret_len == sizeof(monitor_version_t)) {
         rt_os_memcpy((uint8_t *)&m_version, (uint8_t *)buf, ret_len);
         //MSG_HEXDUMP("version", &m_version, sizeof(monitor_version_t));
 
-        snprintf(name, n_size, "%s", m_version.name);    
-        snprintf(version, v_size, "%s", m_version.version);    
+        snprintf(name, n_size, "%s", m_version.name);
+        snprintf(version, v_size, "%s", m_version.version);
         snprintf(chip_modle, c_size, "%s", m_version.chip_model);
 
         return RT_SUCCESS;
@@ -104,7 +154,7 @@ int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign)
     uint16_t ret_len = 0;
 
     rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
-    c_data.cmd = CMD_SIGN_CHK;    
+    c_data.cmd = CMD_SIGN_CHK;
     c_data.data_len = (uint8_t)len;
     rt_os_memcpy(sign_data.hash, hash, rt_os_strlen(hash));
     rt_os_memcpy(sign_data.signature, sign, rt_os_strlen(sign));
@@ -115,7 +165,7 @@ int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign)
     len += c_data.data_len;
 
     //MSG_HEXDUMP("send-buf", buf, len);
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
     //MSG_PRINTF(LOG_INFO, "len=%d, buf[0]=%02x\n", len, buf[0]);
 
     if (ret_len == 1 && buf[0] == RT_TRUE) {
@@ -175,7 +225,7 @@ int32_t ipc_file_verify_by_monitor(const char *abs_file, char *real_file_name)
         MSG_PRINTF(LOG_ERR, "error open file\n");
         goto exit_entry;
     }
-    
+
     sha256_init(&sha_ctx);
     file_size -= PRIVATE_ECC_HASH_STR_LEN;
     if (file_size < HASH_CHECK_BLOCK) {
@@ -250,7 +300,7 @@ int32_t ipc_restart_monitor(uint8_t delay)
     uint16_t ret_len = 0;
 
     rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
-    c_data.cmd = CMD_RESTART_MONITOR;    
+    c_data.cmd = CMD_RESTART_MONITOR;
     c_data.data_len = (uint8_t)len;
     c_data.data = (uint8_t *)&delay;
     len = sizeof(atom_data_t) - sizeof(uint8_t *);
@@ -258,13 +308,13 @@ int32_t ipc_restart_monitor(uint8_t delay)
     rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
     len += c_data.data_len;
 
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
 
     if (ret_len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;
     } else {
         return RT_ERROR;
-    }    
+    }
 }
 
 int32_t ipc_select_profile_by_monitor(void)
@@ -275,18 +325,18 @@ int32_t ipc_select_profile_by_monitor(void)
     uint16_t ret_len = 0;
 
     rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
-    c_data.cmd = CMD_SELECT_PROFILE;    
+    c_data.cmd = CMD_SELECT_PROFILE;
     c_data.data_len = (uint8_t)len;
     len = sizeof(atom_data_t) - sizeof(uint8_t *);
     rt_os_memcpy(&buf[0], &c_data, len);
     len += c_data.data_len;
 
-    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len); 
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
 
     if (len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;
     } else {
         return RT_ERROR;
-    }  
+    }
 }
 

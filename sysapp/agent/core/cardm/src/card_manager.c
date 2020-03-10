@@ -134,11 +134,14 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
                 g_p_info.iccid, g_p_info.type, g_p_info.num);
         if ((g_p_info.type == PROFILE_TYPE_TEST) ||
             (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
-            rt_write_data(RT_LAST_USED_CARD_TYPE, 0, &(g_p_info.type), sizeof(profile_type_e));
             if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
                 rt_os_sleep(1);  // dealy some time after get profile info
                 msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
             }
+        }
+        if (g_p_info.last_type != g_p_info.type) {
+            rt_write_data(RT_LAST_USED_CARD_TYPE, 0, &(g_p_info.type), sizeof(profile_type_e));
+            g_p_info.last_type = g_p_info.type;
         }
     }
 
@@ -513,7 +516,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
         case MSG_CARD_DISABLE_EXIST_CARD:
             ret = card_disable_profile(buf);
             break;
-            
+
         default:
             //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;
@@ -530,9 +533,9 @@ int32_t card_manager_update_profiles_event(const uint8_t *buf, int32_t len, int3
     switch (mode) {
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
-            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);           
+            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             break;
-            
+
         default:
             //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;
@@ -545,11 +548,11 @@ int32_t card_manager_update_profiles_event(const uint8_t *buf, int32_t len, int3
 int32_t card_ext_get_eid(char *eid, int32_t size)
 {
     int32_t ret = RT_ERROR;
-    
+
     if (eid && size > MAX_EID_LEN) {
         snprintf(eid, size, "%s", g_p_info.eid);  // get eid from RAM
     } else {
-        MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
+        MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n");
     }
 
     return ret;
@@ -590,15 +593,15 @@ int32_t card_ext_get_profiles_info(char *profiles_info_json, int32_t size)
                 snprintf(profiles_info_json, size, "%s", profile_str);
                 ret = RT_SUCCESS;
             } else {
-                MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
+                MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n");
                 ret = RT_ERROR;
             }
         } else {
-            MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
+            MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n");
             ret = RT_ERROR;
         }
     } else {
-        MSG_PRINTF(LOG_WARN, "update profiles fail, ret=%d\r\n", ret); 
+        MSG_PRINTF(LOG_WARN, "update profiles fail, ret=%d\r\n", ret);
     }
 
     if (profiles_obj) {

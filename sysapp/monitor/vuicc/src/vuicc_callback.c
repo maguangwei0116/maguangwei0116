@@ -19,9 +19,10 @@ MEM_OPS_DEFINITION(rt_os)
 
 int init_callback_ops(void)
 {
+#if 0
     _file_ops_init(linux);
     _os_ops_init(linux);
     _mem_ops_init(rt_os);
-
+#endif
     return RT_SUCCESS;
 }

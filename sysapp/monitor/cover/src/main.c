@@ -25,6 +25,7 @@
 #include "libcomm.h"
 #include "download_file.h"
 #include "file.h"
+#include "cos_api.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_MONITOR_RESTART          "monitor restart"
@@ -58,7 +59,7 @@
 #endif
 
 /* config malloc check switch */
-#define RT_MALLOC_CHECK_ENABLE      0    
+#define RT_MALLOC_CHECK_ENABLE      0
 #if (RT_MALLOC_CHECK_ENABLE)
 #define RT_LASTEST_INPUT_PARAM      "MALLOC_CHECK_=1", NULL
 #else
@@ -70,6 +71,7 @@ extern int vsim_get_ver(char *version);
 
 static log_mode_e g_def_mode = LOG_PRINTF_FILE;
 static rt_bool g_agent_debug_terminal = RT_FALSE;
+static int32_t g_cos_oid = 0;
 
 typedef struct SIGNATURE_DATA {
     uint8_t             hash[64+4];                 // hash, end with "\0"
@@ -109,12 +111,12 @@ static void cfinish(int32_t sig)
 static void SIGPIPE_handler(int32_t signo)
 {
     rt_os_signal(signo, SIGPIPE_handler);
-    
+
     switch(signo) {
         case RT_SIGPIPE:
             MSG_PRINTF(LOG_DBG, "%d, SIGPIPE recv !\n", signo);
             break;
-            
+
         default:
             MSG_PRINTF(LOG_DBG, "%d signal unregister\n", signo);
             break;
@@ -139,9 +141,9 @@ static void monitor_exit(void)
 static int32_t choose_uicc_type(lpa_channel_type_e type)
 {
     if (type == LPA_CHANNEL_BY_IPC) {
-        trigegr_regist_reset(card_reset);
-        trigegr_regist_cmd(card_cmd);
-        trigger_swap_card(1);
+        // trigegr_regist_reset(card_reset);
+        // trigegr_regist_cmd(card_cmd);
+        // trigger_swap_card(1);
     }
     init_apdu_channel(type);
 
@@ -160,9 +162,13 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (info->vuicc_switch == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
         type = info->vuicc_switch;
         if (info->vuicc_switch == LPA_CHANNEL_BY_IPC) {
-            trigegr_regist_reset(card_reset);
-            trigegr_regist_cmd(card_cmd);
-            trigger_swap_card(1);
+            do {
+                g_cos_oid = cos_client_connect(NULL);
+                if (g_cos_oid == -1) {
+                    sleep(1);
+                }
+            } while(g_cos_oid == -1);
+            MSG_PRINTF(LOG_WARN, "g_cos_oid: %d\n", g_cos_oid);
             *rsp_len = 0;
         }
         MSG_PRINTF(LOG_INFO, "set log_level=%d, log_max_size=%d\n", info->log_level, info->log_size);
@@ -209,8 +215,6 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
 {
     uint16_t cmd = 0;
     uint16_t sw = 0;
-    int8_t log_level;
-    uint32_t log_max_size;
     static rt_bool reset_flag = RT_FALSE;
 
     cmd = (data[5] << 8) + data[6];
@@ -219,30 +223,15 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
         sw = monitor_deal_agent_msg(data[7], &data[12], data[11], rsp, rsp_len);
         MSG_INFO_ARRAY("A-APDU RSP: ", rsp, *rsp_len);
         return sw;
+    } else if (cmd == 0xFFEE) { // msg for atr
+        cos_client_reset(g_cos_oid, (uint8_t *)rsp, (uint16_t *)rsp_len);
     } else { // msg for vuicc
         MSG_INFO_ARRAY("E-APDU REQ: ", data, len);
-        sw = card_cmd((uint8_t *)data, len, rsp, rsp_len);
+        sw = cos_client_transport(g_cos_oid, IO_PACKET_TYPE_DATA, (uint8_t *)data, len, rsp, rsp_len);
         rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
         rsp[(*rsp_len)++] = sw & 0xFF;
         MSG_INFO_ARRAY("E-APDU RSP: ", rsp, *rsp_len);
-
-        /* enable profile and load bootstrap profile, need to reset */
-        if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
-            cmd = (rsp[0] << 8) + rsp[1];
-            if ((cmd & 0xFF00) == 0x6100) {
-                reset_flag = RT_TRUE;
-                return RT_SUCCESS;
-            } else {
-                reset_flag = RT_TRUE;
-            }
-        }
-
-        if (reset_flag == RT_TRUE) {
-            reset_flag = RT_FALSE;
-            trigger_swap_card(1);
-        }
     }
-
     return RT_SUCCESS;
 }
 
@@ -289,7 +278,7 @@ static int32_t agent_file_copy_check(rt_bool copy_force)
     }
 
     if (!linux_file_exist(RT_AGENT_FILE)) {
-        goto copy_usrapp_agent;  
+        goto copy_usrapp_agent;
     }
 
     monitor_get_file_sign_data(RT_OEMAPP_AGENT_FILE, oem_agent_sign, &oem_agent_sign_len);
@@ -341,8 +330,8 @@ static int32_t agent_task_check_start(rt_bool frist_start)
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE, RT_AGENT_NAME) != RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "verify agent error\r\n");
-        
-#ifdef CFG_STANDARD_MODULE        
+
+#ifdef CFG_STANDARD_MODULE
         {
             /* check and copy agent process */
             agent_file_copy_check(RT_TRUE);
@@ -366,9 +355,9 @@ static int32_t agent_task_check_start(rt_bool frist_start)
         MSG_PRINTF(LOG_WARN, "error in fork, err(%d)=%s\r\n", errno, strerror(errno));
     } else if (child_pid == 0) {
         char input_param[128];
-        
+
         MSG_PRINTF(LOG_INFO, "child process, pid %d\r\n", getpid());
-        
+
         {
             int32_t fd;
             /* close all fds (fd>=3) which are open in parent process */
@@ -376,20 +365,20 @@ static int32_t agent_task_check_start(rt_bool frist_start)
                 close(fd);
             }
         }
-        
+
         if (g_agent_debug_terminal) {
-            snprintf(input_param, sizeof(input_param), "%s%s%s", 
+            snprintf(input_param, sizeof(input_param), "%s%s%s",
                 (frist_start ? RT_MONITOR_RESTART : RT_AGENT_RESTART), RT_PARAM_LINK_STRING, RT_DEBUG_IN_TERMINAL);
             ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, input_param, RT_LASTEST_INPUT_PARAM);
         } else {
             snprintf(input_param, sizeof(input_param), "%s", (frist_start ? RT_MONITOR_RESTART : RT_AGENT_RESTART));
             ret = execl(RT_AGENT_FILE, RT_AGENT_PTROCESS, input_param, RT_LASTEST_INPUT_PARAM);
         }
-        
+
         if (ret < 0) {
             MSG_PRINTF(LOG_ERR, "Excute %s fail, ret=%d, err(%d)=%s\n", RT_AGENT_PTROCESS, ret, errno, strerror(errno));
         }
-        
+
         exit(0);
     } else {
         MSG_PRINTF(LOG_INFO, "parent process, pid %d, child_pid %d\r\n", getpid(), child_pid);
@@ -417,7 +406,7 @@ static void init_app_version(void *arg)
 #endif
 
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
-    vsim_get_ver(version);
+    //vsim_get_ver(version);
     MSG_PRINTF(LOG_WARN, "vUICC version: %s\n", version);
 }
 
@@ -447,7 +436,7 @@ static void debug_with_printf(const char *msg)
 
 /*
 Help for debug application in terminal:
-Run: 
+Run:
     ./rt_monitor terminal           -> only monitor debug in terminal
     ./rt_monitor terminal terminal  -> monitor and agent all debug in terminal
 */
@@ -455,6 +444,7 @@ int32_t main(int32_t argc, const char *argv[])
 {
     rt_bool keep_agent_alive = RT_TRUE;
     rt_bool frist_start = RT_TRUE;
+    int32_t ret = 0;
 
     /* check input param to debug in terminal */
     if (argc > 1 && !rt_os_strcmp(argv[1], RT_DEBUG_IN_TERMINAL)) {
@@ -485,8 +475,8 @@ int32_t main(int32_t argc, const char *argv[])
     init_callback_ops();
 
     /* init card path before init card */
-    init_card_path(RT_CARD_PATH);
-    init_card(log_print);
+    //// init_card_path(RT_CARD_PATH);
+    //// init_card(log_print);
 
     /* install system signal handle */
     init_system_signal(NULL);
@@ -494,6 +484,9 @@ int32_t main(int32_t argc, const char *argv[])
     /*init lib interface*/
     init_timer(NULL);
     rt_qmi_init(NULL);
+
+    ret = cos_init(NULL);
+    MSG_PRINTF(LOG_WARN, "ret: %d\n", ret);
 
     /* inspect monitor */
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
@@ -523,7 +516,7 @@ int32_t main(int32_t argc, const char *argv[])
         agent_task_check_start(frist_start);
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
         frist_start = RT_FALSE;
-    } while(keep_agent_alive);
+    } while (keep_agent_alive);
 
     /* stop here */
     while (1) {

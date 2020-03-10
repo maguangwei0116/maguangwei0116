@@ -46,8 +46,8 @@ typedef struct MONITOR_VERSION {
     char            chip_model[16];         // example: 9x07
 } monitor_version_t;
 
-typedef struct SIGNATURE_DATA {    
-    uint8_t         hash[64+4];             // hash, end with ¡®\0¡¯    
+typedef struct SIGNATURE_DATA {
+    uint8_t         hash[64+4];             // hash, end with ¡®\0¡¯
     uint8_t         signature[128+4];       // signature data, end with ¡®\0¡¯
 } signature_data_t;
 
@@ -58,7 +58,7 @@ int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign);
 int32_t ipc_file_verify_by_monitor(const char *abs_file, char *real_file_name); // file: Absolute path !!!
 int32_t ipc_restart_monitor(uint8_t delay);
 int32_t ipc_select_profile_by_monitor(void);
-
+int32_t ipc_send_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
 
 #endif // __AGENT_2_MONITOR_H__
 
