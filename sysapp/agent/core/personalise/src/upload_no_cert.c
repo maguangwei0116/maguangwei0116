@@ -27,6 +27,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     const char *imei            = g_personalise_device_info->imei;
     const char *deviceId        = g_personalise_device_info->device_id;
     const char *model           = g_personalise_device_info->model;
+    const char *signature       = "123";
     char fileVersion[256]       = {0};
 
     content = cJSON_CreateObject();
@@ -44,6 +45,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     CJSON_ADD_NEW_STR_OBJ(content, imei);
     CJSON_ADD_NEW_STR_OBJ(content, deviceId);
     CJSON_ADD_NEW_STR_OBJ(content, model);
+    CJSON_ADD_NEW_STR_OBJ(content, signature);
     CJSON_ADD_NEW_STR_OBJ(content, fileVersion);
 
     ret = RT_SUCCESS;
@@ -54,7 +56,7 @@ exit_entry:
         cJSON_free(content);
         content = NULL;
     }
-    
+
     return content;
 }
 

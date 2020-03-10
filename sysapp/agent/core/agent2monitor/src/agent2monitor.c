@@ -14,7 +14,7 @@
 
 int32_t ipc_get_uicc_atr(uint8_t *atr, uint8_t *atr_size)
 {
-    uint8_t *data = {0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xEE};
+    uint8_t data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xEE};
     ipc_send_data((const uint8_t *)data, sizeof(data), atr, atr_size);
 }
 

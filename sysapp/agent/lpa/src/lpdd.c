@@ -710,15 +710,15 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     char *data = NULL;
     char *b64_in = NULL;
     int b64_len = 0;
-    
+
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
     MSG_INFO("transactionId: %s\n", g_transaction_id);
-    
+
     b64_len = ((in_size + 2) / 3) * 4 + 1;
     b64_in = malloc(b64_len);
-    rt_os_memset(b64_in, 0, b64_len);    
+    rt_os_memset(b64_in, 0, b64_len);
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -1095,19 +1095,7 @@ end:
     return ret;
 }
 
-int load_cert(const uint8_t *data, uint16_t data_len, uint8_t channel)
-{
-    int ret = RT_SUCCESS;
-
-    ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000
-    if (ret == RT_SUCCESS) {
-        return g_buf[5];
-    }
-
-    return ret;
-}
-
-int load_profile(const uint8_t *data, uint16_t data_len, uint8_t channel)
+int load_customized_data(const uint8_t *data, uint16_t data_len, uint8_t channel)
 {
     int ret = RT_SUCCESS;
 

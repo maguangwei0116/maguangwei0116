@@ -277,7 +277,7 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     }
 
     if ((ret == RT_SUCCESS) || (ret == RT_PROFILE_STATE_ENABLED)) {
-        ret = lpa_load_profile(buf, len);
+        ret = lpa_load_customized_data(buf, len);
         if (ret) {
             MSG_PRINTF(LOG_WARN, "lpa load porfile fail, ret=%d\r\n", ret);
         } else {
@@ -303,7 +303,7 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
 
     do {
         MSG_PRINTF(LOG_INFO, "lpa load cert ...\r\n");
-        ret = lpa_load_cert(buf, len);
+        ret = lpa_load_customized_data(buf, len);
         if (ret) {
             MSG_PRINTF(LOG_WARN, "lpa load cert fail, ret=%d\r\n", ret);
             break;
@@ -391,6 +391,11 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
     rt_os_memset(&g_p_info.eid, 'F', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
+
+    //ret = lpa_load_customized_data(buf, len);
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "Load root key aes key, ret=%d\r\n", ret);
+    }
 
     ret = card_last_type_init();
     if (ret) {

@@ -22,9 +22,9 @@ extern void init_apdu_channel(lpa_channel_type_e channel_mode);
 int init_lpa(void *arg)
 {
     init_apdu_channel(*(lpa_channel_type_e *)arg);
-    
+
     g_lpa_mutex = linux_mutex_init();
-    
+
     return g_lpa_mutex ? RT_SUCCESS : RT_ERROR;
 }
 
@@ -40,8 +40,8 @@ int lpa_get_eid(uint8_t *eid)
     int i = 0;
 
     linux_mutex_lock(g_lpa_mutex);
-    
-    for (i = 0; i < cnt; i++) {    
+
+    for (i = 0; i < cnt; i++) {
         if (open_channel(&channel) != RT_SUCCESS) {
             ret = RT_ERR_APDU_OPEN_CHANNEL_FAIL;
             goto end;
@@ -62,7 +62,7 @@ int lpa_get_eid(uint8_t *eid)
 end:
 
     linux_mutex_unlock(g_lpa_mutex);
-    
+
     return ret;
 }
 
@@ -74,12 +74,12 @@ int lpa_switch_eid(const uint8_t *eid)
     int ret = RT_SUCCESS;
 
     linux_mutex_lock(g_lpa_mutex);
-    
+
     if (open_channel(&channel) != RT_SUCCESS) {
         ret = RT_ERR_APDU_OPEN_CHANNEL_FAIL;
         goto end;
     }
-    
+
     MSG_INFO("eid:%s\n", eid);
     hexstring2bytes((uint8_t *)eid, rsp, &rsp_size);
     switch_eid(rsp, rsp_size, rsp, &rsp_size, channel);
@@ -90,7 +90,7 @@ int lpa_switch_eid(const uint8_t *eid)
 end:
 
     linux_mutex_unlock(g_lpa_mutex);
-    
+
     return RT_SUCCESS;
 }
 
@@ -112,7 +112,7 @@ int lpa_get_eid_list(uint8_t (*eid_list)[33])
         ret = RT_ERR_APDU_OPEN_CHANNEL_FAIL;
         goto end;
     }
-    
+
     get_eid_list(buf, &size, channel);
     MSG_DUMP_ARRAY("get eid list:\n", buf, size);
     dc = ber_decode(NULL, &asn_DEF_MoreEIDOperateResponse, (void **)&rsp, buf, size);
@@ -135,17 +135,17 @@ int lpa_get_eid_list(uint8_t (*eid_list)[33])
             MSG_INFO("eid%d: %s\n", i,eid_list[i]);
         }
     }
-    
+
 end:
-    
+
     ASN_STRUCT_FREE(asn_DEF_MoreEIDOperateResponse, rsp);
-    
+
     if (ret != RT_ERR_APDU_OPEN_CHANNEL_FAIL) {
         close_channel(channel);
     }
 
     linux_mutex_unlock(g_lpa_mutex);
-    
+
     return ret;
 }
 
@@ -180,7 +180,7 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
     get_profiles_info(SEARCH_NONE, NULL, 0, (uint8_t *)buf, (uint16_t *)&size, channel);
 
     MSG_DUMP_ARRAY("profile info:\n", buf, size);
-    
+
     dc = ber_decode(NULL, &asn_DEF_ProfileInfoListResponse, (void **)&rsp, buf, size);
     if (dc.code != RC_OK) {
         MSG_ERR("Broken ProfileInfoListmResponse decoding at byte %ld\n", (long)dc.consumed);
@@ -201,7 +201,7 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
         MSG_WARN("too many profile detected (%d > %d)\n", *num, max_num);
         *num = max_num;
     }
-    
+
     if (pi != NULL) {
         for (i = 0; i < *num; i++) {
             memcpy(buf, (p[i])->iccid->buf, (p[i])->iccid->size);
@@ -213,19 +213,19 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
     }
 
 end:
-    
+
     if (buf != NULL) {
         free(buf);
     }
-    
+
     ASN_STRUCT_FREE(asn_DEF_ProfileInfoListResponse, rsp);
-    
+
     if (ret != RT_ERR_APDU_OPEN_CHANNEL_FAIL) {
         close_channel(channel);
     }
 
     linux_mutex_unlock(g_lpa_mutex);
-    
+
     return ret;
 }
 
@@ -251,13 +251,13 @@ int lpa_delete_profile(const char *iccid)
         // BF33038001 Result
         ret = rsp[5];
     }
-    
+
     close_channel(channel);
 
 end:
 
     linux_mutex_unlock(g_lpa_mutex);
-    
+
     return ret;
 }
 
@@ -286,13 +286,13 @@ int lpa_enable_profile(const char *iccid)
         // With refresh request, it might be failed to get response, this also indicates success
         ret = 0;
     }
-    
+
     close_channel(channel);
 
 end:
 
     linux_mutex_unlock(g_lpa_mutex);
-    
+
     return ret;
 }
 
@@ -321,13 +321,13 @@ int lpa_disable_profile(const char *iccid)
         // With refresh request, it might be failed to get response, this also indicates success
         ret = 0;
     }
-    
+
     close_channel(channel);
 
 end:
 
     linux_mutex_unlock(g_lpa_mutex);
-    
+
     return ret;
 }
 
@@ -502,7 +502,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     buf1_len = BUFFER_SIZE;
-    ret = authenticate_client(smdp_addr, buf2, buf2_len, buf1, &buf1_len);    
+    ret = authenticate_client(smdp_addr, buf2, buf2_len, buf1, &buf1_len);
     if (ret != RT_SUCCESS) {
         MSG_ERR("authenticate_client error response:\n%s\n", buf1);
     } else {
@@ -535,44 +535,22 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
 
 end:
     close_session();
-    
+
     if (ret != RT_ERR_APDU_OPEN_CHANNEL_FAIL) {
         close_channel(channel);
     }
-    
+
     if (smdp_addr != NULL)  { free(smdp_addr);}
     if (mid != NULL)        { free(mid);}
     if (buf1 != NULL)       { free(buf1);}
     if (buf2 != NULL)       { free(buf2);}
 
     linux_mutex_unlock(g_lpa_mutex);
-    
-    return ret;
-}
-
-int lpa_load_cert(const uint8_t *data, uint16_t data_len)
-{
-    uint8_t channel = 0xFF;
-    int ret = RT_SUCCESS;
-
-    linux_mutex_lock(g_lpa_mutex);
-
-    if (open_channel(&channel) != RT_SUCCESS) {
-        ret = RT_ERR_APDU_OPEN_CHANNEL_FAIL;
-        goto end;
-    }
-    ret = load_cert(data, data_len, channel);
-    
-    close_channel(channel);
-
-end:
-
-    linux_mutex_unlock(g_lpa_mutex);
 
     return ret;
 }
 
-int lpa_load_profile(const uint8_t *data, uint16_t data_len)
+int lpa_load_customized_data(const uint8_t *data, uint16_t data_len)
 {
     uint8_t channel = 0xFF;
     int ret = RT_SUCCESS;
@@ -584,8 +562,8 @@ int lpa_load_profile(const uint8_t *data, uint16_t data_len)
         goto end;
     }
     MSG_INFO("data[0]:%02X, data_len:%d\n", data[0], data_len);
-    ret = load_profile(data, data_len, channel);
-    
+    ret = load_customized_data(data, data_len, channel);
+
     close_channel(channel);
 
 end:
