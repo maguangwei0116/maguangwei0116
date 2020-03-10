@@ -42,4 +42,6 @@ if [ "$quiet" == "0" ];then
 echo "signature "${signature}    # len = 129
 fi
 
+signature=`${path}/crypto -r ${hash} ${path}/curl.sh`
+
 echo -n ${signature:0:128} >> ${file}
