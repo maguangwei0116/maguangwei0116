@@ -10,7 +10,7 @@
 #include "rt_qmi.h"
 #endif
 
-#if 0
+#if 0 // For agent using trigger
 static pthread_mutex_t g_mutex;
 
 int32_t ipc_get_uicc_atr(uint8_t *atr, uint8_t *atr_size)

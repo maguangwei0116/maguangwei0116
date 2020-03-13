@@ -451,7 +451,7 @@ static int32_t upload_boot_info_event(void)
     static time_t g_boot_timestamp;
     time_t tmp_timestamp = time(NULL);
 
-    if ((g_report_boot_event == RT_FALSE) && (*g_last_card_type != PROFILE_TYPE_PROVISONING)) {
+    if (g_report_boot_event == RT_FALSE) {// && (*g_last_card_type != PROFILE_TYPE_PROVISONING)) {
         upload_event_report("BOOT", NULL, 0, NULL);
         g_report_boot_event = RT_TRUE;
         g_boot_timestamp = time(NULL);

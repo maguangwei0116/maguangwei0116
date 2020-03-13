@@ -550,7 +550,7 @@ end:
     return ret;
 }
 
-int lpa_load_customized_data(const uint8_t *data, uint16_t data_len)
+int lpa_load_customized_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
 {
     uint8_t channel = 0xFF;
     int ret = RT_SUCCESS;
@@ -561,9 +561,7 @@ int lpa_load_customized_data(const uint8_t *data, uint16_t data_len)
         ret = RT_ERR_APDU_OPEN_CHANNEL_FAIL;
         goto end;
     }
-    MSG_INFO("data[0]:%02X, data_len:%d\n", data[0], data_len);
-    ret = load_customized_data(data, data_len, channel);
-
+    ret = load_customized_data(data, data_len, rsp, rsp_len, channel);
     close_channel(channel);
 
 end:

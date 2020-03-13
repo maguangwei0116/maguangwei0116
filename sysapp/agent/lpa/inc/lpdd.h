@@ -48,6 +48,6 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
 void close_session(void);
 
 // Additional
-int load_customized_data(const uint8_t *data, uint16_t data_len, uint8_t channel);
+int load_customized_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel);
 
 #endif  // __LPDD_H__

@@ -1095,12 +1095,16 @@ end:
     return ret;
 }
 
-int load_customized_data(const uint8_t *data, uint16_t data_len, uint8_t channel)
+int load_customized_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
     int ret = RT_SUCCESS;
 
     ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000
     if (ret == RT_SUCCESS) {
+        if ((rsp != NULL) && (rsp_len != NULL)) {
+            memcpy(rsp, g_buf, g_buf_size);
+            *rsp_len = g_buf_size;
+        }
         return g_buf[5];
     }
 
