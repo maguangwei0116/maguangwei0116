@@ -18,6 +18,7 @@
 #include "card_ext.h"
 #include "lpa.h"
 #include "lpa_error_codes.h"
+#include "bootstrap.h"
 
 #define RT_LAST_EID                 "rt_last_eid"
 #define RT_LAST_USED_CARD_TYPE      "rt_last_card_type"
@@ -382,6 +383,8 @@ static int32_t card_init_profile_type(init_profile_type_e type)
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
+    uint8_t data[1024];
+    int32_t data_len;
 
     init_profile_type_e init_profile_type;
 
@@ -392,7 +395,9 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_p_info.eid, 'F', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
 
-    //ret = lpa_load_customized_data(buf, len);
+    bootstrap_get_key(data, &data_len);
+    MSG_INFO_ARRAY("key data: ", data, data_len);
+    ret = lpa_load_customized_data(data, data_len);
     if (ret) {
         MSG_PRINTF(LOG_WARN, "Load root key aes key, ret=%d\r\n", ret);
     }

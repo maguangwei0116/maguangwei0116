@@ -25,32 +25,29 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
     if (socket_id <= 0) {
         return RT_ERROR;
     }
-    
     ret = socket_connect(socket_id);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "connet server failed\n");
         goto end;
     }
-    
-    MSG_INFO_ARRAY("IPC REQ: ", data, len);
+
     ret = socket_send(socket_id, data, len);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "send data failed\n");
         goto end;
     }
-    
+
     ret = socket_recv(socket_id, rsp, MAT_SOCKET_BUFFER);
     if (ret <= 0) {
         MSG_PRINTF(LOG_ERR, "recv data failed, ret=%d\n", ret);
         ret = RT_ERROR;
         goto end;
-    } 
+    }
     *rsp_len = ret;
-    MSG_INFO_ARRAY("IPC RSP: ", rsp, *rsp_len);
     ret = RT_SUCCESS;
-    
+
 end:
-    
+
     socket_close(socket_id);
     return ret;
 }

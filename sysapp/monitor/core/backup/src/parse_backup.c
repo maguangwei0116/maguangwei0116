@@ -17,7 +17,6 @@
 #include "rt_qmi.h"
 #include "apdu.h"
 #include "trigger.h"
-#include "card.h"
 #include "random.h"
 #include "ProfileInfoListResponse.h"
 
@@ -113,7 +112,7 @@ static int32_t parse_profile(void)
     int32_t operator_num;
     uint32_t profile_seq;
     char *apn_name = NULL;
-    char *mcc_mnc = NULL;    
+    char *mcc_mnc = NULL;
 
     dc = ber_decode(NULL, &asn_DEF_ProfileFile, (void **) &profile_file, card_buf, sizeof(card_buf));
     if (dc.code != RC_OK) {
@@ -131,7 +130,7 @@ static int32_t parse_profile(void)
     profiles = profile_file->sharedProfile.optProfiles.list.array[g_operator_num]->content.buf;
     size = profile_file->sharedProfile.optProfiles.list.array[g_operator_num]->content.size;
     size = size / profile_info->totalNum;  // one profile size
-    
+
     profile_seq = get_selecte_profile_index(profile_info->totalNum);
 
     MSG_INFO_ARRAY("insert profile buffer: ", profiles + (profile_seq * size), size);
@@ -162,7 +161,7 @@ int32_t backup_process(lpa_channel_type_e channel_mode)
     int32_t ret;
 
     MSG_PRINTF(LOG_INFO, "Begin to select profile from backup-profile ...\r\n");
-    ret = parse_profile();   
+    ret = parse_profile();
 
     if (channel_mode == LPA_CHANNEL_BY_IPC) {
         trigger_swap_card(1);  // reset card

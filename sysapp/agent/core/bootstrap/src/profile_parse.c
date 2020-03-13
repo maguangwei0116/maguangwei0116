@@ -16,6 +16,7 @@
 #include "ProfileInfo1.h"
 #include "FileInfo.h"
 #include "TBHRequest.h"
+#include "SetRootKeyRequest.h"
 #include "BootstrapRequest.h"
 #include "tlv.h"
 #include "agent_queue.h"
@@ -589,7 +590,7 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
 {
     rt_fshandle_t fp = NULL;
     int32_t length = 0;
-    uint8_t buf[128];
+    uint8_t buf[256];
     uint8_t *buffer = NULL;
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
@@ -615,13 +616,40 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
     return RT_SUCCESS;
 }
 
-int32_t bootstrap_get_profile_aes_key(uint8_t *data, int32_t *data_len)
+int32_t bootstrap_get_key(uint8_t *data, int32_t *data_len)
 {
-    return get_specify_data(data, data_len, g_data.aes_key_offset);
-}
+    uint8_t *buf = NULL;
+    asn_enc_rval_t ec;
+    int32_t ret = RT_ERROR;
+    SetRootKeyRequest_t key_request = {0};
 
-int32_t bootstrap_get_profile_root_sk(uint8_t *data, int32_t *data_len){
-    return get_specify_data(data, data_len, g_data.root_sk_offset);
+    MSG_PRINTF(LOG_INFO, "aes_key_offset:%d\n", g_data.aes_key_offset);
+    MSG_PRINTF(LOG_INFO, "root_sk_offset:%d\n", g_data.root_sk_offset);
+    get_specify_data(data, data_len, g_data.root_sk_offset);
+    MSG_INFO_ARRAY("root_sk: ", data, *data_len);
+    key_request.rootEccSk = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, *data_len);
+
+    buf = data + *data_len;
+    get_specify_data(buf , data_len, g_data.aes_key_offset);
+    MSG_INFO_ARRAY("aes_sk: ", buf, *data_len);
+    key_request.rootAesKey = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, buf, *data_len);
+
+
+    g_buf_size = 0;
+    ec = der_encode(&asn_DEF_SetRootKeyRequest, &key_request, encode_cb_fun, NULL);
+    if (ec.encoded == -1) {
+        MSG_PRINTF(LOG_ERR, "encoded:%ld\n", ec.encoded);
+        goto end;
+    }
+
+    rt_os_memcpy(data, g_buf, g_buf_size);
+    *data_len = g_buf_size;
+    ret = RT_SUCCESS;
+end:
+    //ASN_STRUCT_FREE(asn_DEF_SetRootKeyRequest, &key_request);
+    rt_os_free(g_buf);
+    g_buf = NULL;
+    return ret;
 }
 
 int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size)
@@ -766,9 +794,9 @@ int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profil
 
     g_data.priority++;
     ret = RT_SUCCESS;
-    
+
 end:
-    
+
     if (fp) {
         linux_fclose(fp);
         fp = NULL;

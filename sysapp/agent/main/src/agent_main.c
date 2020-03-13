@@ -119,7 +119,7 @@ static int32_t version_format(const char *version, int32_t ver_int[4])
 
 /*
 # Auto generate softsim-release file
-#                  MFR      agent     monitor    so       ubi       share profile batch code 
+#                  MFR      agent     monitor    so       ubi       share profile batch code
 # e.g. "Release: general_v4.5.6.10_v7.8.9.10_v1.2.3.10_v12.15.18.30#B191213070351591259"
 */
 static int32_t get_oemapp_version(const char *a_version, const char * m_version, const char *so_version, \
@@ -130,7 +130,7 @@ static int32_t get_oemapp_version(const char *a_version, const char * m_version,
     int32_t so_ver_int[4] = {0};
     int32_t o_ver_int[4] = {0};
     int32_t i = 0;
-    
+
     version_format(a_version, a_ver_int);
     version_format(m_version, m_ver_int);
     version_format(so_version, so_ver_int);

@@ -55,6 +55,7 @@ INC-PATH	= ./inc
 
 # Config your resource file list by += xxx.c
 SRC-y 		+= $(SRC-PATH)/vuicc_callback.c
+SRC-y 		+= $(SRC-PATH)/vuicc_apdu.c
 SRC-y 		+= $(SRC-PATH)/ipc_socket_server.c
 SRC-y 		+= $(SRC-PATH)/main.c
 SRC-y 		+= ./core/backup/src/parse_backup.c

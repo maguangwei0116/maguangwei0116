@@ -18,14 +18,13 @@
 #include "rt_os.h"
 #include "rt_type.h"
 #include "trigger.h"
-#include "card.h"
 #include "ipc_socket_server.h"
 #include "parse_backup.h"
 #include "inspect_file.h"
 #include "libcomm.h"
 #include "download_file.h"
 #include "file.h"
-#include "cos_api.h"
+#include "vuicc_apdu.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_MONITOR_RESTART          "monitor restart"
@@ -71,7 +70,6 @@ extern int vsim_get_ver(char *version);
 
 static log_mode_e g_def_mode = LOG_PRINTF_FILE;
 static rt_bool g_agent_debug_terminal = RT_FALSE;
-static int32_t g_cos_oid = 0;
 
 typedef struct SIGNATURE_DATA {
     uint8_t             hash[64+4];                 // hash, end with "\0"
@@ -141,9 +139,7 @@ static void monitor_exit(void)
 static int32_t choose_uicc_type(lpa_channel_type_e type)
 {
     if (type == LPA_CHANNEL_BY_IPC) {
-        // trigegr_regist_reset(card_reset);
-        // trigegr_regist_cmd(card_cmd);
-        // trigger_swap_card(1);
+        init_trigger(type);
     }
     init_apdu_channel(type);
 
@@ -162,13 +158,7 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (info->vuicc_switch == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
         type = info->vuicc_switch;
         if (info->vuicc_switch == LPA_CHANNEL_BY_IPC) {
-            do {
-                g_cos_oid = cos_client_connect(NULL);
-                if (g_cos_oid == -1) {
-                    sleep(1);
-                }
-            } while(g_cos_oid == -1);
-            MSG_PRINTF(LOG_WARN, "g_cos_oid: %d\n", g_cos_oid);
+            init_trigger(info->vuicc_switch);
             *rsp_len = 0;
         }
         MSG_PRINTF(LOG_INFO, "set log_level=%d, log_max_size=%d\n", info->log_level, info->log_size);
@@ -223,14 +213,8 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
         sw = monitor_deal_agent_msg(data[7], &data[12], data[11], rsp, rsp_len);
         MSG_INFO_ARRAY("A-APDU RSP: ", rsp, *rsp_len);
         return sw;
-    } else if (cmd == 0xFFEE) { // msg for atr
-        cos_client_reset(g_cos_oid, (uint8_t *)rsp, (uint16_t *)rsp_len);
     } else { // msg for vuicc
-        MSG_INFO_ARRAY("E-APDU REQ: ", data, len);
-        sw = cos_client_transport(g_cos_oid, IO_PACKET_TYPE_DATA, (uint8_t *)data, len, rsp, rsp_len);
-        rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
-        rsp[(*rsp_len)++] = sw & 0xFF;
-        MSG_INFO_ARRAY("E-APDU RSP: ", rsp, *rsp_len);
+        sw = vuicc_lpa_cmd(data, len, rsp, rsp_len);
     }
     return RT_SUCCESS;
 }
@@ -474,9 +458,8 @@ int32_t main(int32_t argc, const char *argv[])
     /* install ops callbacks */
     init_callback_ops();
 
-    /* init card path before init card */
-    //// init_card_path(RT_CARD_PATH);
-    //// init_card(log_print);
+    /* init vuicc */
+    init_vuicc(NULL);
 
     /* install system signal handle */
     init_system_signal(NULL);
@@ -484,9 +467,6 @@ int32_t main(int32_t argc, const char *argv[])
     /*init lib interface*/
     init_timer(NULL);
     rt_qmi_init(NULL);
-
-    ret = cos_init(NULL);
-    MSG_PRINTF(LOG_WARN, "ret: %d\n", ret);
 
     /* inspect monitor */
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
@@ -499,17 +479,6 @@ int32_t main(int32_t argc, const char *argv[])
     /* install ipc callbacks and start up ipc server */
     ipc_regist_callback(monitor_cmd);
     ipc_socket_server_start();
-
-    #if 0 /* only for test */
-    /* force to change to vUICC mode */
-    trigegr_regist_reset(card_reset);
-    trigegr_regist_cmd(card_cmd);
-    trigger_swap_card(1);
-
-    while (1) {
-        rt_os_sleep(1);
-    }
-    #endif
 
     /* start up agent */
     do {

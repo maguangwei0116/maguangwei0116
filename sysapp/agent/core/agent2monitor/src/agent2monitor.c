@@ -8,9 +8,10 @@
 #include "lpa.h"
 #ifdef CFG_PLATFORM_ANDROID
 #include "rt_qmi.h"
-#else
-#include "trigger.h"
 #endif
+
+#if 0
+static pthread_mutex_t g_mutex;
 
 int32_t ipc_get_uicc_atr(uint8_t *atr, uint8_t *atr_size)
 {
@@ -24,8 +25,12 @@ int32_t ipc_send_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, u
     uint16_t sw = 0;
     static rt_bool reset_flag = RT_FALSE;
 
+    rt_mutex_lock(&g_mutex);
     cmd = (data[5] << 8) + data[6];
+    MSG_INFO_ARRAY("L-APDU REQ: ", data, data_len);
     ipc_send_data(data, data_len, rsp, rsp_len);
+    MSG_INFO_ARRAY("L-APDU RSP: ", rsp, *rsp_len);
+    rt_mutex_unlock(&g_mutex);
 
     /* enable profile and load bootstrap profile, need to reset */
     if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
@@ -47,17 +52,29 @@ int32_t ipc_send_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, u
 
 int32_t ipc_send_trigger_cmd(const uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len)
 {
+    rt_mutex_lock(&g_mutex);
+    MSG_INFO_ARRAY("M-APDU REQ: ", apdu, apdu_len);
     ipc_send_data((const uint8_t *)apdu, apdu_len, rsp, rsp_len);
+    MSG_INFO_ARRAY("M-APDU RSP: ", rsp, *rsp_len);
+    rt_mutex_unlock(&g_mutex);
 }
 
 void init_trigger(uint8_t uicc_switch)
 {
+    int32_t ret = RT_ERROR;
+    ret = rt_mutex_init(&g_mutex);
+    if (ret != 0) {
+        MSG_PRINTF(LOG_ERR, "Mutex init failed", ret);
+    }
+#if 0
     if (uicc_switch == LPA_CHANNEL_BY_IPC) {
         trigegr_regist_reset(ipc_get_uicc_atr);
         trigegr_regist_cmd(ipc_send_trigger_cmd);
         trigger_swap_card(1);
     }
+#endif
 }
+#endif
 
 int32_t ipc_set_monitor_param(config_info_t *config_info)
 {
@@ -96,7 +113,7 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
     }
 #else
     ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-    init_trigger(info.vuicc_switch);
+    // init_trigger(info.vuicc_switch);
 #endif
 
     if (ret_len == 1 && buf[0] == RT_TRUE) {
