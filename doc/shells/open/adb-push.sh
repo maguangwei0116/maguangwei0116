@@ -11,6 +11,9 @@ adb shell chmod +x /usr/bin/rt_monitor
 adb push ./app_targets/*libcomm.so* /usr/lib/libcomm.so
 adb shell chmod +x /usr/lib/libcomm.so
 
+adb push ./app_targets/*libskb.so* /usr/lib/libskb.so
+adb shell chmod +x /usr/lib/libskb.so
+
 adb push ./app_shells/start_redtea_app /etc/init.d/start_redtea_app
 adb shell chmod +x /etc/init.d/start_redtea_app
 

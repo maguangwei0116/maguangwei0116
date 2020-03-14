@@ -28,6 +28,7 @@ REDTEA_OEMAPP_VERSION_FILE=$(BR2_RELEASE_OEMAPP_INSTALL_PATH)/softsim-release
 REDTEA_OEMAPP_SHELL_START=../doc/shells/standard/start_oemapp.sh
 REDTEA_OEMAPP_SHELL_APP=../doc/shells/standard/start_redtea_app
 REDTEA_OEMAPP_SHELL_KEEP=../doc/shells/standard/start_redtea_keep
+REDTEA_OEMAPP_SKB_SO=../sysapp/monitor/vuicc/lib/libskb.so
 REDTEA_OEMAPP_TOOLS=../doc/tools/
 REDTEA_OEMAPP_SHARE_PROFILES=../doc/share_profile/*.der
 REDTEA_OEMAPP_SHARE_PROFILE=rt_share_profile.der
@@ -46,7 +47,7 @@ define CREATE_OEMAPP_CFG_FILE
 endef
 
 # Auto generate softsim-release file
-#                  MFR      agent     monitor    so       ubi       share profile batch code 
+#                  MFR      agent     monitor    so       ubi       share profile batch code
 # e.g. "Release: general_v4.5.6.10_v7.8.9.10_v1.2.3.10_v12.15.18.30#B191213070351591259"
 define CREATE_OEMAPP_SOFTSIM_RELEASE
 	if [ true ]; then \
@@ -95,14 +96,13 @@ endef
 
 # Copy targets into oemapp
 define COPY_TEST_OEMAPP_TARGETS
-	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/test_lpa $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/test_lpa
 	-$(Q)if [ -d $(REDTEA_OEMAPP_TOOLS) ] ; \
 	then \
 		if [ -n "`ls $(REDTEA_OEMAPP_TOOLS)`" ] ; \
 		then \
 			cp -rf $(REDTEA_OEMAPP_TOOLS)/* $(BR2_RELEASE_OEMAPP_INSTALL_PATH) ; \
 		fi; \
-	fi;	
+	fi;
 endef
 
 # Copy release share profile
@@ -117,9 +117,9 @@ define COPY_RELEASE_OEMAPP_TARGETS
 	-$(Q)cp -rf $(REDTEA_OEMAPP_SHELL_START) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
 	-$(Q)cp -rf $(REDTEA_OEMAPP_SHELL_APP) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
 	-$(Q)cp -rf $(REDTEA_OEMAPP_SHELL_KEEP) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
+	-$(Q)cp -rf $(REDTEA_OEMAPP_SKB_SO) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/rt_agent
-	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/rt_monitor	
-	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/libcomm.so
+	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/rt_monitor
 	-$(Q)$(call COPY_SHARE_PROFILE)
 	-$(Q)$(call COPY_TEST_OEMAPP_TARGETS)
 endef
@@ -145,14 +145,14 @@ $(REDTEA_OEMAPP_VERSION):
 	@test -e $(RELEASE_OEMAPP_OTA_OUTPUT_PATH) || mkdir -p $(RELEASE_OEMAPP_OTA_OUTPUT_PATH)
 	$(Q)$(call CREATE_OEMAPP_CFG_FILE,$(RELEASE_OEMAPP_IMG_FILE),$(RELEASE_OEMAPP_CFG_FILE))
 	$(Q)$(call COPY_RELEASE_OEMAPP_TARGETS)
-	$(Q)$(call CREATE_OEMAPP_SOFTSIM_RELEASE)	
-	
+	$(Q)$(call CREATE_OEMAPP_SOFTSIM_RELEASE)
+
 oemapp_ubi: $(REDTEA_OEMAPP_VERSION)
 	$(Q)$(call CREATE_OEMAPP_UBI_FILE)
 	$(Q)$(call CREATE_OEMAPP_OTA_UBI_FILE)
-	
+
 oemapp: $(REDTEA_OEMAPP_VERSION) oemapp_ubi
-	
+
 oemapp-clean:
 	rm -rf $(RELEASE_INSTALL_PATH)
 

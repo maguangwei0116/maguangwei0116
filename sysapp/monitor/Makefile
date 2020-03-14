@@ -42,7 +42,7 @@ ifeq ($(CFG_STANDARD_MODULE),y)
 QMI-LIB                             += ql_softsim_extsdk
 endif
 COMM-LIB                            = crypto ssl pthread m dl
-VUICC-LIB                           = xUICC SecureKeyBox SkbPlatform SecureKeyBox SkbInternalHelpers  stdc++
+VUICC-LIB                           = xUICC skb stdc++
 ############################################################################
 ### path
 ############################################################################
