@@ -29,7 +29,7 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     rt_mutex_lock(&g_mutex);
     cmd = (data[5] << 8) + data[6];
     MSG_INFO_ARRAY("L-APDU REQ: ", data, data_len);
-    cos_client_transport(g_cos_oid, IO_PACKET_TYPE_DATA, (uint8_t *)data, data_len, rsp, rsp_len);
+    cos_client_transport(IO_PACKET_TYPE_DATA, (uint8_t *)data, data_len, rsp, rsp_len);
     MSG_INFO_ARRAY("L-APDU RSP: ", rsp, *rsp_len);
     rt_mutex_unlock(&g_mutex);
 
@@ -52,14 +52,16 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
 
 static int32_t vuicc_get_atr(uint8_t *atr, uint8_t *atr_size)
 {
-    cos_client_reset(g_cos_oid, (uint8_t *)atr, (uint16_t *)atr_size);
+    rt_mutex_lock(&g_mutex);
+    cos_client_reset((uint8_t *)atr, (uint16_t *)atr_size);
+    rt_mutex_unlock(&g_mutex);
 }
 
 static int32_t vuicc_trigger_cmd(const uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len)
 {
     rt_mutex_lock(&g_mutex);
     MSG_INFO_ARRAY("M-APDU REQ: ", apdu, apdu_len);
-    cos_client_transport(g_cos_oid, IO_PACKET_TYPE_DATA, (uint8_t *)apdu, apdu_len, rsp, rsp_len);
+    cos_client_transport(IO_PACKET_TYPE_DATA, (uint8_t *)apdu, apdu_len, rsp, rsp_len);
     MSG_INFO_ARRAY("M-APDU RSP: ", rsp, *rsp_len);
     rt_mutex_unlock(&g_mutex);
 }
@@ -80,16 +82,25 @@ void init_trigger(uint8_t uicc_switch)
     }
 }
 
+static void start_cos(void *arg)
+{
+    init_callback_ops(arg);
+    return;
+}
+
 int32_t init_vuicc(void *arg)
 {
-    int32_t ret = RT_ERROR;
+    unsigned long task_id;
+    int32_t ret = RT_SUCCESS;
+
     ret = rt_mutex_init(&g_mutex);
     if (ret != 0) {
         MSG_PRINTF(LOG_ERR, "Mutex init failed", ret);
     }
-    /* init card path before init card */
-    ret = cos_init(NULL);
-    if (ret != 0) {
-        MSG_PRINTF(LOG_WARN, "ret: %d\n", ret);
+
+    if (ret = rt_create_task(&task_id, (void *)start_cos, arg) == RT_ERROR) {
+        MSG_PRINTF(LOG_ERR, "Create thread failed\n");
     }
+
+    return ret;
 }

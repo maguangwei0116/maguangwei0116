@@ -46,7 +46,7 @@
 #define RT_AGENT_FILE               "/usrdata/redtea/rt_agent"
 #endif
 
-#define RT_CARD_PATH                RT_DATA_PATH".vcos/"
+#define RT_CARD_PATH                RT_DATA_PATH".vcos/cos_nvm"
 #define RT_MONITOR_LOG              "rt_monitor_log"
 
 #ifdef CFG_SOFTWARE_TYPE_DEBUG
@@ -216,6 +216,7 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
     } else { // msg for vuicc
         sw = vuicc_lpa_cmd(data, len, rsp, rsp_len);
     }
+
     return RT_SUCCESS;
 }
 
@@ -455,11 +456,8 @@ int32_t main(int32_t argc, const char *argv[])
     /* debug versions information */
     init_app_version(NULL);
 
-    /* install ops callbacks */
-    init_callback_ops();
-
-    /* init vuicc */
-    init_vuicc(NULL);
+    /* init vuicc and ops callbacks*/
+    init_vuicc(RT_CARD_PATH);
 
     /* install system signal handle */
     init_system_signal(NULL);

@@ -31,7 +31,7 @@ void ipc_regist_callback(void *fun)
 
 rt_bool ipc_server_check(void)
 {
-    return g_ipc_server_ok;    
+    return g_ipc_server_ok;
 }
 
 int32_t ipc_socket_server(void)
@@ -54,8 +54,8 @@ int32_t ipc_socket_server(void)
         MSG_PRINTF(LOG_ERR, "socket bind failed, sock_id=%d, err(%d)=%s\n", socket_id, errno, strerror(errno));
         rt_os_sleep(2);
         MSG_PRINTF(LOG_ERR, "monitor restart ...\r\n");
-        /* 
-        Usual bind error: [err(98)=Address already in use] 
+        /*
+        Usual bind error: [err(98)=Address already in use]
         And set SO_REUSEADDR by setsockopt API doesn't work but restart monitor process !
         */
         rt_os_exit(-1);
@@ -68,7 +68,7 @@ int32_t ipc_socket_server(void)
     }
 
     g_ipc_server_ok = RT_TRUE;
-    
+
     while (1) {
         new_fd = socket_accept(socket_id);
         if (new_fd == -1) {
@@ -87,3 +87,5 @@ end:
 
     return ret;
 }
+
+

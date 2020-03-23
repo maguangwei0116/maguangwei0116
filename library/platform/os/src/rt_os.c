@@ -40,6 +40,7 @@ int32_t rt_create_task(rt_task *task_id, rt_taskfun task_fun, void * args)
 
     ret = pthread_create(task_id, &attr, task_fun, args);
     if (ret != 0) {
+        MSG_PRINTF(LOG_ERR, "pthread create failed ret:%d\n", ret);
         ret = RT_ERROR;
     }
 
