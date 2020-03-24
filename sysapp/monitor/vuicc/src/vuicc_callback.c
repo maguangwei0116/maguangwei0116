@@ -10,6 +10,7 @@
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Sublime text
  *******************************************************************************/
+
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -18,10 +19,9 @@
 #include "cos_api.h"
 #include "cb_io.h"
 
-//#define NVM_SIZE                    0x20000UL // 128*1024UL
-//#define NVM_INIT_VALUE              0xFF
-#define VUICC_FILE_NAME_LEN    64
-static char g_vuicc_file[VUICC_FILE_NAME_LEN];
+#define     VUICC_FILE_NAME        "card_nvm"
+#define     VUICC_FILE_NAME_LEN    64
+static char g_vuicc_file[VUICC_FILE_NAME_LEN + 1];
 
 uint32_t linux_random(uint32_t key)
 {
@@ -41,23 +41,20 @@ int32_t linux_nvm_init(void)
     char buf[1] = {NVM_INIT_VALUE};
 
     if (access((const char *)g_vuicc_file, F_OK) != 0) {
-        fp = fopen((const char *)g_vuicc_file, "wb+");
+        fp = fopen((const char *)g_vuicc_file, "w+");
     } else {
-        fp = fopen((const char *)g_vuicc_file, "rb+");
-        printf("nvm init [ok]\n");
-        return 0;
+        fp = fopen((const char *)g_vuicc_file, "r+");
+        return RT_SUCCESS;
     }
     if (!fp) {
-        printf("nvm init [fail]\n");
-        // assert(fp);
-        return -1;
+        MSG_PRINTF(LOG_ERR, "nvm init faild\n");
+        return RT_ERROR;
     }
 
     for (i = 0; i < NVM_SIZE; i++) {
         fwrite(buf, 1, 1, fp);
     }
-    printf("nvm init [ok]\n");
-    return 0;
+    return RT_SUCCESS;
 }
 
 int32_t linux_nvm_write(const uint8_t *src, uint32_t dest, uint32_t length)
@@ -66,7 +63,7 @@ int32_t linux_nvm_write(const uint8_t *src, uint32_t dest, uint32_t length)
         fp = fopen((const char *)g_vuicc_file, "r+");
         if (!fp) {
             printf("fopen false\n");
-            return -1;
+            return RT_ERROR;
         }
     }
 
@@ -76,12 +73,12 @@ int32_t linux_nvm_write(const uint8_t *src, uint32_t dest, uint32_t length)
 
     if(fwrite(src, 1, length, fp) == length) {
         if(fdatasync(fileno(fp)) != 0) {
-            return -1;
+            return RT_ERROR;
         }
-        return 0;
+        return RT_SUCCESS;
     } else {
         printf("fwrite false:%s\n", strerror(errno));
-        return -1;
+        return RT_ERROR;
     }
 }
 
@@ -91,7 +88,7 @@ int32_t linux_nvm_read(const uint8_t *dest, uint32_t src, uint32_t length)
         fp = fopen((const char *)g_vuicc_file, "rb+");
         if (!fp) {
             printf("fopen false\n");
-            return -1;
+            return RT_ERROR;
         }
     }
 
@@ -99,11 +96,11 @@ int32_t linux_nvm_read(const uint8_t *dest, uint32_t src, uint32_t length)
         printf("fseek false:%s\n", strerror(errno));
     }
 
-    if(fread((uint8_t *)dest, 1, length, fp) == length) {
-        return 0;
+    if (fread((uint8_t *)dest, 1, length, fp) == length) {
+        return RT_SUCCESS;
     } else {
         printf("fread false:%s\n", strerror(errno));
-        return -1;
+        return RT_ERROR;
     }
 }
 
@@ -137,11 +134,10 @@ cos_client_operation_t client_opt = {
 
 int init_callback_ops(void *arg)
 {
-    rt_os_memcpy(g_vuicc_file, (uint8_t *)arg, rt_os_strlen((uint8_t *)arg));
-    g_vuicc_file[rt_os_strlen((uint8_t *)arg)] = '\0';
+    snprintf(g_vuicc_file, VUICC_FILE_NAME_LEN, "%s%s", (uint8_t *)arg, VUICC_FILE_NAME);
     MSG_PRINTF(LOG_INFO, "g_vuicc_file:%s\n", g_vuicc_file);
 
-    if (cos_init(&server_opt, &client_opt) == -1) {
+    if (cos_init(&server_opt, &client_opt) == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "cos init failed.\n");
         return RT_ERROR;
     }

@@ -11,6 +11,11 @@ adb shell chmod +x /usr/bin/rt_monitor
 adb push ./app_targets/*libcomm.so* /usr/lib/libcomm.so
 adb shell chmod +x /usr/lib/libcomm.so
 
+if [ -e ./app_targets/rt_share_profile.der ]; then
+adb push ./app_targets/*rt_share_profile.der* /data/redtea/rt_share_profile.der
+adb shell chmod +x /data/redtea/rt_share_profile.der
+fi
+
 adb push ./app_targets/*libskb.so* /usr/lib/libskb.so
 adb shell chmod +x /usr/lib/libskb.so
 

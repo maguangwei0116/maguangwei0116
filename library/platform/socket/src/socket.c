@@ -22,13 +22,13 @@
 #include "rt_os.h"
 #include "socket.h"
 
-/* 
+/*
 Unix domain socket without create server file (abstract namespace) !
 See docs in https://blog.csdn.net/tekenuo/article/details/87869272
 Or see [man 7 unix]
 */
 #define SERVER_PATH                             ".data.redtea.server"
-#define UNIX_DOMAIN_SOCKET_ABSTRACT_NAMESPACE   1 
+#define UNIX_DOMAIN_SOCKET_ABSTRACT_NAMESPACE   1
 
 int32_t socket_create(void)
 {
@@ -43,7 +43,7 @@ int32_t socket_connect(int32_t socket_id)
     socklen_t server_len;
 
     rt_os_memset(&server_sai, 0, sizeof(server_sai));
-    server_sai.sun_family = AF_UNIX;  
+    server_sai.sun_family = AF_UNIX;
     server_sai.sun_path[0] = '\0';  // must be '\0'
     rt_os_strcpy(server_sai.sun_path + 1, SERVER_PATH);
     server_len = rt_os_strlen(SERVER_PATH) + offsetof(struct sockaddr_un, sun_path);
@@ -74,7 +74,7 @@ int32_t socket_connect(int32_t socket_id)
     struct sockaddr_un server_sai;
 
     rt_os_memset(&server_sai, 0, sizeof(server_sai));
-    server_sai.sun_family = AF_UNIX;    
+    server_sai.sun_family = AF_UNIX;
     rt_os_strcpy(server_sai.sun_path, SERVER_PATH);
 
     return connect(socket_id, (struct sockaddr *)&server_sai, sizeof(struct sockaddr_un));
@@ -82,12 +82,12 @@ int32_t socket_connect(int32_t socket_id)
 
 int32_t socket_bind(int32_t socket_id)
 {
-    int32_t on = 1;  
+    int32_t on = 1;
     struct sockaddr_un server_sai;
 
-    rt_os_unlink(SERVER_PATH);  
+    rt_os_unlink(SERVER_PATH);
     rt_os_memset(&server_sai, 0, sizeof(server_sai));
-    server_sai.sun_family = AF_UNIX;    
+    server_sai.sun_family = AF_UNIX;
     rt_os_strcpy(server_sai.sun_path, SERVER_PATH);
     setsockopt(socket_id, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 

@@ -46,7 +46,6 @@
 #define RT_AGENT_FILE               "/usrdata/redtea/rt_agent"
 #endif
 
-#define RT_CARD_PATH                RT_DATA_PATH".vcos/cos_nvm"
 #define RT_MONITOR_LOG              "rt_monitor_log"
 
 #ifdef CFG_SOFTWARE_TYPE_DEBUG
@@ -457,7 +456,7 @@ int32_t main(int32_t argc, const char *argv[])
     init_app_version(NULL);
 
     /* init vuicc and ops callbacks*/
-    init_vuicc(RT_CARD_PATH);
+    init_vuicc(RT_DATA_PATH);
 
     /* install system signal handle */
     init_system_signal(NULL);

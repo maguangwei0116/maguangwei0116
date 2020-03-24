@@ -18,14 +18,12 @@ Description:
 
 #include "cb_io.h"
 
-#define SERVER_PATH     "./server"
-#define MAX_SOCKFD_NUM  3
-
-
-#define IO_INTERFACE_INVALID    0xFF
-#define IO_INTERFACE_MODEM      0
-#define IO_INTERFACE_LPA        1
-#define IO_MAX_INTERFACES       2
+#define  SERVER_PATH                   ".data.redtea.cos_server"
+#define  MAX_SOCKFD_NUM                 3
+#define  IO_INTERFACE_INVALID           0xFF
+#define  IO_INTERFACE_MODEM             0
+#define  IO_INTERFACE_LPA               1
+#define  IO_MAX_INTERFACES              2
 
 // TODO: add 2625/9205/unisoc 9832e etc.
 
@@ -207,7 +205,7 @@ result_t linux_io_client_connect(void)
         close(connect_fd);
         return -1;
     }
-    return connect_fd;
+    return 0;
 }
 
 result_t linux_io_client_close(void)
