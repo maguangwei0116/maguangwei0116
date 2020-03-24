@@ -120,6 +120,7 @@ define COPY_RELEASE_OEMAPP_TARGETS
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/rt_agent
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/rt_monitor
 	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/libcomm.so
+	-$(Q)cp -rf $(REDTEA_OEMAPP_SKB_SO) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/libskb.so
 	-$(Q)$(call COPY_SHARE_PROFILE)
 	-$(Q)$(call COPY_TEST_OEMAPP_TARGETS)
 endef

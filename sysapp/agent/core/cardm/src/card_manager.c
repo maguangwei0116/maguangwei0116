@@ -380,13 +380,26 @@ static int32_t card_init_profile_type(init_profile_type_e type)
     return ret;
 }
 
-int32_t init_card_manager(void *arg)
+static int32_t init_key_data(void)
 {
-    int32_t ret = RT_ERROR;
     uint8_t data[1024];
     int32_t data_len;
 
+    bootstrap_get_key(data, &data_len);
+    MSG_INFO_ARRAY("key data: ", data, data_len);
+    MSG_PRINTF(LOG_INFO, "data len:%d\n", data_len);
+    return lpa_load_customized_data(data, data_len, NULL, NULL);
+}
+
+int32_t init_card_manager(void *arg)
+{
+    int32_t ret = RT_ERROR;
     init_profile_type_e init_profile_type;
+
+    ret = init_key_data();
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
+    }
 
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
@@ -394,13 +407,6 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
     rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
-
-    bootstrap_get_key(data, &data_len);
-    MSG_INFO_ARRAY("key data: ", data, data_len);
-    ret = lpa_load_customized_data(data, data_len, NULL, NULL);
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "Load root key aes key, ret=%d\r\n", ret);
-    }
 
     ret = card_last_type_init();
     if (ret) {

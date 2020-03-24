@@ -18,7 +18,7 @@ Description:
 
 #include "cb_io.h"
 
-#define  SERVER_PATH                   ".data.redtea.cos_server"
+#define  SERVER_PATH                   "/data/cos_server"
 #define  MAX_SOCKFD_NUM                 3
 #define  IO_INTERFACE_INVALID           0xFF
 #define  IO_INTERFACE_MODEM             0
@@ -65,8 +65,8 @@ result_t linux_io_server_init(void)
 
         memset(&server_sai, 0, sizeof(server_sai));
         server_sai.sun_family = AF_UNIX;
+        server_sai.sun_path[0] = '\0';  // must be '\0'
         strncpy(server_sai.sun_path, SERVER_PATH, sizeof(server_sai.sun_path) - 1);
-        unlink(SERVER_PATH);
 
         ret = bind(sock_fd[0], (struct sockaddr *)&server_sai, sizeof(struct sockaddr_un));
         if (ret < 0) {
