@@ -380,10 +380,10 @@ static int32_t card_init_profile_type(init_profile_type_e type)
     return ret;
 }
 
-static int32_t init_key_data(void)
+static int32_t card_key_data_init(void)
 {
     uint8_t data[1024];
-    int32_t data_len;
+    int32_t data_len = 0;
 
     bootstrap_get_key(data, &data_len);
     MSG_INFO_ARRAY("key data: ", data, data_len);
@@ -396,17 +396,20 @@ int32_t init_card_manager(void *arg)
     int32_t ret = RT_ERROR;
     init_profile_type_e init_profile_type;
 
-    ret = init_key_data();
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
-    }
-
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
     init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
     rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
+
+    MSG_PRINTF(LOG_INFO, "Card set key\r\n");
+    if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
+        ret = card_key_data_init();
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
+        }
+    }
 
     ret = card_last_type_init();
     if (ret) {

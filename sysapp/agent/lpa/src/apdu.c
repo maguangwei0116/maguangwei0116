@@ -191,7 +191,7 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
         }
         memset(&apdu->data, 0x00, apdu->lc);
         memcpy(&apdu->data, data + i * APDU_BLOCK_SIZE, apdu->lc);
-        cbuf[apdu->lc+5] = 0x00;
+        cbuf[apdu->lc + 5] = 0x00;
         ret = lpa_send_apdu(cbuf, apdu->lc+6, rsp, rsp_len, channel);
         if (ret != RT_SUCCESS) {
             return RT_ERR_APDU_SEND_FAIL;

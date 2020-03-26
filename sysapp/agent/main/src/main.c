@@ -139,7 +139,7 @@ int32_t main(int32_t argc, char **argv)
     check_reopen_stderr(argc, argv);
 
     config_set_restart_reason(restart_reason);
-    
+
     agent_main(RT_DATA_PATH, func);
 
     init_system_signal(NULL);

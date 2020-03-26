@@ -25,6 +25,7 @@ CFLAGS          += -fdiagnostics-color=auto
 # Config link flags
 LDFLAGS         += $(LIB-y)
 LDFLAGS         += -L$(SDK_INSTALL_PATH)/lib
+LDFLAGS         += -L$(SYSROOT)/usr/lib
 LDFLAGS         += $(LOCAL_LDFLAGS)
 
 # Config run library path
