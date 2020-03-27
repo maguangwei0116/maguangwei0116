@@ -14,8 +14,35 @@
 #include "log.h"
 #include "https.h"
 #include "dns.h"
+#if (UPLOAD_HTTPS_ENABLE)
+    #include "http.h"
+#endif
 
 #define TCP_CONNECT_TIMEOUT     30  // unit: seconds
+#define PING_ADDR                              "ping -c 1 -W 3 18.136.190.97"
+
+static int new_system(char *cmd)
+{
+    int status = system(cmd);
+    MSG_PRINTF(LOG_INFO, "cmd=%s\r\n", cmd);
+    if (-1 == status) {
+        MSG_PRINTF(LOG_ERR, "system error!\r\n");
+    } else {
+        MSG_PRINTF(LOG_INFO, "exit status value = [0x%x]\n", status);
+        if (WIFEXITED(status)) {
+            if (0 == WEXITSTATUS(status)) {
+                MSG_PRINTF(LOG_INFO, "run shell script successfully.\n");
+                return 0;
+            } else {
+                MSG_PRINTF(LOG_ERR, "run shell script fail, script exit code: %d\n", WEXITSTATUS(status));
+            }
+        } else {
+            MSG_PRINTF(LOG_ERR, "exit status = [%d]\n", WEXITSTATUS(status));
+        }
+    }
+
+    return -1;
+}
 
 // Establish a regular tcp connection
 static int connect_tcp(const char *host_name, const char *addr)
@@ -23,7 +50,19 @@ static int connect_tcp(const char *host_name, const char *addr)
     int error, handle;
     struct hostent *host;
     struct sockaddr_in server;
-
+    int i = 0;
+    // gethostbyname() function High Probability fail, so add this codes
+    while (1) {
+        if (0 == new_system(PING_ADDR)) {
+            break;
+        }
+        if (i > 5) {
+            break;
+        }
+        sleep(2);
+        MSG_PRINTF(LOG_WARN, "times is %d ...\r\n", i);
+        i++;
+    }
     host = gethostbyname(host_name);
 #ifdef CFG_USR_DNS_API
     if (!host) {
@@ -86,8 +125,12 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
     SSL_library_init();
     OpenSSL_add_all_algorithms();
 
-    // New context saying we are a client, and using SSL 2 or 3
-    https_ctx->ssl_cxt = SSL_CTX_new(SSLv23_client_method());
+    #if (UPLOAD_HTTPS_ENABLE)
+        https_ctx->ssl_cxt = SSL_CTX_new(TLSv1_client_method());
+    #else
+        // New context saying we are a client, and using SSL 2 or 3
+        https_ctx->ssl_cxt = SSL_CTX_new(SSLv23_client_method());
+    #endif
     if (https_ctx->ssl_cxt == NULL) {
         ERR_print_errors_fp(stderr);
         return RT_ERR_HTTPS_NEW_SSL_CTX_FAIL;
@@ -189,4 +232,235 @@ void https_free(https_ctx_t *https_ctx)
         https_ctx->ssl_cxt = NULL;
     }
 }
+
+#if (UPLOAD_HTTPS_ENABLE)
+
+    const char *strtoken(const char *src, char *dst, int size)
+    {
+        const char *p, *start, *end;
+        int  len = 0;
+
+        // Trim left
+        p = src;
+        while (1) {
+            // value is not exists
+            if ((*p == '\n') || (*p == 0)) {
+                return NULL;
+            }
+            // Get the first non-whitespace character
+            if ((*p != ' ') && (*p != '\t')) {
+                break;
+            }
+            // Skip white spaces
+            p++;
+        }
+
+        start = p;
+        while (1) {
+            end = p;
+            // Meet blank or tab, end
+            if (*p == ' ') {
+                p++;    // Skip it
+                break;
+            }
+            // Meet return or line end
+            if ((*p == '\n') || (*p == 0)) {
+                break;
+            }
+            // Search forward
+            p++;
+        }
+
+        // TODO: remove
+        // Trim right
+        while (1) {
+            end--;
+            if (start == end) {
+                break;
+            }
+
+            if ((*end != ' ') && (*end != '\t')) {
+                break;
+            }
+        }
+
+        len = (int)(end - start + 1);
+        if ((size > 0) && (len >= size)) {
+            len = size - 1;
+        }
+
+        rt_os_strncpy(dst, start, len);
+        dst[len]=0;
+
+        return p;
+    }
+
+    // Return body start pointer
+    const char *process_header(const char *rsp, int *status, int *content_length)
+    {
+        const char *p, *token, *left;
+        int len;
+        char key[19];
+        char value[8];
+
+        *status = 0;
+        *content_length = 0;
+        MSG_PRINTF(LOG_INFO, "rsp:%s\n",rsp);
+        p = rsp;
+        do {
+            left = strstr(p, "\r\n");
+            if (left == NULL) {
+                return NULL;
+            }
+
+            len = left - p;
+            if (len == 0) {
+                return (p + 2);    // Skip CR+LF
+            }
+
+            token = strtoken(p, key, 19);
+            if (token == NULL) {
+                return NULL;  // TODO: define return code
+            }
+
+            token = strtoken(token, value, 8);
+            if (p == NULL) {
+                return NULL;  // TODO: define return code
+            }
+
+            // Take care about status code and body size
+            if (strncasecmp(key, "HTTP", 4) == 0) {
+                *status = atoi(value);
+            } else if (strncasecmp(key, "content-length:", 15) == 0) {
+                *content_length = atoi(value);
+            } else if (strncasecmp(key, "transfer-encoding:", 18) == 0) {
+                if (strncasecmp(value, "chunked", 7) == 0) {
+                    *content_length = -1;
+                }
+            }
+
+            // Don't care about others fields
+            p = left + 2;
+        } while (*p != '\0');
+
+        return NULL;  // TODO: define return code
+    }
+
+    int upload_https_post(const char *addr, const char *api, const char *body, char *buffer, int *size /* out */)
+    {
+        const char *p;
+        int i,k=0;
+        int len = 0;
+        int status = 0;
+        char port[6] = {0};
+        char host[64] = {0};
+        char api_t[100] = {0};
+        int done_size, left_size;
+        char request[1024] = {0};
+        https_ctx_t https_ctx = {-1, NULL, NULL};
+        char md5_out[32 + 1];
+
+        MSG_PRINTF(LOG_INFO, "addr:%s, api:%s\n", addr, api);
+        p = strstr(addr, ":");
+        if (p == NULL) {
+            // Use default port
+            rt_os_strncpy(port, "443", 4);
+            rt_os_strncpy(host, addr, 63);
+        } else {
+            rt_os_strncpy(port, p+1, 5);
+            // TODO: fix potential bug: p - addr > 63
+            rt_os_strncpy(host, addr, p - addr);
+        }
+
+        if (https_ctx.ssl == NULL) {
+            MSG_PRINTF(LOG_INFO, "https_init\n");
+            status = https_init(&https_ctx, host, port, "./ca-chain.pem"); // "./ca-chain.pem" unuse
+            if (status < 0) {
+                https_free(&https_ctx);
+                return status;
+            }
+        }
+        get_md5_string((int8_t *)body, md5_out);
+        snprintf(request, sizeof(request),
+                "POST %s HTTP/1.1\r\n"
+                "Host: %s:%s\r\n"
+                "Accept: */*\r\n"
+                "Content-Type: application/json; charset=utf-8\r\n"
+                "md5sum:%s\r\n"
+                "Content-Length: %d\r\n"
+                "\r\n",
+                api,
+                host, port,md5_out,
+                (int)strlen(body));
+
+        done_size = strlen(request);
+        left_size = strlen(body);
+
+        snprintf(request + done_size, sizeof(request) - done_size, "%s", body);
+        https_post(&https_ctx, (const char *)request);
+
+        done_size = sizeof(request) - 1 - done_size;
+        left_size -= done_size;
+
+        while (left_size > 0) {
+            memset(request, 0, sizeof(request));
+            snprintf(request, sizeof(request), "%s", body + done_size);
+            https_post(&https_ctx, (const char *)request);
+            done_size += sizeof(request) - 1;
+            left_size -= sizeof(request) - 1;
+        }
+
+        memset(buffer, 0, *size);
+        *size = https_read(&https_ctx, buffer, *size);
+        if (*size == 0 || *size == -1) {
+            MSG_PRINTF(LOG_ERR, "https read, *size=%d\r\n", *size);
+            return RT_ERR_HTTPS_POST_FAIL;
+        }
+
+        p = process_header(buffer, &status, &len);
+        if (p == NULL) {
+            MSG_PRINTF(LOG_ERR, "%s\n", buffer);
+            return RT_ERR_HTTPS_SMDP_ERROR;
+        }
+
+        if (len == -1) {
+            char sbuf[11] = {0}; // For content length, MAX to 0x7FFFFFF(2147483647)
+            p = strtoken(p, sbuf, sizeof(sbuf));
+            p += 1;             // Skip '\n'
+            *size = strtol(sbuf, NULL, 16);
+        } else {
+            *size = len;
+        }
+        for (i=0; i<*size; i++) {
+            if (p[i] == '\n' || p[i] == '\r') {
+                k++;
+            }
+            buffer[i] = p[i+k];
+        }
+        buffer[*size-k] = '\0';
+        https_free(&https_ctx);
+        return status;
+    }
+
+    int https_post_raw(const char *addr, const char *api, const char *body, char *buffer, int *size , socket_call_back cb)
+    {
+        char out_buffer[5120] = {0};
+        int out_size = 5120;
+        int ret = 0;
+        MSG_PRINTF(LOG_INFO, "addr is %s\n", addr);
+        MSG_PRINTF(LOG_INFO, "api is %s\n", api);
+        MSG_PRINTF(LOG_INFO, "body is %s\n", body);
+        ret = upload_https_post(addr, api, body, out_buffer, &out_size);
+        MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
+        if (200 == ret) {
+            cb(out_buffer);
+            MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
+        } else {
+            MSG_PRINTF(LOG_WARN, "upload_https_post return is %d the buffer is %s\n", ret, out_buffer);
+        }
+
+        return 0;
+    }
+
+#endif
 

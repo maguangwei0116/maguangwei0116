@@ -644,6 +644,9 @@ defconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 %_defconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< --defconfig=$(TOPDIR)/configs/$@ $(CONFIG_CONFIG_IN)
+	@mkdir -p $(TOPDIR)/.Jenkins
+	@rm -rf $(TOPDIR)/.Jenkins/*
+	@touch $(TOPDIR)/.Jenkins/$(MAKECMDGOALS)
 
 savedefconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 	@mkdir -p $(BUILD_DIR)/buildroot-config

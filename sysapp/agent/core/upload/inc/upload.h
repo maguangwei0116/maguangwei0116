@@ -9,10 +9,20 @@ extern "C" {
 #include "http.h"
 #include "rt_type.h"
 #include "cJSON.h"
+#include "https.h"
 
 /* uuid sample: 6c90fcc5-a30d-444f-9ba4-5bc433895699 */
 #define MAX_UUID_LEN                37  //(32+4+1)
 #define MAX_TRAN_ID_LEN             64
+
+#if (UPLOAD_HTTPS_ENABLE)
+    #define UPLOAD_API "/api/v2/report"
+    #if (CFG_ENV_TYPE_PROD)
+        #define UPLOAD_URL "oti.redtea.io:443"
+    #else
+        #define UPLOAD_URL "oti-staging.redtea.io:443"
+    #endif
+#endif
 
 typedef enum UPLOAD_TOPIC {
     TOPIC_DEVICEID                  = 0,
