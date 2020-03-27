@@ -49,6 +49,7 @@ COMM-LIB                            = comm ssl crypto pthread dl
 ifeq ($(CFG_STANDARD_MODULE),y)
 QMI-LIB                             += ql_softsim_extsdk
 endif
+
 endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 COMM-LIB                            = comm z ssl crypto

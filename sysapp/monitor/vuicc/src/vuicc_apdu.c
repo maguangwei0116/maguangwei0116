@@ -17,13 +17,6 @@
 #include "trigger.h"
 #include "log.h"
 
-typedef enum RESPONSE_TYPE {
-    CHANNEL_LOGIC_USED,
-    CHANNEL_MODEM_USED,
-    CHANNEL_NOT_USED
-} response_type;
-
-static response_type g_response_type = CHANNEL_NOT_USED;
 static pthread_mutex_t g_mutex;
 
 int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
@@ -32,17 +25,12 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     uint16_t sw = 0;
     static rt_bool reset_flag = RT_FALSE;
 
-    if ((data[1] != 0xC0) && (g_response_type == CHANNEL_LOGIC_USED)) {
-        rt_mutex_unlock(&g_mutex);
-    }
-
     rt_mutex_lock(&g_mutex);
     cmd = (data[5] << 8) + data[6];
     MSG_INFO_ARRAY("L-APDU REQ: ", data, data_len);
     cos_client_transport(IO_PACKET_TYPE_DATA, (uint8_t *)data, data_len, rsp, rsp_len);
     MSG_INFO_ARRAY("L-APDU RSP: ", rsp, *rsp_len);
 
-    sw = ((uint16_t)rsp[*rsp_len - 2] << 8) + rsp[*rsp_len - 1];
     /* enable profile and load bootstrap profile, need to reset */
     if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
         cmd = (rsp[0] << 8) + rsp[1];
@@ -54,18 +42,11 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
         }
     }
 
-    if ((sw & 0xFF00) == 0x6100) {
-        g_response_type = CHANNEL_LOGIC_USED;
-    } else if ((sw & 0xFF00) == 0x9000) {
-        g_response_type = CHANNEL_NOT_USED;
-        rt_mutex_unlock(&g_mutex);
-    }
-
     if (reset_flag == RT_TRUE) {
         reset_flag = RT_FALSE;
         trigger_swap_card(1);
     }
-
+    rt_mutex_unlock(&g_mutex);
 }
 
 static int32_t vuicc_get_atr(uint8_t *atr, uint8_t *atr_size)
@@ -77,24 +58,12 @@ static int32_t vuicc_get_atr(uint8_t *atr, uint8_t *atr_size)
 
 static int32_t vuicc_trigger_cmd(const uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len)
 {
-    uint16_t sw = 0;
 
-    if ((apdu[1] != 0xC0) && (g_response_type == CHANNEL_MODEM_USED)) {
-        rt_mutex_unlock(&g_mutex);
-    }
     rt_mutex_lock(&g_mutex);
     MSG_INFO_ARRAY("M-APDU REQ: ", apdu, apdu_len);
     cos_client_transport(IO_PACKET_TYPE_DATA, (uint8_t *)apdu, apdu_len, rsp, rsp_len);
-
-    sw = ((uint16_t)rsp[*rsp_len - 2] << 8) + rsp[*rsp_len - 1];
-    if ((sw & 0xFF00) == 0x6100) {
-        g_response_type = CHANNEL_MODEM_USED;
-    } else if ((sw & 0xFF00) == 0x9000) {
-        g_response_type = CHANNEL_NOT_USED;
-        rt_mutex_unlock(&g_mutex);
-    }
-
     MSG_INFO_ARRAY("M-APDU RSP: ", rsp, *rsp_len);
+    rt_mutex_unlock(&g_mutex);
 }
 
 void init_trigger(uint8_t uicc_switch)

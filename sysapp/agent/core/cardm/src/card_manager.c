@@ -382,11 +382,10 @@ static int32_t card_init_profile_type(init_profile_type_e type)
 
 static int32_t card_key_data_init(void)
 {
-    uint8_t data[1024];
+    uint8_t data[1516];
     int32_t data_len = 0;
 
     bootstrap_get_key(data, &data_len);
-    MSG_INFO_ARRAY("key data: ", data, data_len);
     MSG_PRINTF(LOG_INFO, "data len:%d\n", data_len);
     return lpa_load_customized_data(data, data_len, NULL, NULL);
 }

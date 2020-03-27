@@ -626,12 +626,10 @@ int32_t bootstrap_get_key(uint8_t *data, int32_t *data_len)
     MSG_PRINTF(LOG_INFO, "aes_key_offset:%d\n", g_data.aes_key_offset);
     MSG_PRINTF(LOG_INFO, "root_sk_offset:%d\n", g_data.root_sk_offset);
     get_specify_data(data, data_len, g_data.root_sk_offset);
-    MSG_INFO_ARRAY("root_sk: ", data, *data_len);
     key_request.rootEccSk = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, *data_len);
 
     buf = data + *data_len;
     get_specify_data(buf , data_len, g_data.aes_key_offset);
-    MSG_INFO_ARRAY("aes_sk: ", buf, *data_len);
     key_request.rootAesKey = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, buf, *data_len);
 
 
@@ -649,6 +647,7 @@ end:
     //ASN_STRUCT_FREE(asn_DEF_SetRootKeyRequest, &key_request);
     rt_os_free(g_buf);
     g_buf = NULL;
+
     return ret;
 }
 
@@ -695,6 +694,7 @@ int32_t verify_profile_file(rt_bool absolute_path, const char *file)
         linux_rt_file_abs_path(file, absolute_file_path, sizeof(absolute_file_path));
     }
 
+#if 0
     ret = ipc_file_verify_by_monitor(absolute_file_path, real_file_name);
     if (ret == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "share profile verify fail !\n");
@@ -705,6 +705,7 @@ int32_t verify_profile_file(rt_bool absolute_path, const char *file)
         MSG_PRINTF(LOG_ERR, "share profile name unmatched !\n");
         ret = RT_ERROR;
     }
+#endif
 #endif
 
     return ret;
