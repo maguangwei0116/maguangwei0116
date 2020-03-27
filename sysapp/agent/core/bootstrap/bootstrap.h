@@ -19,7 +19,7 @@
 int32_t init_bootstrap(void *arg);
 void    bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode);
 void    operational_network_start_timer(void);
-int32_t bootstrap_get_key(uint8_t *data, int32_t *data_len);
+int32_t bootstrap_get_key(void);
 int32_t bootstrap_get_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size);
 int32_t bootstrap_init_profile(const char *file);
 int32_t bootstrap_select_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *profile_len);

@@ -616,21 +616,19 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
     return RT_SUCCESS;
 }
 
-int32_t bootstrap_get_key(uint8_t *data, int32_t *data_len)
+int32_t bootstrap_get_key(void)
 {
-    uint8_t *buf = NULL;
+    uint8_t data[512];
+    int32_t data_len = 0;
     asn_enc_rval_t ec;
     int32_t ret = RT_ERROR;
     SetRootKeyRequest_t key_request = {0};
 
-    MSG_PRINTF(LOG_INFO, "aes_key_offset:%d\n", g_data.aes_key_offset);
-    MSG_PRINTF(LOG_INFO, "root_sk_offset:%d\n", g_data.root_sk_offset);
-    get_specify_data(data, data_len, g_data.root_sk_offset);
-    key_request.rootEccSk = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, *data_len);
+    get_specify_data(data, &data_len, g_data.root_sk_offset);
+    key_request.rootEccSk = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, data_len);
 
-    buf = data + *data_len;
-    get_specify_data(buf , data_len, g_data.aes_key_offset);
-    key_request.rootAesKey = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, buf, *data_len);
+    get_specify_data(data , &data_len, g_data.aes_key_offset);
+    key_request.rootAesKey = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, data_len);
 
 
     g_buf_size = 0;
@@ -640,8 +638,7 @@ int32_t bootstrap_get_key(uint8_t *data, int32_t *data_len)
         goto end;
     }
 
-    rt_os_memcpy(data, g_buf, g_buf_size);
-    *data_len = g_buf_size;
+    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_KEY, g_buf, g_buf_size);
     ret = RT_SUCCESS;
 end:
     //ASN_STRUCT_FREE(asn_DEF_SetRootKeyRequest, &key_request);

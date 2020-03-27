@@ -283,7 +283,6 @@ static int32_t agent_init_call(void)
 
 int32_t agent_main(const char *app_path, log_func logger)
 {
-    printf("NEW MAIN\n");
     if (app_path) {
         snprintf(g_app_path, sizeof(g_app_path), "%s", app_path);
     }

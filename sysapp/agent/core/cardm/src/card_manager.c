@@ -382,12 +382,7 @@ static int32_t card_init_profile_type(init_profile_type_e type)
 
 static int32_t card_key_data_init(void)
 {
-    uint8_t data[1516];
-    int32_t data_len = 0;
-
-    bootstrap_get_key(data, &data_len);
-    MSG_PRINTF(LOG_INFO, "data len:%d\n", data_len);
-    return lpa_load_customized_data(data, data_len, NULL, NULL);
+    return bootstrap_get_key();
 }
 
 int32_t init_card_manager(void *arg)
@@ -402,7 +397,6 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
 
-    MSG_PRINTF(LOG_INFO, "Card set key\r\n");
     if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
         ret = card_key_data_init();
         if (ret) {
@@ -493,6 +487,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     switch (mode) {
         case MSG_CARD_SETTING_KEY:
+            ret = lpa_load_customized_data(buf, len, NULL, NULL);
             break;
 
         case MSG_CARD_SETTING_PROFILE:

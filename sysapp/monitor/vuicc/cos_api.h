@@ -27,7 +27,7 @@ Description: Provide some interfaces for the upper application calls
 #endif
 
 #ifndef NVM_SIZE
-#define NVM_SIZE                    0x5000UL  //NVM块总大小
+#define NVM_SIZE                    0x20000UL  //NVM块总大小
 #endif
 
 /* 以下为io_type的定义*/

@@ -67,6 +67,8 @@ int32_t ipc_socket_server(void)
         goto end;
     }
 
+    MSG_PRINTF(LOG_INFO, "monitor server socket_id:%d\r\n", socket_id);
+
     g_ipc_server_ok = RT_TRUE;
 
     while (1) {
@@ -76,6 +78,7 @@ int32_t ipc_socket_server(void)
         }
         rcv_len = socket_recv(new_fd, buffer, THT_BUFFER_LEN);
         rt_os_memset(rsp, 0x00, THT_BUFFER_LEN);
+        MSG_INFO_ARRAY(" IPC SERVER REQ: ", buffer, rcv_len);
         ipc_cmd((const uint8_t *)buffer, rcv_len, rsp, &rsp_len);
         socket_send(new_fd, rsp, rsp_len);
         close(new_fd);
