@@ -47,6 +47,7 @@
 #endif
 
 #define RT_MONITOR_LOG              "rt_monitor_log"
+#define SECP256R1                   0
 
 #ifdef CFG_SOFTWARE_TYPE_DEBUG
 #define RT_MONITOR_LOG_MAX_SIZE     (30 * 1024 * 1024)
@@ -391,7 +392,7 @@ static void init_app_version(void *arg)
 
     MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
     //vsim_get_ver(version);
-    MSG_PRINTF(LOG_WARN, "vUICC version: %s\n", version);
+    //MSG_PRINTF(LOG_WARN, "vUICC version: %s\n", version);
 }
 
 #ifdef CFG_ENABLE_LIBUNWIND
@@ -411,6 +412,7 @@ static int32_t monitor_printf(const char *fmt, ...)
 }
 
 extern int32_t init_backtrace(void *arg);
+extern void init_curve_parameter(curve_type_e parameter_type);
 #endif
 
 static void debug_with_printf(const char *msg)
@@ -464,6 +466,8 @@ int32_t main(int32_t argc, const char *argv[])
     /*init lib interface*/
     init_timer(NULL);
     rt_qmi_init(NULL);
+
+    init_curve_parameter(SECP256R1);
 
     /* inspect monitor */
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
