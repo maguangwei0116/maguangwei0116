@@ -17,6 +17,13 @@
 #include "trigger.h"
 #include "log.h"
 
+typedef enum APDU_RESPONSE_STATE{
+    APDU_RESPONSE_NOT_USED = 0,
+    APDU_RESPONSE_BASIC_USED,
+    APDU_RESPONSE_LOGIC_USED
+} apdu_response_state_e;
+
+static apdu_response_state_e g_response_state = APDU_RESPONSE_NOT_USED;
 static pthread_mutex_t g_apdu_mutex;
 
 int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
@@ -25,12 +32,27 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     uint16_t sw = 0;
     static rt_bool reset_flag = RT_FALSE;
 
+    if ((data[1] != 0xC0) && (g_response_state == APDU_RESPONSE_LOGIC_USED)) {
+        rt_mutex_unlock(&g_apdu_mutex);
+    } else if (g_response_state == APDU_RESPONSE_NOT_USED) {
+        rt_mutex_lock(&g_apdu_mutex);
+    }
+
     MSG_INFO_ARRAY("L-APDU REQ: ", data, data_len);
-    rt_mutex_lock(&g_apdu_mutex);
     cmd = (data[5] << 8) + data[6];
     cos_client_transport(IO_PACKET_TYPE_DATA, (uint8_t *)data, data_len, rsp, rsp_len);
     MSG_INFO_ARRAY("L-APDU RSP: ", rsp, *rsp_len);
-    rt_mutex_unlock(&g_apdu_mutex);
+
+    sw = ((uint16_t)rsp[*rsp_len - 2] << 8) + rsp[*rsp_len - 1];
+
+    if ((sw & 0xFF00) == 0x6100) {
+        g_response_state = APDU_RESPONSE_LOGIC_USED;
+    } else {
+        g_response_state = APDU_RESPONSE_NOT_USED;
+        rt_mutex_unlock(&g_apdu_mutex);
+    }
+    MSG_PRINTF(LOG_INFO, "g_response_state:%d\n", g_response_state);
+
     /* enable profile and load bootstrap profile, need to reset */
     if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
         cmd = (rsp[0] << 8) + rsp[1];
@@ -41,7 +63,6 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
             reset_flag = RT_TRUE;
         }
     }
-
     if (reset_flag == RT_TRUE) {
         reset_flag = RT_FALSE;
         trigger_swap_card(1);
@@ -57,12 +78,25 @@ static int32_t vuicc_get_atr(uint8_t *atr, uint8_t *atr_size)
 
 static int32_t vuicc_trigger_cmd(const uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len)
 {
+    uint16_t sw = 0;
 
-    rt_mutex_lock(&g_apdu_mutex);
+    if ((apdu[1] != 0xC0) && (g_response_state == APDU_RESPONSE_BASIC_USED)) {
+        rt_mutex_unlock(&g_apdu_mutex);
+    } else if (g_response_state == APDU_RESPONSE_NOT_USED) {
+        rt_mutex_lock(&g_apdu_mutex);
+    }
+
     MSG_INFO_ARRAY("M-APDU REQ: ", apdu, apdu_len);
     cos_client_transport(IO_PACKET_TYPE_DATA, (uint8_t *)apdu, apdu_len, rsp, rsp_len);
     MSG_INFO_ARRAY("M-APDU RSP: ", rsp, *rsp_len);
-    rt_mutex_unlock(&g_apdu_mutex);
+    sw = ((uint16_t)rsp[*rsp_len - 2] << 8) + rsp[*rsp_len - 1];
+    if ((sw & 0xFF00) == 0x6100) {
+        g_response_state = APDU_RESPONSE_BASIC_USED;
+    } else {
+        g_response_state = APDU_RESPONSE_NOT_USED;
+        rt_mutex_unlock(&g_apdu_mutex);
+    }
+    MSG_PRINTF(LOG_INFO, "g_response_state:%d\n", g_response_state);
 }
 
 void init_trigger(uint8_t uicc_switch)

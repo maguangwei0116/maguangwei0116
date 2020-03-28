@@ -44,7 +44,7 @@ LOCAL_CFLAGS                        += -DOPENSSL=1
 
 # Config your own libraries
 ifeq ($(SYSAPP_PLATFORM_9X07), y)
-QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices
+QMI-LIB                             = dsi_netctrl dsutils qmi_cci qmiservices
 COMM-LIB                            = comm ssl crypto pthread dl
 ifeq ($(CFG_STANDARD_MODULE),y)
 QMI-LIB                             += ql_softsim_extsdk

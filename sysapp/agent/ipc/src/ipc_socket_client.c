@@ -32,7 +32,7 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
         MSG_PRINTF(LOG_ERR, "connet server failed\n");
         goto end;
     }
-    MSG_INFO_ARRAY("IPC-APDU REQ: ", data, len);
+    //MSG_INFO_ARRAY("IPC-APDU REQ: ", data, len);
     ret = socket_send(socket_id, data, len);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "send data failed\n");
@@ -47,7 +47,7 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
     }
     *rsp_len = ret;
     ret = RT_SUCCESS;
-    MSG_INFO_ARRAY("IPC-APDU RSP: ", rsp, *rsp_len);
+    //MSG_INFO_ARRAY("IPC-APDU RSP: ", rsp, *rsp_len);
 end:
 
     socket_close(socket_id);

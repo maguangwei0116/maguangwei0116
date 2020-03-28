@@ -691,7 +691,6 @@ int32_t verify_profile_file(rt_bool absolute_path, const char *file)
         linux_rt_file_abs_path(file, absolute_file_path, sizeof(absolute_file_path));
     }
 
-#if 0
     ret = ipc_file_verify_by_monitor(absolute_file_path, real_file_name);
     if (ret == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "share profile verify fail !\n");
@@ -702,7 +701,6 @@ int32_t verify_profile_file(rt_bool absolute_path, const char *file)
         MSG_PRINTF(LOG_ERR, "share profile name unmatched !\n");
         ret = RT_ERROR;
     }
-#endif
 #endif
 
     return ret;

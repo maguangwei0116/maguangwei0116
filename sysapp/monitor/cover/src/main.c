@@ -141,8 +141,9 @@ static int32_t choose_uicc_type(lpa_channel_type_e type)
     if (type == LPA_CHANNEL_BY_IPC) {
         init_trigger(type);
     }
+#ifndef CFG_STANDARD_MODULE
     init_apdu_channel(type);
-
+#endif
     return RT_SUCCESS;
 }
 
@@ -173,12 +174,14 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         *rsp = (uint8_t)inspect_abstract_content(info->hash, info->signature);
         *rsp_len = 1;
     } else if (cmd == CMD_SELECT_PROFILE) { // choose one profile from backup profile
+#ifndef CFG_STANDARD_MODULE
         int32_t ret;
         choose_uicc_type(type);
         rt_os_sleep(3);  // must have, delay some for card reset !!!
         ret = backup_process(type);
         *rsp = (ret == RT_SUCCESS) ? 0x01 : 0x00;
         *rsp_len = 1;
+#endif
     } else if (cmd == CMD_GET_MONITOR_VER) { // monitor version info
         monitor_version_t info;
         *rsp_len = sizeof(monitor_version_t);

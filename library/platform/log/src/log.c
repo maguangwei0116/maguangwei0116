@@ -117,7 +117,7 @@ int32_t init_log_file(void *arg)
 
     g_log_mutex = linux_mutex_init();
     if (g_log_mutex) {
-        printf("log mutex init fail\n"); 
+        printf("log mutex init fail\n");
         return RT_ERROR;
     }
 
@@ -157,9 +157,9 @@ static void log_local_print(const char *data, int32_t len)
         /* external logger function */
         g_log_ex_func(data);
     }
-    
+
     if (g_log_param.mode == LOG_PRINTF_TERMINAL) {
-        printf("%s", data);      
+        printf("%s", data);
     } else {
         //printf("g_log_param.cur_size: %d/%d \r\n", g_log_param.cur_size, g_log_param.max_size);
         if (g_log_param.cur_size > g_log_param.max_size) {

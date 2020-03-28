@@ -37,7 +37,7 @@ LOCAL_CFLAGS                        += -DLOCAL_TARGET_NAME=\"$(LOCAL_TARGET_NAME
 LOCAL_CFLAGS                        += -DLOCAL_TARGET_VERSION=\"$(LOCAL_TARGET_VERSION)\"
 LOCAL_CFLAGS                        += -DLOCAL_TARGET_PLATFORM_TYPE=\"$(LOCAL_TARGET_PLATFORM_TYPE)\"
 
-QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices
+QMI-LIB                             = dsi_netctrl dsutils qmi_cci qmiservices
 ifeq ($(CFG_STANDARD_MODULE),y)
 QMI-LIB                             += ql_softsim_extsdk
 endif
@@ -59,12 +59,14 @@ SRC-y 		+= $(SRC-PATH)/cb_io.c
 SRC-y 		+= $(SRC-PATH)/vuicc_apdu.c
 SRC-y 		+= $(SRC-PATH)/ipc_socket_server.c
 SRC-y 		+= $(SRC-PATH)/main.c
+
+ifeq ($(CFG_OPEN_MODULE),y)
 SRC-y 		+= ./core/backup/src/parse_backup.c
 SRC-y 		+= ./core/backup/src/apdu.c
-SRC-y 		+= ./core/inspect/src/inspect_file.c
 SRC-y 		+= ./core/networkd/src/network_detection.c
 SRC-y 		+= ./core/download/src/download_file.c
-
+endif
+SRC-y 		+= ./core/inspect/src/inspect_file.c
 # Config your include file path by += xxx-inc
 INC-y 		+= ./ipc/
 INC-y 		+= ./ipc/$(INC-PATH)
