@@ -358,9 +358,9 @@ void https_free(https_ctx_t *https_ctx)
         char host[64] = {0};
         char api_t[100] = {0};
         int done_size, left_size;
-        char request[1024] = {0};
+        char request[2048] = {0};
         https_ctx_t https_ctx = {-1, NULL, NULL};
-        char md5_out[32 + 1];
+        char md5_out[32 + 1] = {0};
 
         MSG_PRINTF(LOG_INFO, "addr:%s, api:%s\n", addr, api);
         p = strstr(addr, ":");
