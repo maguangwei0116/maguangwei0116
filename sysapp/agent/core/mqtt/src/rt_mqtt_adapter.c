@@ -6,7 +6,7 @@
 #define ADAPTER_APPKEY                  "D358134D21684E8FA23CC25740506A82"
 
 /* callback for REDTEA ticket server */
-static int32_t mqtt_redtea_ticket_server_cb(const char *json_data) 
+static int32_t mqtt_redtea_ticket_server_cb(const char *json_data)
 {
     int32_t ret = RT_ERROR;
     cJSON *data;
@@ -36,7 +36,7 @@ static int32_t mqtt_redtea_ticket_server_cb(const char *json_data)
                 snprintf(reg_info->password, sizeof(reg_info->password), password->valuestring);
                 snprintf(reg_info->channel, sizeof(reg_info->channel), channel->valuestring);
                 snprintf(reg_info->ticket_server, sizeof(reg_info->ticket_server), ticket_url->valuestring);
-#if (EMQ_MQTTS_ENABLE)
+#if (CFG_EMQ_MQTTS_ENABLE)
                 snprintf(reg_info->url, sizeof(reg_info->url), "ssl://%s:%d", host->valuestring, port->valueint);
 #else
                 snprintf(reg_info->url, sizeof(reg_info->url), "tcp://%s:%d", host->valuestring, port->valueint);
@@ -68,7 +68,7 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
         return RT_ERROR;
     }
 
-#if (EMQ_MQTTS_ENABLE)
+#if (CFG_EMQ_MQTTS_ENABLE)
     if (!opts->device_id) {
         snprintf(json_data, sizeof(json_data), "{\"a\":\"%s\",\"ssl_enabled\":true}", appkey);
     } else {
@@ -116,7 +116,7 @@ rt_bool mqtt_connect_adapter(mqtt_param_t *param, const char *oti_addr, int32_t 
     MQTTClient *c = &param->client;
     mqtt_opts_t *opts = &param->opts;
     const char *alias = param->alias;
-    
+
     mqtt_set_reg_url(oti_addr, oti_port);
     MSG_PRINTF(LOG_INFO, "OTI server addr:%s, port:%d\r\n", oti_addr, oti_port);
 

@@ -15,7 +15,7 @@ extern "C" {
 #define MAX_UUID_LEN                37  //(32+4+1)
 #define MAX_TRAN_ID_LEN             64
 
-#if (UPLOAD_HTTPS_ENABLE)
+#if (CFG_UPLOAD_HTTPS_ENABLE)
     #define UPLOAD_API "/api/v2/report"
     #if (CFG_ENV_TYPE_PROD)
         #define UPLOAD_URL "oti.redtea.io:443"

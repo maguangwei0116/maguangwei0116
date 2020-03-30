@@ -14,7 +14,7 @@
 #include "log.h"
 #include "https.h"
 #include "dns.h"
-#if (UPLOAD_HTTPS_ENABLE)
+#if (CFG_UPLOAD_HTTPS_ENABLE)
     #include "http.h"
 #endif
 
@@ -51,6 +51,7 @@ static int connect_tcp(const char *host_name, const char *addr)
     struct hostent *host;
     struct sockaddr_in server;
     int i = 0;
+#if (CFG_UPLOAD_HTTPS_ENABLE)
     // gethostbyname() function High Probability fail, so add this codes
     while (1) {
         if (0 == new_system(PING_ADDR)) {
@@ -63,6 +64,7 @@ static int connect_tcp(const char *host_name, const char *addr)
         MSG_PRINTF(LOG_WARN, "times is %d ...\r\n", i);
         i++;
     }
+#endif
     host = gethostbyname(host_name);
 #ifdef CFG_USR_DNS_API
     if (!host) {
@@ -125,7 +127,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
     SSL_library_init();
     OpenSSL_add_all_algorithms();
 
-    #if (UPLOAD_HTTPS_ENABLE)
+    #if (CFG_UPLOAD_HTTPS_ENABLE)
         https_ctx->ssl_cxt = SSL_CTX_new(TLSv1_client_method());
     #else
         // New context saying we are a client, and using SSL 2 or 3
@@ -233,7 +235,7 @@ void https_free(https_ctx_t *https_ctx)
     }
 }
 
-#if (UPLOAD_HTTPS_ENABLE)
+#if (CFG_UPLOAD_HTTPS_ENABLE)
 
     const char *strtoken(const char *src, char *dst, int size)
     {

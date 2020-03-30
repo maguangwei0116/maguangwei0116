@@ -39,7 +39,7 @@ static rt_bool g_upload_mqtt                    = RT_FALSE;
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
     MSG_PRINTF(LOG_DBG, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
-    #if (UPLOAD_HTTPS_ENABLE)
+    #if (CFG_UPLOAD_HTTPS_ENABLE)
         https_post_raw(UPLOAD_URL, UPLOAD_API, buffer, NULL, NULL, cb);
     #else
         return http_post_raw(host_addr, port, buffer, len, cb);
@@ -108,7 +108,7 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
     snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, md5_out, data_len, data);
     send_len = rt_os_strlen(lpbuf);
 
-    #if (UPLOAD_HTTPS_ENABLE)
+    #if (CFG_UPLOAD_HTTPS_ENABLE)
         ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, data, rt_os_strlen(data));
     #else
         ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);

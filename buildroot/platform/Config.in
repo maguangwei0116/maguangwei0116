@@ -15,6 +15,7 @@ config BR2_CFG_SOFTWARE_NAME
 config BR2_CFG_SOFTWARE_NAME
 	string "Software Name"
 	default "general"
+
 choice
 	prompt "Module Type"
 	default BR2_CFG_OPEN_MODULE
@@ -115,6 +116,52 @@ config BR2_CFG_ENV_TYPE_STAGING
 	  Running at staging environment.
 
 endchoice
+
+choice
+	prompt "Mqtt Type"
+	default BR2_CFG_EMQ_MQTT_ENABLE
+	help
+	  Set mqtt type (mqtt or mqtts)
+
+config BR2_CFG_EMQ_MQTT_ENABLE
+	bool "BR2_CFG_EMQ_MQTT_ENABLE"
+	help
+	  mqtt type. This is the default.
+
+config BR2_CFG_EMQ_MQTTS_ENABLE
+	bool "BR2_CFG_EMQ_MQTTS_ENABLE"
+	help
+	  mqtts type.
+
+endchoice
+
+choice
+	prompt "Http Type"
+	default BR2_CFG_UPLOAD_HTTP_ENABLE
+	help
+	  Set http type (http or https)
+
+config BR2_CFG_UPLOAD_HTTP_ENABLE
+	bool "BR2_CFG_UPLOAD_HTTP_ENABLE"
+	help
+	  http type. This is the default.
+
+config BR2_CFG_UPLOAD_HTTPS_ENABLE
+	bool "BR2_CFG_UPLOAD_HTTPS_ENABLE"
+	help
+	  https type.
+
+endchoice
+
+config BR2_CFG_HTTP_TYPE
+	string
+	default "https"		    if BR2_CFG_UPLOAD_HTTPS_ENABLE
+	default "http"	        if BR2_CFG_UPLOAD_HTTP_ENABLE
+
+config BR2_CFG_MQTT_TYPE
+	string
+	default "mqtts"		    if BR2_CFG_EMQ_MQTTS_ENABLE
+	default "mqtt"	        if BR2_CFG_EMQ_MQTT_ENABLE
 
 config BR2_CFG_ENV_TYPE
 	string

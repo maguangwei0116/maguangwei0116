@@ -480,7 +480,6 @@ int32_t main(int32_t argc, const char *argv[])
     /* install ipc callbacks and start up ipc server */
     ipc_regist_callback(monitor_cmd);
     ipc_socket_server_start();
-
     /* start up agent */
     do {
         agent_task_check_start(frist_start);
