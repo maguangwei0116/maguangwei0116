@@ -14,6 +14,10 @@
 #include "cJSON.h"
 #include "rt_mqtt_common.h"
 
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    #include "https.h"
+#endif
+
 #define MQTT_ALIAS_MAX_LEN              40
 #define MAX_CONNECT_SERVER_TIMER        3
 #define MQTT_PUBLISH_NO_YUNBA           -88

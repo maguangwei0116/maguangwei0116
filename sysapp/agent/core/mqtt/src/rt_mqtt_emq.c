@@ -56,8 +56,14 @@ int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_opts_t *opts)
 
     snprintf(json_data, sizeof(json_data), "{\"appKey\":\"%s\"}", appkey);
 
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    ret = mqtt_https_post_json((const char *)json_data, reg_url->url, reg_url->port, \
+                            "/clientService/getEmqUser", mqtt_emq_ticket_server_cb);
+#else
     ret = mqtt_http_post_json((const char *)json_data, reg_url->url, reg_url->port, \
                             "/clientService/getEmqUser", mqtt_emq_ticket_server_cb);
+#endif
+
     if (ret < 0) {
         return RT_ERROR;
     }

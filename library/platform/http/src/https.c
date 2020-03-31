@@ -16,6 +16,7 @@
 #include "dns.h"
 #if (CFG_UPLOAD_HTTPS_ENABLE)
     #include "http.h"
+    typedef int32_t (*PCALLBACK)(const char *json_data);
 #endif
 
 #define TCP_CONNECT_TIMEOUT     30  // unit: seconds
@@ -462,6 +463,75 @@ void https_free(https_ctx_t *https_ctx)
         }
 
         return 0;
+    }
+
+
+    int32_t mqtt_https_post_json(const char *json_data, const char *host_ip, uint16_t port, const char *path, PCALLBACK cb)
+    {
+#if (CFG_ENV_TYPE_PROD)
+    host_ip = "oti.redtea.io";
+    port = 443;
+#else
+    host_ip = "oti-staging.redtea.io";
+    port = 443;
+#endif
+        int32_t ret = RT_ERROR;
+        int32_t socket_fd = RT_ERROR;
+        // char buf[BUFFER_SIZE * 4];
+        char md5_out[32+1];
+        char *p = NULL;
+        // char temp[128];
+        char out_buffer[5120] = {0};
+        int out_size = 5120;
+
+        do{
+            if(!json_data || !host_ip || !path) {
+                MSG_PRINTF(LOG_DBG, "path json data error\n");
+                break;
+            }
+
+            MSG_PRINTF(LOG_INFO, "json_data:%s\n",json_data);
+            get_md5_string((const char *)json_data, md5_out);
+            md5_out[32] = '\0';
+
+            MSG_PRINTF(LOG_INFO, "host_ip:%s, port:%d\r\n", host_ip, port);
+
+            // rt_os_memset(buf, 0, sizeof(buf));
+            // snprintf(temp, sizeof(temp), "POST %s HTTP/1.1", path);
+            // rt_os_strcat(buf, temp);
+            // rt_os_strcat(buf, "\r\n");
+            // snprintf(temp, sizeof(temp), "Host: %s:%d", host_ip, port),
+            // rt_os_strcat(buf, temp);
+            // rt_os_strcat(buf, "\r\n");
+            // rt_os_strcat(buf, "Accept: */*\r\n");
+            // rt_os_strcat(buf, "Content-Type: application/json;charset=UTF-8\r\n");
+            // rt_os_strcat(buf, "md5sum:");
+            // snprintf(temp, sizeof(temp), "%s\r\n", md5_out);
+            // rt_os_strcat(buf, temp);
+            // rt_os_strcat(buf, "Content-Length: ");
+            // snprintf(temp, sizeof(temp), "%d", rt_os_strlen(json_data)),
+            // rt_os_strcat(buf, temp);
+            // rt_os_strcat(buf, "\r\n\r\n");
+            // rt_os_strcat(buf, json_data);
+
+            // MSG_PRINTF(LOG_INFO, "send buf:%s\n", buf);
+
+            ret = upload_https_post(host_ip, path, json_data, out_buffer, &out_size);
+            MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
+            if (200 == ret) {
+                cb(out_buffer);
+                MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
+            } else {
+                MSG_PRINTF(LOG_WARN, "upload_https_post return is %d the buffer is %s\n", ret, out_buffer);
+            }
+
+            /* get http body */
+            MSG_PRINTF(LOG_INFO, "recv buff: %s\n", out_buffer);
+
+            ret = cb(out_buffer);
+        } while(0);
+
+        return ret;
     }
 
 #endif

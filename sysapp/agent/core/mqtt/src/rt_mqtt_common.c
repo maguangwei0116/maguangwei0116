@@ -112,8 +112,15 @@ int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey
     }
 
     MSG_PRINTF(LOG_INFO, "json_data: %s\n", json_data);
+
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    ret = mqtt_https_post_json((const char *)json_data, g_mqtt_reg_url.url, g_mqtt_reg_url.port, \
+                            "/clientService/getNodes", mqtt_get_broker_cb);
+    #else
     ret = mqtt_http_post_json((const char *)json_data, g_mqtt_reg_url.url, g_mqtt_reg_url.port, \
                             "/clientService/getNodes", mqtt_get_broker_cb);
+#endif
+
     if (ret < 0) {
         return RT_ERROR;
     }

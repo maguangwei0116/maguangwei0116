@@ -85,8 +85,14 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
     }
 #endif
 
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    ret = mqtt_https_post_json((const char *)json_data, reg_url->url, reg_url->port, \
+                            "/api/v1/ticket", mqtt_redtea_ticket_server_cb);
+    #else
     ret = mqtt_http_post_json((const char *)json_data, reg_url->url, reg_url->port, \
                             "/api/v1/ticket", mqtt_redtea_ticket_server_cb);
+#endif
+
     if (ret < 0){
         MSG_PRINTF(LOG_ERR, "http post json error, ret=%d\r\n", ret);
         return RT_ERROR;
