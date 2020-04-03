@@ -34,7 +34,7 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
 
     if ((data[1] != 0xC0) && (g_response_state == APDU_RESPONSE_LOGIC_USED)) {
         rt_mutex_unlock(&g_apdu_mutex);
-    } else if (g_response_state == APDU_RESPONSE_NOT_USED) {
+    } else if (g_response_state != APDU_RESPONSE_LOGIC_USED) {
         rt_mutex_lock(&g_apdu_mutex);
     }
 
@@ -82,7 +82,7 @@ static int32_t vuicc_trigger_cmd(const uint8_t *apdu, uint16_t apdu_len, uint8_t
 
     if ((apdu[1] != 0xC0) && (g_response_state == APDU_RESPONSE_BASIC_USED)) {
         rt_mutex_unlock(&g_apdu_mutex);
-    } else if (g_response_state == APDU_RESPONSE_NOT_USED) {
+    } else if (g_response_state != APDU_RESPONSE_BASIC_USED) {
         rt_mutex_lock(&g_apdu_mutex);
     }
 

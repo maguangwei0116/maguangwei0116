@@ -86,6 +86,7 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 		then \
 			ubi_version+=".$$ubi_version_4"; \
 		fi; \
+		share_profile_batch_code=`echo $${share_profile_batch_code:0:19}`; \
 		ubi_share_profile_version="$$ubi_version""#""$$share_profile_batch_code"; \
 		version_string+="_$$ubi_share_profile_version";\
 		echo "$$version_string" > $(REDTEA_OEMAPP_VERSION_FILE); \
