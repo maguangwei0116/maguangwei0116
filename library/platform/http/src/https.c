@@ -128,12 +128,9 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
     SSL_library_init();
     OpenSSL_add_all_algorithms();
 
-    #if (CFG_UPLOAD_HTTPS_ENABLE)
-        https_ctx->ssl_cxt = SSL_CTX_new(TLSv1_client_method());
-    #else
-        // New context saying we are a client, and using SSL 2 or 3
-        https_ctx->ssl_cxt = SSL_CTX_new(SSLv23_client_method());
-    #endif
+    // New context saying we are a client, and using SSL 2 or 3
+    https_ctx->ssl_cxt = SSL_CTX_new(SSLv23_client_method());
+
     if (https_ctx->ssl_cxt == NULL) {
         ERR_print_errors_fp(stderr);
         return RT_ERR_HTTPS_NEW_SSL_CTX_FAIL;
@@ -237,6 +234,94 @@ void https_free(https_ctx_t *https_ctx)
 }
 
 #if (CFG_UPLOAD_HTTPS_ENABLE)
+
+    int tls_https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca)
+    {
+        int res = -1;
+        
+        rt_os_memset(https_ctx, 0, sizeof(https_ctx_t));
+
+        https_ctx->socket = connect_tcp(host, port);
+        if (https_ctx->socket < 0) {
+            return https_ctx->socket;
+        }
+
+        // Register the error strings for libcrypto & libssl
+        SSL_load_error_strings();
+
+        // Register the available ciphers and digests
+        SSL_library_init();
+        OpenSSL_add_all_algorithms();
+
+        https_ctx->ssl_cxt = SSL_CTX_new(TLSv1_client_method());
+        if (https_ctx->ssl_cxt == NULL) {
+            ERR_print_errors_fp(stderr);
+            return RT_ERR_HTTPS_NEW_SSL_CTX_FAIL;
+        }
+
+        SSL_CTX_set_verify(https_ctx->ssl_cxt, SSL_VERIFY_NONE, NULL);
+        SSL_CTX_set_verify_depth(https_ctx->ssl_cxt, 4);
+        res = SSL_CTX_load_verify_locations(https_ctx->ssl_cxt, ca, NULL);
+        if (res < 0) {
+            MSG_PRINTF(LOG_ERR, "No Certificate found on Client!\n");
+    #ifdef TLS_VERIFY_CERT
+            return RT_ERR_HTTPS_CLIENT_CRT_NOT_FOUND;
+    #endif
+        }
+
+        // Create an SSL struct for the connection
+        https_ctx->ssl = SSL_new(https_ctx->ssl_cxt);
+        if (https_ctx->ssl == NULL) {
+            ERR_print_errors_fp(stderr);
+            return RT_ERR_HTTPS_CREATE_SSL_FAIL;
+        }
+
+        // Connect the SSL struct to our connection
+        if (!SSL_set_fd(https_ctx->ssl, https_ctx->socket)) {
+            ERR_print_errors_fp(stderr);
+            return RT_ERR_HTTPS_CONNECT_SSL_FAIL;
+        }
+
+        // Initiate SSL handshake
+        if (SSL_connect(https_ctx->ssl) != 1) {
+            ERR_print_errors_fp(stderr);
+            return RT_ERR_HTTPS_SSL_HANDSHAKE_FAIL;
+        }
+        
+        X509* cert = SSL_get_peer_certificate(https_ctx->ssl);
+        if (cert) {  // Free immediately
+            char *line;
+            //MSG_PRINTF(LOG_INFO, "cert: %s\n", cert);
+            line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+            MSG_PRINTF(LOG_INFO, "Subject Name: %s\n", line);
+            rt_os_free(line);
+            line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+            MSG_PRINTF(LOG_INFO, "Issuer: %s\n", line);
+            res = SSL_get_verify_result(https_ctx->ssl);
+            if (res != X509_V_OK) {
+                MSG_PRINTF(LOG_ERR, "Certificate verification failed: %d\n", res);
+    #ifdef TLS_VERIFY_CERT
+    #ifdef TLS_VERIFY_CERT_9_AS_OK
+                if (res == X509_V_ERR_CERT_NOT_YET_VALID) {
+                    // Do nothing, consider X509_V_ERR_CERT_NOT_YET_VALID as verification passed
+                } else
+    #endif
+                {
+                    return RT_ERR_HTTPS_SERVER_CRT_VERIFY_FAIL;
+                }
+    #endif
+            }
+            rt_os_free(line);
+            X509_free(cert);
+        } else {
+            MSG_PRINTF(LOG_ERR, "No Certificate found on Server!\n");
+    #ifdef TLS_VERIFY_CERT
+                return RT_ERR_HTTPS_SERVER_CRT_NOT_FOUND;
+    #endif
+        }
+
+        return RT_SUCCESS;
+    }
 
     const char *strtoken(const char *src, char *dst, int size)
     {
@@ -376,8 +461,8 @@ void https_free(https_ctx_t *https_ctx)
         }
 
         if (https_ctx.ssl == NULL) {
-            MSG_PRINTF(LOG_INFO, "https_init\n");
-            status = https_init(&https_ctx, host, port, "./ca-chain.pem"); // "./ca-chain.pem" unuse
+            MSG_PRINTF(LOG_INFO, "tls_https_init\n");
+            status = tls_https_init(&https_ctx, host, port, "./ca-chain.pem"); // "./ca-chain.pem" unuse
             if (status < 0) {
                 https_free(&https_ctx);
                 return status;
