@@ -484,10 +484,12 @@ int32_t card_get_avariable_profile_num(int32_t *avariable_num)
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t ret = RT_ERROR;
+    int i = 0;
 
-    switch (mode) {
+    for ( i = 0; i <= 3; i++) {
+       switch (mode) {
         case MSG_CARD_SETTING_KEY:
-            ret = lpa_load_customized_data(buf, len, NULL, NULL);
+            ret = lpa_load_customized_data(buf, len, NULL, NULL);       // RT_SUCCESS
             break;
 
         case MSG_CARD_SETTING_PROFILE:
@@ -533,6 +535,11 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
         default:
             //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;
+        }
+
+        if (ret == RT_SUCCESS) {
+            break;
+        }
     }
 
     return ret;
