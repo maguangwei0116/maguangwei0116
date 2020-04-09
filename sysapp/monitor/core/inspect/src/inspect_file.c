@@ -156,7 +156,7 @@ end:
 
 rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
 {
-    return RT_TRUE;
+    // return RT_TRUE;
     rt_bool ret = RT_FALSE;
 
     uint8_t pk_out[MAX_PK_LEN/2 + 1] = {0};

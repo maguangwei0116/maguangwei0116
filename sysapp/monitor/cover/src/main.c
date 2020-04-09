@@ -171,7 +171,13 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
             goto end;
         }
         signature_data_t *info = (signature_data_t *)data;
-        *rsp = (uint8_t)inspect_abstract_content(info->hash, info->signature);
+
+        uint8_t signature_out[65] = {0};
+        uint16_t signature_len = 0;
+        hexstring2bytes(info->signature, signature_out, &signature_len);
+
+        *rsp = (uint8_t)inspect_abstract_content(info->hash, signature_out);
+
         *rsp_len = 1;
     } else if (cmd == CMD_SELECT_PROFILE) { // choose one profile from backup profile
 #ifndef CFG_STANDARD_MODULE
