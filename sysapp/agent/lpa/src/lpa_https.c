@@ -178,7 +178,7 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
 
     if (g_https_ctx.ssl == NULL) {
         MSG_PRINTF(LOG_INFO, "https_init\n");
-        status = https_init(&g_https_ctx, host, port, TLS_CERT_PATH);
+        status = https_init(&g_https_ctx, host, port, TLS_CERT_PATH, 0);
         if (status < 0) {
             https_free(&g_https_ctx);
             return status;

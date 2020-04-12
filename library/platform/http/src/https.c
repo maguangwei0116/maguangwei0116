@@ -20,30 +20,6 @@
 #endif
 
 #define TCP_CONNECT_TIMEOUT     30  // unit: seconds
-#define PING_ADDR                              "ping -c 1 -W 3 18.136.190.97"
-
-static int new_system(char *cmd)
-{
-    int status = system(cmd);
-    MSG_PRINTF(LOG_INFO, "cmd=%s\r\n", cmd);
-    if (-1 == status) {
-        MSG_PRINTF(LOG_ERR, "system error!\r\n");
-    } else {
-        MSG_PRINTF(LOG_INFO, "exit status value = [0x%x]\n", status);
-        if (WIFEXITED(status)) {
-            if (0 == WEXITSTATUS(status)) {
-                MSG_PRINTF(LOG_INFO, "run shell script successfully.\n");
-                return 0;
-            } else {
-                MSG_PRINTF(LOG_ERR, "run shell script fail, script exit code: %d\n", WEXITSTATUS(status));
-            }
-        } else {
-            MSG_PRINTF(LOG_ERR, "exit status = [%d]\n", WEXITSTATUS(status));
-        }
-    }
-
-    return -1;
-}
 
 // Establish a regular tcp connection
 static int connect_tcp(const char *host_name, const char *addr)
@@ -52,20 +28,7 @@ static int connect_tcp(const char *host_name, const char *addr)
     struct hostent *host;
     struct sockaddr_in server;
     int i = 0;
-#if (CFG_UPLOAD_HTTPS_ENABLE)
-    // gethostbyname() function High Probability fail, so add this codes
-    while (1) {
-        if (0 == new_system(PING_ADDR)) {
-            break;
-        }
-        if (i > 5) {
-            break;
-        }
-        sleep(2);
-        MSG_PRINTF(LOG_WARN, "times is %d ...\r\n", i);
-        i++;
-    }
-#endif
+
     host = gethostbyname(host_name);
 #ifdef CFG_USR_DNS_API
     if (!host) {
@@ -110,7 +73,7 @@ static int connect_tcp(const char *host_name, const char *addr)
     return handle;
 }
 
-int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca)
+int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca, int is_tls)
 {
     int res = -1;
     
@@ -128,8 +91,13 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
     SSL_library_init();
     OpenSSL_add_all_algorithms();
 
-    // New context saying we are a client, and using SSL 2 or 3
-    https_ctx->ssl_cxt = SSL_CTX_new(SSLv23_client_method());
+    if (0 == is_tls)
+    {
+        // New context saying we are a client, and using SSL 2 or 3
+        https_ctx->ssl_cxt = SSL_CTX_new(SSLv23_client_method());
+    } else {
+        https_ctx->ssl_cxt = SSL_CTX_new(TLSv1_client_method());
+    }
 
     if (https_ctx->ssl_cxt == NULL) {
         ERR_print_errors_fp(stderr);
@@ -235,92 +203,29 @@ void https_free(https_ctx_t *https_ctx)
 
 #if (CFG_UPLOAD_HTTPS_ENABLE)
 
-    int tls_https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca)
+    #define PING_ADDR                              "ping -c 1 -W 3 18.136.190.97"
+
+    static int new_system(char *cmd)
     {
-        int res = -1;
-        
-        rt_os_memset(https_ctx, 0, sizeof(https_ctx_t));
-
-        https_ctx->socket = connect_tcp(host, port);
-        if (https_ctx->socket < 0) {
-            return https_ctx->socket;
-        }
-
-        // Register the error strings for libcrypto & libssl
-        SSL_load_error_strings();
-
-        // Register the available ciphers and digests
-        SSL_library_init();
-        OpenSSL_add_all_algorithms();
-
-        https_ctx->ssl_cxt = SSL_CTX_new(TLSv1_client_method());
-        if (https_ctx->ssl_cxt == NULL) {
-            ERR_print_errors_fp(stderr);
-            return RT_ERR_HTTPS_NEW_SSL_CTX_FAIL;
-        }
-
-        SSL_CTX_set_verify(https_ctx->ssl_cxt, SSL_VERIFY_NONE, NULL);
-        SSL_CTX_set_verify_depth(https_ctx->ssl_cxt, 4);
-        res = SSL_CTX_load_verify_locations(https_ctx->ssl_cxt, ca, NULL);
-        if (res < 0) {
-            MSG_PRINTF(LOG_ERR, "No Certificate found on Client!\n");
-    #ifdef TLS_VERIFY_CERT
-            return RT_ERR_HTTPS_CLIENT_CRT_NOT_FOUND;
-    #endif
-        }
-
-        // Create an SSL struct for the connection
-        https_ctx->ssl = SSL_new(https_ctx->ssl_cxt);
-        if (https_ctx->ssl == NULL) {
-            ERR_print_errors_fp(stderr);
-            return RT_ERR_HTTPS_CREATE_SSL_FAIL;
-        }
-
-        // Connect the SSL struct to our connection
-        if (!SSL_set_fd(https_ctx->ssl, https_ctx->socket)) {
-            ERR_print_errors_fp(stderr);
-            return RT_ERR_HTTPS_CONNECT_SSL_FAIL;
-        }
-
-        // Initiate SSL handshake
-        if (SSL_connect(https_ctx->ssl) != 1) {
-            ERR_print_errors_fp(stderr);
-            return RT_ERR_HTTPS_SSL_HANDSHAKE_FAIL;
-        }
-        
-        X509* cert = SSL_get_peer_certificate(https_ctx->ssl);
-        if (cert) {  // Free immediately
-            char *line;
-            //MSG_PRINTF(LOG_INFO, "cert: %s\n", cert);
-            line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-            MSG_PRINTF(LOG_INFO, "Subject Name: %s\n", line);
-            rt_os_free(line);
-            line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-            MSG_PRINTF(LOG_INFO, "Issuer: %s\n", line);
-            res = SSL_get_verify_result(https_ctx->ssl);
-            if (res != X509_V_OK) {
-                MSG_PRINTF(LOG_ERR, "Certificate verification failed: %d\n", res);
-    #ifdef TLS_VERIFY_CERT
-    #ifdef TLS_VERIFY_CERT_9_AS_OK
-                if (res == X509_V_ERR_CERT_NOT_YET_VALID) {
-                    // Do nothing, consider X509_V_ERR_CERT_NOT_YET_VALID as verification passed
-                } else
-    #endif
-                {
-                    return RT_ERR_HTTPS_SERVER_CRT_VERIFY_FAIL;
-                }
-    #endif
-            }
-            rt_os_free(line);
-            X509_free(cert);
+        int status = system(cmd);
+        MSG_PRINTF(LOG_INFO, "cmd=%s\r\n", cmd);
+        if (-1 == status) {
+            MSG_PRINTF(LOG_ERR, "system error!\r\n");
         } else {
-            MSG_PRINTF(LOG_ERR, "No Certificate found on Server!\n");
-    #ifdef TLS_VERIFY_CERT
-                return RT_ERR_HTTPS_SERVER_CRT_NOT_FOUND;
-    #endif
+            MSG_PRINTF(LOG_INFO, "exit status value = [0x%x]\n", status);
+            if (WIFEXITED(status)) {
+                if (0 == WEXITSTATUS(status)) {
+                    MSG_PRINTF(LOG_INFO, "run shell script successfully.\n");
+                    return 0;
+                } else {
+                    MSG_PRINTF(LOG_ERR, "run shell script fail, script exit code: %d\n", WEXITSTATUS(status));
+                }
+            } else {
+                MSG_PRINTF(LOG_ERR, "exit status = [%d]\n", WEXITSTATUS(status));
+            }
         }
 
-        return RT_SUCCESS;
+        return -1;
     }
 
     const char *strtoken(const char *src, char *dst, int size)
@@ -461,8 +366,22 @@ void https_free(https_ctx_t *https_ctx)
         }
 
         if (https_ctx.ssl == NULL) {
-            MSG_PRINTF(LOG_INFO, "tls_https_init\n");
-            status = tls_https_init(&https_ctx, host, port, "./ca-chain.pem"); // "./ca-chain.pem" unuse
+            MSG_PRINTF(LOG_INFO, "tls https_init\n");
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+        // dns function High Probability fail, so add this codes
+        while (1) {
+            if (0 == new_system(PING_ADDR)) {
+                break;
+            }
+            if (i > 5) {
+                break;
+            }
+            sleep(2);
+            MSG_PRINTF(LOG_WARN, "times is %d ...\r\n", i);
+            i++;
+        }
+#endif
+            status = https_init(&https_ctx, host, port, "./ca-chain.pem", 1); // "./ca-chain.pem" unuse
             if (status < 0) {
                 https_free(&https_ctx);
                 return status;
@@ -539,7 +458,6 @@ void https_free(https_ctx_t *https_ctx)
         MSG_PRINTF(LOG_INFO, "api is %s\n", api);
         MSG_PRINTF(LOG_INFO, "body is %s\n", body);
         ret = upload_https_post(addr, api, body, out_buffer, &out_size);
-        MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
         if (200 == ret) {
             cb(out_buffer);
             MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
@@ -562,10 +480,8 @@ void https_free(https_ctx_t *https_ctx)
 #endif
         int32_t ret = RT_ERROR;
         int32_t socket_fd = RT_ERROR;
-        // char buf[BUFFER_SIZE * 4];
         char md5_out[32+1];
         char *p = NULL;
-        // char temp[128];
         char out_buffer[5120] = {0};
         int out_size = 5120;
 
@@ -580,26 +496,6 @@ void https_free(https_ctx_t *https_ctx)
             md5_out[32] = '\0';
 
             MSG_PRINTF(LOG_INFO, "host_ip:%s, port:%d\r\n", host_ip, port);
-
-            // rt_os_memset(buf, 0, sizeof(buf));
-            // snprintf(temp, sizeof(temp), "POST %s HTTP/1.1", path);
-            // rt_os_strcat(buf, temp);
-            // rt_os_strcat(buf, "\r\n");
-            // snprintf(temp, sizeof(temp), "Host: %s:%d", host_ip, port),
-            // rt_os_strcat(buf, temp);
-            // rt_os_strcat(buf, "\r\n");
-            // rt_os_strcat(buf, "Accept: */*\r\n");
-            // rt_os_strcat(buf, "Content-Type: application/json;charset=UTF-8\r\n");
-            // rt_os_strcat(buf, "md5sum:");
-            // snprintf(temp, sizeof(temp), "%s\r\n", md5_out);
-            // rt_os_strcat(buf, temp);
-            // rt_os_strcat(buf, "Content-Length: ");
-            // snprintf(temp, sizeof(temp), "%d", rt_os_strlen(json_data)),
-            // rt_os_strcat(buf, temp);
-            // rt_os_strcat(buf, "\r\n\r\n");
-            // rt_os_strcat(buf, json_data);
-
-            // MSG_PRINTF(LOG_INFO, "send buf:%s\n", buf);
 
             ret = upload_https_post(host_ip, path, json_data, out_buffer, &out_size);
             MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
