@@ -476,7 +476,7 @@ int32_t main(int32_t argc, const char *argv[])
     init_timer(NULL);
     rt_qmi_init(NULL);
 
-    init_curve_parameter(SECP256R1);
+    // init_curve_parameter(SECP256R1);
 
     /* inspect monitor */
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
