@@ -31,8 +31,10 @@ uint32_t linux_random(uint32_t key)
 
 void linux_printf(const uint8_t *buf, uint32_t len)
 {
+#ifdef CFG_SOFTWARE_TYPE_DEBUG
     log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF, buf, len);
     log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF, "\n");
+#endif
 }
 
 static FILE *fp = NULL;
