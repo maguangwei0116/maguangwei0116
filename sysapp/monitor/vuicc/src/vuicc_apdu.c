@@ -54,10 +54,12 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     MSG_PRINTF(LOG_INFO, "g_response_state:%d\n", g_response_state);
 
     /* enable profile and load bootstrap profile, need to reset */
-    if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
+    if ((cmd == 0xBF31) || (cmd == 0xFF7F) || (cmd == 0xBF32)) {
+        MSG_PRINTF(LOG_INFO, "cmd is :%4X\n", cmd);
         cmd = (rsp[0] << 8) + rsp[1];
         if ((cmd & 0xFF00) == 0x6100) {
             reset_flag = RT_TRUE;
+            MSG_PRINTF(LOG_INFO, "cmd rsp is :%4X\n", cmd);
             return RT_SUCCESS;
         } else {
             reset_flag = RT_TRUE;
