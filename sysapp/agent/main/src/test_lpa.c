@@ -98,7 +98,8 @@ static int get_uicc_mode(void)
         mode = atoi(rsp);
         fprintf(stderr, "Config UICC mode: %s\n", rsp);
         if (mode == LPA_CHANNEL_BY_QMI || mode == LPA_CHANNEL_BY_IPC) {
-            g_chan_mode = mode;            
+            // g_chan_mode = mode;
+            g_chan_mode = LPA_CHANNEL_BY_QMI;
         } 
     }
 

@@ -31,6 +31,7 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     uint16_t cmd = 0;
     uint16_t sw = 0;
     static rt_bool reset_flag = RT_FALSE;
+    static rt_bool disable_flag = RT_FALSE;
 
     if ((data[1] != 0xC0) && (g_response_state == APDU_RESPONSE_LOGIC_USED)) {
         rt_mutex_unlock(&g_apdu_mutex);
@@ -53,21 +54,11 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     }
     MSG_PRINTF(LOG_INFO, "g_response_state:%d\n", g_response_state);
 
-#if 1
-if ((cmd == 0xBF32))
-{
-    MSG_PRINTF(LOG_INFO, "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh\n");
-    t9x07_remove_card(1);
-}
-#endif
-
-    /* enable profile and load bootstrap profile, need to reset */
-    if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
-        MSG_PRINTF(LOG_INFO, "cmd is :%4X\n", cmd);
+    /* enable profile and load bootstrap profile disbale profile, need to reset */
+    if ((cmd == 0xBF31) || (cmd == 0xFF7F) || (cmd == 0xBF32)) {
         cmd = (rsp[0] << 8) + rsp[1];
         if ((cmd & 0xFF00) == 0x6100) {
             reset_flag = RT_TRUE;
-            MSG_PRINTF(LOG_INFO, "cmd rsp is :%4X\n", cmd);
             return RT_SUCCESS;
         } else {
             reset_flag = RT_TRUE;
@@ -75,10 +66,6 @@ if ((cmd == 0xBF32))
     }
     if (reset_flag == RT_TRUE) {
         reset_flag = RT_FALSE;
-        #if 0
-        t9x07_reset_card(1);
-        sleep(3);
-        #endif
         trigger_swap_card(1);
     }
 }
@@ -115,14 +102,7 @@ static int32_t vuicc_trigger_cmd(const uint8_t *apdu, uint16_t apdu_len, uint8_t
 
 void init_trigger(uint8_t uicc_switch)
 {
-    int32_t cos_oid = 0;
     if (uicc_switch == LPA_CHANNEL_BY_IPC) {
-        do {
-            cos_oid = cos_client_connect(NULL);
-            if (cos_oid == -1) {
-                sleep(1);
-            }
-        } while(cos_oid == -1);
         trigegr_regist_reset(vuicc_get_atr);
         trigegr_regist_cmd(vuicc_trigger_cmd);
         trigger_swap_card(1);

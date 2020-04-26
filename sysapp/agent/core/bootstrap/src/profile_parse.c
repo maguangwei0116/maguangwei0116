@@ -410,7 +410,7 @@ static int32_t update_hash(uint8_t *buf, int32_t profile_len, uint8_t *profile_h
 }
 
 static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index,
-                            BOOLEAN_t sequential, uint16_t mcc, uint8_t *profile, uint16_t *len_out)
+                            BOOLEAN_t sequential, uint16_t mcc, uint8_t *profile, uint16_t *len_out, int is_err_imsi)
 {
     BootstrapRequest_t *bootstrap_request = NULL;
     asn_dec_rval_t dc;
@@ -439,6 +439,27 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         swap_nibble(imsi_buffer, 2);
         bootstrap_request->tbhRequest.imsi.buf[7] = imsi_buffer[0];
         bootstrap_request->tbhRequest.imsi.buf[8] = imsi_buffer[1];
+    }
+    if (is_err_imsi == 1) {
+        bootstrap_request->tbhRequest.iccid.buf[0] = 0x89;
+        bootstrap_request->tbhRequest.iccid.buf[1] = 0x86;
+        bootstrap_request->tbhRequest.iccid.buf[2] = 0x01;
+        bootstrap_request->tbhRequest.iccid.buf[3] = 0x34;
+        bootstrap_request->tbhRequest.iccid.buf[4] = 0x56;
+        bootstrap_request->tbhRequest.iccid.buf[5] = 0x12;
+        bootstrap_request->tbhRequest.iccid.buf[6] = 0x43;
+        bootstrap_request->tbhRequest.iccid.buf[7] = 0x23;
+        bootstrap_request->tbhRequest.iccid.buf[8] = 0x71;
+
+        bootstrap_request->tbhRequest.imsi.buf[0] = 0x23;
+        bootstrap_request->tbhRequest.imsi.buf[1] = 0x01;
+        bootstrap_request->tbhRequest.imsi.buf[2] = 0x76;
+        bootstrap_request->tbhRequest.imsi.buf[3] = 0x45;
+        bootstrap_request->tbhRequest.imsi.buf[4] = 0x32;
+        bootstrap_request->tbhRequest.imsi.buf[5] = 0x11;
+        bootstrap_request->tbhRequest.imsi.buf[6] = 0x43;
+        bootstrap_request->tbhRequest.imsi.buf[7] = 0x21;
+        bootstrap_request->tbhRequest.imsi.buf[8] = 0x89;
     }
 
     {
@@ -528,7 +549,7 @@ static uint32_t get_selecte_profile_index(uint32_t total_num)
     return index;
 }
 
-static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *len_out)
+static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *len_out, int is_err_imsi)
 {
     uint32_t selected_profile_index, profile_len, size;
     uint8_t *profile_buffer = NULL;
@@ -576,7 +597,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
     linux_fseek(fp, off, RT_FS_SEEK_SET);
     linux_fread(profile_buffer, 1, profile_len, fp);
 
-    build_profile(profile_buffer, profile_len, selected_profile_index, request->sequential, mcc, profile, len_out);
+    build_profile(profile_buffer, profile_len, selected_profile_index, request->sequential, mcc, profile, len_out, is_err_imsi);
     rt_os_free(profile_buffer);
     ret = RT_SUCCESS;
 end:
@@ -629,7 +650,6 @@ int32_t bootstrap_get_key(void)
 
     get_specify_data(data , &data_len, g_data.aes_key_offset);
     key_request.rootAesKey = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, data_len);
-
 
     g_buf_size = 0;
     ec = der_encode(&asn_DEF_SetRootKeyRequest, &key_request, encode_cb_fun, NULL);
@@ -750,7 +770,7 @@ int32_t init_profile_file(const char *file)
     return ret;
 }
 
-int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *profile_len)
+int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *profile_len, int is_err_imsi)
 {
     rt_fshandle_t fp;
     uint8_t buf[8];
@@ -786,7 +806,7 @@ int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profil
         linux_fseek(fp, off, RT_FS_SEEK_SET);
         linux_fread(buf, 1, 8, fp);
     }
-    decode_profile_info(fp, off, mcc, apn, mcc_mnc, profile, profile_len);
+    decode_profile_info(fp, off, mcc, apn, mcc_mnc, profile, profile_len, is_err_imsi);
 
     g_data.priority++;
     ret = RT_SUCCESS;

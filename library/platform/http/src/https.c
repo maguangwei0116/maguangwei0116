@@ -352,6 +352,7 @@ void https_free(https_ctx_t *https_ctx)
         char request[2048] = {0};
         https_ctx_t https_ctx = {-1, NULL, NULL};
         char md5_out[32 + 1] = {0};
+        int post_res = -1;
 
         MSG_PRINTF(LOG_INFO, "addr:%s, api:%s\n", addr, api);
         p = strstr(addr, ":");
@@ -384,7 +385,8 @@ void https_free(https_ctx_t *https_ctx)
             status = https_init(&https_ctx, host, port, "./ca-chain.pem", 1); // "./ca-chain.pem" unuse
             if (status < 0) {
                 https_free(&https_ctx);
-                return status;
+                MSG_PRINTF(LOG_WARN, "https_init is status %d ...\r\n", status);
+                return HTTP_SOCKET_CONNECT_ERROR;
             }
         }
         get_md5_string((int8_t *)body, md5_out);
@@ -404,7 +406,11 @@ void https_free(https_ctx_t *https_ctx)
         left_size = strlen(body);
 
         snprintf(request + done_size, sizeof(request) - done_size, "%s", body);
-        https_post(&https_ctx, (const char *)request);
+        post_res = https_post(&https_ctx, (const char *)request);
+        if (post_res < 0) {
+            MSG_PRINTF(LOG_WARN, "https_post is post_res %d ...\r\n", post_res);
+            return HTTP_SOCKET_SEND_ERROR;
+        }
 
         done_size = sizeof(request) - 1 - done_size;
         left_size -= done_size;
@@ -412,7 +418,11 @@ void https_free(https_ctx_t *https_ctx)
         while (left_size > 0) {
             memset(request, 0, sizeof(request));
             snprintf(request, sizeof(request), "%s", body + done_size);
-            https_post(&https_ctx, (const char *)request);
+            post_res = https_post(&https_ctx, (const char *)request);
+            if (post_res < 0) {
+                MSG_PRINTF(LOG_WARN, "https_post is post_res %d ...\r\n", post_res);
+                return HTTP_SOCKET_SEND_ERROR;
+            }
             done_size += sizeof(request) - 1;
             left_size -= sizeof(request) - 1;
         }
@@ -421,7 +431,7 @@ void https_free(https_ctx_t *https_ctx)
         *size = https_read(&https_ctx, buffer, *size);
         if (*size == 0 || *size == -1) {
             MSG_PRINTF(LOG_ERR, "https read, *size=%d\r\n", *size);
-            return RT_ERR_HTTPS_POST_FAIL;
+            return HTTP_SOCKET_RECV_ERROR;
         }
 
         p = process_header(buffer, &status, &len);
@@ -461,11 +471,11 @@ void https_free(https_ctx_t *https_ctx)
         if (200 == ret) {
             cb(out_buffer);
             MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
+            return 0;
         } else {
             MSG_PRINTF(LOG_WARN, "upload_https_post return is %d the buffer is %s\n", ret, out_buffer);
+            return ret;
         }
-
-        return 0;
     }
 
 

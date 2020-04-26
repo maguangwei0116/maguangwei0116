@@ -796,9 +796,10 @@ static rt_bool ota_file_activate_agent_so_profile(const void *arg)
 {
     MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
     rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
+    rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
     MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");        
-    rt_os_exit(RT_ERROR); 
-
+    // rt_os_exit(RT_ERROR); 
+    ipc_restart_monitor(10);
     return RT_TRUE;
 }
 

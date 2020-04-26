@@ -17,6 +17,7 @@ typedef uint16_t (*trigger_callback_reset)(uint8_t *rsp, uint16_t *rsp_len);
 trigger_callback_cmd trigger_cmd;
 trigger_callback_reset trigger_reset;
 
+
 void trigegr_regist_cmd(void *fun)
 {
     trigger_cmd = (trigger_callback_cmd)fun;
@@ -97,7 +98,7 @@ static int process_ind_apdu(qmi_client_type user_handle, unsigned int msg_id,
     rc = qmi_client_message_decode(user_handle, QMI_IDL_INDICATION, msg_id, ind_buf,
                         ind_buf_len, &ind_msg, sizeof(uim_remote_apdu_ind_msg_v01));
     if(rc != RT_SUCCESS) {
-        MSG_PRINTF(LOG_INFO,"qmi_client_message_decode failed rc = %d", rc);
+        MSG_PRINTF(LOG_INFO,"qmi_client_message_decode failed rc = %d\n", rc);
         return rc;
     }
 
@@ -146,9 +147,11 @@ static int process_ind_pup(qmi_client_type user_handle, unsigned int msg_id,
     trigger_reset(req.atr, (uint16_t *)&req.atr_len);
     //MSG_INFO_ARR2STR("ATR", req.atr, req.atr_len, 1);
 
+    MSG_INFO_ARRAY("ATR: ", req.atr, req.atr_len);
     rc = qmi_client_send_msg_async(rm_uim_client, QMI_UIM_REMOTE_EVENT_REQ_V01, &req, sizeof(req),
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, txn);
 
+    MSG_PRINTF(LOG_INFO,"qmi_client_send_msg_async rc is %d\n", rc);
     return rc;
 }
 
@@ -285,9 +288,8 @@ int t9x07_swap_card(uim_remote_slot_type_enum_v01 slot)
 {
     // TODO: figure out why swap not working...
     t9x07_remove_card(UIM_REMOTE_SLOT_1_V01);
-    sleep(3);
+    sleep(1);
     t9x07_insert_card(UIM_REMOTE_SLOT_1_V01);
-    sleep(3);
     return RT_SUCCESS;
 }
 
@@ -309,6 +311,7 @@ int t9x07_remove_card(uim_remote_slot_type_enum_v01 slot)
                                     &resp, sizeof(resp), remote_uim_async_cb, NULL, &txn);
     MSG_PRINTF(LOG_INFO,"UIM_REMOTE_CARD_REMOVED_V01 slot:%d, rc:%d\n", slot, rc);
 
+    sleep(1);
     rc = qmi_client_release(rm_uim_client);
     rm_uim_client = NULL;
     MSG_PRINTF(LOG_INFO,"qmi_client_release client rc: %d\n", rc);
