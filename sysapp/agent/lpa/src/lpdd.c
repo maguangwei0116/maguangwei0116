@@ -951,7 +951,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
             for (i = 0; i < *out_size; ++i) {
                 if ( (out[i] == 0x80) && (out[i+1] == 0x01) && (out[i+2] == 0x02) && \
                     (out[i+3] == 0x81) && (out[i+4] == 0x01) && (out[i+5] == 0x09) ) {
-                    ret = -203;
+                    ret = RT_ERR_APDU_STORE_DATA_FAIL;
                     goto end;
                 }
             }
