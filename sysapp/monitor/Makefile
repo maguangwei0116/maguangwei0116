@@ -60,12 +60,10 @@ SRC-y 		+= $(SRC-PATH)/vuicc_apdu.c
 SRC-y 		+= $(SRC-PATH)/ipc_socket_server.c
 SRC-y 		+= $(SRC-PATH)/main.c
 
-ifeq ($(CFG_OPEN_MODULE),y)
 SRC-y 		+= ./core/backup/src/parse_backup.c
 SRC-y 		+= ./core/backup/src/apdu.c
 SRC-y 		+= ./core/networkd/src/network_detection.c
 SRC-y 		+= ./core/download/src/download_file.c
-endif
 SRC-y 		+= ./core/inspect/src/inspect_file.c
 # Config your include file path by += xxx-inc
 INC-y 		+= ./ipc/

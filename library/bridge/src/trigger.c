@@ -285,8 +285,9 @@ int t9x07_swap_card(uim_remote_slot_type_enum_v01 slot)
 {
     // TODO: figure out why swap not working...
     t9x07_remove_card(UIM_REMOTE_SLOT_1_V01);
-    sleep(1);
+    sleep(3);
     t9x07_insert_card(UIM_REMOTE_SLOT_1_V01);
+    sleep(3);
     return RT_SUCCESS;
 }
 

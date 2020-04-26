@@ -944,6 +944,19 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         MSG_DUMP_ARRAY("sequenceOf88TLV\n", get_cb_data(), get_cb_size());
         ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
+
+        /* check result code */
+        MSG_DUMP_ARRAY("sequenceOf88TLV out\n", out, *out_size);
+        if (*out_size != 2) {
+            for (i = 0; i < *out_size; ++i) {
+                if ( (out[i] == 0x80) && (out[i+1] == 0x01) && (out[i+2] == 0x02) && \
+                    (out[i+3] == 0x81) && (out[i+4] == 0x01) && (out[i+5] == 0x09) ) {
+                    ret = -203;
+                    goto end;
+                }
+            }
+        }
+
     }
 
     // ES8+ Replace Session Keys

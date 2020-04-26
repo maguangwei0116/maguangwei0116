@@ -53,8 +53,16 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     }
     MSG_PRINTF(LOG_INFO, "g_response_state:%d\n", g_response_state);
 
+#if 1
+if ((cmd == 0xBF32))
+{
+    MSG_PRINTF(LOG_INFO, "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh\n");
+    t9x07_remove_card(1);
+}
+#endif
+
     /* enable profile and load bootstrap profile, need to reset */
-    if ((cmd == 0xBF31) || (cmd == 0xFF7F) || (cmd == 0xBF32)) {
+    if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
         MSG_PRINTF(LOG_INFO, "cmd is :%4X\n", cmd);
         cmd = (rsp[0] << 8) + rsp[1];
         if ((cmd & 0xFF00) == 0x6100) {
@@ -67,6 +75,10 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     }
     if (reset_flag == RT_TRUE) {
         reset_flag = RT_FALSE;
+        #if 0
+        t9x07_reset_card(1);
+        sleep(3);
+        #endif
         trigger_swap_card(1);
     }
 }

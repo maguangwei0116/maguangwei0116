@@ -47,7 +47,6 @@
 #endif
 
 #define RT_MONITOR_LOG              "rt_monitor_log"
-#define SECP256R1                   0
 
 #ifdef CFG_SOFTWARE_TYPE_DEBUG
 #define RT_MONITOR_LOG_MAX_SIZE     (30 * 1024 * 1024)
@@ -182,7 +181,15 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
     } else if (cmd == CMD_SELECT_PROFILE) { // choose one profile from backup profile
 #ifndef CFG_STANDARD_MODULE
         int32_t ret;
-        choose_uicc_type(type);
+        // 因为我一开始，默认是0，默认选择了choose_uicc_type(0)
+        // 所以这里不再重复做
+        if (0 == type)
+        {
+            ;
+        } else {
+            choose_uicc_type(type);
+        }
+
         rt_os_sleep(3);  // must have, delay some for card reset !!!
         ret = backup_process(type);
         *rsp = (ret == RT_SUCCESS) ? 0x01 : 0x00;
@@ -306,6 +313,22 @@ exit_entry:
 }
 #endif
 
+static int get_uicc_mode(void)
+{
+    const char *cmd = "cat "RT_DATA_PATH"rt_config.ini | grep UICC_MODE | awk {\' print $3\'}";
+    int ret = -1;
+    int mode = 0;
+    char rsp[1024] = {0};
+
+    ret = shell_cmd(cmd, rsp, sizeof(rsp));
+    if (ret > 0) {
+        mode = atoi(rsp);
+        return mode;
+    } else {
+        return mode;
+    }
+}
+
 static int32_t agent_task_check_start(rt_bool frist_start)
 {
     int32_t ret;
@@ -338,7 +361,11 @@ static int32_t agent_task_check_start(rt_bool frist_start)
             snprintf(upgrade.file_name, sizeof(upgrade.file_name), "%s", RT_AGENT_FILE);
             snprintf(upgrade.real_file_name, sizeof(upgrade.real_file_name), "%s", RT_AGENT_NAME);
             init_download(&upgrade);
-            choose_uicc_type(LPA_CHANNEL_BY_IPC);
+            if (get_uicc_mode() == 0) {
+                ;
+            } else {
+                choose_uicc_type(LPA_CHANNEL_BY_IPC);
+            }
             network_detection_task();
         }
 #endif
@@ -421,7 +448,6 @@ static int32_t monitor_printf(const char *fmt, ...)
 }
 
 extern int32_t init_backtrace(void *arg);
-extern void init_curve_parameter(curve_type_e parameter_type);
 #endif
 
 static void debug_with_printf(const char *msg)
@@ -477,8 +503,21 @@ int32_t main(int32_t argc, const char *argv[])
     rt_qmi_init(NULL);
 
     // init_curve_parameter(SECP256R1);
-
+        if (0 == get_uicc_mode()) {
+    choose_uicc_type(LPA_CHANNEL_BY_IPC);
+} else {
+    init_curve_parameter(0);
+}
+    // init_trigger(LPA_CHANNEL_BY_IPC);
     /* inspect monitor */
+
+    #if 0
+    uint8_t version[100] = {0};
+    uint16_t ver_len = 100;
+    cos_get_ver(version, &ver_len);
+    MSG_PRINTF(LOG_WARN, "vUICC version: %s\n", version);
+    #endif
+MSG_PRINTF(LOG_INFO, "into inspect_abstract_content xxxxx islllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllls\n");;
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
         rt_os_sleep(RT_AGENT_WAIT_MONITOR_TIME);
     }

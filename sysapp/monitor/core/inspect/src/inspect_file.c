@@ -14,6 +14,7 @@
 #include "inspect_file.h"
 #include "file.h"
 #include "hash.h"
+#include "cos_api.h"
 
 #define HASH_CHECK_BLOCK                1024    /* block size for HASH check */
 #define MAX_FILE_HASH_BYTE_LEN          32
@@ -154,25 +155,151 @@ end:
     return ret;
 }
 
+void change_apdu(uint8_t *src_apdu, uint8_t *dest_apdu, uint16_t start, uint16_t end)
+{
+    uint16_t i = 0;
+    uint16_t j = 0;
+    for (i = start, j = 0; i < end; ++i, ++j) {
+        src_apdu[i] = dest_apdu[j];
+    }
+}
+
+static unsigned char toto_ascii(unsigned char ch)
+{
+    if (ch <= 9) {
+        ch += ('0' - 0);
+    }
+    else if (ch >= 0xa && ch <= 0xf) {
+        ch += ('A' - 0xa);
+    } else {
+        ch = 'F';
+    }
+    return ch;
+}
+
+void go(uint8_t *src, uint8_t *dest)
+{
+    uint8_t *p = src;
+    int j = 0;
+    while(*p != '\0') {
+        dest[j] = toto_ascii(*p);
+        p++;
+        j++;
+    }
+}
+
+#if (CFG_OPEN_MODULE)
+#define RT_DATA_PATH            "/data/redtea/"
+#elif (CFG_STANDARD_MODULE)  // standard
+#define RT_DATA_PATH            "/usrdata/redtea/"
+#endif
+
+static int get_uicc_mode(void)
+{
+    const char *cmd = "cat "RT_DATA_PATH"rt_config.ini | grep UICC_MODE | awk {\' print $3\'}";
+    int ret = -1;
+    int mode = -1;
+    char rsp[1024] = {0};
+
+    ret = shell_cmd(cmd, rsp, sizeof(rsp));
+    if (ret > 0) {
+        mode = atoi(rsp);
+        MSG_PRINTF(LOG_INFO, "modemodemodemodemodemodemodemode: %d\n", mode);
+        return mode;
+    } else {
+        MSG_PRINTF(LOG_INFO, "modemodemodemodemodemodemodemode: %d\n", mode);
+        return mode;
+    }
+}
+
+static int32_t choose_uicc_type(int type)
+{
+    if (type == 0) {
+        init_trigger(type);
+    }
+#ifndef CFG_STANDARD_MODULE
+    init_apdu_channel(type);
+#endif
+    return RT_SUCCESS;
+}
+
 rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
 {
-    return RT_TRUE;
-    rt_bool ret = RT_FALSE;
 
-    uint8_t pk_out[MAX_PK_LEN/2 + 1] = {0};
-    uint16_t p_len = 0;
+    if (0 == get_uicc_mode()) {
 
-    hexstring2bytes(g_verify_pk, pk_out, &p_len);
-    // MSG_INFO_ARRAY("input: ", input, MAX_FILE_HASH_LEN/2);
-    MSG_PRINTF(LOG_INFO, "input: %s\n", input);
-    MSG_INFO_ARRAY("signature: ", signature, PRIVATE_HASH_STR_LEN/2);
-    MSG_INFO_ARRAY("pk: ", pk_out, p_len);
-    ret = ecc_verify(input, MAX_FILE_HASH_LEN, pk_out, p_len, signature, PRIVATE_HASH_STR_LEN/2);
-    MSG_PRINTF(LOG_INFO, "ret is : %d\n", ret);
+        uint8_t default_apdu[] = {0xFF, 0x22, 0x81, 0xD0, \
+            0x80, 0x01, 0x00, 0xA1, 0x81, 0xCA, 0xA0, 0x81, 0xC7, 0x80, 0x40, 0x45,  \
+            0x33, 0x39, 0x44, 0x31, 0x46, 0x32, 0x36, 0x45, 0x41, 0x44, 0x37, 0x45,  \
+            0x33, 0x42, 0x30, 0x41, 0x36, 0x45, 0x45, 0x45, 0x46, 0x35, 0x37, 0x38,  \
+            0x37, 0x31, 0x45, 0x38, 0x32, 0x32, 0x45, 0x32, 0x36, 0x31, 0x32, 0x30,  \
+            0x42, 0x32, 0x44, 0x44, 0x34, 0x30, 0x39, 0x31, 0x31, 0x33, 0x43, 0x34,  \
+            0x33, 0x46, 0x41, 0x31, 0x33, 0x34, 0x42, 0x32, 0x36, 0x32, 0x35, 0x37,  \
+            0x42, 0x34, 0x30, 0x81, 0x41, 0x00, 0x00, 0xB7, 0xEE, 0x6A, 0x54, 0x9E,  \
+            0xB9, 0xF3, 0xFA, 0x3B, 0xA3, 0x37, 0xAA, 0xC9, 0x1F, 0xC3, 0x5A, 0x13,  \
+            0x5E, 0x2E, 0x60, 0x6C, 0xA6, 0x23, 0xC9, 0xFF, 0x4C, 0x85, 0xA7, 0x55,  \
+            0x2F, 0xB4, 0x99, 0x98, 0x7E, 0x66, 0x5D, 0x0A, 0x3D, 0x31, 0x08, 0xCF,  \
+            0xB4, 0x62, 0x97, 0xF5, 0xD9, 0x08, 0x27, 0xD3, 0x4C, 0x1F, 0x47, 0xF6,  \
+            0xF0, 0x5E, 0x10, 0x37, 0x6A, 0xE1, 0x6C, 0x3E, 0xED, 0x29, 0x82, 0x40,  \
+            0x09, 0x3D, 0xAF, 0xB1, 0xD5, 0xCB, 0x8E, 0x9E, 0xCB, 0x84, 0x98, 0x61,  \
+            0xE1, 0x5C, 0x13, 0x24, 0xE0, 0x12, 0xBF, 0x5C, 0xBF, 0x7F, 0x37, 0xD2,  \
+            0x6F, 0x1F, 0xAC, 0x58, 0x0E, 0x9F, 0x64, 0x8D, 0x27, 0x62, 0xCE, 0x75,  \
+            0x26, 0x02, 0x22, 0x96, 0x81, 0x7E, 0x1A, 0x87, 0x23, 0xAE, 0x49, 0x1B,  \
+            0x9D, 0xA8, 0x1B, 0x31, 0xF5, 0x2B, 0x8B, 0x3E, 0xBA, 0x21, 0xFF, 0xB2,  \
+            0x44, 0x50, 0x4F, 0x25 \
+        };
+        uint8_t buf[256];
+        uint16_t rsp_len = 0;
+        uint8_t ca_hm[80] = {0};
+        uint16_t ca_hm_len = 0;
+        char sha[32];
+        int i = 0;
 
-    if (ret == 0) {
-        return RT_TRUE;
+        for(i=0; i<64; i++) {
+            ca_hm[i] = input[i];  // 最后数组AsciiNum就是字符串每个字符所对应ASCII码值的数组
+        }
+
+
+        MSG_INFO_ARRAY("default_apdu: ", default_apdu, sizeof(default_apdu));
+        MSG_INFO_ARRAY("signature: ", signature, PRIVATE_HASH_STR_LEN/2);
+        change_apdu(default_apdu, ca_hm, 15, 15+0x40);
+        change_apdu(default_apdu, signature, 15+0x40+2+0x41+2,15+0x40+2+0x41+2+0x40);
+
+        // FF 22 81 D0 80 01 00 A1 81 CA A0 81 C7 80 40 45333944314632364541443745334230413645454546353738373145383232453236313230423244443430393131334334334641313334423236323537423430 81 41 0000B7EE6A549EB9F3FA3BA337AAC91FC35A135E2E606CA623C9FF4C85A7552FB499987E665D0A3D3108CFB46297F5D90827D34C1F47F6F05E10376AE16C3EED29 82 40 093DAFB1D5CB8E9ECB849861E15C1324E012BF5CBF7F37D26F1FAC580E9F648D2762CE7526022296817E1A8723AE491B9DA81B31F52B8B3EBA21FFB244504F25
+        MSG_INFO_ARRAY("default_apdu: ", default_apdu, sizeof(default_apdu));  
+        uint8_t channel = 0xFF;
+        rt_open_channel(&channel);
+        int xxx = cmd_store_data(default_apdu, sizeof(default_apdu), buf, &rsp_len, channel);
+        rt_close_channel(channel);
+        MSG_PRINTF(LOG_INFO, "xxxxxxxxxxx is %d\n", xxx);
+
+        if (xxx == 0) {
+            return RT_TRUE;
+        } else {
+            return RT_FALSE;
+        }
+
     } else {
-        return RT_FALSE;
-    }
+
+            rt_bool ret = RT_FALSE;
+
+            uint8_t pk_out[MAX_PK_LEN/2 + 1] = {0};
+            uint16_t p_len = 0;
+
+            hexstring2bytes(g_verify_pk, pk_out, &p_len);
+            // MSG_INFO_ARRAY("input: ", input, MAX_FILE_HASH_LEN/2);
+            MSG_PRINTF(LOG_INFO, "input: %s\n", input);
+            MSG_INFO_ARRAY("signature: ", signature, PRIVATE_HASH_STR_LEN/2);
+            MSG_INFO_ARRAY("pk: ", pk_out, p_len);
+            ret = ecc_verify(input, MAX_FILE_HASH_LEN, pk_out, p_len, signature, PRIVATE_HASH_STR_LEN/2);
+            MSG_PRINTF(LOG_INFO, "ret is : %d\n", ret);
+
+            if (ret == 0) {
+                return RT_TRUE;
+            } else {
+                return RT_FALSE;
+            }
+
+        }
+   
 }
