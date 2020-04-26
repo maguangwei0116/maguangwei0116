@@ -353,6 +353,7 @@ void https_free(https_ctx_t *https_ctx)
         https_ctx_t https_ctx = {-1, NULL, NULL};
         char md5_out[32 + 1] = {0};
         int post_res = -1;
+        int ping_count = 0;
 
         MSG_PRINTF(LOG_INFO, "addr:%s, api:%s\n", addr, api);
         p = strstr(addr, ":");
@@ -374,12 +375,12 @@ void https_free(https_ctx_t *https_ctx)
             if (0 == new_system(PING_ADDR)) {
                 break;
             }
-            if (i > 5) {
+            if (ping_count > 5) {
                 break;
             }
             sleep(2);
-            MSG_PRINTF(LOG_WARN, "times is %d ...\r\n", i);
-            i++;
+            MSG_PRINTF(LOG_WARN, "ping_count is %d ...\r\n", ping_count);
+            ping_count++;
         }
 #endif
             status = https_init(&https_ctx, host, port, "./ca-chain.pem", 1); // "./ca-chain.pem" unuse
