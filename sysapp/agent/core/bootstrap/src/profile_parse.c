@@ -441,9 +441,9 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         bootstrap_request->tbhRequest.imsi.buf[8] = imsi_buffer[1];
     }
     if (is_err_imsi == 1) {
-        bootstrap_request->tbhRequest.iccid.buf[0] = 0x89;
-        bootstrap_request->tbhRequest.iccid.buf[1] = 0x86;
-        bootstrap_request->tbhRequest.iccid.buf[2] = 0x01;
+        bootstrap_request->tbhRequest.iccid.buf[0] = 0x98;
+        bootstrap_request->tbhRequest.iccid.buf[1] = 0x68;
+        bootstrap_request->tbhRequest.iccid.buf[2] = 0x10;
         bootstrap_request->tbhRequest.iccid.buf[3] = 0x34;
         bootstrap_request->tbhRequest.iccid.buf[4] = 0x56;
         bootstrap_request->tbhRequest.iccid.buf[5] = 0x12;
@@ -451,15 +451,13 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         bootstrap_request->tbhRequest.iccid.buf[7] = 0x23;
         bootstrap_request->tbhRequest.iccid.buf[8] = 0x71;
 
-        bootstrap_request->tbhRequest.imsi.buf[0] = 0x23;
-        bootstrap_request->tbhRequest.imsi.buf[1] = 0x01;
+        bootstrap_request->tbhRequest.imsi.buf[0] = 0x64;
+        bootstrap_request->tbhRequest.imsi.buf[1] = 0x00;
         bootstrap_request->tbhRequest.imsi.buf[2] = 0x76;
         bootstrap_request->tbhRequest.imsi.buf[3] = 0x45;
         bootstrap_request->tbhRequest.imsi.buf[4] = 0x32;
         bootstrap_request->tbhRequest.imsi.buf[5] = 0x11;
         bootstrap_request->tbhRequest.imsi.buf[6] = 0x43;
-        bootstrap_request->tbhRequest.imsi.buf[7] = 0x21;
-        bootstrap_request->tbhRequest.imsi.buf[8] = 0x89;
     }
 
     {
