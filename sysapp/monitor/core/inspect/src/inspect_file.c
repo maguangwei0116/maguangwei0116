@@ -21,10 +21,11 @@
 #define PRIVATE_HASH_STR_LEN            128     /* There is a '\0' at the end */
 #define MAX_FILE_HASH_LEN               64
 #define MAX_PK_LEN                      128
+#define TAG_LEN                         2
 #define RT_CHECK_ERR(process, result)   if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
 // static const uint8_t *g_verify_pk = "B37F3BAD94DFCC1FBDB0FBF608802FA72D38FAEE3AB8CBBF63BF6C99DA9E31FAE1465F1BCFCAF85A6626B938D1BD12D6901833047C50FE8ED67B84CFCFECCFEA";
-static const uint8_t *g_verify_pk = "0000B7EE6A549EB9F3FA3BA337AAC91FC35A135E2E606CA623C9FF4C85A7552FB499987E665D0A3D3108CFB46297F5D90827D34C1F47F6F05E10376AE16C3EED29";
+static const uint8_t g_verify_pk[] = {0x00, 0x00, 0xB7, 0xEE, 0x6A, 0x54, 0x9E, 0xB9, 0xF3, 0xFA, 0x3B, 0xA3, 0x37, 0xAA, 0xC9, 0x1F, 0xC3, 0x5A, 0x13, 0x5E, 0x2E, 0x60, 0x6C, 0xA6, 0x23, 0xC9, 0xFF, 0x4C, 0x85, 0xA7, 0x55, 0x2F, 0xB4, 0x99, 0x98, 0x7E, 0x66, 0x5D, 0x0A, 0x3D, 0x31, 0x08, 0xCF, 0xB4, 0x62, 0x97, 0xF5, 0xD9, 0x08, 0x27, 0xD3, 0x4C, 0x1F, 0x47, 0xF6, 0xF0, 0x5E, 0x10, 0x37, 0x6A, 0xE1, 0x6C, 0x3E, 0xED, 0x29};
 /**
  * function: verify a section data by input public key
  * return value:
@@ -166,7 +167,7 @@ void change_apdu(uint8_t *src_apdu, uint8_t *dest_apdu, uint16_t start, uint16_t
 rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
 {
     uint8_t default_apdu[512];
-
+    uint32_t all_len = 0;
     uint8_t buf[256];
     uint16_t rsp_len = 0;
     uint8_t ca_hm[80] = {0};
@@ -204,7 +205,7 @@ rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
     // pk
     default_apdu[15+0x40] = 0x81;
     default_apdu[15+0x40+1] = 0x41;
-    rt_os_memcpy(default_apdu+15+0x40+1+1, g_verify_pk, MAX_PK_LEN/2);
+    rt_os_memcpy(default_apdu+15+0x40+1+1, g_verify_pk, MAX_PK_LEN/2+1);
 
     /******************************************************************/
     // sk
@@ -212,9 +213,12 @@ rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
     default_apdu[15+0x40+2+0x41+1] = 0x40;
     rt_os_memcpy(default_apdu+15+0x40+2+0x41+2, signature, MAX_PK_LEN/2);
 
-    MSG_INFO_ARRAY("default_apdu: ", default_apdu, sizeof(default_apdu));
+    all_len = 13*2+4+128+4+130+4+128;
+
+    MSG_PRINTF(LOG_INFO, "all_len is %d\n", all_len);
+    MSG_INFO_ARRAY("default_apdu: ", default_apdu, all_len);
     rt_open_channel(&channel);
-    ret = cmd_store_data(default_apdu, sizeof(default_apdu), buf, &rsp_len, channel);
+    ret = cmd_store_data(default_apdu, all_len, buf, &rsp_len, channel);
     rt_close_channel(channel);
     MSG_PRINTF(LOG_INFO, "ret is %d\n", ret);
 
