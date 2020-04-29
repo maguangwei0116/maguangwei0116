@@ -19,8 +19,24 @@
 #include "trigger.h"
 #include "random.h"
 #include "ProfileInfoListResponse.h"
+#include "SetRootKeyRequest.h"
+#include "tlv.h"
 
 static int32_t g_operator_num = 0;
+
+static uint8_t *g_buf = NULL;
+static uint16_t g_buf_size = 0;
+static int32_t encode_cb_fun(const void *buffer, size_t size, void *app_key)
+{
+    g_buf = rt_os_realloc(g_buf, g_buf_size + size);
+    if (!g_buf) {
+        MSG_PRINTF(LOG_ERR, "realloc failed!!\n");
+        return RT_ERROR;
+    }
+    rt_os_memcpy(g_buf + g_buf_size, (void *) buffer, size);
+    g_buf_size += size;
+    return RT_SUCCESS;
+}
 
 static int32_t insert_profile(const uint8_t *buf, int32_t len)
 {
@@ -36,39 +52,80 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     ProfileInfo_t **p = NULL;
     uint8_t num = 0, i;
 
-    uint8_t root_aes_key_apdu[] = {0xFF, 0x20, 0x82, 0x01, 0x40, 0x80, 0x81, 0xA5, 0x66, 0x7B, 0x5C, \
-           0xFA, 0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, \
-           0x23, 0xA1, 0x80, 0x2B, 0x19, 0xD5, 0x3B, 0x1D, 0xAA, 0xD2, 0x06, 0x66, 0xFF, 0x05, 0x10, \
-           0xFF, 0x14, 0x92, 0x9C, 0x6A, 0xBE, 0x48, 0x10, 0x2A, 0xE3, 0x91, 0x09, 0x83, 0x0C, 0x96, \
-           0xA2, 0x19, 0x58, 0xB0, 0x52, 0xA7, 0xAA, 0x23, 0x63, 0xF6, 0x3E, 0x62, 0xED, 0x4A, 0xCE, \
-           0x37, 0x6B, 0x00, 0x00, 0x00, 0x01, 0x21, 0xC7, 0xEE, 0xD3, 0xE2, 0x21, 0xE7, 0x36, 0x14, \
-           0x69, 0xD0, 0x93, 0xB0, 0xC9, 0x33, 0x44, 0x56, 0x06, 0x49, 0xB2, 0x4A, 0x1D, 0x50, 0x0E, \
-           0x00, 0x00, 0x00, 0x20, 0x15, 0xE0, 0xD4, 0xBE, 0xB9, 0x93, 0x99, 0x6D, 0x0B, 0x42, 0x61, \
-           0x54, 0x8B, 0x15, 0xF9, 0xAD, 0x54, 0xAA, 0xB5, 0x0A, 0x1D, 0xF3, 0x2C, 0xB6, 0x57, 0x98, \
-           0x2D, 0x05, 0xBC, 0x9C, 0x52, 0xC3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
-           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD9, 0x78, 0xE1, 0x98, 0x83, 0x61, 0x50, 0xE4, \
-           0xAF, 0xB3, 0xF9, 0xFA, 0x1D, 0x90, 0xE1, 0xFB, 0xF8, 0xE7, 0xDF, 0x53, 0x81, 0x81, 0x95, \
-           0x0A, 0x66, 0xAB, 0x1C, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, \
-           0x00, 0x00, 0x09, 0x23, 0xA1, 0x80, 0x2B, 0x19, 0xD5, 0x3B, 0x1D, 0xAA, 0xD2, 0x06, 0x66, \
-           0xFF, 0x05, 0x10, 0xFF, 0x14, 0x92, 0x9C, 0x6A, 0xBE, 0x48, 0x10, 0x2A, 0xE3, 0x91, 0x09, \
-           0x83, 0x0C, 0x96, 0xA2, 0x03, 0x46, 0xFA, 0xFB, 0x0F, 0xFF, 0x6B, 0xBD, 0x56, 0x53, 0x4C, \
-           0xD8, 0x7B, 0x3C, 0xF8, 0x56, 0x00, 0x00, 0x00, 0x01, 0x65, 0x29, 0xDD, 0x6C, 0x15, 0xED, \
-           0x6F, 0x0E, 0x54, 0x79, 0xFB, 0xD4, 0x3B, 0x41, 0x24, 0x7F, 0x3F, 0x64, 0x20, 0xDF, 0x3F, \
-           0xF4, 0xC7, 0xCB, 0x00, 0x00, 0x00, 0x10, 0x98, 0x7D, 0x65, 0x0A, 0x41, 0x9E, 0x1D, 0x6C, \
-           0x76, 0xD0, 0x2B, 0xEE, 0x7E, 0x12, 0x0B, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
-           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE9, 0x0E, 0x7E, 0xC4, 0x6F, 0x7E, \
-           0xAD, 0xAD, 0x52, 0xA7, 0x1A, 0x01, 0x98, 0xED, 0xA1, 0xAE, 0x8C, 0x3A, 0x34, 0xE4};
+    /******************************************************************************/
+    uint32_t all_profile_len = 0;
+    uint8_t *all_profile_buf = NULL;
 
+    all_profile_len = get_length((uint8_t *)card_buf, 0);
+    all_profile_buf = get_value_buffer((uint8_t *)card_buf);
+
+    MSG_INFO_ARRAY("all_profile_buf: ", all_profile_buf, all_profile_len);
+    /******************************************************************************/
+    uint32_t all_profile_no_hash_len = 0;
+    uint8_t *all_profile_no_hash_buf = NULL;
+
+    all_profile_no_hash_len = get_length(all_profile_buf, 0);
+    all_profile_no_hash_buf = get_value_buffer(all_profile_buf);
+
+    MSG_INFO_ARRAY("all_profile_no_hash_buf: ", all_profile_no_hash_buf, all_profile_no_hash_len);
+    /******************************************************************************/
+    uint32_t profile_info_len = 0;
+    uint32_t profile_info_tag_len = 0;
+    uint8_t *profile_info_buf = NULL;
+
+    profile_info_len = get_length(all_profile_no_hash_buf, 0);
+    profile_info_tag_len = get_length(all_profile_no_hash_buf, 1);
+    profile_info_buf = get_value_buffer(all_profile_no_hash_buf);
+
+    MSG_INFO_ARRAY("profile_info_buf: ", profile_info_buf, profile_info_len);
+    /******************************************************************************/
+    //need offset
+    uint32_t root_key_len = 0;
+    uint32_t root_key_tag_len = 0;
+    uint8_t *root_key_buf = NULL;
+
+    root_key_len = get_length(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len, 0);
+    root_key_tag_len = get_length(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len, 1);
+    root_key_buf = get_value_buffer(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len);
+
+    MSG_INFO_ARRAY("root_key_buf: ", root_key_buf, root_key_len);
+    /******************************************************************************/
+    //need offset
+    uint32_t aes_key_len = 0;
+    uint32_t aes_key_tag_len = 0;
+    uint8_t *aes_key_buf = NULL;
+
+    aes_key_len = get_length(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len+root_key_len+root_key_tag_len, 0);
+    aes_key_tag_len = get_length(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len+root_key_len+root_key_tag_len, 1);
+    aes_key_buf = get_value_buffer(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len+root_key_len+root_key_tag_len);
+
+    MSG_INFO_ARRAY("aes_key_buf: ", aes_key_buf, aes_key_len);
+    /******************************************************************************/
+    asn_enc_rval_t ec;
+    SetRootKeyRequest_t key_request = {0};
+
+    key_request.rootEccSk = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, root_key_buf, root_key_len);
+    key_request.rootAesKey = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, aes_key_buf, aes_key_len);
+
+    g_buf_size = 0;
+    ec = der_encode(&asn_DEF_SetRootKeyRequest, &key_request, encode_cb_fun, NULL);
+    if (ec.encoded == -1) {
+        MSG_PRINTF(LOG_ERR, "encoded:%ld\n", ec.encoded);
+    }
+
+    MSG_INFO_ARRAY("g_buf: ", g_buf, g_buf_size);
+    /******************************************************************************/
     ret = rt_open_channel(&channel);
     MSG_PRINTF(LOG_INFO, "rt_open_channel ret is : %d \n", ret);
-    ret = cmd_store_data(root_aes_key_apdu, sizeof(root_aes_key_apdu), rsp_buf, &rsp_len, channel);
+    ret = cmd_store_data(g_buf, g_buf_size, rsp_buf, &rsp_len, channel);
     MSG_PRINTF(LOG_INFO, "root_aes_key_apdu cmd_store_data ret is : %d \n", ret);
     ret = rt_close_channel(channel);
     MSG_PRINTF(LOG_INFO, "rt_close_channel ret is : %d \n", ret);
-
+    rt_os_free(g_buf);
+    g_buf = NULL;
+    /******************************************************************************/
     rt_open_channel(&channel);
     ret = cmd_store_data((const uint8_t *)apdu_info, 3, rsp_buf, &rsp_len, channel);
-
 
     dc = ber_decode(NULL, &asn_DEF_ProfileInfoListResponse, (void **)&rsp, rsp_buf, rsp_len);
     if (dc.code != RC_OK) {
