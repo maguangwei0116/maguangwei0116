@@ -22,7 +22,12 @@
 #define ARRAY_SIZE(a)                       (sizeof((a)) / sizeof((a)[0]))
 #endif
 
-#define RT_OTI_SERVER_PORT                  7082
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    #define RT_OTI_SERVER_PORT                  443
+#else
+    #define RT_OTI_SERVER_PORT                  7082
+#endif
+
 
 #define M_BYTES                             (1024 * 1024)
 #define MAX_LINE_SIZE                       384
@@ -153,29 +158,37 @@ static config_item_t g_config_items[] =
 {
 /*     item_name            config_func                 data_type   default_value           annotation          */
 #if (CFG_ENV_TYPE_PROD)
-ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                       STRING,     "52.220.34.227",        "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "18.136.190.97",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp.redtea.io",       "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "oti.redtea.io",                "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
 #else
-ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                       STRING,     "54.222.248.186",       "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "13.229.31.234",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp-test.redtea.io",  "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "52.220.34.227",                "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
 #endif
-ITEM(MBN_CONFIGURATION,     config_switch_value,        INTEGER,    "1",                    "Whether config MBN (0:disable  1:enable)"),
-ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,       INTEGER,    "2",                    "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
-ITEM(RPLMN_ENABLE,          NULL,                       INTEGER,    "1",                    "Whether set rplmn (0:disable  1:enable)"),
-ITEM(LOG_FILE_SIZE,         config_log_size,            INTEGER,    "1",                    "The max size of rt_log file (MB)"),
-ITEM(UICC_MODE,             config_uicc_mode,           INTEGER,    "0",                    "The mode of UICC (0:vUICC  1:eUICC)"),
+ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "18.136.190.97",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
+ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp.redtea.io",               "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+#else
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "oti-staging.redtea.io",        "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
+#else
+    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "54.222.248.186",               "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
+#endif
+ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "13.229.31.234",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
+ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp-test.redtea.io",          "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+#endif
+ITEM(MBN_CONFIGURATION,     config_switch_value,        INTEGER,    "1",                            "Whether config MBN (0:disable  1:enable)"),
+ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,       INTEGER,    "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
+ITEM(RPLMN_ENABLE,          NULL,                       INTEGER,    "1",                            "Whether set rplmn (0:disable  1:enable)"),
+ITEM(LOG_FILE_SIZE,         config_log_size,            INTEGER,    "1",                            "The max size of rt_log file (MB)"),
+ITEM(UICC_MODE,             config_uicc_mode,           INTEGER,    "0",                            "The mode of UICC (0:vUICC  1:eUICC)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_WARN",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_WARN",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_WARN",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_WARN",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
 #else
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_INFO",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_INFO",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
 #endif
-ITEM(USAGE_ENABLE,          config_switch_value,        INTEGER,    "0",                    "Whether enable upload user traffic (0:disable  1:enable)"),
-ITEM(USAGE_FREQ,            config_usage_freq,          INTEGER,    "60",                   "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
-ITEM(CARD_FLOW_SWITCH,      config_card_flow_switch,    INTEGER,    "0",                    "The switch of seed card flow control(0:close 1:open)"),
+ITEM(USAGE_ENABLE,          config_switch_value,        INTEGER,    "0",                            "Whether enable upload user traffic (0:disable  1:enable)"),
+ITEM(USAGE_FREQ,            config_usage_freq,          INTEGER,    "60",                           "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
+ITEM(CARD_FLOW_SWITCH,      config_card_flow_switch,    INTEGER,    "0",                            "The switch of seed card flow control(0:close 1:open)"),
 };
 
 static config_info_t g_config_info;

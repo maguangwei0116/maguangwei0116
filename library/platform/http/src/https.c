@@ -76,7 +76,8 @@ static int connect_tcp(const char *host_name, const char *addr)
 int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca, int is_tls)
 {
     int res = -1;
-    
+    int count = 0;
+
     rt_os_memset(https_ctx, 0, sizeof(https_ctx_t));
 
     https_ctx->socket = connect_tcp(host, port);
@@ -136,10 +137,18 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
     X509* cert = SSL_get_peer_certificate(https_ctx->ssl);
     if (cert) {  // Free immediately
         char *line;
-        //MSG_PRINTF(LOG_INFO, "cert: %s\n", cert);
-        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        MSG_PRINTF(LOG_INFO, "Subject Name: %s\n", line);
-        rt_os_free(line);
+        for (count = 0; count < 6; ++count) {
+            //MSG_PRINTF(LOG_INFO, "cert: %s\n", cert);
+            line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+            MSG_PRINTF(LOG_INFO, "Subject Name: %s\n", line);
+            MSG_PRINTF(LOG_INFO, "count is: %d\n", count);
+            if (strstr(line, "redtea") != NULL) {
+                rt_os_free(line);
+                break;
+            }
+            rt_os_free(line);
+            sleep(2);
+        }
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
         MSG_PRINTF(LOG_INFO, "Issuer: %s\n", line);
         res = SSL_get_verify_result(https_ctx->ssl);
@@ -482,13 +491,6 @@ void https_free(https_ctx_t *https_ctx)
 
     int32_t mqtt_https_post_json(const char *json_data, const char *host_ip, uint16_t port, const char *path, PCALLBACK cb)
     {
-#if (CFG_ENV_TYPE_PROD)
-    host_ip = "oti.redtea.io";
-    port = 443;
-#else
-    host_ip = "oti-staging.redtea.io";
-    port = 443;
-#endif
         int32_t ret = RT_ERROR;
         int32_t socket_fd = RT_ERROR;
         char md5_out[32+1];
