@@ -155,15 +155,6 @@ end:
     return ret;
 }
 
-void change_apdu(uint8_t *src_apdu, uint8_t *dest_apdu, uint16_t start, uint16_t end)
-{
-    uint16_t i = 0;
-    uint16_t j = 0;
-    for (i = start, j = 0; i < end; ++i, ++j) {
-        src_apdu[i] = dest_apdu[j];
-    }
-}
-
 rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
 {
     uint8_t default_apdu[512];
@@ -227,25 +218,4 @@ rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
     } else {
         return RT_FALSE;
     }
-
-    #if 0
-    rt_bool ret = RT_FALSE;
-
-    uint8_t pk_out[MAX_PK_LEN/2 + 1] = {0};
-    uint16_t p_len = 0;
-
-    hexstring2bytes(g_verify_pk, pk_out, &p_len);
-    // MSG_INFO_ARRAY("input: ", input, MAX_FILE_HASH_LEN/2);
-    MSG_PRINTF(LOG_INFO, "input: %s\n", input);
-    MSG_INFO_ARRAY("signature: ", signature, PRIVATE_HASH_STR_LEN/2);
-    MSG_INFO_ARRAY("pk: ", pk_out, p_len);
-    ret = ecc_verify(input, MAX_FILE_HASH_LEN, pk_out, p_len, signature, PRIVATE_HASH_STR_LEN/2);
-    MSG_PRINTF(LOG_INFO, "ret is : %d\n", ret);
-
-    if (ret == 0) {
-        return RT_TRUE;
-    } else {
-        return RT_FALSE;
-    }
-    #endif
 }

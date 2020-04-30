@@ -933,6 +933,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
 
     // Send sequenceOf88 Value
     cnt = bpp->sequenceOf88.list.count;
+    // according to BF37
     for (i = 0; i < cnt; i++) {
         req = bpp->sequenceOf88.list.array[i];
         clean_cb_data();
@@ -948,12 +949,86 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         /* check result code */
         MSG_DUMP_ARRAY("sequenceOf88TLV out\n", out, *out_size);
         if (*out_size != 2) {
-            for (i = 0; i < *out_size; ++i) {
-                if ( (out[i] == 0x80) && (out[i+1] == 0x01) && (out[i+2] == 0x02) && \
-                    (out[i+3] == 0x81) && (out[i+4] == 0x01) && (out[i+5] == 0x09) ) {
-                    ret = RT_ERR_APDU_STORE_DATA_FAIL;
-                    goto end;
-                }
+            uint32_t profile_installation_result_data_len = 0;
+            uint8_t *profile_installation_result_data_buf = NULL;
+
+            profile_installation_result_data_len = get_length(out, 0);
+            profile_installation_result_data_buf = get_value_buffer(out);
+            MSG_INFO_ARRAY("ProfileInstallationResultData_buf: ", profile_installation_result_data_buf, profile_installation_result_data_len);
+
+            uint32_t metadata1_len = 0;
+            uint8_t *metadata1_buf = NULL;
+
+            metadata1_len = get_length(profile_installation_result_data_buf, 0);
+            metadata1_buf = get_value_buffer(profile_installation_result_data_buf);
+            MSG_INFO_ARRAY("metadata1_buf: ", metadata1_buf, metadata1_len);
+
+            uint32_t metadata2_len = 0;
+            uint32_t metadata2_tag_len = 0;
+            uint8_t *metadata2_buf = NULL;
+
+            metadata2_len = get_length(metadata1_buf, 0);
+            metadata2_tag_len = get_length(metadata1_buf, 1);
+            metadata2_buf = get_value_buffer(metadata1_buf);
+            MSG_INFO_ARRAY("metadata2_buf: ", metadata2_buf, metadata2_len);
+
+            uint32_t metadata3_len = 0;
+            uint32_t metadata3_tag_len = 0;
+            uint8_t *metadata3_buf = NULL;
+
+            metadata3_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len, 0);
+            metadata3_tag_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len, 1);
+            metadata3_buf = get_value_buffer(metadata1_buf+metadata2_len+metadata2_tag_len);
+            MSG_INFO_ARRAY("metadata3_buf: ", metadata3_buf, metadata3_len);
+
+            uint32_t metadata4_len = 0;
+            uint32_t metadata4_tag_len = 0;
+            uint8_t *metadata4_buf = NULL;
+
+            metadata4_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len, 0);
+            metadata4_tag_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len, 1);
+            metadata4_buf = get_value_buffer(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len);
+            MSG_INFO_ARRAY("metadata4_buf: ", metadata4_buf, metadata4_len);
+
+            uint32_t metadata5_len = 0;
+            uint32_t metadata5_tag_len = 0;
+            uint8_t *metadata5_buf = NULL;
+
+            metadata5_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len+metadata4_len+metadata4_tag_len, 0);
+            metadata5_tag_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len+metadata4_len+metadata4_tag_len, 1);
+            metadata5_buf = get_value_buffer(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len+metadata4_len+metadata4_tag_len);
+            MSG_INFO_ARRAY("metadata5_buf: ", metadata5_buf, metadata5_len);
+
+
+            uint32_t metadata6_len = 0;
+            uint8_t *metadata6_buf = NULL;
+
+            metadata6_len = get_length(metadata5_buf, 0);
+            metadata6_buf = get_value_buffer(metadata5_buf);
+            MSG_INFO_ARRAY("metadata6_buf: ", metadata6_buf, metadata6_len);
+
+
+            uint32_t err_id_len = 0;
+            uint32_t err_id_tag_len = 0;
+            uint8_t *err_id_buf = NULL;
+
+            err_id_len = get_length(metadata6_buf, 0);
+            err_id_tag_len = get_length(metadata6_buf, 1);
+            err_id_buf = get_value_buffer(metadata6_buf);
+            MSG_INFO_ARRAY("err_id_buf: ", err_id_buf, err_id_len);
+
+            uint32_t err_res_len = 0;
+            uint32_t err_res_tag_len = 0;
+            uint8_t *err_res_buf = NULL;
+
+            err_res_len = get_length(metadata6_buf+err_id_len+err_id_tag_len, 0);
+            err_res_tag_len = get_length(metadata6_buf+err_id_len+err_id_tag_len, 1);
+            err_res_buf = get_value_buffer(metadata6_buf+err_id_len+err_id_tag_len);
+            MSG_INFO_ARRAY("err_res_buf: ", err_res_buf, err_res_len);
+
+            if ((*err_id_buf == 0x02) && (*err_res_buf == 0x09)) {
+                ret = RT_ERR_APDU_STORE_DATA_FAIL;
+                goto end;
             }
         }
 
