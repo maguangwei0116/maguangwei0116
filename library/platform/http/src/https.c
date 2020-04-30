@@ -1,4 +1,3 @@
-
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -97,7 +96,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
         // New context saying we are a client, and using SSL 2 or 3
         https_ctx->ssl_cxt = SSL_CTX_new(SSLv23_client_method());
     } else {
-        https_ctx->ssl_cxt = SSL_CTX_new(TLSv1_client_method());
+        https_ctx->ssl_cxt = SSL_CTX_new(TLSv1_2_client_method());
     }
 
     if (https_ctx->ssl_cxt == NULL) {
@@ -140,7 +139,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
         for (count = 0; count < 6; ++count) {
             //MSG_PRINTF(LOG_INFO, "cert: %s\n", cert);
             line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-            MSG_PRINTF(LOG_DBG, "Subject Name: %s\n", line);
+            MSG_PRINTF(LOG_WARN, "Subject Name: %s\n", line);
             MSG_PRINTF(LOG_WARN, "count is: %d\n", count);
             if (strstr(line, "redtea") != NULL) {
                 rt_os_free(line);
@@ -150,10 +149,10 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
             sleep(2);
         }
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        MSG_PRINTF(LOG_DBG, "Issuer: %s\n", line);
+        MSG_PRINTF(LOG_WARN, "Issuer: %s\n", line);
         res = SSL_get_verify_result(https_ctx->ssl);
         if (res != X509_V_OK) {
-            MSG_PRINTF(LOG_DBG, "Certificate verification failed: %d\n", res);
+            MSG_PRINTF(LOG_WARN, "Certificate verification failed: %d\n", res);
 #ifdef TLS_VERIFY_CERT
 #ifdef TLS_VERIFY_CERT_9_AS_OK
             if (res == X509_V_ERR_CERT_NOT_YET_VALID) {
@@ -179,7 +178,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
 
 int https_post(https_ctx_t *https_ctx, const char *request)
 {
-    MSG_PRINTF(LOG_TRACE, "request[%d]:\n%s\n\n\n", (int)rt_os_strlen(request), request);
+    // MSG_PRINTF(LOG_TRACE, "request[%d]:\n%s\n\n\n", (int)rt_os_strlen(request), request);
     return SSL_write(https_ctx->ssl, request, rt_os_strlen(request));
 }
 
@@ -491,13 +490,6 @@ void https_free(https_ctx_t *https_ctx)
 
     int32_t mqtt_https_post_json(const char *json_data, const char *host_ip, uint16_t port, const char *path, PCALLBACK cb)
     {
-#if (CFG_ENV_TYPE_PROD)
-    host_ip = "oti.redtea.io";
-    port = 443;
-#else
-    host_ip = "oti-staging.redtea.io";
-    port = 443;
-#endif
         int32_t ret = RT_ERROR;
         int32_t socket_fd = RT_ERROR;
         char md5_out[32+1];
@@ -536,4 +528,3 @@ void https_free(https_ctx_t *https_ctx)
     }
 
 #endif
-

@@ -47,6 +47,9 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
 
     dw_struct.if_continue = 1;
     dw_struct.buf = NULL;
+    dw_struct.https_ctx.ssl = NULL;
+    dw_struct.https_ctx.ssl_cxt = NULL;
+    dw_struct.https_ctx.socket = -1;
     /* build http body */
     dw_struct.file_path = (const char *)d_info->file_name;
     dw_struct.manager_type = 1;

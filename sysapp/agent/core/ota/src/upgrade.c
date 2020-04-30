@@ -88,6 +88,9 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 
     dw_struct.if_continue = 1;
     dw_struct.buf = NULL;
+    dw_struct.https_ctx.ssl = NULL;
+    dw_struct.https_ctx.ssl_cxt = NULL;
+    dw_struct.https_ctx.socket = -1;
 
     /* build http body */
     post_info = cJSON_CreateObject();

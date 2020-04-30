@@ -143,6 +143,7 @@ int32_t main(int32_t argc, char **argv)
     agent_main(RT_DATA_PATH, func);
 
     init_system_signal(NULL);
+    MSG_PRINTF(LOG_DBG, "111111222 signal unregister\n");
 
     while (!toStop) {
         rt_os_sleep(3);

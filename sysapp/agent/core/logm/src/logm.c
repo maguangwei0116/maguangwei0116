@@ -1,4 +1,3 @@
-
 #include "downstream.h"
 #include "rt_type.h"
 #include "rt_os.h"
@@ -66,8 +65,8 @@ static log_level_e downstream_log_get_level(const char *level_str)
 
     for (i = 0; i < ARRAY_SIZE(g_log_item_table); i++) {
         if (!rt_os_strcmp(g_log_item_table[i].label, level_str)) {
-        	ret_level = g_log_item_table[i].level;
-        	break;
+            ret_level = g_log_item_table[i].level;
+            break;
         }
     }
 
@@ -189,9 +188,10 @@ static int32_t log_file_cut(const char *file_name, log_level_e log_level)
 
     /* copy out selective log data */
     MSG_PRINTF(LOG_DBG, "----> log cut start ... log_level = %d\n", log_level);
-    log_file_copy_out(tmp_file_name, file_name, log_level);
-    MSG_PRINTF(LOG_DBG, "----> log cut end ...\n");
-
+    int copy_result = log_file_copy_out(tmp_file_name, file_name, log_level);
+    MSG_PRINTF(LOG_DBG, "----> log cut end ... %d\n", copy_result);
+    MSG_PRINTF(LOG_DBG, "----> log cut end ... %s\n", tmp_file_name);
+    MSG_PRINTF(LOG_DBG, "----> log cut end ... %s\n", file_name);
     /* delete tmp log file */
     linux_rt_delete_file(tmp_file_name);
 
@@ -203,6 +203,7 @@ static int32_t log_file_cut(const char *file_name, log_level_e log_level)
         goto exit_entry;
     }
     snprintf(buf, sizeof(buf), "\r\n--%s--", BOUNDARY);
+
     if (rt_write_data((const char *)file_name, offset, buf, rt_os_strlen(buf)) == RT_ERROR) {
         MSG_PRINTF(LOG_WARN, "write %s error\n",file_name);
         ret = RT_ERROR;
@@ -254,6 +255,9 @@ static void log_file_upload(void *arg)
     http_set_header_record(obj, "HOST", log_host);
     http_set_header_record(obj, "tranId", tranId);
     obj->file_path = log_cut_file;
+    obj->https_ctx.ssl = NULL;
+    obj->https_ctx.ssl_cxt = NULL;
+    obj->https_ctx.socket = -1;
 
     while (1) {
         if (http_client_file_upload(obj) != 0) {
