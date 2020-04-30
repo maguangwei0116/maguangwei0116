@@ -123,11 +123,11 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
     }
 
     RT_CHECK_ERR(linux_fread(sign_buffer, PRIVATE_HASH_STR_LEN, 1, fp), 0);
-    MSG_PRINTF(LOG_INFO, "signature_buffer:%s\n", sign_buffer);
+    MSG_PRINTF(LOG_DBG, "signature_buffer:%s\n", sign_buffer);
 
     linux_fseek(fp, -(PRIVATE_HASH_STR_LEN + MAX_FILE_INFO_LEN), RT_FS_SEEK_END);
     RT_CHECK_ERR(linux_fread(file_info, MAX_FILE_INFO_LEN, 1, fp), 0);
-    MSG_PRINTF(LOG_INFO, "file_info:%s\n", file_info);
+    MSG_PRINTF(LOG_DBG, "file_info:%s\n", file_info);
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
 
     bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
@@ -206,12 +206,12 @@ rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
 
     all_len = 13*2+4+128+4+130+4+128;
 
-    MSG_PRINTF(LOG_INFO, "all_len is %d\n", all_len);
+    MSG_PRINTF(LOG_DBG, "all_len is %d\n", all_len);
     MSG_INFO_ARRAY("default_apdu: ", default_apdu, all_len);
     rt_open_channel(&channel);
     ret = cmd_store_data(default_apdu, all_len, buf, &rsp_len, channel);
     rt_close_channel(channel);
-    MSG_PRINTF(LOG_INFO, "ret is %d\n", ret);
+    MSG_PRINTF(LOG_INFO, "inspect file ret is %d\n", ret);
 
     if (ret == 0) {
         return RT_TRUE;

@@ -283,8 +283,8 @@ static int32_t agent_file_copy_check(rt_bool copy_force)
         goto exit_entry;
     }
 
-    MSG_PRINTF(LOG_WARN, "oem_agent_sign: %s\r\n", oem_agent_sign);
-    MSG_PRINTF(LOG_WARN, "usr_agent_sign: %s\r\n", usr_agent_sign);
+    MSG_PRINTF(LOG_DBG, "oem_agent_sign: %s\r\n", oem_agent_sign);
+    MSG_PRINTF(LOG_DBG, "usr_agent_sign: %s\r\n", usr_agent_sign);
 
 copy_usrapp_agent:
 
@@ -296,7 +296,7 @@ copy_usrapp_agent:
         /* sync data to flash */
         rt_os_sync();
 
-        MSG_PRINTF(LOG_WARN, "copy agent file done !!!\r\n");
+        MSG_PRINTF(LOG_INFO, "copy agent file done !!!\r\n");
     }
 
 exit_entry:
@@ -393,10 +393,10 @@ static int32_t agent_task_check_start(rt_bool frist_start)
 static void init_app_version(void *arg)
 {
 #ifdef CFG_STANDARD_MODULE
-    MSG_PRINTF(LOG_WARN, "Running standard module ...\r\n");
+    MSG_PRINTF(LOG_INFO, "Running standard module ...\r\n");
 #endif
 
-    MSG_PRINTF(LOG_WARN, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
+    MSG_PRINTF(LOG_INFO, "App version: %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
 }
 
 #ifdef CFG_ENABLE_LIBUNWIND

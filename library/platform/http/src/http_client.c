@@ -23,7 +23,7 @@ static void display_progress(const http_client_struct_t *obj)
 {
 #if (VERSION_TYPE == DEBUG) // only for debug version
     int percentage = ((float)obj->process_length / (obj->file_length + obj->range)) * 100;
-    MSG_PRINTF(LOG_WARN, "file download [%s] : %3d%% (%7d/%-7d)\r\n", \
+    MSG_PRINTF(LOG_TRACE, "file download [%s] : %3d%% (%7d/%-7d)\r\n", \
                     obj->file_path, percentage, obj->process_length, (obj->file_length + obj->range));
     //rt_os_sleep(1);  // only for test
 #else
@@ -46,7 +46,7 @@ static int http_client_upload_init(http_client_struct_t *obj)
 
     obj->remain_length = obj->file_length;
     obj->process_length = 0;
-    MSG_PRINTF(LOG_WARN, "upload file_name:%s,file_size:%d\n", obj->file_path, obj->file_length);
+    MSG_PRINTF(LOG_TRACE, "upload file_name:%s,file_size:%d\n", obj->file_path, obj->file_length);
 
     RT_CHECK_ERR(obj->fp = linux_rt_fopen(obj->file_path, "r"), NULL);  // 打开文件
     RT_CHECK_ERR(obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN), NULL);
@@ -325,7 +325,7 @@ static int http_client_recv_data(http_client_struct_t *obj)
     obj->try_count = 0;
     obj->process_length = obj->range;
 
-    MSG_PRINTF(LOG_WARN, "obj->range=%d, obj->process_length=%d\n", obj->range, obj->process_length);
+    MSG_PRINTF(LOG_TRACE, "obj->range=%d, obj->process_length=%d\n", obj->range, obj->process_length);
 
     /* If the process for download, loop to receive data */
     while (obj->remain_length > 0) {
@@ -457,7 +457,7 @@ int http_client_file_download(http_client_struct_t *d_state)
     RT_CHECK_LES(http_client_get_resp_header(d_state), 0);
     RT_CHECK_LES(http_client_error_prase(d_state), 0);
     RT_CHECK_ERR(http_client_recv_data(d_state), -1);
-    MSG_PRINTF(LOG_WARN, "Download  %s success\n", d_state->file_path);
+    MSG_PRINTF(LOG_INFO, "Download  %s success\n", d_state->file_path);
     ret = RT_SUCCESS;
 
 end:
@@ -476,7 +476,7 @@ int http_client_file_upload(http_client_struct_t *up_state)
     RT_CHECK_LES(http_client_send_body(up_state), 0);
     RT_CHECK_LES(http_client_get_resp_header(up_state), 0);
     RT_CHECK_LES(http_client_error_prase(up_state), 0);
-    MSG_PRINTF(LOG_WARN, "Uplaad  %s success\n", up_state->file_path);
+    MSG_PRINTF(LOG_INFO, "Uplaad  %s success\n", up_state->file_path);
 
     ret = RT_SUCCESS;
 end:

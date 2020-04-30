@@ -140,8 +140,8 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
         for (count = 0; count < 6; ++count) {
             //MSG_PRINTF(LOG_INFO, "cert: %s\n", cert);
             line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-            MSG_PRINTF(LOG_INFO, "Subject Name: %s\n", line);
-            MSG_PRINTF(LOG_INFO, "count is: %d\n", count);
+            MSG_PRINTF(LOG_WARN, "Subject Name: %s\n", line);
+            MSG_PRINTF(LOG_WARN, "count is: %d\n", count);
             if (strstr(line, "redtea") != NULL) {
                 rt_os_free(line);
                 break;
@@ -150,10 +150,10 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
             sleep(2);
         }
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        MSG_PRINTF(LOG_INFO, "Issuer: %s\n", line);
+        MSG_PRINTF(LOG_WARN, "Issuer: %s\n", line);
         res = SSL_get_verify_result(https_ctx->ssl);
         if (res != X509_V_OK) {
-            MSG_PRINTF(LOG_ERR, "Certificate verification failed: %d\n", res);
+            MSG_PRINTF(LOG_WARN, "Certificate verification failed: %d\n", res);
 #ifdef TLS_VERIFY_CERT
 #ifdef TLS_VERIFY_CERT_9_AS_OK
             if (res == X509_V_ERR_CERT_NOT_YET_VALID) {
@@ -179,7 +179,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
 
 int https_post(https_ctx_t *https_ctx, const char *request)
 {
-    MSG_PRINTF(LOG_INFO, "request[%d]:\n%s\n\n\n", (int)rt_os_strlen(request), request);
+    MSG_PRINTF(LOG_TRACE, "request[%d]:\n%s\n\n\n", (int)rt_os_strlen(request), request);
     return SSL_write(https_ctx->ssl, request, rt_os_strlen(request));
 }
 
@@ -217,7 +217,7 @@ void https_free(https_ctx_t *https_ctx)
     static int new_system(char *cmd)
     {
         int status = system(cmd);
-        MSG_PRINTF(LOG_INFO, "cmd=%s\r\n", cmd);
+        MSG_PRINTF(LOG_TRACE, "cmd=%s\r\n", cmd);
         if (-1 == status) {
             MSG_PRINTF(LOG_ERR, "system error!\r\n");
         } else {
@@ -307,7 +307,7 @@ void https_free(https_ctx_t *https_ctx)
 
         *status = 0;
         *content_length = 0;
-        MSG_PRINTF(LOG_INFO, "rsp:%s\n",rsp);
+        MSG_PRINTF(LOG_TRACE, "rsp:%s\n",rsp);
         p = rsp;
         do {
             left = strstr(p, "\r\n");
@@ -364,7 +364,7 @@ void https_free(https_ctx_t *https_ctx)
         int post_res = -1;
         int ping_count = 0;
 
-        MSG_PRINTF(LOG_INFO, "addr:%s, api:%s\n", addr, api);
+        MSG_PRINTF(LOG_TRACE, "addr:%s, api:%s\n", addr, api);
         p = strstr(addr, ":");
         if (p == NULL) {
             // Use default port
@@ -377,7 +377,7 @@ void https_free(https_ctx_t *https_ctx)
         }
 
         if (https_ctx.ssl == NULL) {
-            MSG_PRINTF(LOG_INFO, "tls https_init\n");
+            MSG_PRINTF(LOG_TRACE, "tls https_init\n");
 #if (CFG_UPLOAD_HTTPS_ENABLE)
         // dns function High Probability fail, so add this codes
         while (1) {
@@ -395,7 +395,7 @@ void https_free(https_ctx_t *https_ctx)
             status = https_init(&https_ctx, host, port, "./ca-chain.pem", 1); // "./ca-chain.pem" unuse
             if (status < 0) {
                 https_free(&https_ctx);
-                MSG_PRINTF(LOG_WARN, "https_init is status %d ...\r\n", status);
+                MSG_PRINTF(LOG_ERR, "https_init is status %d ...\r\n", status);
                 return HTTP_SOCKET_CONNECT_ERROR;
             }
         }
@@ -418,7 +418,7 @@ void https_free(https_ctx_t *https_ctx)
         snprintf(request + done_size, sizeof(request) - done_size, "%s", body);
         post_res = https_post(&https_ctx, (const char *)request);
         if (post_res < 0) {
-            MSG_PRINTF(LOG_WARN, "https_post is post_res %d ...\r\n", post_res);
+            MSG_PRINTF(LOG_ERR, "https_post is post_res %d ...\r\n", post_res);
             return HTTP_SOCKET_SEND_ERROR;
         }
 
@@ -430,7 +430,7 @@ void https_free(https_ctx_t *https_ctx)
             snprintf(request, sizeof(request), "%s", body + done_size);
             post_res = https_post(&https_ctx, (const char *)request);
             if (post_res < 0) {
-                MSG_PRINTF(LOG_WARN, "https_post is post_res %d ...\r\n", post_res);
+                MSG_PRINTF(LOG_ERR, "https_post is post_res %d ...\r\n", post_res);
                 return HTTP_SOCKET_SEND_ERROR;
             }
             done_size += sizeof(request) - 1;
@@ -474,13 +474,13 @@ void https_free(https_ctx_t *https_ctx)
         char out_buffer[5120] = {0};
         int out_size = 5120;
         int ret = 0;
-        MSG_PRINTF(LOG_INFO, "addr is %s\n", addr);
-        MSG_PRINTF(LOG_INFO, "api is %s\n", api);
-        MSG_PRINTF(LOG_INFO, "body is %s\n", body);
+        MSG_PRINTF(LOG_TRACE, "addr is %s\n", addr);
+        MSG_PRINTF(LOG_TRACE, "api is %s\n", api);
+        MSG_PRINTF(LOG_TRACE, "body is %s\n", body);
         ret = upload_https_post(addr, api, body, out_buffer, &out_size);
         if (200 == ret) {
             cb(out_buffer);
-            MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
+            MSG_PRINTF(LOG_DBG, "out_buffer is %s\n", out_buffer);
             return 0;
         } else {
             MSG_PRINTF(LOG_WARN, "upload_https_post return is %d the buffer is %s\n", ret, out_buffer);
@@ -500,27 +500,27 @@ void https_free(https_ctx_t *https_ctx)
 
         do{
             if(!json_data || !host_ip || !path) {
-                MSG_PRINTF(LOG_DBG, "path json data error\n");
+                MSG_PRINTF(LOG_WARN, "path json data error\n");
                 break;
             }
 
-            MSG_PRINTF(LOG_INFO, "json_data:%s\n",json_data);
+            MSG_PRINTF(LOG_DBG, "json_data:%s\n",json_data);
             get_md5_string((const char *)json_data, md5_out);
             md5_out[32] = '\0';
 
-            MSG_PRINTF(LOG_INFO, "host_ip:%s, port:%d\r\n", host_ip, port);
+            MSG_PRINTF(LOG_DBG, "host_ip:%s, port:%d\r\n", host_ip, port);
 
             ret = upload_https_post(host_ip, path, json_data, out_buffer, &out_size);
-            MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
+            MSG_PRINTF(LOG_DBG, "out_buffer is %s\n", out_buffer);
             if (200 == ret) {
                 cb(out_buffer);
-                MSG_PRINTF(LOG_INFO, "out_buffer is %s\n", out_buffer);
+                MSG_PRINTF(LOG_DBG, "out_buffer is %s\n", out_buffer);
             } else {
                 MSG_PRINTF(LOG_WARN, "upload_https_post return is %d the buffer is %s\n", ret, out_buffer);
             }
 
             /* get http body */
-            MSG_PRINTF(LOG_INFO, "recv buff: %s\n", out_buffer);
+            MSG_PRINTF(LOG_DBG, "recv buff: %s\n", out_buffer);
 
             ret = cb(out_buffer);
         } while(0);

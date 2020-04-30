@@ -96,7 +96,7 @@ static const char *process_header(const char *rsp, int *status, int *content_len
 
     *status = 0;
     *content_length = 0;
-    MSG_PRINTF(LOG_INFO, "rsp:%s\n",rsp);
+    MSG_PRINTF(LOG_DBG, "rsp:%s\n",rsp);
     p = rsp;
     do {
         left = strstr(p, "\r\n");
@@ -164,7 +164,7 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
         addr = g_proxy_server_url;
     }
 
-    MSG_PRINTF(LOG_INFO, "addr:%s, api:%s\n", addr, api);
+    MSG_PRINTF(LOG_DBG, "addr:%s, api:%s\n", addr, api);
     p = strstr(addr, ":");
     if (p == NULL) {
         // Use default port
@@ -177,7 +177,7 @@ int lpa_https_post(const char *addr, const char *api, const char *body, char *bu
     }
 
     if (g_https_ctx.ssl == NULL) {
-        MSG_PRINTF(LOG_INFO, "https_init\n");
+        MSG_PRINTF(LOG_DBG, "https_init\n");
         status = https_init(&g_https_ctx, host, port, TLS_CERT_PATH, 0);
         if (status < 0) {
             https_free(&g_https_ctx);

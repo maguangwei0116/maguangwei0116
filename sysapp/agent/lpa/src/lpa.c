@@ -492,7 +492,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     if (ret != RT_SUCCESS) {
         MSG_ERR("initiate_authentication error response:\n%s\n", buf1);
     } else {
-        MSG_INFO("initiate_authentication response:\n%s\n", buf1);
+        MSG_DBG("initiate_authentication response:\n%s\n", buf1);
     }
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
@@ -506,7 +506,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     if (ret != RT_SUCCESS) {
         MSG_ERR("authenticate_client error response:\n%s\n", buf1);
     } else {
-        MSG_INFO("authenticate_client response:\n%s\n", buf1);
+        MSG_DBG("authenticate_client response:\n%s\n", buf1);
     }
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 

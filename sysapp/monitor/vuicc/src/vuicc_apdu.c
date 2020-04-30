@@ -52,7 +52,7 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
         g_response_state = APDU_RESPONSE_NOT_USED;
         rt_mutex_unlock(&g_apdu_mutex);
     }
-    MSG_PRINTF(LOG_INFO, "g_response_state:%d\n", g_response_state);
+    MSG_PRINTF(LOG_DBG, "g_response_state:%d\n", g_response_state);
 
     /* enable profile and load bootstrap profile disbale profile, need to reset */
     if ((cmd == 0xBF31) || (cmd == 0xFF7F) || (cmd == 0xBF32)) {
@@ -97,7 +97,7 @@ static int32_t vuicc_trigger_cmd(const uint8_t *apdu, uint16_t apdu_len, uint8_t
         g_response_state = APDU_RESPONSE_NOT_USED;
         rt_mutex_unlock(&g_apdu_mutex);
     }
-    MSG_PRINTF(LOG_INFO, "g_response_state:%d\n", g_response_state);
+    MSG_PRINTF(LOG_DBG, "g_response_state:%d\n", g_response_state);
 }
 
 void init_trigger(uint8_t uicc_switch)

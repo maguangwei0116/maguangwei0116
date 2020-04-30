@@ -111,7 +111,7 @@ static int32_t config_switch_value(const void *in, char *out)
     return config_range_int_value(in, 0, 1, out);
 }
 
-/* value: [LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO] */
+/* value: [LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE] */
 static int32_t config_log_level(const void *in, char *out)
 {
     const char *str_value = (const char *)in;
@@ -180,11 +180,11 @@ ITEM(RPLMN_ENABLE,          NULL,                       INTEGER,    "1",        
 ITEM(LOG_FILE_SIZE,         config_log_size,            INTEGER,    "1",                            "The max size of rt_log file (MB)"),
 ITEM(UICC_MODE,             config_uicc_mode,           INTEGER,    "0",                            "The mode of UICC (0:vUICC  1:eUICC)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_WARN",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_WARN",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 #else
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_TRACE",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_TRACE",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 #endif
 ITEM(USAGE_ENABLE,          config_switch_value,        INTEGER,    "0",                            "Whether enable upload user traffic (0:disable  1:enable)"),
 ITEM(USAGE_FREQ,            config_usage_freq,          INTEGER,    "60",                           "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
@@ -460,23 +460,23 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
 static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
 {
 #ifdef CFG_STANDARD_MODULE
-    MSG_PRINTF(LOG_WARN, "Running standard module ...\r\n");
+    MSG_PRINTF(LOG_INFO, "Running standard module ...\r\n");
 #endif
-    MSG_PRINTF(LOG_WARN, "Restart reason: %s\n", g_restart_reason);
-    MSG_PRINTF(LOG_WARN, "Agent version : %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
-    MSG_PRINTF(LOG_DBG, "OTI_ENVIRONMENT_ADDR  : %s\n", local_config_get_data("OTI_ENVIRONMENT_ADDR"));
-    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", local_config_get_data("EMQ_SERVER_ADDR"));
-    MSG_PRINTF(LOG_DBG, "PROXY_SERVER_ADDR     : %s\n", local_config_get_data("PROXY_SERVER_ADDR"));
-    MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION     : %s\n", local_config_get_data("MBN_CONFIGURATION"));
-    MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE     : %s\n", local_config_get_data("INIT_PROFILE_TYPE"));
-    MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE          : %s\n", local_config_get_data("RPLMN_ENABLE"));
-    MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
-    MSG_PRINTF(LOG_DBG, "UICC_MODE             : %s\n", !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? "vUICC" : "eUICC");
-    MSG_PRINTF(LOG_DBG, "MONITOR_LOG_LEVEL     : %s\n", local_config_get_data("MONITOR_LOG_LEVEL"));
-    MSG_PRINTF(LOG_DBG, "AGENT_LOG_LEVEL       : %s\n", local_config_get_data("AGENT_LOG_LEVEL"));
-    MSG_PRINTF(LOG_DBG, "USAGE_ENABLE          : %s\n", local_config_get_data("USAGE_ENABLE"));
-    MSG_PRINTF(LOG_DBG, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
-    MSG_PRINTF(LOG_DBG, "CARD_FLOW_SWITCH      : %s\n", local_config_get_data("CARD_FLOW_SWITCH"));
+    MSG_PRINTF(LOG_INFO, "Restart reason: %s\n", g_restart_reason);
+    MSG_PRINTF(LOG_INFO, "Agent version : %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
+    MSG_PRINTF(LOG_INFO, "OTI_ENVIRONMENT_ADDR  : %s\n", local_config_get_data("OTI_ENVIRONMENT_ADDR"));
+    MSG_PRINTF(LOG_INFO, "EMQ_SERVER_ADDR       : %s\n", local_config_get_data("EMQ_SERVER_ADDR"));
+    MSG_PRINTF(LOG_INFO, "PROXY_SERVER_ADDR     : %s\n", local_config_get_data("PROXY_SERVER_ADDR"));
+    MSG_PRINTF(LOG_INFO, "MBN_CONFIGURATION     : %s\n", local_config_get_data("MBN_CONFIGURATION"));
+    MSG_PRINTF(LOG_INFO, "INIT_PROFILE_TYPE     : %s\n", local_config_get_data("INIT_PROFILE_TYPE"));
+    MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n", local_config_get_data("RPLMN_ENABLE"));
+    MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
+    MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n", !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? "vUICC" : "eUICC");
+    MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n", local_config_get_data("MONITOR_LOG_LEVEL"));
+    MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n", local_config_get_data("AGENT_LOG_LEVEL"));
+    MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n", local_config_get_data("USAGE_ENABLE"));
+    MSG_PRINTF(LOG_INFO, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
+    MSG_PRINTF(LOG_INFO, "CARD_FLOW_SWITCH      : %s\n", local_config_get_data("CARD_FLOW_SWITCH"));
 }
 
 int32_t init_config(void *arg)

@@ -52,12 +52,13 @@ typedef struct LOG_PARAM {
 
 static const log_item_t g_log_item_table[] =
 {
-    {LOG_NONE,  "LOG_NONE",     "[NONE]",},
-    {LOG_ERR,   "LOG_ERR",      "[ERR ]",},
-    {LOG_WARN,  "LOG_WARN",     "[WARN]",},
-    {LOG_DBG,   "LOG_DBG",      "[DBG ]",},
-    {LOG_INFO,  "LOG_INFO",     "[INFO]",},
-    {LOG_ALL,   "LOG_ALL",      "[ALL ]",},
+    {LOG_NONE,    "LOG_NONE",     "[NONE ]",},
+    {LOG_ERR,     "LOG_ERR",      "[ERR  ]",},
+    {LOG_WARN,    "LOG_WARN",     "[WARN ]",},
+    {LOG_INFO,    "LOG_INFO",     "[INFO ]",},
+    {LOG_DBG,     "LOG_DBG",      "[DBG  ]",},
+    {LOG_TRACE,   "LOG_TRACE",    "[TRACE]",},
+    {LOG_ALL,     "LOG_ALL",      "[ALL  ]",},
 };
 
 static log_param_t g_log_param =

@@ -25,6 +25,7 @@
 #include "lpa_error_codes.h"
 #include "rt_os.h"
 #include "lpa_https.h"
+#include "tlv.h"
 
 static uint8_t g_buf[10*1024];
 static uint16_t g_buf_size;
@@ -363,12 +364,12 @@ static int get_status_codes(const char *in, char *sc, char *rc)
     p1 += 1;  // Skip "
     p2 = strstr(p1, "\"");  // Find the secoond " after :
     RT_CHECK_GO(p2, RT_ERR_HTTPS_SMDP_ERROR, end);
-    MSG_INFO("p1: %s\np2: %s\n", p1, p2);
+    MSG_DBG("p1: %s\np2: %s\n", p1, p2);
 
     // Now we get subjectCode, and p1 points to the start and p2 points to the end of the subjectCode
     memcpy(sc, p1, p2 - p1);
     sc[p2-p1] = '\0';
-    MSG_INFO("sc: %s\n", sc);
+    MSG_DBG("sc: %s\n", sc);
 
     p2 = strstr(p2, "\"reasonCode\""); // Find "reasonCode"
     RT_CHECK_GO(p2, RT_ERR_HTTPS_SMDP_ERROR, end);
@@ -380,12 +381,12 @@ static int get_status_codes(const char *in, char *sc, char *rc)
     p1 += 1;  // Skipp "
     p2 = strstr(p1, "\"");  // Find the secoond " after :
     RT_CHECK_GO(p2, RT_ERR_HTTPS_SMDP_ERROR, end);
-    MSG_INFO("p1: %s\np2: %s\n", p1, p2);
+    MSG_DBG("p1: %s\np2: %s\n", p1, p2);
 
     // Now we get subjectCode, and p1 points to the start and p2 points to the end of the reasonCode
     memcpy(rc, p1, p2 - p1);
     rc[p2-p1] = '\0';
-    MSG_INFO("rc: %s\n", rc);
+    MSG_DBG("rc: %s\n", rc);
 
     ret = 1;
 
@@ -539,7 +540,7 @@ static int get_asn1_from_json(cJSON *json, const char *key,
 
     b64_str = cJSON_GetObjectItem(json, key)->valuestring;
     RT_CHECK_GO(b64_str, RT_ERR_CJSON_ERROR, end);
-    MSG_INFO("%s: %s\n", key, b64_str);
+    MSG_DBG("%s: %s\n", key, b64_str);
 
     asn1 = malloc(strlen(b64_str));
     RT_CHECK_GO(asn1, RT_ERR_OUT_OF_MEMORY, end);
@@ -570,7 +571,7 @@ static int get_signature_from_json(cJSON *json, const char *key, void **req)
 
     b64_str = cJSON_GetObjectItem(json, key)->valuestring;
     RT_CHECK_GO(b64_str, RT_ERR_CJSON_ERROR, end);
-    MSG_INFO("%s: %s\n", key, b64_str);
+    MSG_DBG("%s: %s\n", key, b64_str);
 
     asn1 = malloc(strlen(b64_str));
     RT_CHECK_GO(asn1, RT_ERR_OUT_OF_MEMORY, end);
@@ -714,7 +715,7 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
-    MSG_INFO("transactionId: %s\n", g_transaction_id);
+    MSG_DBG("transactionId: %s\n", g_transaction_id);
 
     b64_len = ((in_size + 2) / 3) * 4 + 1;
     b64_in = malloc(b64_len);
@@ -722,7 +723,7 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("b64_in:\n%s\n", b64_in);
+    MSG_DBG("b64_in:\n%s\n", b64_in);
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
@@ -824,13 +825,13 @@ int get_bound_profile_package(const char *smdp_addr, const uint8_t *in, uint16_t
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
-    MSG_INFO("transactionId: %s\n", g_transaction_id);
+    MSG_DBG("transactionId: %s\n", g_transaction_id);
 
     b64_in = malloc(((in_size + 2) / 3) * 4 + 1);
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("b64_in[%d]:\n%s\n", strlen(b64_in), b64_in);
+    MSG_DBG("b64_in[%d]:\n%s\n", strlen(b64_in), b64_in);
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
@@ -927,7 +928,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     buf = strchr(get_cb_data(),0x88);
     p = get_cb_data();
     len = buf-get_cb_data();  // TODO: Make it general
-    MSG_INFO("len: %d\n", len);
+    MSG_DBG("len: %d\n", len);
     ret = cmd_store_data(p, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
@@ -1061,13 +1062,13 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     buf = strchr(get_cb_data(), 0x86);
     p = get_cb_data();
     len = buf-get_cb_data();  // TODO: Make it general
-    MSG_INFO("len: %d\n", len);
+    MSG_DBG("len: %d\n", len);
     ret = cmd_store_data(p, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     // Send sequenceOf86 Value
     cnt = bpp->sequenceOf86.list.count;
-    MSG_INFO("cnt: %d\n", cnt);
+    MSG_DBG("cnt: %d\n", cnt);
     for (i = 0; i < cnt; i++) {
         req = bpp->sequenceOf86.list.array[i];
         clean_cb_data();
@@ -1105,13 +1106,13 @@ int handle_notification(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
-    MSG_INFO("transactionId: %s\n", g_transaction_id);
+    MSG_DBG("transactionId: %s\n", g_transaction_id);
 
     b64_in = malloc(((in_size + 2) / 3) * 4 + 1);
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("b64_in:\n%s\n", b64_in);
+    MSG_DBG("b64_in:\n%s\n", b64_in);
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
@@ -1149,13 +1150,13 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
-    MSG_INFO("transactionId: %s\n", g_transaction_id);
+    MSG_DBG("transactionId: %s\n", g_transaction_id);
 
     b64_in = malloc(((in_size + 2) / 3) * 4 + 1);
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("b64_in:\n%s\n", b64_in);
+    MSG_DBG("b64_in:\n%s\n", b64_in);
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);

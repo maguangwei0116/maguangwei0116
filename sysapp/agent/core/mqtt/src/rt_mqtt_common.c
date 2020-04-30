@@ -174,7 +174,7 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
         rt_os_strcat(buf, "\r\n\r\n");
         rt_os_strcat(buf, json_data);
 
-        MSG_PRINTF(LOG_INFO, "send buf:%s\n", buf);
+        MSG_PRINTF(LOG_TRACE, "send buf:%s\n", buf);
         if (http_tcpclient_send(socket_fd, buf, rt_os_strlen(buf)) < 0) {      // send data
             ret = HTTP_SOCKET_SEND_ERROR;
             MSG_PRINTF(LOG_WARN, "http tcpclient send failed..\n");

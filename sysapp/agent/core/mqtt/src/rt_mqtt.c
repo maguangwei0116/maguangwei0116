@@ -321,7 +321,7 @@ static int32_t mqtt_subscribe_all(void)
         SET_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag);
         SET_IMEI_FLAG(g_mqtt_param.subscribe_flag);
         SET_AGENT_FLAG(g_mqtt_param.subscribe_flag);
-        MSG_PRINTF(LOG_WARN, "mqtt subcribe %s ok !\r\n", topic_list);
+        MSG_PRINTF(LOG_INFO, "mqtt subcribe %s ok !\r\n", topic_list);
     } else {
         CLR_EID_FLAG(g_mqtt_param.subscribe_flag);
         CLR_DEVICE_ID_FLAG(g_mqtt_param.subscribe_flag);
@@ -526,7 +526,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     opts->try_connect_timer = 0;
     param->alias_rc = 1;
 
-    MSG_PRINTF(LOG_WARN, "Connect mqtt server ok !\r\n");
+    MSG_PRINTF(LOG_INFO, "Connect mqtt server ok !\r\n");
 
     if (rt_os_strcmp(last_channel, opts->channel)) {
         MSG_PRINTF(LOG_DBG, "last mqtt channel changed: [%s] ==> [%s]\r\n", last_channel, opts->channel);

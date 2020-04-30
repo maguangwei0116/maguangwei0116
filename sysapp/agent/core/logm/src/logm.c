@@ -24,12 +24,13 @@ typedef struct LOG_LEVEL_ITEM {
 
 static log_item_t g_log_item_table[] =
 {
-    {LOG_NONE,      "NONE",},
-    {LOG_ERR,       "ERROR",},  // default
-    {LOG_WARN,      "WARN",},
-    {LOG_DBG,       "DEBUG",},
-    {LOG_INFO,      "INFO",},
-    {LOG_ALL,       "ALL",},
+    {LOG_NONE,       "NONE",},
+    {LOG_ERR,        "ERROR",},  // default
+    {LOG_WARN,       "WARN",},
+    {LOG_INFO,       "INFO",},
+    {LOG_DBG,        "DEBUG",},
+    {LOG_TRACE,      "TRACE",},
+    {LOG_ALL,        "ALL",},
 };
 
 #ifndef ARRAY_SIZE

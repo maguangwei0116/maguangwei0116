@@ -105,12 +105,12 @@ static qmi_client_error_type dms_get_msisdn_req(qmi_client_type dms_client, qmi_
 
 void dump_device_info(qmi_device_info_t *devinfo)
 {
-    MSG_PRINTF(LOG_WARN, "Manufacture  : %s\n", devinfo->device_manufacturer);
-    MSG_PRINTF(LOG_WARN, "Modem ID     : %s\n", devinfo->device_model_id);
-    MSG_PRINTF(LOG_WARN, "Revision ID  : %s\n", devinfo->boot_code_rev_valid ? devinfo->boot_code_rev : "N/A");
-    MSG_PRINTF(LOG_WARN, "IMEI         : %s\n", devinfo->imei_valid ? devinfo->imei : "N/A");
-    MSG_PRINTF(LOG_WARN, "Voice Number : %s\n", devinfo->mobile_id_number_valid ? devinfo->mobile_id_number : "N/A");
-    MSG_PRINTF(LOG_WARN, "IMSI         : %s\n", devinfo->imsi_valid ? devinfo->imsi : "N/A");
+    MSG_PRINTF(LOG_INFO, "Manufacture  : %s\n", devinfo->device_manufacturer);
+    MSG_PRINTF(LOG_INFO, "Modem ID     : %s\n", devinfo->device_model_id);
+    MSG_PRINTF(LOG_INFO, "Revision ID  : %s\n", devinfo->boot_code_rev_valid ? devinfo->boot_code_rev : "N/A");
+    MSG_PRINTF(LOG_INFO, "IMEI         : %s\n", devinfo->imei_valid ? devinfo->imei : "N/A");
+    MSG_PRINTF(LOG_INFO, "Voice Number : %s\n", devinfo->mobile_id_number_valid ? devinfo->mobile_id_number : "N/A");
+    MSG_PRINTF(LOG_INFO, "IMSI         : %s\n", devinfo->imsi_valid ? devinfo->imsi : "N/A");
 }
 
 int qmi_query_device_info(qmi_device_info_t *devinfo)
