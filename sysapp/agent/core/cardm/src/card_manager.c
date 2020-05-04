@@ -94,7 +94,7 @@ static int32_t card_update_eid(rt_bool init)
     int32_t ret = RT_ERROR;
     uint8_t eid[MAX_EID_HEX_LEN] = {0};
 
-    MSG_PRINTF(LOG_WARN, "card_update_eid()\n");
+    MSG_PRINTF(LOG_TRACE, "card_update_eid()\n");
     ret = lpa_get_eid(eid);
     if (!ret) {
         bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
@@ -131,7 +131,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
         if (i == g_p_info.num) {
             g_p_info.type = PROFILE_TYPE_TEST;
         }
-        MSG_PRINTF(LOG_WARN, "using iccid: %s, type: %d, profile num: %d\n",
+        MSG_PRINTF(LOG_INFO, "using iccid: %s, type: %d, profile num: %d\n",
                 g_p_info.iccid, g_p_info.type, g_p_info.num);
         if ((g_p_info.type == PROFILE_TYPE_TEST) ||
             (g_p_info.type == PROFILE_TYPE_PROVISONING)) {

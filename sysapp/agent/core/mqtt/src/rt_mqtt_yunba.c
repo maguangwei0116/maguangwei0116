@@ -36,7 +36,7 @@ static int32_t get_authkey_status(const char *json_data)
     int ret = 0;
     char buf[500];
     cJSON *root = NULL;
-    
+
     memset(buf, 0, sizeof(buf));
     memset(auth_key, 0, sizeof(auth_key)),
     memcpy(buf, json_data, strlen(json_data));
@@ -103,7 +103,7 @@ int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char
         snprintf(json_data, sizeof(json_data), "{\"a\": \"%s\", \"p\":4, \"d\": \"%s\"}", appkey, deviceid);
     }
     
-    ret = mqtt_http_post_json((const char *)json_data, reg_url->url, reg_url->port, 
+    ret = mqtt_http_post_json((const char *)json_data, reg_url->url, reg_url->port,
                 "/device/reg/", mqtt_yunba_ticket_server_cb);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "http post json yunba error, ret=%d\r\n", ret);
@@ -128,7 +128,7 @@ int MQTTClient_set_authkey(char *cid, char *appkey, char* authkey, int *ret_stat
     int ret = RT_ERROR;
     char json_data[1024];
 
-    snprintf(json_data, sizeof(json_data), 
+    snprintf(json_data, sizeof(json_data),
             "{\"cmd\":\"authkey_set\",\"cid\":\"%s\",\"appkey\":\"%s\",\"authkey\":\"%s\"}",
             cid, appkey, authkey);
 
@@ -176,7 +176,7 @@ rt_bool mqtt_connect_yunba(mqtt_param_t *param, const char *ticket_server)
             MSG_PRINTF(LOG_WARN, "mqtt_get_ip_pair error ticket_serverL:%s\n", ticket_server);
             return RT_FALSE;
         }
-        MSG_PRINTF(LOG_WARN, "ticket_server:%s, yunba addr:%s, port:%d\n", ticket_server, addr, port);
+        MSG_PRINTF(LOG_INFO, "ticket_server:%s, yunba addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
     /* connect yunba mqtt server with max 3 times */

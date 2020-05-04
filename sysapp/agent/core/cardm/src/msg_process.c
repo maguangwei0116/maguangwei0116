@@ -321,7 +321,7 @@ int32_t msg_set_apn(const char *iccid)
     char mcc_mnc[32] = {0};
 
     if (RT_SUCCESS == msg_get_op_apn_name(iccid, apn_name, mcc_mnc)) {
-        MSG_PRINTF(LOG_WARN, "iccid:%s, set apn_name:%s  mcc_mnc:%s\n", iccid, apn_name, mcc_mnc);
+        MSG_PRINTF(LOG_INFO, "iccid:%s, set apn_name:%s  mcc_mnc:%s\n", iccid, apn_name, mcc_mnc);
         rt_qmi_modify_profile(1, 0, 0, apn_name, mcc_mnc);
     }
 

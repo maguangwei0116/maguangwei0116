@@ -574,7 +574,7 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
     while (1) {
         switch (dsi_net_hndl->call_state) {
             case DSI_STATE_CALL_IDLE:
-                MSG_PRINTF(LOG_WARN, "Start dial up\r\n");
+                MSG_PRINTF(LOG_INFO, "Start dial up\r\n");
                 if (dial_up_check_register_state(CHK_REG_STATE_INTERVAL, MAX_CHK_REG_STATE_CNT) == RT_SUCCESS) {
                     dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTING);
                 } else {

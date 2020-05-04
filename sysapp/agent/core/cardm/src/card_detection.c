@@ -102,7 +102,7 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
 {
     if (PROFILE_TYPE_PROVISONING == *g_cur_profile_type || PROFILE_TYPE_TEST == *g_cur_profile_type) {
         if (*type != *g_cur_profile_type) { /* provisoning -> operational */
-            MSG_PRINTF(LOG_WARN, "provionsing iccid detected [%d] ==> [%d]\r\n", *type, *g_cur_profile_type);
+            MSG_PRINTF(LOG_INFO, "provionsing iccid detected [%d] ==> [%d]\r\n", *type, *g_cur_profile_type);
             *type = *g_cur_profile_type;
             return RT_SUCCESS;
         } else {
@@ -114,7 +114,7 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
 
     if (PROFILE_TYPE_OPERATIONAL == *g_cur_profile_type) {
         if ((rt_os_strcmp(iccid, g_cur_iccid)) || (*type != *g_cur_profile_type)) {
-            MSG_PRINTF(LOG_WARN, "iccid changed: (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_cur_iccid, *g_cur_profile_type);
+            MSG_PRINTF(LOG_INFO, "iccid changed: (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_cur_iccid, *g_cur_profile_type);
             snprintf(iccid, size, "%s", g_cur_iccid);
             *type = *g_cur_profile_type;
             return RT_SUCCESS;

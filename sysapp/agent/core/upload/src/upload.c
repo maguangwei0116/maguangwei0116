@@ -399,7 +399,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             cJSON *content = NULL;
             int32_t ret = RT_ERROR;
 
-            MSG_PRINTF(LOG_WARN, "------->%s\n", event);
+            MSG_PRINTF(LOG_INFO, "------->%s\n", event);
 
             content = obj->packer(private_arg);
             //MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);

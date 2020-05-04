@@ -19,7 +19,7 @@
 
 static cJSON *upload_on_enable_packer(void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "Upload on enable\n");
+    MSG_PRINTF(LOG_INFO, "Upload on enable\n");
 exit_entry:
     return (cJSON *)arg;
 }

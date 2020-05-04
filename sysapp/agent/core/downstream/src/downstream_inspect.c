@@ -37,7 +37,7 @@ static int32_t downstream_inpsect_parser(const void *in, char *tranId, void **ou
     }
     
     rt_os_strcpy(tranId, tran_id->valuestring);
-    MSG_PRINTF(LOG_WARN, "tranId: %s, %p, stelen=%d\n", tranId, tranId, rt_os_strlen(tran_id->valuestring));
+    MSG_PRINTF(LOG_TRACE, "tranId: %s, %p, stelen=%d\n", tranId, tranId, rt_os_strlen(tran_id->valuestring));
 
     ret = 0;
 
@@ -58,7 +58,7 @@ static int32_t downstream_inpsect_handler(const void *in, const char *event, voi
     (void)in;
     (void)event;
     *out = NULL;
-    MSG_PRINTF(LOG_WARN, "\n");
+    MSG_PRINTF(LOG_INFO, "\n");
 
 exit_entry:
 

@@ -24,7 +24,7 @@ static uint8_t g_iccid[THE_ICCID_LENGTH + 1] = {0};
 
 static cJSON *upload_push_ac_packer(void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "Upload push ac\n");
+    MSG_PRINTF(LOG_INFO, "Upload push ac\n");
 exit_entry:
     return (cJSON *)arg;
 }
@@ -242,7 +242,7 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
             cJSON_AddItemToObject(code_info, "code", cJSON_CreateNumber(code));
             cJSON_AddItemToObject(code_info, "iccid", cJSON_CreateString(iccid_t));
             cJSON_AddItemToArray(install_result, code_info);
-            MSG_PRINTF(LOG_WARN, "add %d, code:%d, iccid_t=%s\r\n", ii, code, iccid_t);
+            MSG_PRINTF(LOG_TRACE, "add %d, code:%d, iccid_t=%s\r\n", ii, code, iccid_t);
             if (code == RT_SUCCESS) {
                 //MSG_PRINTF(LOG_INFO, "111111 min_prio_value=%d, priority=%d\r\n", min_prio_value, priority);
                 if ((frist_download_ok == RT_TRUE) || (priority <= min_prio_value)) {

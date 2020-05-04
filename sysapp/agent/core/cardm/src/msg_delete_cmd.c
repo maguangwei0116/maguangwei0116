@@ -20,7 +20,7 @@
 
 static cJSON *upload_on_delete_packer(void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "Upload on delete\n");
+    MSG_PRINTF(LOG_INFO, "Upload on delete\n");
 exit_entry:
     return (cJSON *)arg;
 }
@@ -153,7 +153,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
             opr_iccid_using = RT_FALSE;
             code = msg_delete_profile(iccid->valuestring, &opr_iccid_using);
             if (opr_iccid_using && code == RT_SUCCESS) {
-                MSG_PRINTF(LOG_WARN, "delete using operational profile, start bootstrap ...\n");
+                MSG_PRINTF(LOG_TRACE, "delete using operational profile, start bootstrap ...\n");
                 bootstrap_flag = UPDATE_JUDGE_BOOTSTRAP;
             }
             if (RT_ERR_APDU_SEND_FAIL == code) {
@@ -167,7 +167,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 if (code == 1) {
                     code = RT_SUCCESS;
                     if (opr_iccid_using) {
-                        MSG_PRINTF(LOG_WARN, "delete using operational profile, start bootstrap ...\n");
+                        MSG_PRINTF(LOG_TRACE, "delete using operational profile, start bootstrap ...\n");
                         bootstrap_flag = UPDATE_JUDGE_BOOTSTRAP;
                     }
                 }

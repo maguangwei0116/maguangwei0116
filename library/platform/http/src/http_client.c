@@ -405,7 +405,7 @@ static int http_client_error_prase(http_client_struct_t *obj)
         rt_os_memcpy(length, pos + 16, length_char_len);
         length[length_char_len] = '\0';
         obj->file_length = msg_string_to_int((uint8_t *)length);
-        MSG_PRINTF(LOG_WARN, "Download file size:%d\n", obj->file_length);
+        MSG_PRINTF(LOG_INFO, "Download file size:%d\n", obj->file_length);
         obj->remain_length = obj->file_length;
     }
 

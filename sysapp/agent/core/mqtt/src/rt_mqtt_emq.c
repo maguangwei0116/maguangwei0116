@@ -94,7 +94,7 @@ rt_bool mqtt_connect_emq(mqtt_param_t *param, const char *emq_addr, const char *
             MSG_PRINTF(LOG_WARN, "mqtt_get_ip_pair error ticket_serverL:%s\n", ticket_server);
             return RT_FALSE;
         }
-        MSG_PRINTF(LOG_WARN, "ticket_server:%s, EMQ addr:%s, port:%d\n", ticket_server, addr, port);
+        MSG_PRINTF(LOG_INFO, "ticket_server:%s, EMQ addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
     /* connect EMQ mqtt server with max 3 times */
