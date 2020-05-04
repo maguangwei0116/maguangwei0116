@@ -358,7 +358,7 @@ int32_t msg_send_upload_queue(void *buffer, int32_t len)
     que_t.data_len  = len;
     que_t.data_buf  = (void *)rt_os_malloc(que_t.data_len + 1);
     rt_os_memcpy(que_t.data_buf, buffer, len);
-    //MSG_PRINTF(LOG_ERR, "que_t.data_buf: %p, buffer: %p, len: %d\n", que_t.data_buf, buffer, len);
+    //MSG_PRINTF(LOG_TRACE, "que_t.data_buf: %p, buffer: %p, len: %d\n", que_t.data_buf, buffer, len);
     *(((uint8_t *)que_t.data_buf) + len) = '\0';
     len = sizeof(upload_que_t) - sizeof(long);
     ret = rt_send_msg_queue(g_upload_queue_id, (const void *)&que_t, len, 0);

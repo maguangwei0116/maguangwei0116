@@ -219,18 +219,18 @@ void https_free(https_ctx_t *https_ctx)
         int status = system(cmd);
         MSG_PRINTF(LOG_TRACE, "cmd=%s\r\n", cmd);
         if (-1 == status) {
-            MSG_PRINTF(LOG_ERR, "system error!\r\n");
+            MSG_PRINTF(LOG_WARN, "system error!\r\n");
         } else {
-            MSG_PRINTF(LOG_INFO, "exit status value = [0x%x]\n", status);
+            MSG_PRINTF(LOG_DBG, "exit status value = [0x%x]\n", status);
             if (WIFEXITED(status)) {
                 if (0 == WEXITSTATUS(status)) {
                     MSG_PRINTF(LOG_INFO, "run shell script successfully.\n");
                     return 0;
                 } else {
-                    MSG_PRINTF(LOG_ERR, "run shell script fail, script exit code: %d\n", WEXITSTATUS(status));
+                    MSG_PRINTF(LOG_WARN, "run shell script fail, script exit code: %d\n", WEXITSTATUS(status));
                 }
             } else {
-                MSG_PRINTF(LOG_ERR, "exit status = [%d]\n", WEXITSTATUS(status));
+                MSG_PRINTF(LOG_WARN, "exit status = [%d]\n", WEXITSTATUS(status));
             }
         }
 

@@ -301,7 +301,7 @@ int32_t dial_up_reset(void)
     /* Pass on the EVENT to upper application */
     write(g_dsi_event_fd[0], &signo, sizeof(signo));
 
-    MSG_PRINTF(LOG_ERR, "force to create a local NO_NET event ...\r\n");
+    MSG_PRINTF(LOG_INFO, "force to create a local NO_NET event ...\r\n");
 }
 
 static rt_bool dial_up_get_regist_state(void)
