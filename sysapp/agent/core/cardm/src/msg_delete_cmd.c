@@ -71,7 +71,7 @@ static int32_t delete_parser(const void *in, char *tranid, void **out)
         }
         rt_os_memcpy(buf, payload->valuestring, len);
         buf[len] = '\0';
-        MSG_PRINTF(LOG_INFO, "payload:%s,len:%d\n", buf, len);
+        MSG_PRINTF(LOG_TRACE, "payload:%s,len:%d\n", buf, len);
         ret = RT_SUCCESS;
     } while(0);
 
@@ -111,7 +111,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         goto end;
     }
     do {
-        MSG_PRINTF(LOG_INFO, "payload:%s\n", (uint8_t *)in);
+        MSG_PRINTF(LOG_TRACE, "payload:%s\n", (uint8_t *)in);
         payload = cJSON_Parse((uint8_t *)in);
         if (!payload) {
             MSG_PRINTF(LOG_ERR, "Parse payload failed!!\n");

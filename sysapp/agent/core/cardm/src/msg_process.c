@@ -129,7 +129,7 @@ static int32_t msg_insert(uint8_t *iccid, uint8_t *buffer)
     if (num == RT_ERROR) {
         num = msg_get_free_block(buff);
     }
-    MSG_PRINTF(LOG_INFO, "Insert iccid %s apn data !\r\n", iccid);
+    MSG_PRINTF(LOG_TRACE, "Insert iccid %s apn data !\r\n", iccid);
     rt_write_data(APN_LIST, num * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE);
     return RT_SUCCESS;
 }
@@ -174,7 +174,7 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name, char *mcc_
     if (apn_list != NULL) {
         apn_num = cJSON_GetArraySize(apn_list);
         for (ii = 0; ii < apn_num; ii++) {
-            MSG_PRINTF(LOG_INFO, "apn index: %d/%d\r\n", ii+1, apn_num);
+            MSG_PRINTF(LOG_TRACE, "apn index: %d/%d\r\n", ii+1, apn_num);
             apn_item = cJSON_GetArrayItem(apn_list, ii);
             mcc_mnc = cJSON_GetObjectItem(apn_item, "mccmnc");
             if (mcc_mnc != NULL) {
@@ -355,7 +355,7 @@ int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid)
     rt_os_memset(buffer, 'F', MSG_ONE_BLOCK_SIZE);
     rt_os_memcpy(buffer, out, rt_os_strlen(out));
     buffer[sizeof(buffer) - 1] = '\0';
-    MSG_PRINTF(LOG_INFO, "iccid=%s, buffer=%s, rt_os_strlen(out)=%d\r\n", iccid, buffer, rt_os_strlen(out));
+    MSG_PRINTF(LOG_TRACE, "iccid=%s, buffer=%s, rt_os_strlen(out)=%d\r\n", iccid, buffer, rt_os_strlen(out));
     ret = msg_insert(iccid, buffer);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_WARN, "insert error\n");

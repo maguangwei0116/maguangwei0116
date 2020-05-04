@@ -66,7 +66,7 @@ static int32_t card_check_provisoning_conflict(rt_bool clear_flg)
         cur_time[i] = time(NULL);
     }
 
-    MSG_PRINTF(LOG_INFO, "cur_time: %ld, [%ld], %ld, [%ld], %ld\r\n", \
+    MSG_PRINTF(LOG_TRACE, "cur_time: %ld, [%ld], %ld, [%ld], %ld\r\n", \
         cur_time[0], cur_time[1] - cur_time[0], cur_time[1], cur_time[2] - cur_time[1], cur_time[2]);
     for (i = 0; i < (SUCCESSIVE_NO_NET_NUM - 1); i++) {
         if ((cur_time[i + 1] == 0) || (cur_time[i] == 0) || (cur_time[i + 1] - cur_time[i]) > SUCCESSIVE_NO_NET_TIME) {
