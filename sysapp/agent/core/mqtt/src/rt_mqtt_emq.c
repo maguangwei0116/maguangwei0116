@@ -13,7 +13,7 @@ static int32_t mqtt_emq_ticket_server_cb(const char *json_data)
     cJSON *root;
     mqtt_reg_info_t *reg_info  = mqtt_get_reg_info();
 
-    MSG_PRINTF(LOG_INFO, "buf:%s\n", json_data);    
+    MSG_PRINTF(LOG_TRACE, "buf:%s\n", json_data);
     root = cJSON_Parse(json_data);
     if(!root){
         return RT_ERROR;
@@ -21,7 +21,7 @@ static int32_t mqtt_emq_ticket_server_cb(const char *json_data)
     
     str = cJSON_Print(root);
     if (str) {
-        MSG_PRINTF(LOG_INFO, "%s\n", str);
+        MSG_PRINTF(LOG_TRACE, "%s\n", str);
         cJSON_free(str);
     }
     

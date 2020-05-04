@@ -72,7 +72,7 @@ static int32_t mqtt_get_broker_cb(const char *json_data)
     int32_t ret = RT_ERROR;
     cJSON *root;
    
-    MSG_PRINTF(LOG_INFO, "json_data: %s\n", json_data);
+    MSG_PRINTF(LOG_TRACE, "json_data: %s\n", json_data);
     root = cJSON_Parse(json_data);  
     
 #if 0  // only for test
@@ -111,7 +111,7 @@ int32_t MQTTClient_get_host(const char *node_name, char *url, const char *appkey
         snprintf(json_data, sizeof(json_data), "{\"nodeName\":\"%s\",\"appKey\":\"%s\"}", node_name, appkey);
     }
 
-    MSG_PRINTF(LOG_INFO, "json_data: %s\n", json_data);
+    MSG_PRINTF(LOG_TRACE, "json_data: %s\n", json_data);
 
 #if (CFG_UPLOAD_HTTPS_ENABLE)
     ret = mqtt_https_post_json((const char *)json_data, g_mqtt_reg_url.url, g_mqtt_reg_url.port, \
@@ -144,11 +144,11 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
             break;
         }
         
-        MSG_PRINTF(LOG_INFO, "json_data:%s\n",json_data);
+        MSG_PRINTF(LOG_TRACE, "json_data:%s\n",json_data);
         get_md5_string((const char *)json_data, md5_out);
         md5_out[MD5_STRING_LENGTH] = '\0';
 
-        MSG_PRINTF(LOG_INFO, "host_ip:%s, port:%d\r\n", host_ip, port);
+        MSG_PRINTF(LOG_TRACE, "host_ip:%s, port:%d\r\n", host_ip, port);
         socket_fd = http_tcpclient_create(host_ip, port);       // connect network
         if (socket_fd < 0) {
             ret = HTTP_SOCKET_CONNECT_ERROR;
@@ -209,7 +209,7 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
         #endif
         
             /* get http body */
-            MSG_PRINTF(LOG_INFO, "recv buff: %s\n", buf);
+            MSG_PRINTF(LOG_TRACE, "recv buff: %s\n", buf);
             p = rt_os_strstr(buf, "\r\n\r\n");
             if (p) {
                 p += 4;
@@ -231,7 +231,7 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
     } while(0);
 
     if(socket_fd > 0){
-        MSG_PRINTF(LOG_INFO, "close sock fd=%d\r\n", socket_fd);
+        MSG_PRINTF(LOG_TRACE, "close sock fd=%d\r\n", socket_fd);
         http_tcpclient_close(socket_fd);
     }
     

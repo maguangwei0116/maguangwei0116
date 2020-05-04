@@ -654,7 +654,7 @@ typedef struct CONFIG_ONLINE_PARAM {
     do {\
         const char *tmp_str_out = cJSON_PrintUnformatted(json);\
         if (tmp_str_out) {\
-            MSG_PRINTF(LOG_INFO, #json": %s\r\n", tmp_str_out);\
+            MSG_PRINTF(LOG_TRACE, #json": %s\r\n", tmp_str_out);\
             cJSON_free((void *)tmp_str_out);\
         }\
     } while(0)
@@ -705,7 +705,7 @@ static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
             } else if (item->type == CJSON_STR_TYPE) {
                 snprintf(value, sizeof(value), "%s", item->valuestring);
             }
-            MSG_PRINTF(LOG_INFO, "# %02d    %-25s : %s\r\n", i, item->string, value);
+            MSG_PRINTF(LOG_TRACE, "# %02d    %-25s : %s\r\n", i, item->string, value);
 
             for (j = 0; j < pair_num; j++) {
                 if (!rt_os_strcmp(items[j].key, key)) {
@@ -713,7 +713,7 @@ static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
                         snprintf((char *)items[j].value, sizeof(items[j].value), "%s", value);
                     } else {
                         /* data type unmatched, setup a invalid value */
-                            MSG_PRINTF(LOG_INFO, "[%s] data type unmatched !\r\n", key);
+                            MSG_PRINTF(LOG_WARN, "[%s] data type unmatched !\r\n", key);
                         if (items[j].type == CJSON_INT_TYPE) {
                             snprintf((char *)items[j].value, sizeof(items[j].value), "%s", "-1");
                         }

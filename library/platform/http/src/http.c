@@ -300,7 +300,7 @@ http_result_e http_post_raw(const char *host_ip, int32_t port, void *buffer, int
         }
         rt_os_memset(lpbuf, '0', BUFFER_SIZE * 4);
 
-        MSG_PRINTF(LOG_INFO, "host_ip:%s, port:%d\r\n", host_ip, port);
+        MSG_PRINTF(LOG_TRACE, "host_ip:%s, port:%d\r\n", host_ip, port);
         socket_fd = http_tcpclient_create(host_ip, port);       // connect network
         if (socket_fd < 0) {
             ret = HTTP_SOCKET_CONNECT_ERROR;

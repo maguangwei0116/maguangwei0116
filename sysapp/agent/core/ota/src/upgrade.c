@@ -149,7 +149,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 
         if (http_client_file_download(&dw_struct) == 0) {
             ret = RT_TRUE;
-            MSG_PRINTF(LOG_WARN, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_rt_file_size(dw_struct.file_path));
+            MSG_PRINTF(LOG_INFO, "Download file_path : %s, size:%d\r\n", (const int8_t *)dw_struct.file_path, linux_rt_file_size(dw_struct.file_path));
             break;
         }
         cnt++;
@@ -209,10 +209,10 @@ static rt_bool upgrade_check_package(upgrade_struct_t *d_info)
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
     bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
 
-    MSG_PRINTF(LOG_WARN, "download  hash_result: %s\r\n", hash_result);
-    MSG_PRINTF(LOG_WARN, "push file hash_result: %s\r\n", d_info->fileHash);
+    MSG_PRINTF(LOG_TRACE, "download  hash_result: %s\r\n", hash_result);
+    MSG_PRINTF(LOG_TRACE, "push file hash_result: %s\r\n", d_info->fileHash);
     RT_CHECK_NEQ(strncmp_case_insensitive((const char *)hash_result, (const char *)d_info->fileHash, MAX_FILE_HASH_LEN), RT_TRUE);
-    MSG_PRINTF(LOG_WARN, "file hash check ok !\r\n");
+    MSG_PRINTF(LOG_INFO, "file hash check ok !\r\n");
     ret = RT_TRUE;
 
 end:

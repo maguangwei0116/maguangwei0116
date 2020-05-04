@@ -210,11 +210,11 @@ static int32_t mqtt_client_pulish_msg(MQTTClient handle, int32_t qos, const char
     #if 1
     do {
         rc1 = MQTTClient_publishMessage(handle, topic, &pubmsg, &token);
-        MSG_PRINTF(LOG_INFO, "Waiting for up to %dS to publish (%d bytes): \r\n%s\r\n",
+        MSG_PRINTF(LOG_TRACE, "Waiting for up to %dS to publish (%d bytes): \r\n%s\r\n",
                 (int32_t)(MQTT_PUBLISH_TIMEOUT/1000), data_len, (const char *)data);
-        MSG_PRINTF(LOG_INFO, "on topic [%s] ClientID: [%s] rc1=%d, token=%lld\r\n", topic, g_mqtt_info.device_id, rc1, token);
+        MSG_PRINTF(LOG_TRACE, "on topic [%s] ClientID: [%s] rc1=%d, token=%lld\r\n", topic, g_mqtt_info.device_id, rc1, token);
         rc2 = MQTTClient_waitForCompletion(handle, token, MQTT_PUBLISH_TIMEOUT);
-        MSG_PRINTF(LOG_INFO, "Message with delivery token %lld delivered, rc2=%d\n", token, rc2);
+        MSG_PRINTF(LOG_TRACE, "Message with delivery token %lld delivered, rc2=%d\n", token, rc2);
         if (rc1 != 0 || rc2 != 0) {
             MSG_PRINTF(LOG_WARN, "MQTT publish msg fail !\r\n");
             rc1 = RT_ERROR;
@@ -426,7 +426,7 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
 
 static rt_bool mqtt_disconnect(MQTTClient* client, int32_t *wait_cnt)
 {
-    MSG_PRINTF(LOG_DBG, "MQTTClient disconnect\n");
+    MSG_PRINTF(LOG_WARN, "MQTTClient disconnect\n");
     MQTTClient_disconnect(*client, 0);
     g_mqtt_param.mqtt_flag      = RT_FALSE;
     g_mqtt_param.mqtt_conn_state= RT_FALSE;
@@ -486,7 +486,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     ret = MQTTClient_setCallbacks(*c, NULL,(MQTTClient_connectionLost *)mqtt_connection_lost,
                                  (MQTTClient_messageArrived *)mqtt_msg_arrived, NULL,
                                  (MQTTClient_extendedCmdArrive *)mqtt_ext_msg_arrived);
-    MSG_PRINTF(LOG_INFO, "MQTTClient_setCallbacks %d\n", ret);
+    MSG_PRINTF(LOG_TRACE, "MQTTClient_setCallbacks %d\n", ret);
 
     pconn_opts->username = (const char *)opts->username;
     pconn_opts->password = (const char *)opts->password;

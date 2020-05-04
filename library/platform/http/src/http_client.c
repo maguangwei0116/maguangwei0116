@@ -48,7 +48,7 @@ static int http_client_upload_init(http_client_struct_t *obj)
     obj->process_length = 0;
     MSG_PRINTF(LOG_TRACE, "upload file_name:%s,file_size:%d\n", obj->file_path, obj->file_length);
 
-    RT_CHECK_ERR(obj->fp = linux_rt_fopen(obj->file_path, "r"), NULL);  // 打开文件
+    RT_CHECK_ERR(obj->fp = linux_rt_fopen(obj->file_path, "r"), NULL);  // 麓貌驴陋脦脛录镁
     RT_CHECK_ERR(obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN), NULL);
 
     /* connect server */
@@ -217,7 +217,7 @@ static int http_client_send_header(http_client_struct_t *obj)
     }
     rt_os_strcat(obj->buf, "\r\n");
 
-    MSG_PRINTF(LOG_INFO, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
+    MSG_PRINTF(LOG_TRACE, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
     obj->process_set = rt_os_strlen(obj->buf);
 
     return http_client_send(obj);
@@ -307,7 +307,7 @@ static int http_client_get_resp_header(http_client_struct_t *obj)
             }
         } else {
             obj->buf[obj->process_length] = '\0';
-            MSG_PRINTF(LOG_INFO,"recv http header ok, flag:%d, buf:%s\n", flag, obj->buf);
+            MSG_PRINTF(LOG_TRACE,"recv http header ok, flag:%d, buf:%s\n", flag, obj->buf);
             return 0;
         }
         //MSG_PRINTF(LOG_INFO,"->>> flag:%d, char:%c\n", flag, obj->buf[obj->process_length]);
@@ -383,7 +383,7 @@ static int http_client_error_prase(http_client_struct_t *obj)
 
     RT_CHECK_ERR(obj, NULL);
 
-    MSG_PRINTF(LOG_INFO, "respond header:\n%s\n", obj->buf);
+    MSG_PRINTF(LOG_TRACE, "respond header:\n%s\n", obj->buf);
     rt_os_memset(length, 0, sizeof(length));
 
     RT_CHECK_ERR(pos = rt_os_strstr((const char *)obj->buf, (const char *)"HTTP/"), NULL);
@@ -405,7 +405,7 @@ static int http_client_error_prase(http_client_struct_t *obj)
         rt_os_memcpy(length, pos + 16, length_char_len);
         length[length_char_len] = '\0';
         obj->file_length = msg_string_to_int((uint8_t *)length);
-        MSG_PRINTF(LOG_INFO, "Download file size:%d\n", obj->file_length);
+        MSG_PRINTF(LOG_TRACE, "Download file size:%d\n", obj->file_length);
         obj->remain_length = obj->file_length;
     }
 
@@ -480,6 +480,6 @@ int http_client_file_upload(http_client_struct_t *up_state)
 
     ret = RT_SUCCESS;
 end:
-    http_client_release(up_state);  // 释放结构
+    http_client_release(up_state);  // 脢脥路脜陆谩鹿鹿
     return ret;
 }

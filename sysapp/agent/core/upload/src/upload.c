@@ -98,7 +98,7 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
 
     //send report by http
     snprintf(upload_url, sizeof(upload_url), "http://%s:%d%s", g_upload_addr, g_upload_port, g_upload_api);
-    MSG_PRINTF(LOG_INFO, "upload_url: %s\r\n", upload_url);
+    MSG_PRINTF(LOG_TRACE, "upload_url: %s\r\n", upload_url);
     if (http_parse_url(upload_url, host_addr, file, &port)) {
         MSG_PRINTF(LOG_WARN, "http_parse_url failed!\n");
         ret = HTTP_PARAMETER_ERROR;

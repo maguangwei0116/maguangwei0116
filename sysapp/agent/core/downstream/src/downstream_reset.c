@@ -37,7 +37,7 @@ static int32_t downstream_reset_parser(const void *in, char *tranId, void **out)
     }
     
     rt_os_strcpy(tranId, tran_id->valuestring);
-    MSG_PRINTF(LOG_WARN, "tranId: %s, %p, stelen=%d\n", tranId, tranId, rt_os_strlen(tran_id->valuestring));
+    MSG_PRINTF(LOG_TRACE, "tranId: %s, %p, stelen=%d\n", tranId, tranId, rt_os_strlen(tran_id->valuestring));
 
     ret = RT_SUCCESS;
 

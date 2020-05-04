@@ -182,7 +182,7 @@ static int32_t ota_upgrade_task_deal(const char *ota_task_file)
     OTA_CHK_PINTER_NULL(task.param_len, -2);
 
     MSG_PRINTF(LOG_INFO, "OTA remain task list          : \r\n");       
-    MSG_PRINTF(LOG_WARN, "ota task, len=%d, tmp-file: %s, event: %s\r\n", task.param_len, task.tmp_file, task.event); 
+    MSG_PRINTF(LOG_TRACE, "ota task, len=%d, tmp-file: %s, event: %s\r\n", task.param_len, task.tmp_file, task.event);
 
     param = (ota_upgrade_param_t *)rt_os_malloc(sizeof(ota_upgrade_param_t));
     OTA_CHK_PINTER_NULL(param, -3);
@@ -403,7 +403,7 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
                 bootstrap_get_profile_name(share_profile, sizeof(share_profile));
                 snprintf(targetFileName, len, "%s", share_profile);
                 *type_matched = RT_TRUE;
-                MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);                
+                MSG_PRINTF(LOG_INFO, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
                 return RT_TRUE;   
             }
         }
@@ -430,7 +430,7 @@ static rt_bool ota_upgrade_get_target_file_name(const ota_upgrade_param_t *param
         
         if (rt_os_strstr(fileName, p)) {
             snprintf(targetFileName, len, g_target_files[i]);
-            MSG_PRINTF(LOG_WARN, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
+            MSG_PRINTF(LOG_TRACE, "Find target file name: [%s] => [%s]\r\n", fileName, targetFileName);
             if (i != param->target.type) {
                 MSG_PRINTF(LOG_WARN, "type unmatched: [%d] => [%d]\r\n", i, param->target.type);
                 *type_matched = RT_FALSE;
@@ -513,7 +513,7 @@ static rt_bool ota_policy_compare_version(const char *old_in, const char *new_in
         new_batch_code = rt_os_strchr(new_in, '#');
 
         if (old_batch_code && new_batch_code && rt_os_strcmp(old_batch_code+1, new_batch_code+1)) {
-            MSG_PRINTF(LOG_WARN, "share profile batch code update [%s] => [%s]\r\n", old_batch_code+1, new_batch_code+1);
+            MSG_PRINTF(LOG_INFO, "share profile batch code update [%s] => [%s]\r\n", old_batch_code+1, new_batch_code+1);
             return RT_TRUE;
         }
     }
@@ -574,7 +574,7 @@ static int32_t ota_policy_check(const ota_upgrade_param_t *param, upgrade_struct
     }
 
     if (policy_forced == UPGRADE_MODE_FORCED) {
-        MSG_PRINTF(LOG_WARN, "forced to upgrade\r\n");   
+        MSG_PRINTF(LOG_INFO, "forced to upgrade\r\n");
     } else {
         if (policy_forced == UPGRADE_MODE_CHK_FILE_NAME) {
             if (rt_os_strcmp(param->target.name, g_upload_ver_info->versions[param->target.type].name)) {
@@ -695,7 +695,7 @@ static rt_bool ota_file_check(const void *arg)
 #ifdef CFG_STANDARD_MODULE
         if (!rt_os_strcmp(OTA_UPGRADE_OEMAPP_UBI, real_file_name)) {
             upgrade->ubi = RT_TRUE;
-            MSG_PRINTF(LOG_WARN, "oemapp ubi detected !!!\r\n");
+            MSG_PRINTF(LOG_INFO, "oemapp ubi detected !!!\r\n");
             return RT_TRUE;
         }
 #endif        
@@ -721,7 +721,7 @@ static rt_bool ota_file_install(const void *arg)
         char tmp_abs_file[128];
 
         linux_delete_file(OTA_UPGRADE_USR_AGENT);  // must delete agent to create a new one !!!
-        MSG_PRINTF(LOG_WARN, "goning to upgrade oemapp ubi file !!!\r\n");
+        MSG_PRINTF(LOG_TRACE, "goning to upgrade oemapp ubi file !!!\r\n");
         linux_rt_file_abs_path(upgrade->tmpFileName, tmp_abs_file, sizeof(tmp_abs_file));
         ret = ubi_update(tmp_abs_file);
         MSG_PRINTF(LOG_ERR, "%s upgrade %s !!!\r\n", tmp_abs_file, !ret ? "OK" : "FAIL");
@@ -794,10 +794,10 @@ static rt_bool ota_on_upload_event(const void *arg)
 /* make ota downloaded file take active */
 static rt_bool ota_file_activate_agent_so_profile(const void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
+    MSG_PRINTF(LOG_INFO, "sleep %d seconds to restart app !\r\n", MAX_RESTART_WAIT_TIMEOUT);
     rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
     rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
-    MSG_PRINTF(LOG_WARN, "Current app restart to run new app ...\r\n");        
+    MSG_PRINTF(LOG_INFO, "Current app restart to run new app ...\r\n");
     // rt_os_exit(RT_ERROR); 
     ipc_restart_monitor(10);
     return RT_TRUE;
@@ -805,10 +805,10 @@ static rt_bool ota_file_activate_agent_so_profile(const void *arg)
 
 static rt_bool ota_file_activate_monitor(const void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart monitor !\r\n", MAX_RESTART_WAIT_TIMEOUT);
+    MSG_PRINTF(LOG_INFO, "sleep %d seconds to restart monitor !\r\n", MAX_RESTART_WAIT_TIMEOUT);
     ipc_restart_monitor(MAX_RESTART_WAIT_TIMEOUT);
     rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT * 2);
-    MSG_PRINTF(LOG_WARN, "Current app restart to run new monitor ...\r\n");
+    MSG_PRINTF(LOG_INFO, "Current app restart to run new monitor ...\r\n");
 
     return RT_TRUE;
 }
@@ -819,9 +819,9 @@ static rt_bool ota_file_activate_oemapp(const void *arg)
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
 
     if (upgrade && upgrade->ubi) {  
-        MSG_PRINTF(LOG_WARN, "sleep %d seconds to restart terminal !\r\n", MAX_RESTART_WAIT_TIMEOUT);   
+        MSG_PRINTF(LOG_INFO, "sleep %d seconds to restart terminal !\r\n", MAX_RESTART_WAIT_TIMEOUT);
         rt_os_sleep(MAX_RESTART_WAIT_TIMEOUT);
-        MSG_PRINTF(LOG_WARN, "Current terminal restart to active ubi file ...\r\n");        
+        MSG_PRINTF(LOG_INFO, "Current terminal restart to active ubi file ...\r\n");
         rt_os_reboot();
         return RT_TRUE;
     }

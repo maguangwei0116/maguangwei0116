@@ -152,7 +152,7 @@ static int32_t init_versions(void *arg)
     static target_versions_t g_target_versions = {0};
 
     libcomm_get_version(libcomm_ver, sizeof(libcomm_ver));
-    MSG_PRINTF(LOG_WARN, "%s\n", libcomm_ver);
+    MSG_PRINTF(LOG_INFO, "%s\n", libcomm_ver);
 
     ((public_value_list_t *)arg)->version_info = &g_target_versions;
 
