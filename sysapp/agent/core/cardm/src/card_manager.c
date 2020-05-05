@@ -398,9 +398,14 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
 
     if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
-        ret = card_key_data_init();
-        if (ret) {
-            MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
+        MSG_PRINTF(LOG_DBG, "((public_value_list_t *)arg)->profile_damaged is %d\r\n", *(((public_value_list_t *)arg)->profile_damaged));
+        if (*(((public_value_list_t *)arg)->profile_damaged) == 0) {
+            ret = card_key_data_init();
+            if (ret) {
+                MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
+            }
+        } else {
+            ;
         }
     }
 
