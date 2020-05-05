@@ -491,6 +491,13 @@ void https_free(https_ctx_t *https_ctx)
 
     int32_t mqtt_https_post_json(const char *json_data, const char *host_ip, uint16_t port, const char *path, PCALLBACK cb)
     {
+#if (CFG_ENV_TYPE_PROD)
+    host_ip = "oti.redtea.io";
+    port = 443;
+#else
+    host_ip = "oti-staging.redtea.io";
+    port = 443;
+#endif
         int32_t ret = RT_ERROR;
         int32_t socket_fd = RT_ERROR;
         char md5_out[32+1];

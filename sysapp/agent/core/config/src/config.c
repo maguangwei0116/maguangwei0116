@@ -22,11 +22,7 @@
 #define ARRAY_SIZE(a)                       (sizeof((a)) / sizeof((a)[0]))
 #endif
 
-#if (CFG_UPLOAD_HTTPS_ENABLE)
-    #define RT_OTI_SERVER_PORT                  443
-#else
-    #define RT_OTI_SERVER_PORT                  7082
-#endif
+#define RT_OTI_SERVER_PORT                  7082
 
 
 #define M_BYTES                             (1024 * 1024)
@@ -158,19 +154,11 @@ static config_item_t g_config_items[] =
 {
 /*     item_name            config_func                 data_type   default_value           annotation          */
 #if (CFG_ENV_TYPE_PROD)
-#if (CFG_UPLOAD_HTTPS_ENABLE)
-    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "oti.redtea.io",                "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
-#else
-    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "52.220.34.227",                "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-#endif
+ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                       STRING,     "52.220.34.227",                "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
 ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "18.136.190.97",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
 ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp.redtea.io",               "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
 #else
-#if (CFG_UPLOAD_HTTPS_ENABLE)
-    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "oti-staging.redtea.io",        "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
-#else
-    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "54.222.248.186",               "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-#endif
+ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                       STRING,     "54.222.248.186",               "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
 ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "13.229.31.234",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
 ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp-test.redtea.io",          "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
 #endif

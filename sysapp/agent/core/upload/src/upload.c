@@ -40,7 +40,7 @@ static int32_t upload_http_post_single(const char *host_addr, int32_t port, sock
 {
     MSG_PRINTF(LOG_DBG, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
     #if (CFG_UPLOAD_HTTPS_ENABLE)
-        return https_post_raw(g_upload_addr, g_upload_api, buffer, NULL, NULL, cb);
+        return https_post_raw(UPLOAD_URL, UPLOAD_API, buffer, NULL, NULL, cb);
     #else
         return http_post_raw(host_addr, port, buffer, len, cb);
     #endif
