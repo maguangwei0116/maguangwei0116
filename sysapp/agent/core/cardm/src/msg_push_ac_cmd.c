@@ -226,7 +226,7 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
             MSG_PRINTF(LOG_ERR, "Parse acInfos failed!!\n");
             break;
         }
-        MSG_PRINTF(LOG_INFO, "to_enable:%d\r\n", to_enable->valueint);
+        MSG_PRINTF(LOG_DBG, "to_enable:%d\r\n", to_enable->valueint);
         item = cJSON_GetArraySize(ac_infos);
 
         card_get_avariable_profile_num(&avariable_num);

@@ -479,7 +479,7 @@ int32_t card_get_avariable_profile_num(int32_t *avariable_num)
 {
     if (avariable_num) {
         *avariable_num = THE_MAX_CARD_NUM - g_p_info.num;
-        MSG_PRINTF(LOG_INFO, "profile num: %d - %d = %d\r\n", THE_MAX_CARD_NUM, g_p_info.num, *avariable_num);
+        MSG_PRINTF(LOG_DBG, "profile num: %d - %d = %d\r\n", THE_MAX_CARD_NUM, g_p_info.num, *avariable_num);
         return RT_SUCCESS;
     }
 

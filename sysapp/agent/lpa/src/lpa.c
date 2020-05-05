@@ -356,7 +356,7 @@ static int check_ac(const char *ac, uint16_t *smdp_addr_start, uint16_t *smdp_ad
     }
     // p1++;
 
-    MSG_INFO("ac: %p, p1: %p, p2: %p\n", ac, p1, p2);
+    MSG_DBG("ac: %p, p1: %p, p2: %p\n", ac, p1, p2);
     *smdp_addr_start = p1 - ac;             // SM-DP+ Address, M
     p2 = strstr(p1, "$");                   // Delimiter 2, M
     if (p2 == NULL) {
@@ -365,7 +365,7 @@ static int check_ac(const char *ac, uint16_t *smdp_addr_start, uint16_t *smdp_ad
     *smdp_addr_len = p2 - p1;
     p2++;
 
-    MSG_INFO("ac: %p, p1: %p, p2: %p\n", ac, p1, p2);
+    MSG_DBG("ac: %p, p1: %p, p2: %p\n", ac, p1, p2);
     *matching_id_start = p2 - ac;           // AC_token, M
     p1 = strstr(p2, "$");                   // Delimiter 3, M
     if (p1 == NULL) {
@@ -375,14 +375,14 @@ static int check_ac(const char *ac, uint16_t *smdp_addr_start, uint16_t *smdp_ad
     *matching_id_len = p1 - p2;
     p1++;                                   // SM-DP OID, O
 
-    MSG_INFO("ac: %p, p1: %p, p2: %p\n", ac, p1, p2);
+    MSG_DBG("ac: %p, p1: %p, p2: %p\n", ac, p1, p2);
     p2 = strstr(p1, "$");                   // Delimiter 4, C
     if (p2 == NULL) {
         return RT_SUCCESS;
     }
     p2++;                                   // Confirmation Code Required Flag, O
 
-    MSG_INFO("ac: %p, p1: %p, p2: %p\n", ac, p1, p2);
+    MSG_DBG("ac: %p, p1: %p, p2: %p\n", ac, p1, p2);
     if (*p2 != '1') {
         return RT_SUCCESS;
     }
@@ -465,22 +465,22 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     memset(buf1,0x00,BUFFER_SIZE);
     memset(buf2,0x00,BUFFER_SIZE);
     lpa_https_set_url(server_url);
-    MSG_INFO("AC:%s\n", ac);
+    MSG_DBG("AC:%s\n", ac);
     RT_CHECK(check_ac(ac, &smdp_addr_start, &smdp_addr_len, &matching_id_start, &matching_id_len, &need_cc));
 
-    MSG_INFO("smdp_addr_len: %d\n", smdp_addr_len);
+    MSG_DBG("smdp_addr_len: %d\n", smdp_addr_len);
     smdp_addr = calloc(1, smdp_addr_len + 1);
     RT_CHECK_GO(smdp_addr, RT_ERR_OUT_OF_MEMORY, end);
     memcpy(smdp_addr, ac+smdp_addr_start, smdp_addr_len);
 
-    MSG_INFO("matching_id_len: %d\n", matching_id_len);
+    MSG_DBG("matching_id_len: %d\n", matching_id_len);
     mid = calloc(1, matching_id_len + 1);
     RT_CHECK_GO(mid, RT_ERR_OUT_OF_MEMORY, end);
     memcpy(mid, ac+matching_id_start, matching_id_len);
     mid[matching_id_len + 1] = '\0';
-    MSG_INFO("AC_token:     %s\n", mid);
-    MSG_INFO("SMDP_ADDRESS: %s\n", smdp_addr);
-    MSG_INFO("Need CC:      %s\n", need_cc ? "Yes" : "No");
+    MSG_DBG("AC_token:     %s\n", mid);
+    MSG_DBG("SMDP_ADDRESS: %s\n", smdp_addr);
+    MSG_DBG("Need CC:      %s\n", need_cc ? "Yes" : "No");
     if (need_cc) {
         RT_CHECK_GO(cc, RT_ERR_NEED_CONFIRMATION_CODE, end);
     } else {
@@ -518,7 +518,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     buf1_len = BUFFER_SIZE;
     ret = get_bound_profile_package(smdp_addr, buf2, buf2_len, buf1, &buf1_len);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("get_bound_profile_package response:\n%s\n", buf1);
+    MSG_DBG("get_bound_profile_package response:\n%s\n", buf1);
 
     buf2_len = BUFFER_SIZE;
     ret = load_bound_profile_package(smdp_addr, buf1, buf2, &buf2_len, channel);
@@ -528,7 +528,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     ret = process_bpp_rsp(buf2, buf2_len, iccid, &bppcid, &error);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
-    MSG_INFO("iccid: %s, bppcid: %d, error: %d\n", iccid, bppcid, error);
+    MSG_DBG("iccid: %s, bppcid: %d, error: %d\n", iccid, bppcid, error);
     if ((bppcid != 0) || (error != 0) ){
         ret = (((uint16_t)bppcid) << 8) + error;
     }
