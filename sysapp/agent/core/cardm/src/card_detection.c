@@ -106,7 +106,7 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
             *type = *g_cur_profile_type;
             return RT_SUCCESS;
         } else {
-            MSG_PRINTF(LOG_INFO, "provionsing iccid detected ...\r\n");
+            MSG_PRINTF(LOG_WARN, "provionsing iccid detected ...\r\n");
             *type = *g_cur_profile_type;
             return RT_ERROR;
         }

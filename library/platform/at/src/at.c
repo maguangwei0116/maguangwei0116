@@ -69,12 +69,12 @@ int32_t at_send_recv(const char *cmd, char *rsp, int32_t rsp_len, int32_t timeou
 
         switch (select(fd+1, &fds, NULL, NULL, &timeout)) {
             case -1:
-                MSG_PRINTF(LOG_DBG, "Select error\n");
+                MSG_PRINTF(LOG_WARN, "Select error\n");
                 ret = RT_ERROR;
                 goto exit;
 
             case 0:
-                MSG_PRINTF(LOG_DBG, "Time out\n");
+                MSG_PRINTF(LOG_WARN, "Time out\n");
                 ret = RT_ERROR;
                 goto exit;
 
@@ -92,13 +92,13 @@ int32_t at_send_recv(const char *cmd, char *rsp, int32_t rsp_len, int32_t timeou
                         len += recv_len;
                         continue;
                     } else {
-                        MSG_PRINTF(LOG_DBG, "Read at rsp fail\n");
+                        MSG_PRINTF(LOG_WARN, "Read at rsp fail\n");
                         ret = RT_ERROR;
                         goto exit;
                     }
                     
                 } else {
-                    MSG_PRINTF(LOG_DBG, "FD is missed\n");
+                    MSG_PRINTF(LOG_WARN, "FD is missed\n");
                 }
                 break;
         }
@@ -149,7 +149,7 @@ int32_t init_at(void *arg)
             }
         }
         if (i == cnt) {
-            MSG_PRINTF(LOG_DBG, "find AT Port fail\n");
+            MSG_PRINTF(LOG_WARN, "find AT Port fail\n");
             ret = RT_ERROR;
         }
     } else {

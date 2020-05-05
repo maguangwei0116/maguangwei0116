@@ -91,7 +91,7 @@ typedef struct OTA_UPGRADE_PARAM {
     do {\
         const char *tmp_str_out = cJSON_PrintUnformatted(json);\
         if (tmp_str_out) {\
-            MSG_PRINTF(LOG_INFO, #json": %s\r\n", tmp_str_out);\
+            MSG_PRINTF(LOG_TRACE, #json": %s\r\n", tmp_str_out);\
             cJSON_free((void *)tmp_str_out);\
         }\
     } while(0)

@@ -19,7 +19,7 @@
 
 static cJSON *upload_on_network_packer(void *arg)
 {
-    MSG_PRINTF(LOG_DBG, "Upload on network\n");
+    MSG_PRINTF(LOG_INFO, "Upload on network\n");
     
 exit_entry:
     return (cJSON *)arg;
@@ -71,7 +71,7 @@ static int32_t network_parser(const void *in, char *tranid, void **out)
         }
         rt_os_memcpy(buf, payload->valuestring, len);
         buf[len] = '\0';
-        MSG_PRINTF(LOG_INFO, "payload:%s,len:%d\n", buf, len);
+        MSG_PRINTF(LOG_TRACE, "payload:%s,len:%d\n", buf, len);
         ret = RT_SUCCESS;
     } while(0);
     
@@ -93,7 +93,7 @@ static int32_t network_handler(const void *in, const char *event, void **out)
 
     num = shell_cmd(cmd, buf, sizeof(buf));
     buf[num] = '\0';
-    MSG_PRINTF(LOG_INFO, "num:%d, buf:%s\n", num, buf);
+    MSG_PRINTF(LOG_TRACE, "num:%d, buf:%s\n", num, buf);
 
     content = cJSON_CreateObject();
     if (!content) {

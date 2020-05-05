@@ -67,7 +67,7 @@ int32_t ipc_socket_server(void)
         goto end;
     }
 
-    MSG_PRINTF(LOG_INFO, "monitor server socket_id:%d\r\n", socket_id);
+    MSG_PRINTF(LOG_TRACE, "monitor server socket_id:%d\r\n", socket_id);
 
     g_ipc_server_ok = RT_TRUE;
 

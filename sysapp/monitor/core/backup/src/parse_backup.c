@@ -116,11 +116,11 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     MSG_INFO_ARRAY("g_buf: ", g_buf, g_buf_size);
     /******************************************************************************/
     ret = rt_open_channel(&channel);
-    MSG_PRINTF(LOG_INFO, "rt_open_channel ret is : %d \n", ret);
+    MSG_PRINTF(LOG_TRACE, "rt_open_channel ret is : %d \n", ret);
     ret = cmd_store_data(g_buf, g_buf_size, rsp_buf, &rsp_len, channel);
-    MSG_PRINTF(LOG_INFO, "root_aes_key_apdu cmd_store_data ret is : %d \n", ret);
+    MSG_PRINTF(LOG_TRACE, "root_aes_key_apdu cmd_store_data ret is : %d \n", ret);
     ret = rt_close_channel(channel);
-    MSG_PRINTF(LOG_INFO, "rt_close_channel ret is : %d \n", ret);
+    MSG_PRINTF(LOG_TRACE, "rt_close_channel ret is : %d \n", ret);
     rt_os_free(g_buf);
     g_buf = NULL;
     /******************************************************************************/
@@ -133,8 +133,8 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
         ret = RT_ERROR;
         goto end;
     }
-    MSG_PRINTF(LOG_INFO, "present: %d\n", rsp->present);
-    MSG_PRINTF(LOG_INFO, "count: %d\n", rsp->choice.profileInfoListOk.list.count);
+    MSG_PRINTF(LOG_TRACE, "present: %d\n", rsp->present);
+    MSG_PRINTF(LOG_TRACE, "count: %d\n", rsp->choice.profileInfoListOk.list.count);
 
     if (rsp->present != ProfileInfoListResponse_PR_profileInfoListOk) {
         ret = RT_ERROR;

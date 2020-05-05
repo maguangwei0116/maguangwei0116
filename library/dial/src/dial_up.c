@@ -493,18 +493,18 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                     switch (signo) {
                         /* redtea force DSI NO_NET */
                         case RT_FORCE_DSI_EVT_NET_NO_NET:
-                            MSG_PRINTF(LOG_DBG, "RT_FORCE_DSI_EVT_NET_NO_NET\n");
+                            MSG_PRINTF(LOG_INFO, "RT_FORCE_DSI_EVT_NET_NO_NET\n");
                             exit_flag = RT_TRUE;
                             *state = LOCAL_DIAL_UP_NO_NET;
                             break;
                             
                         /* Data call is disconnected */
                         case DSI_EVT_NET_NO_NET:
-                            MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NO_NET\n");
+                            MSG_PRINTF(LOG_INFO, "DSI_EVT_NET_NO_NET\n");
                             exit_flag = RT_TRUE;
                             *state = LOCAL_DIAL_UP_NO_NET;
                             if (dsi_get_call_end_reason(dsi_net_hndl->handle, &dsicallend, dsi_net_hndl->ip_type) == DSI_SUCCESS) {
-                                MSG_PRINTF(LOG_DBG, "dsi_get_call_end_reason handle reason type=%d, reason code=%d\n",
+                                MSG_PRINTF(LOG_INFO, "dsi_get_call_end_reason handle reason type=%d, reason code=%d\n",
                                     dsicallend.reason_type, dsicallend.reason_code);
                             }                            
                         break;
@@ -512,11 +512,11 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                         /* WDS connected */
                         case DSI_EVT_WDS_CONNECTED:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
-                                MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V4\n");
+                                MSG_PRINTF(LOG_INFO, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V4\n");
                             } else if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V6){
-                                MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V6\n");
+                                MSG_PRINTF(LOG_INFO, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V6\n");
                             } else {
-                                MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
+                                MSG_PRINTF(LOG_INFO, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
                             }
                         break;
 
@@ -524,23 +524,23 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                         case DSI_EVT_NET_IS_CONN:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
                                 if (RT_SUCCESS == get_ipv4_net_conf(dsi_net_hndl)) {
-                                    MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_IS_CONN\n");
+                                    MSG_PRINTF(LOG_INFO, "DSI_EVT_NET_IS_CONN\n");
                                     count = 0;
                                     exit_flag = RT_TRUE;
                                     *state = LOCAL_DIAL_UP_IS_CONN;                                    
                                 }
                             } else if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V6) {
-                                MSG_PRINTF(LOG_DBG, "donot support DSI_IP_FAMILY_V6 by now!!!!\n");
+                                MSG_PRINTF(LOG_INFO, "donot support DSI_IP_FAMILY_V6 by now!!!!\n");
                             }
                         break;
                         
                         case DSI_EVT_NET_PARTIAL_CONN:                            
-                            MSG_PRINTF(LOG_DBG, "DSI_EVT_PARTIAL_CONN\n");
+                            MSG_PRINTF(LOG_INFO, "DSI_EVT_PARTIAL_CONN\n");
                             break;
 
                         // Net ip address is generated                        
                         case DSI_EVT_NET_NEWADDR:                            
-                            MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_NEWADDR\n");
+                            MSG_PRINTF(LOG_INFO, "DSI_EVT_NET_NEWADDR\n");
                             break;
                         
                         default:

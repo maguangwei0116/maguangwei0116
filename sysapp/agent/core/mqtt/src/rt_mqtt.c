@@ -137,7 +137,7 @@ static rt_bool mqtt_get_server_addr(mqtt_param_t *param)
 FORCE_TO_ADAPTER:
         if (USE_ADAPTER_SERVER){
             if (mqtt_connect_adapter(param, g_mqtt_info.oti_addr, g_mqtt_info.oti_port, eid) == RT_TRUE) {
-                MSG_PRINTF(LOG_DBG, "connect adapter server to get mqtt server address EMQ or YUNBA successfully\n");
+                MSG_PRINTF(LOG_INFO, "connect adapter server to get mqtt server address EMQ or YUNBA successfully\n");
                 goto ok_exit_entry;
             }
 
@@ -145,14 +145,14 @@ FORCE_TO_ADAPTER:
                 /* If connect yunba ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.channel, "YUNBA", 5) &&
                       (mqtt_connect_yunba(param, param->opts.ticket_server) == RT_TRUE)) {
-                    MSG_PRINTF(LOG_DBG, "get YUNBA mqtt server connect param successfully\n");
+                    MSG_PRINTF(LOG_INFO, "get YUNBA mqtt server connect param successfully\n");
                     goto ok_exit_entry;
                 }
 
                 /* If connect EMQ ticket server before, and then try this */
                 if (!rt_os_strncmp(param->opts.channel, "EMQ", 3) &&
                       (mqtt_connect_emq(param, g_mqtt_info.emq_addr, param->opts.ticket_server) == RT_TRUE)) {
-                    MSG_PRINTF(LOG_DBG, "get EMQ mqtt server connect param successfully\n");
+                    MSG_PRINTF(LOG_INFO, "get EMQ mqtt server connect param successfully\n");
                     goto ok_exit_entry;
                 }
             }
@@ -162,13 +162,13 @@ FORCE_TO_ADAPTER:
         if (!rt_os_strncmp(param->opts.channel, "YUNBA", 5)) {
 FORCE_TO_EMQ:
             if (mqtt_connect_emq(param, g_mqtt_info.emq_addr, NULL) == RT_TRUE) {
-                MSG_PRINTF(LOG_DBG, "get EMQ mqtt server connect param successfully\n");
+                MSG_PRINTF(LOG_INFO, "get EMQ mqtt server connect param successfully\n");
                 goto ok_exit_entry;
             }
         } else if (!rt_os_strncmp(param->opts.channel, "EMQ", 3)) {
 FORCE_TO_YUNBA:
             if (mqtt_connect_yunba(param, NULL) == RT_TRUE) {
-                MSG_PRINTF(LOG_DBG, "get yunba mqtt server connect param successfully\n");
+                MSG_PRINTF(LOG_INFO, "get yunba mqtt server connect param successfully\n");
                 goto ok_exit_entry;
             }
         }
@@ -409,7 +409,7 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
         g_mqtt_param.mqtt_conn_state    = RT_TRUE;
         g_mqtt_param.mqtt_flag          = RT_TRUE;
         g_mqtt_param.lost_flag          = RT_FALSE;
-        MSG_PRINTF(LOG_DBG, "Connect mqtt ok !\r\n");
+        MSG_PRINTF(LOG_INFO, "Connect mqtt ok !\r\n");
         return RT_TRUE;
     } else {
         if (!rt_os_strncmp(g_mqtt_param.opts.channel, "EMQ", 3)) {
@@ -796,7 +796,7 @@ static void mqtt_client_state_mechine(void)
         }
     }
 
-    MSG_PRINTF(LOG_DBG, "exit mqtt task\n");
+    MSG_PRINTF(LOG_INFO, "exit mqtt task\n");
     MQTTClient_destroy(&g_mqtt_param.client);
     rt_exit_task(NULL);
 }

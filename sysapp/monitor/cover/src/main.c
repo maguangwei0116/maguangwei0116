@@ -349,7 +349,7 @@ static int32_t agent_task_check_start(rt_bool frist_start)
     } else if (child_pid == 0) {
         char input_param[128];
 
-        MSG_PRINTF(LOG_INFO, "child process, pid %d\r\n", getpid());
+        MSG_PRINTF(LOG_TRACE, "child process, pid %d\r\n", getpid());
 
         {
             int32_t fd;
@@ -374,7 +374,7 @@ static int32_t agent_task_check_start(rt_bool frist_start)
 
         exit(0);
     } else {
-        MSG_PRINTF(LOG_INFO, "parent process, pid %d, child_pid %d\r\n", getpid(), child_pid);
+        MSG_PRINTF(LOG_TRACE, "parent process, pid %d, child_pid %d\r\n", getpid(), child_pid);
 
         /* block to wait designative child process's death */
         while (1) {

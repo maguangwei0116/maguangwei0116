@@ -85,7 +85,7 @@ int rt_open_channel(uint8_t *channel)
     } else {
         ret = rt_qmi_open_channel(euicc_aid, sizeof(euicc_aid), channel);
     }
-    MSG_PRINTF(LOG_INFO, "Open Channel: %d\n", *channel);
+    MSG_PRINTF(LOG_TRACE, "Open Channel: %d\n", *channel);
 
     return ret;
 }
@@ -116,7 +116,7 @@ int rt_close_channel(uint8_t channel)
     } else {
         ret = rt_qmi_close_channel(channel);
     }
-    MSG_PRINTF(LOG_INFO, "channel %d, ret:%d\n", channel, ret);
+    MSG_PRINTF(LOG_TRACE, "channel %d, ret:%d\n", channel, ret);
 
     return ret;
 }

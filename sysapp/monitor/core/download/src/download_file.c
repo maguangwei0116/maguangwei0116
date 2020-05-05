@@ -90,7 +90,7 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
             break;
         }
         cnt++;
-        MSG_PRINTF(LOG_DBG, "Download fail cnt: %d\r\n", cnt);
+        MSG_PRINTF(LOG_WARN, "Download fail cnt: %d\r\n", cnt);
         if (cnt >= 3) {  // retry 3 times
             MSG_PRINTF(LOG_ERR, "Download fail too many times !\r\n");
             break;
@@ -148,7 +148,7 @@ static void upgrade_process(void *args)
         rt_os_sleep(10);
         rt_os_reboot();    // reboot device
 #else
-        MSG_PRINTF(LOG_DBG, "Download agent success, monitor exit to restart again after 10 seconds !\r\n");
+        MSG_PRINTF(LOG_INFO, "Download agent success, monitor exit to restart again after 10 seconds !\r\n");
         rt_os_sleep(10);
         rt_os_exit(-1);
 #endif

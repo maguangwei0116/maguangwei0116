@@ -50,7 +50,7 @@ static void bootstrap_network_timer_callback(void)
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_BOOTSTRAP_DISCONNECTED, NULL, 0);
     }
     g_network_timer_flag = RT_FALSE;
-    MSG_PRINTF(LOG_INFO, "%s, netwrok state: %d\r\n", __func__, g_bootstrap_network);
+    MSG_PRINTF(LOG_TRACE, "%s, netwrok state: %d\r\n", __func__, g_bootstrap_network);
 }
 
 static void bootstrap_network_start_timer(void)

@@ -177,7 +177,7 @@ static uint16_t rt_init_file_info(rt_fshandle_t fp)
     g_data.operator_num = p[0];
 
     MSG_PRINTF(LOG_INFO, "operator_num:%d\n", g_data.operator_num);
-    MSG_PRINTF(LOG_INFO, "file_version_offset:%d\n", g_data.file_version_offset);
+    MSG_PRINTF(LOG_TRACE, "file_version_offset:%d\n", g_data.file_version_offset);
 }
 
 static uint32_t rt_get_root_sk_offset(rt_fshandle_t fp, uint32_t *size)
@@ -223,7 +223,7 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     linux_fseek(fp, profile_off, RT_FS_SEEK_SET);
     linux_fread(buf, 1, sizeof(buf), fp);
     hash_off += get_length(buf, 0) + get_length(buf, 1);
-    MSG_PRINTF(LOG_INFO, "file_size=%d, profile_off=%d, hash_off=%d\n", file_size, profile_off, hash_off);
+    MSG_PRINTF(LOG_TRACE, "file_size=%d, profile_off=%d, hash_off=%d\n", file_size, profile_off, hash_off);
 
     linux_fseek(fp, hash_off, RT_FS_SEEK_SET);
     rt_os_memset(buf, 0, sizeof(buf));

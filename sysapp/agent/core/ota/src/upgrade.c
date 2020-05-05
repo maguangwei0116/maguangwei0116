@@ -153,7 +153,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
             break;
         }
         cnt++;
-        MSG_PRINTF(LOG_DBG, "Download fail cnt: %d\r\n", cnt);
+        MSG_PRINTF(LOG_WARN, "Download fail cnt: %d\r\n", cnt);
         if (cnt >= d_info->retryAttempts) {
             MSG_PRINTF(LOG_WARN, "Download fail too many times !\r\n");
             break;

@@ -96,7 +96,7 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
     rt_bool ret = RT_FALSE;
 
     file_size = linux_file_size(file_name);
-    MSG_PRINTF(LOG_INFO, "%s, file_size:%d\n", file_name, file_size);
+    MSG_PRINTF(LOG_TRACE, "%s, file_size:%d\n", file_name, file_size);
 
     RT_CHECK_ERR(fp = linux_fopen((char *)file_name, "r"), NULL);
     sha256_init(&sha_ctx);
@@ -114,7 +114,7 @@ rt_bool monitor_inspect_file(const char *file_name, const char *exp_real_file_na
         }
 
         partlen = file_size + HASH_CHECK_BLOCK - check_size;
-        MSG_PRINTF(LOG_INFO, "%s, file_size: %d, check_size: %d, partlen:%d\n", file_name, file_size, check_size, partlen);
+        MSG_PRINTF(LOG_TRACE, "%s, file_size: %d, check_size: %d, partlen:%d\n", file_name, file_size, check_size, partlen);
         if (partlen > 0) {
             rt_os_memset(hash_buffer, 0, HASH_CHECK_BLOCK);
             RT_CHECK_ERR(linux_fread(hash_buffer, partlen, 1, fp), 0);

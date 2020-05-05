@@ -303,7 +303,7 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
     int32_t ret = RT_ERROR;
 
     do {
-        MSG_PRINTF(LOG_INFO, "lpa load cert ...\r\n");
+        MSG_PRINTF(LOG_TRACE, "lpa load cert ...\r\n");
         ret = lpa_load_customized_data(buf, len, NULL, NULL);
         if (ret) {
             MSG_PRINTF(LOG_WARN, "lpa load cert fail, ret=%d\r\n", ret);
@@ -337,7 +337,7 @@ static int32_t card_init_profile_type(init_profile_type_e type)
 {
     int32_t ret = RT_SUCCESS;
 
-    MSG_PRINTF(LOG_INFO, "init profile type = %d\r\n", type);
+    MSG_PRINTF(LOG_TRACE, "init profile type = %d\r\n", type);
     if (INIT_PROFILE_TYPE_LAST_USED != type) {
         char iccid[THE_ICCID_LENGTH + 1] = {0};
 

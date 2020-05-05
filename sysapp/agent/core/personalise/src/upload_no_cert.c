@@ -57,7 +57,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     if (buf[3] == 0x80) {
         len = buf[4];
     }
-    MSG_PRINTF(LOG_INFO, "sign len:%d\n", len);
+    MSG_PRINTF(LOG_TRACE, "sign len:%d\n", len);
     rt_base64_encode(&buf[5], len, buf_temp);
 
     CJSON_ADD_NEW_STR_OBJ(content, imei);
