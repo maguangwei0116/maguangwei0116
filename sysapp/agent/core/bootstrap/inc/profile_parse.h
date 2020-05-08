@@ -51,7 +51,7 @@ typedef struct PROFILE_DATA {
 
 int32_t init_profile_file(const char *file);
 int32_t verify_profile_file(rt_bool absolute_path, const char *file);
-int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *profile_len, int is_err_imsi);
+int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profile, uint16_t *profile_len);
 int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size);
 
 #endif // __PROFILE_PARSE_H__

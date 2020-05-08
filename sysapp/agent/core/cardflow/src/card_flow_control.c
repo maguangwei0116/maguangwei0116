@@ -85,17 +85,7 @@ static void flow_control_main(void)
                         num = 1;
                     } else {
                         network_update_switch(NETWORK_UPDATE_DISABLE);
-                        uint16_t mcc;
-                        char apn[64] = {0};
-                        char mcc_mnc[64] = {0};
-                        uint8_t profile[1024] = {0} ;
-                        uint16_t profile_len;
-                        int is_err_imsi = 1;
-                        rt_qmi_get_mcc_mnc(&mcc, NULL);
-                        bootstrap_select_profile(mcc, apn, mcc_mnc, profile, &profile_len, is_err_imsi);
-                        rt_qmi_modify_profile(1, 0, 0, apn, mcc_mnc);
-                        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile, profile_len);
-                        // msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_DISABLE_EXIST_CARD, (void *)(g_p_info->iccid), rt_os_strlen(g_p_info->iccid));
+                        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_DISABLE_EXIST_CARD, (void *)(g_p_info->iccid), rt_os_strlen(g_p_info->iccid));
                         num ++;
                     }
                 }

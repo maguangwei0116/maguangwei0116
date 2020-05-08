@@ -436,6 +436,8 @@ int32_t main(int32_t argc, const char *argv[])
     rt_bool frist_start = RT_TRUE;
     int32_t ret = 0;
     int32_t cos_oid = 0;
+    uint8_t atr[32] = {0};
+    uint16_t atr_size=32;
 
     /* check input param to debug in terminal */
     if (argc > 1 && !rt_os_strcmp(argv[1], RT_DEBUG_IN_TERMINAL)) {
@@ -480,6 +482,7 @@ int32_t main(int32_t argc, const char *argv[])
             sleep(1);
         }
     } while(cos_oid == -1);
+    cos_client_reset(atr, &atr_size);
 
     /* inspect monitor */
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
