@@ -215,6 +215,8 @@ void https_free(https_ctx_t *https_ctx)
 
     static int new_system(char *cmd)
     {
+        return 0;
+        #if 0
         int status = system(cmd);
         MSG_PRINTF(LOG_TRACE, "cmd=%s\r\n", cmd);
         if (-1 == status) {
@@ -234,6 +236,7 @@ void https_free(https_ctx_t *https_ctx)
         }
 
         return -1;
+        #endif
     }
 
     const char *strtoken(const char *src, char *dst, int size)
@@ -379,6 +382,7 @@ void https_free(https_ctx_t *https_ctx)
             MSG_PRINTF(LOG_TRACE, "tls https_init\n");
 #if (CFG_UPLOAD_HTTPS_ENABLE)
         // dns function High Probability fail, so add this codes
+        #if 0
         while (1) {
             if (0 == new_system(PING_ADDR)) {
                 break;
@@ -390,6 +394,7 @@ void https_free(https_ctx_t *https_ctx)
             MSG_PRINTF(LOG_WARN, "ping_count is %d ...\r\n", ping_count);
             ping_count++;
         }
+        #endif
 #endif
             status = https_init(&https_ctx, host, port, "./ca-chain.pem", 1); // "./ca-chain.pem" unuse
             if (status < 0) {

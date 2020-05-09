@@ -66,7 +66,7 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     }
     if (reset_flag == RT_TRUE) {
         reset_flag = RT_FALSE;
-        sleep(12); // need wait reset
+        sleep(20); // need wait reset
         trigger_swap_card(1);
     }
 }
