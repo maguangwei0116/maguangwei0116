@@ -24,6 +24,7 @@ RELEASE_OEMAPP_UBI_TOOL=$(REDTEA_SUPPORT_SCRIPTS_PATH)/ubinize_oemapp_ubi.sh
 RELEASE_OEMAPP_SIGN_TOOL=$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh
 REDTEA_OEMAPP_VERSION=$(BR2_RELEASE_OEMAPP_INSTALL_PATH)/oemapp_version
 REDTEA_OEMAPP_VERSION_FILE_TITLE="Release: "   # never modify !!!
+REDTEA_OEMAPP_RELEASE_VERSION="AQO001_BETA20191210"  # modify in the future
 REDTEA_OEMAPP_VERSION_FILE=$(BR2_RELEASE_OEMAPP_INSTALL_PATH)/softsim-release
 REDTEA_OEMAPP_SHELL_START=../doc/shells/standard/start_oemapp.sh
 REDTEA_OEMAPP_SHELL_APP=../doc/shells/standard/start_redtea_app
@@ -88,8 +89,16 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 		fi; \
 		share_profile_batch_code=`echo $${share_profile_batch_code:0:19}`; \
 		ubi_share_profile_version="$$ubi_version""#""$$share_profile_batch_code"; \
-		version_string+="_$$ubi_share_profile_version";\
-		echo "$$version_string" > $(REDTEA_OEMAPP_VERSION_FILE); \
+		if [ "$(RELEASE_OEMAPP_SOFTWARE_TYPE)" = "debug" ] ; \
+		then \
+			version_string+="_$$ubi_share_profile_version"; \
+			echo "$$version_string" > $(REDTEA_OEMAPP_VERSION_FILE); \
+		elif [ "$(RELEASE_OEMAPP_SOFTWARE_TYPE)" = "release" ] ; \
+		then \
+			relese_oemapp_title=$(REDTEA_OEMAPP_VERSION_FILE_TITLE); \
+			relese_oemapp_title+=$(REDTEA_OEMAPP_RELEASE_VERSION); \
+			echo "$$relese_oemapp_title" > $(REDTEA_OEMAPP_VERSION_FILE); \
+		fi; \
 		echo -e "$$ubi_share_profile_version\c" > $(REDTEA_OEMAPP_VERSION); \
 		echo "Oemapp Ubi $$version_string"; \
 	fi

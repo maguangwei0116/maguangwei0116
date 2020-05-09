@@ -194,17 +194,17 @@ rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
 
     /******************************************************************/
     // pk
-    default_apdu[15+0x40] = 0x81;
-    default_apdu[15+0x40+1] = 0x41;
-    rt_os_memcpy(default_apdu+15+0x40+1+1, g_verify_pk, MAX_PK_LEN/2+1);
+    default_apdu[15 + MAX_FILE_HASH_LEN] = 0x81;
+    default_apdu[15 + MAX_FILE_HASH_LEN + 1] = 0x41;
+    rt_os_memcpy(default_apdu + 15 + MAX_FILE_HASH_LEN + 1 + 1, g_verify_pk, MAX_PK_LEN/2+1);
 
     /******************************************************************/
     // sk
-    default_apdu[15+0x40+2+0x41] = 0x82;
-    default_apdu[15+0x40+2+0x41+1] = 0x40;
-    rt_os_memcpy(default_apdu+15+0x40+2+0x41+2, signature, MAX_PK_LEN/2);
+    default_apdu[15 + MAX_FILE_HASH_LEN + 2 + sizeof(g_verify_pk)] = 0x82;
+    default_apdu[15 + MAX_FILE_HASH_LEN + 2 + sizeof(g_verify_pk) + 1] = 0x40;
+    rt_os_memcpy(default_apdu + 15 + MAX_FILE_HASH_LEN + 2 + sizeof(g_verify_pk) + 2, signature, MAX_PK_LEN/2);
 
-    all_len = 13*2+4+128+4+130+4+128;
+    all_len = 13 * 2 + 4 + MAX_FILE_HASH_LEN * 2 + 4 + sizeof(g_verify_pk) * 2 + 4 + PRIVATE_HASH_STR_LEN;
 
     MSG_PRINTF(LOG_DBG, "all_len is %d\n", all_len);
     MSG_INFO_ARRAY("default_apdu: ", default_apdu, all_len);
