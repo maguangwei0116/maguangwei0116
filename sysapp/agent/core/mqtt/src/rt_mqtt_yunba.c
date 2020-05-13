@@ -16,6 +16,8 @@ static char auth_key[80];
 
 static int32_t get_ret_status(const char *json_data)
 {
+    return -1;
+    #if 0
     int ret = 0;
     cJSON *root = cJSON_Parse(json_data);
     
@@ -29,10 +31,13 @@ static int32_t get_ret_status(const char *json_data)
         cJSON_Delete(root);
     }
     return ret;
+    #endif
 }
 
 static int32_t get_authkey_status(const char *json_data)
 {
+    return -1;
+    #if 0
     int ret = 0;
     char buf[500];
     cJSON *root = NULL;
@@ -53,11 +58,14 @@ static int32_t get_authkey_status(const char *json_data)
         cJSON_Delete(root);
     }
     return ret;
+    #endif
 }
 
 /* callback for YUNBA ticket server */
 static int32_t mqtt_yunba_ticket_server_cb(const char *json_data) 
 {
+    return RT_ERROR;
+    #if 0
     int32_t ret = RT_ERROR;
     cJSON *root;
     mqtt_reg_info_t *reg_info  = mqtt_get_reg_info();
@@ -82,11 +90,14 @@ static int32_t mqtt_yunba_ticket_server_cb(const char *json_data)
         cJSON_Delete(root);
     }
     return ret;
+    #endif
 }
 
 /* get YUNBA MQTT connect param API */
 int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char *deviceid, mqtt_opts_t *opts)
 {
+    return RT_ERROR;
+    #if 0
     int32_t ret;
     char json_data[1024];
     mqtt_reg_url_t *reg_url    = mqtt_get_reg_url();
@@ -121,10 +132,13 @@ int32_t MQTTClient_setup_with_appkey_and_deviceid(const char* appkey, const char
 exit_entry:
 
     return ret;
+    #endif
 }
 
 int MQTTClient_set_authkey(char *cid, char *appkey, char* authkey, int *ret_status)
 {
+    return RT_ERROR;
+    #if 0
     int ret = RT_ERROR;
     char json_data[1024];
 
@@ -138,10 +152,13 @@ int MQTTClient_set_authkey(char *cid, char *appkey, char* authkey, int *ret_stat
     }
     *ret_status = retstatus;
     return RT_SUCCESS;
+    #endif
 }
 
 int MQTTClient_get_authkey(char *cid, char *appkey, char* authkey, int *ret_status)
 {
+    return RT_ERROR;
+    #if 0
     int ret = RT_ERROR;
     char json_data[1024];
 
@@ -154,11 +171,14 @@ int MQTTClient_get_authkey(char *cid, char *appkey, char* authkey, int *ret_stat
     *ret_status = retstatus;
     strcpy(authkey, auth_key);
     return RT_SUCCESS;
+    #endif
 }
 
 //connect yunba server
 rt_bool mqtt_connect_yunba(mqtt_param_t *param, const char *ticket_server)
 {
+    return RT_FALSE;
+    #if 0
     uint8_t num = 0;
     int32_t ret;
     MQTTClient *c = &param->client;
@@ -197,5 +217,6 @@ rt_bool mqtt_connect_yunba(mqtt_param_t *param, const char *ticket_server)
     snprintf(opts->url, sizeof(opts->url), "%s", YUNBA_URL);
 
     return RT_TRUE;
+    #endif
 }
 

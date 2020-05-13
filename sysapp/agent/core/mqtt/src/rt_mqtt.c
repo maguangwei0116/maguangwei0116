@@ -469,6 +469,9 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     /* force to connect EMQ mqtt server with [client_id = g_mqtt_info.device_id] */
     if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_info.device_id);
+    } else {
+        MSG_PRINTF(LOG_INFO, "platform send yunba mqtt, but we will return ...\n");
+        return RT_FALSE;
     }
 
     MSG_PRINTF(LOG_DBG, "MQTT broker: addr [%s] id [%s] user [%s] passwd [%s]\n",
