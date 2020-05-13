@@ -32,6 +32,7 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     uint16_t sw = 0;
     static rt_bool reset_flag = RT_FALSE;
     static rt_bool disable_flag = RT_FALSE;
+    uint16_t sleep_flag = 0;
 
     if ((data[1] != 0xC0) && (g_response_state == APDU_RESPONSE_LOGIC_USED)) {
         rt_mutex_unlock(&g_apdu_mutex);
@@ -66,7 +67,12 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
     }
     if (reset_flag == RT_TRUE) {
         reset_flag = RT_FALSE;
-        sleep(20); // need wait reset
+        if (sleep_flag == 0) {
+            sleep_flag = 1;
+        } else {
+            sleep(20); // need wait reset
+            sleep_flag = 0;
+        }
         trigger_swap_card(1);
     }
 }
