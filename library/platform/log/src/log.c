@@ -28,7 +28,7 @@
 #define LOG_FILE_SIZE           1024 * 1024  // 1MB
 #define LOG_BUF_SIZE            2048
 #define LOG_MAX_LINE_SIZE       2 * 1024
-#define LOG_LEVEL_LEN           6
+#define LOG_LEVEL_LEN           7
 #define LOG_FILE_NAME_LEN       64
 #define LOG_HEXDUMP_LEVEL       LOG_INFO
 #ifndef ARRAY_SIZE
