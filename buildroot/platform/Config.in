@@ -30,6 +30,11 @@ config BR2_CFG_STANDARD_MODULE
 
 endchoice
 
+config BR2_CFG_MODULE_TYPE
+	string
+	default "open"               if BR2_CFG_OPEN_MODULE
+	default "standard"           if BR2_CFG_STANDARD_MODULE
+
 choice
 	prompt "Build for Platform"
 	default BR2_CFG_PLATFORM_9X07

@@ -13,6 +13,8 @@ RELEASE_OEMAPP_PRODUCT_NAME=$(call qstrip,$(BR2_CFG_PRODUCT_NAME))
 RELEASE_OEMAPP_SOFTWARE_NAME=$(call qstrip,$(BR2_CFG_SOFTWARE_NAME))
 RELEASE_OEMAPP_PLATFORM_TYPE=$(call qstrip,$(BR2_CFG_PLATFORM_TYPE))
 RELEASE_OEMAPP_SOFTWARE_TYPE=$(call qstrip,$(BR2_CFG_SOFTWARE_TYPE))
+RELEASE_OEMAPP_PRODUCT_TYPE=$(call qstrip,$(BR2_CFG_REDTEA_READY))
+RELEASE_OEMAPP_MODULE_TYPE=$(call qstrip,$(BR2_CFG_MODULE_TYPE))
 RELEASE_OEMAPP_ENV_TYPE=$(call qstrip,$(BR2_CFG_ENV_TYPE))
 RELEASE_OEMAPP_TARGET_NAME=$(RELEASE_OEMAPP_SYSTEM_NAME)-$(RELEASE_OEMAPP_PRODUCT_NAME)-oemapp-$(RELEASE_OEMAPP_SOFTWARE_NAME)
 
@@ -24,7 +26,6 @@ RELEASE_OEMAPP_UBI_TOOL=$(REDTEA_SUPPORT_SCRIPTS_PATH)/ubinize_oemapp_ubi.sh
 RELEASE_OEMAPP_SIGN_TOOL=$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh
 REDTEA_OEMAPP_VERSION=$(BR2_RELEASE_OEMAPP_INSTALL_PATH)/oemapp_version
 REDTEA_OEMAPP_VERSION_FILE_TITLE="Release: "   # never modify !!!
-REDTEA_OEMAPP_RELEASE_VERSION="AQO001_BETA20191210"  # modify in the future
 REDTEA_OEMAPP_VERSION_FILE=$(BR2_RELEASE_OEMAPP_INSTALL_PATH)/softsim-release
 REDTEA_OEMAPP_SHELL_START=../doc/shells/standard/start_oemapp.sh
 REDTEA_OEMAPP_SHELL_APP=../doc/shells/standard/start_redtea_app
@@ -33,6 +34,7 @@ REDTEA_OEMAPP_SKB_SO=../sysapp/monitor/vuicc/lib/libskb.so
 REDTEA_OEMAPP_TOOLS=../doc/tools/
 REDTEA_OEMAPP_SHARE_PROFILES=../doc/share_profile/*.der
 REDTEA_OEMAPP_SHARE_PROFILE=rt_share_profile.der
+REDTEA_OEMAPP_LOCAL_BUILD_DATE=$(shell date "+%Y%m%d")
 
 # Auto generate oemapp cfg file
 define CREATE_OEMAPP_CFG_FILE
@@ -83,6 +85,7 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 			fi; \
 		done; \
 		ubi_version=v$$ubi_version_1.$$ubi_version_2.$$ubi_version_3; \
+		release_version=`printf "%03d" $$ubi_version_3`; \
 		if [ -n "$$ubi_version_4" ] ; \
 		then \
 			ubi_version+=".$$ubi_version_4"; \
@@ -93,16 +96,63 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 		then \
 			version_string+="_$$ubi_share_profile_version"; \
 			echo "$$version_string" > $(REDTEA_OEMAPP_VERSION_FILE); \
+			echo "Oemapp Ubi $$version_string"; \
 		elif [ "$(RELEASE_OEMAPP_SOFTWARE_TYPE)" = "release" ] ; \
 		then \
-			relese_oemapp_title=$(REDTEA_OEMAPP_VERSION_FILE_TITLE); \
-			relese_oemapp_title+=$(REDTEA_OEMAPP_RELEASE_VERSION); \
-			echo "$$relese_oemapp_title" > $(REDTEA_OEMAPP_VERSION_FILE); \
+			release_oemapp_title=$(REDTEA_OEMAPP_VERSION_FILE_TITLE); \
+			if [ "$(RELEASE_OEMAPP_PRODUCT_TYPE)" = "redteaready" ] ; \
+			then \
+				release_oemapp_title+="R"; \
+			else \
+				release_oemapp_title+="S"; \
+			fi; \
+			if [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "general" ] ; \
+			then \
+				release_oemapp_title+="A"; \
+			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "quectel" ] ; \
+			then \
+				release_oemapp_title+="Q"; \
+			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "neoway" ] ; \
+			then \
+				release_oemapp_title+="N"; \
+			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "gosuncn" ] ; \
+			then \
+				release_oemapp_title+="G"; \
+			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "fibcom" ] ; \
+			then \
+				release_oemapp_title+="F"; \
+			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "yuga" ] ; \
+			then \
+				release_oemapp_title+="Y"; \
+			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "meig" ] ; \
+			then \
+				release_oemapp_title+="M"; \
+			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "longung" ] ; \
+			then \
+				release_oemapp_title+="L"; \
+			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "mobiletek" ] ; \
+			then \
+				release_oemapp_title+="M"; \
+			fi; \
+			if [ "$(RELEASE_OEMAPP_MODULE_TYPE)" = "open" ] ; \
+			then \
+				release_oemapp_title+="O"; \
+			elif [ "$(RELEASE_OEMAPP_MODULE_TYPE)" = "standard" ] ; \
+			then \
+				release_oemapp_title+="S"; \
+			fi; \
+			release_oemapp_title+="$$release_version"; \
+			release_oemapp_title+="_RELEASE_"; \
+			release_oemapp_title+=$(REDTEA_OEMAPP_LOCAL_BUILD_DATE); \
+			release_oemapp_title+="#""$$share_profile_batch_code"; \
+			echo "$$release_oemapp_title" > $(REDTEA_OEMAPP_VERSION_FILE); \
+			echo "Oemapp Ubi $$release_oemapp_title"; \
 		fi; \
 		echo -e "$$ubi_share_profile_version\c" > $(REDTEA_OEMAPP_VERSION); \
-		echo "Oemapp Ubi $$version_string"; \
 	fi
 endef
+
+
 
 # Copy targets into oemapp
 define COPY_TEST_OEMAPP_TARGETS
