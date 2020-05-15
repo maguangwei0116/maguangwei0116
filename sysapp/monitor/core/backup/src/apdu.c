@@ -204,6 +204,10 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
                 }
                 *rsp_len += size-2;
                 sw = get_sw(rsp,size);
+                // for cos return data
+                if ((rsp[0] == 0xFF) && (rsp[1] == 0x22) && (rsp[2] == 0x03) && (rsp[3] == 0x80) && (rsp[4] == 0x01) && (rsp[5] == 0x7F) && (rsp[6] == 0x90) && (rsp[7] == 0x00)) {
+                    return RT_ERROR;
+                }
                 rsp += size-2;
             } else {
                 break;
