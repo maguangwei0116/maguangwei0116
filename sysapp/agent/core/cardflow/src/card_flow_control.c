@@ -22,7 +22,7 @@
 static card_info_t                         *g_p_info;
 static card_flow_switch_e                  *g_flow_switch = NULL;
 
-#define INITIAL_WAIT_TIME                  360         // 1H, ti
+#define INITIAL_WAIT_TIME                  3600         // 1H, ti
 #define INITIAL_SLEEP_TIME                 10           // 10s
 #define INITIAL_JUDGE_TIMES                (INITIAL_WAIT_TIME / INITIAL_SLEEP_TIME)
 #define WAIT_TIME_TO_ENABLE_CARD           600          // 10 min
