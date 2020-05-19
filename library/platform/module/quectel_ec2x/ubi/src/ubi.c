@@ -40,7 +40,7 @@ extern _QL_SOFTSIM_RETURN_TYPE_ ql_file_update(char *file);
 static int32_t ubi_update_quectel(void *func, const char *ubi_file)
 {
     ubi_update_func update_func = (ubi_update_func)func;
-    
+
     MSG_PRINTF(LOG_TRACE, "%s, func %p, %s !\r\n", __func__, func, ubi_file); 
 
     return update_func(ubi_file) == QL_SOFTSIM_UPDATE_OK ? UBI_UPDATE_OK : UBI_UPDATE_FAIL;

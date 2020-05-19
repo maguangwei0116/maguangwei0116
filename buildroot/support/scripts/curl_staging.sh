@@ -19,3 +19,4 @@ signature=`curl -s -l -k -H "Content-Type:application/json" -H "Data_Type:msg" \
 	awk -F '"' '{print $(NF-7)}' | awk -F ':' '{print $3}'`
 
 echo $signature
+

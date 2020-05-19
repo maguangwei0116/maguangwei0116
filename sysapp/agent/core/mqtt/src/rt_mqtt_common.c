@@ -207,7 +207,7 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
             rt_os_memset(buf, 0, sizeof(buf));
             rt_os_memcpy(buf, tmp_data, rt_os_strlen(tmp_data));
         #endif
-        
+
             /* get http body */
             MSG_PRINTF(LOG_TRACE, "recv buff: %s\n", buf);
             p = rt_os_strstr(buf, "\r\n\r\n");

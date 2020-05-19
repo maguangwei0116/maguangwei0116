@@ -34,13 +34,13 @@ static void display_progress(const http_client_struct_t *obj)
 static int http_client_upload_init(http_client_struct_t *obj)
 {
 #if (CFG_UPLOAD_HTTPS_ENABLE)
-    int ret = RT_ERROR;
+    int32_t ret = RT_ERROR;
     char port[6] = {0};
-    int status = 0;
+    int32_t status = 0;
 
     if (obj->https_ctx.ssl == NULL) {
         MSG_PRINTF(LOG_DBG, "tls https_init\n");
-        ret = http_parse_url(obj->http_header.url,obj->http_header.addr,obj->http_header.url_interface,&obj->http_header.port);
+        ret = http_parse_url(obj->http_header.url, obj->http_header.addr, obj->http_header.url_interface, &obj->http_header.port);
         if (0 != ret) {
             return RT_ERROR;
         }
@@ -116,13 +116,13 @@ end:
 static int http_client_download_init(http_client_struct_t *obj)
 {
 #if (CFG_UPLOAD_HTTPS_ENABLE)
-    int ret = RT_ERROR;
+    int32_t ret = RT_ERROR;
     char port[6] = {0};
-    int status = 0;
+    int32_t status = 0;
 
     if (obj->https_ctx.ssl == NULL) {
         MSG_PRINTF(LOG_DBG, "tls https_init\n");
-        ret = http_parse_url(obj->http_header.url,obj->http_header.addr,obj->http_header.url_interface,&obj->http_header.port);
+        ret = http_parse_url(obj->http_header.url, obj->http_header.addr, obj->http_header.url_interface, &obj->http_header.port);
         if (0 != ret) {
             MSG_PRINTF(LOG_WARN, "http_parse_url error\n");
             return RT_ERROR;
@@ -215,8 +215,8 @@ static void http_client_release(http_client_struct_t *obj)
 static int http_client_send(http_client_struct_t *obj)
 {
 #if (CFG_UPLOAD_HTTPS_ENABLE)
-    int sent = 0;
-    int tmpres = 0;
+    int32_t sent = 0;
+    int32_t tmpres = 0;
 
     while (sent < obj->process_set) {
         tmpres = https_post(&(obj->https_ctx), obj->buf + sent);
@@ -428,7 +428,7 @@ end:
 static int http_client_get_resp_header(http_client_struct_t *obj)
 {
 #if (CFG_UPLOAD_HTTPS_ENABLE)
-    int flag = 0;
+    int32_t flag = 0;
 
     obj->process_length = 0;
     rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
@@ -450,7 +450,7 @@ static int http_client_get_resp_header(http_client_struct_t *obj)
         obj->process_length++;
     }
     MSG_PRINTF(LOG_WARN,"recv http header fail, flag:%d, buf:%s\n", flag, obj->buf);
-    return -1;
+    return RT_ERROR;
 #else
     int flag = 0;
 

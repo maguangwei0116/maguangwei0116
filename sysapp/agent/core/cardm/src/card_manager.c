@@ -23,6 +23,7 @@
 #define RT_LAST_EID                 "rt_last_eid"
 #define RT_LAST_USED_CARD_TYPE      "rt_last_card_type"
 #define RT_PROFILE_STATE_ENABLED    2
+#define RT_RETRY_COUNT              3
 
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
@@ -491,7 +492,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
     int32_t ret = RT_ERROR;
     int i = 0;
 
-    for ( i = 0; i <= 3; i++) {
+    for ( i = 0; i <= RT_RETRY_COUNT; i++) {
        switch (mode) {
         case MSG_CARD_SETTING_KEY:
             ret = lpa_load_customized_data(buf, len, NULL, NULL);       // RT_SUCCESS

@@ -112,7 +112,7 @@ static void network_detection_task(void *arg)
         /* init dial up */
         ret = dial_up_init(&dsi_net_hndl);
         sleep(3);
-        if (ret != RT_SUCCESS) {            
+        if (ret != RT_SUCCESS) {
             if (++cnt < MAX_INIT_RETRY_CNT) {
                 MSG_PRINTF(LOG_ERR, "dial up init error (%d)\r\n", cnt);
                 rt_os_sleep(3);

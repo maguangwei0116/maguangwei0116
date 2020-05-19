@@ -91,8 +91,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
     SSL_library_init();
     OpenSSL_add_all_algorithms();
 
-    if (0 == is_tls)
-    {
+    if (0 == is_tls) {
         // New context saying we are a client, and using SSL 2 or 3
         https_ctx->ssl_cxt = SSL_CTX_new(SSLv23_client_method());
     } else {
@@ -499,8 +498,8 @@ void https_free(https_ctx_t *https_ctx)
         int32_t socket_fd = RT_ERROR;
         char md5_out[32+1];
         char *p = NULL;
-        char out_buffer[5120] = {0};
-        int out_size = 5120;
+        char out_buffer[1024] = {0};
+        int out_size = 1024;
 
         do{
             if(!json_data || !host_ip || !path) {

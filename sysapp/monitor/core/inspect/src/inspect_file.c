@@ -193,7 +193,7 @@ rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
     // data
     default_apdu[13] = 0x80;
     default_apdu[14] = 0x40;
-    for(i=0; i<64; i++) {
+    for (i = 0; i < 64; i++) {
         default_apdu[15+i] = input[i];  // 最后数组AsciiNum就是字符串每个字符所对应ASCII码值的数组
     }
 

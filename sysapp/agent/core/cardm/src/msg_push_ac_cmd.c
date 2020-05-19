@@ -134,7 +134,7 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
         return ERROR_NO_REQUIRED_DATA;
     }
     *prio = priority->valueint;
-    
+
     while(1) {
         //debug_json_data(activation_code, activation_code);
         MSG_PRINTF(LOG_TRACE, "AC: %s\r\n", activation_code->valuestring);

@@ -207,7 +207,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
     rt_os_sleep(3);
 #endif
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-       
+
 #endif
     *out = content;
 end:
