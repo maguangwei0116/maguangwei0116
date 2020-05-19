@@ -13,7 +13,7 @@ static int32_t mqtt_emq_ticket_server_cb(const char *json_data)
     cJSON *root;
     mqtt_reg_info_t *reg_info  = mqtt_get_reg_info();
 
-    MSG_PRINTF(LOG_INFO, "buf:%s\n", json_data);    
+    MSG_PRINTF(LOG_TRACE, "buf:%s\n", json_data);
     root = cJSON_Parse(json_data);
     if(!root){
         return RT_ERROR;
@@ -21,7 +21,7 @@ static int32_t mqtt_emq_ticket_server_cb(const char *json_data)
     
     str = cJSON_Print(root);
     if (str) {
-        MSG_PRINTF(LOG_INFO, "%s\n", str);
+        MSG_PRINTF(LOG_TRACE, "%s\n", str);
         cJSON_free(str);
     }
     
@@ -56,8 +56,14 @@ int32_t MQTTClient_setup_with_appkey(const char* appkey, mqtt_opts_t *opts)
 
     snprintf(json_data, sizeof(json_data), "{\"appKey\":\"%s\"}", appkey);
 
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    ret = mqtt_https_post_json((const char *)json_data, reg_url->url, reg_url->port, \
+                            "/clientService/getEmqUser", mqtt_emq_ticket_server_cb);
+#else
     ret = mqtt_http_post_json((const char *)json_data, reg_url->url, reg_url->port, \
                             "/clientService/getEmqUser", mqtt_emq_ticket_server_cb);
+#endif
+
     if (ret < 0) {
         return RT_ERROR;
     }
@@ -88,7 +94,7 @@ rt_bool mqtt_connect_emq(mqtt_param_t *param, const char *emq_addr, const char *
             MSG_PRINTF(LOG_WARN, "mqtt_get_ip_pair error ticket_serverL:%s\n", ticket_server);
             return RT_FALSE;
         }
-        MSG_PRINTF(LOG_WARN, "ticket_server:%s, EMQ addr:%s, port:%d\n", ticket_server, addr, port);
+        MSG_PRINTF(LOG_INFO, "ticket_server:%s, EMQ addr:%s, port:%d\n", ticket_server, addr, port);
     }
 
     /* connect EMQ mqtt server with max 3 times */

@@ -22,7 +22,13 @@
 #define ARRAY_SIZE(a)                       (sizeof((a)) / sizeof((a)[0]))
 #endif
 
-#define RT_OTI_SERVER_PORT                  7082
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    #define RT_OTI_SERVER_PORT                  443
+#else
+    #define RT_OTI_SERVER_PORT                  7082
+#endif
+
+
 
 #define M_BYTES                             (1024 * 1024)
 #define MAX_LINE_SIZE                       384
@@ -106,7 +112,7 @@ static int32_t config_switch_value(const void *in, char *out)
     return config_range_int_value(in, 0, 1, out);
 }
 
-/* value: [LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO] */
+/* value: [LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE] */
 static int32_t config_log_level(const void *in, char *out)
 {
     const char *str_value = (const char *)in;
@@ -153,29 +159,37 @@ static config_item_t g_config_items[] =
 {
 /*     item_name            config_func                 data_type   default_value           annotation          */
 #if (CFG_ENV_TYPE_PROD)
-ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                       STRING,     "52.220.34.227",        "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "18.136.190.97",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp.redtea.io",       "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "oti.redtea.io",                "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
 #else
-ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                       STRING,     "54.222.248.186",       "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "13.229.31.234",        "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp-test.redtea.io",  "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "52.220.34.227",                "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
 #endif
-ITEM(MBN_CONFIGURATION,     config_switch_value,        INTEGER,    "1",                    "Whether config MBN (0:disable  1:enable)"),
-ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,       INTEGER,    "2",                    "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
-ITEM(RPLMN_ENABLE,          NULL,                       INTEGER,    "1",                    "Whether set rplmn (0:disable  1:enable)"),
-ITEM(LOG_FILE_SIZE,         config_log_size,            INTEGER,    "1",                    "The max size of rt_log file (MB)"),
-ITEM(UICC_MODE,             config_uicc_mode,           INTEGER,    "0",                    "The mode of UICC (0:vUICC  1:eUICC)"),
+ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "18.136.190.97",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
+ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp.redtea.io",               "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+#else
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "oti-staging.redtea.io",        "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
+#else
+    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "54.222.248.186",               "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
+#endif
+ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "13.229.31.234",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
+ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp-test.redtea.io",          "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+#endif
+ITEM(MBN_CONFIGURATION,     config_switch_value,        INTEGER,    "1",                            "Whether config MBN (0:disable  1:enable)"),
+ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,       INTEGER,    "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
+ITEM(RPLMN_ENABLE,          NULL,                       INTEGER,    "1",                            "Whether set rplmn (0:disable  1:enable)"),
+ITEM(LOG_FILE_SIZE,         config_log_size,            INTEGER,    "1",                            "The max size of rt_log file (MB)"),
+ITEM(UICC_MODE,             config_uicc_mode,           INTEGER,    "0",                            "The mode of UICC (0:vUICC  1:eUICC)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_WARN",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_WARN",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 #else
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_INFO",             "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_INFO",             "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_DBG LOG_INFO)"),
+ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_TRACE",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_TRACE",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 #endif
-ITEM(USAGE_ENABLE,          config_switch_value,        INTEGER,    "0",                    "Whether enable upload user traffic (0:disable  1:enable)"),
-ITEM(USAGE_FREQ,            config_usage_freq,          INTEGER,    "60",                   "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
-ITEM(CARD_FLOW_SWITCH,      config_card_flow_switch,    INTEGER,    "0",                    "The switch of seed card flow control(0:close 1:open)"),
+ITEM(USAGE_ENABLE,          config_switch_value,        INTEGER,    "0",                            "Whether enable upload user traffic (0:disable  1:enable)"),
+ITEM(USAGE_FREQ,            config_usage_freq,          INTEGER,    "60",                           "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
+ITEM(CARD_FLOW_SWITCH,      config_card_flow_switch,    INTEGER,    "0",                            "The switch of seed card flow control(0:close 1:open)"),
 };
 
 static config_info_t g_config_info;
@@ -447,23 +461,23 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
 static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
 {
 #ifdef CFG_STANDARD_MODULE
-    MSG_PRINTF(LOG_WARN, "Running standard module ...\r\n");
+    MSG_PRINTF(LOG_INFO, "Running standard module ...\r\n");
 #endif
-    MSG_PRINTF(LOG_WARN, "Restart reason: %s\n", g_restart_reason);
-    MSG_PRINTF(LOG_WARN, "Agent version : %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
-    MSG_PRINTF(LOG_DBG, "OTI_ENVIRONMENT_ADDR  : %s\n", local_config_get_data("OTI_ENVIRONMENT_ADDR"));
-    MSG_PRINTF(LOG_DBG, "EMQ_SERVER_ADDR       : %s\n", local_config_get_data("EMQ_SERVER_ADDR"));
-    MSG_PRINTF(LOG_DBG, "PROXY_SERVER_ADDR     : %s\n", local_config_get_data("PROXY_SERVER_ADDR"));
-    MSG_PRINTF(LOG_DBG, "MBN_CONFIGURATION     : %s\n", local_config_get_data("MBN_CONFIGURATION"));
-    MSG_PRINTF(LOG_DBG, "INIT_PROFILE_TYPE     : %s\n", local_config_get_data("INIT_PROFILE_TYPE"));
-    MSG_PRINTF(LOG_DBG, "RPLMN_ENABLE          : %s\n", local_config_get_data("RPLMN_ENABLE"));
-    MSG_PRINTF(LOG_DBG, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
-    MSG_PRINTF(LOG_DBG, "UICC_MODE             : %s\n", !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? "vUICC" : "eUICC");
-    MSG_PRINTF(LOG_DBG, "MONITOR_LOG_LEVEL     : %s\n", local_config_get_data("MONITOR_LOG_LEVEL"));
-    MSG_PRINTF(LOG_DBG, "AGENT_LOG_LEVEL       : %s\n", local_config_get_data("AGENT_LOG_LEVEL"));
-    MSG_PRINTF(LOG_DBG, "USAGE_ENABLE          : %s\n", local_config_get_data("USAGE_ENABLE"));
-    MSG_PRINTF(LOG_DBG, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
-    MSG_PRINTF(LOG_DBG, "CARD_FLOW_SWITCH      : %s\n", local_config_get_data("CARD_FLOW_SWITCH"));
+    MSG_PRINTF(LOG_INFO, "Restart reason: %s\n", g_restart_reason);
+    MSG_PRINTF(LOG_INFO, "Agent version : %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
+    MSG_PRINTF(LOG_INFO, "OTI_ENVIRONMENT_ADDR  : %s\n", local_config_get_data("OTI_ENVIRONMENT_ADDR"));
+    MSG_PRINTF(LOG_INFO, "EMQ_SERVER_ADDR       : %s\n", local_config_get_data("EMQ_SERVER_ADDR"));
+    MSG_PRINTF(LOG_INFO, "PROXY_SERVER_ADDR     : %s\n", local_config_get_data("PROXY_SERVER_ADDR"));
+    MSG_PRINTF(LOG_INFO, "MBN_CONFIGURATION     : %s\n", local_config_get_data("MBN_CONFIGURATION"));
+    MSG_PRINTF(LOG_INFO, "INIT_PROFILE_TYPE     : %s\n", local_config_get_data("INIT_PROFILE_TYPE"));
+    MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n", local_config_get_data("RPLMN_ENABLE"));
+    MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
+    MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n", !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? "vUICC" : "eUICC");
+    MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n", local_config_get_data("MONITOR_LOG_LEVEL"));
+    MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n", local_config_get_data("AGENT_LOG_LEVEL"));
+    MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n", local_config_get_data("USAGE_ENABLE"));
+    MSG_PRINTF(LOG_INFO, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
+    MSG_PRINTF(LOG_INFO, "CARD_FLOW_SWITCH      : %s\n", local_config_get_data("CARD_FLOW_SWITCH"));
 }
 
 int32_t init_config(void *arg)
@@ -641,7 +655,7 @@ typedef struct CONFIG_ONLINE_PARAM {
     do {\
         const char *tmp_str_out = cJSON_PrintUnformatted(json);\
         if (tmp_str_out) {\
-            MSG_PRINTF(LOG_INFO, #json": %s\r\n", tmp_str_out);\
+            MSG_PRINTF(LOG_TRACE, #json": %s\r\n", tmp_str_out);\
             cJSON_free((void *)tmp_str_out);\
         }\
     } while(0)
@@ -692,7 +706,7 @@ static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
             } else if (item->type == CJSON_STR_TYPE) {
                 snprintf(value, sizeof(value), "%s", item->valuestring);
             }
-            MSG_PRINTF(LOG_INFO, "# %02d    %-25s : %s\r\n", i, item->string, value);
+            MSG_PRINTF(LOG_TRACE, "# %02d    %-25s : %s\r\n", i, item->string, value);
 
             for (j = 0; j < pair_num; j++) {
                 if (!rt_os_strcmp(items[j].key, key)) {
@@ -700,7 +714,7 @@ static int32_t config_all_parse(cJSON *config, config_online_param_t *param)
                         snprintf((char *)items[j].value, sizeof(items[j].value), "%s", value);
                     } else {
                         /* data type unmatched, setup a invalid value */
-                            MSG_PRINTF(LOG_INFO, "[%s] data type unmatched !\r\n", key);
+                            MSG_PRINTF(LOG_WARN, "[%s] data type unmatched !\r\n", key);
                         if (items[j].type == CJSON_INT_TYPE) {
                             snprintf((char *)items[j].value, sizeof(items[j].value), "%s", "-1");
                         }

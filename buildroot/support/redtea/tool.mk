@@ -20,7 +20,7 @@ LN					= ln
 CD					= cd
 
 # Force to config SHELL, or [echo -e] will be a problem !
-SHELL				= /bin/bash 
+SHELL				= /bin/bash
 
 # Config for quite tool
 quiet_do_cc        	= $(Q)$(ECHO)	"  CC       $<" && $(CC)
@@ -32,7 +32,7 @@ quiet_do_copy      	= $(Q)$(ECHO)	"  OBJCOPY  $@" && $(OBJCOPY)
 quiet_do_objdump   	= $(Q)$(ECHO)	"  OBJDUMP  $@" && $(OBJDUMP)
 quiet_do_link      	= $(Q)$(ECHO)	"  LINK     $@" && $(LINK)
 quiet_do_strip     	= $(Q)$(ECHO)	"  STRIP    $@" && $(STRIP)
-quiet_do_mkver     	= $(Q)$(ECHO)	"  MAKEVER  $@" && 
+quiet_do_mkver     	= $(Q)$(ECHO)	"  MAKEVER  $@" &&
 quiet_do_transfer  	= $(Q)$(ECHO)	"  TRANSF   $@" && $(TRANSFER)
 quiet_do_compress  	= $(Q)$(ECHO)	"  COMPRES  $@" && $(COMPRESS)
 
@@ -45,12 +45,12 @@ do_copy            	= $(OBJCOPY)
 do_objdump         	= $(OBJDUMP)
 do_link            	= $(LINK)
 do_strip           	= $(STRIP)
-do_mkver           	= 
+do_mkver           	=
 do_transfer        	= $(TRANSFER)
 do_compress        	= $(COMPRESS)
 
 ifeq ($(CFG_STRIP_strip),y)
 STRIP_ALL           = $($(quiet)do_strip) --strip-all
 else
-STRIP_ALL           = $(Q)touch 
+STRIP_ALL           = $(Q)touch
 endif

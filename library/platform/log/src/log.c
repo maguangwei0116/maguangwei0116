@@ -28,7 +28,7 @@
 #define LOG_FILE_SIZE           1024 * 1024  // 1MB
 #define LOG_BUF_SIZE            2048
 #define LOG_MAX_LINE_SIZE       2 * 1024
-#define LOG_LEVEL_LEN           6
+#define LOG_LEVEL_LEN           7
 #define LOG_FILE_NAME_LEN       64
 #define LOG_HEXDUMP_LEVEL       LOG_INFO
 #ifndef ARRAY_SIZE
@@ -52,12 +52,13 @@ typedef struct LOG_PARAM {
 
 static const log_item_t g_log_item_table[] =
 {
-    {LOG_NONE,  "LOG_NONE",     "[NONE]",},
-    {LOG_ERR,   "LOG_ERR",      "[ERR ]",},
-    {LOG_WARN,  "LOG_WARN",     "[WARN]",},
-    {LOG_DBG,   "LOG_DBG",      "[DBG ]",},
-    {LOG_INFO,  "LOG_INFO",     "[INFO]",},
-    {LOG_ALL,   "LOG_ALL",      "[ALL ]",},
+    {LOG_NONE,    "LOG_NONE",     "[NONE ]",},
+    {LOG_ERR,     "LOG_ERR",      "[ERR  ]",},
+    {LOG_WARN,    "LOG_WARN",     "[WARN ]",},
+    {LOG_INFO,    "LOG_INFO",     "[INFO ]",},
+    {LOG_DBG,     "LOG_DBG",      "[DBG  ]",},
+    {LOG_TRACE,   "LOG_TRACE",    "[TRACE]",},
+    {LOG_ALL,     "LOG_ALL",      "[ALL  ]",},
 };
 
 static log_param_t g_log_param =
@@ -117,7 +118,7 @@ int32_t init_log_file(void *arg)
 
     g_log_mutex = linux_mutex_init();
     if (g_log_mutex) {
-        printf("log mutex init fail\n"); 
+        printf("log mutex init fail\n");
         return RT_ERROR;
     }
 
@@ -157,9 +158,9 @@ static void log_local_print(const char *data, int32_t len)
         /* external logger function */
         g_log_ex_func(data);
     }
-    
+
     if (g_log_param.mode == LOG_PRINTF_TERMINAL) {
-        printf("%s", data);      
+        printf("%s", data);
     } else {
         //printf("g_log_param.cur_size: %d/%d \r\n", g_log_param.cur_size, g_log_param.max_size);
         if (g_log_param.cur_size > g_log_param.max_size) {

@@ -25,6 +25,7 @@ CFLAGS          += -fdiagnostics-color=auto
 # Config link flags
 LDFLAGS         += $(LIB-y)
 LDFLAGS         += -L$(SDK_INSTALL_PATH)/lib
+LDFLAGS         += -L$(SYSROOT)/usr/lib
 LDFLAGS         += $(LOCAL_LDFLAGS)
 
 # Config run library path
@@ -33,9 +34,9 @@ LDFLAGS         += $(EXEC_LIB_PATH)
 
 # Config compile optimize flags
 #CFLAGS         += -g
-#CFLAGS         += -Os
-#CFLAGS         += -fdata-sections
-#CFLAGS         += -ffunction-sections
+CFLAGS         += -O0
+CFLAGS         += -fdata-sections
+CFLAGS         += -ffunction-sections
 #CFLAGS         += -fvisibility=hidden
 #LDFLAGS        += -Wl,--gc-sections
 #LDFLAGS        += -Wl,--print-gc-sections

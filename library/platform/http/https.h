@@ -10,6 +10,10 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/* switch for upload HTTPS */
+// #define UPLOAD_HTTPS_ENABLE                0
+// #define CFG_UPLOAD_HTTPS_ENABLE                0
+
 /* error code for https handle */
 typedef enum ERR_HTTPS_CODE {
     RT_ERR_HTTPS_GET_HOSTNAME_FAIL      = -300,
@@ -32,7 +36,7 @@ typedef struct HTTPS_CXT {
     SSL_CTX *                           ssl_cxt;    // openssl ssl CTX
 } https_ctx_t;
 
-extern int  https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca);
+extern int  https_init(https_ctx_t *https_ctx, const char *host, const char *port, const char *ca, int is_tls);
 extern int  https_post(https_ctx_t *https_ctx, const char *request);
 extern int  https_read(https_ctx_t *https_ctx, char *buffer, int buffer_size);
 extern void https_free(https_ctx_t *https_ctx);

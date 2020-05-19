@@ -19,7 +19,7 @@
 
 static cJSON *upload_on_enable_packer(void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "Upload on enable\n");
+    MSG_PRINTF(LOG_INFO, "Upload on enable\n");
 exit_entry:
     return (cJSON *)arg;
 }
@@ -70,7 +70,7 @@ static int32_t enable_parser(const void *in, char *tranid, void **out)
         }
         rt_os_memcpy(buf, payload->valuestring, len);
         buf[len] = '\0';
-        MSG_PRINTF(LOG_INFO, "payload:%s,len:%d\n", buf, len);
+        MSG_PRINTF(LOG_TRACE, "payload:%s,len:%d\n", buf, len);
         ret = RT_SUCCESS;
     } while(0);
     *out = (void *)buf;

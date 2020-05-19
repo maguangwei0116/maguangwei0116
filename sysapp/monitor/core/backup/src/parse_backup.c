@@ -17,11 +17,26 @@
 #include "rt_qmi.h"
 #include "apdu.h"
 #include "trigger.h"
-#include "card.h"
 #include "random.h"
 #include "ProfileInfoListResponse.h"
+#include "SetRootKeyRequest.h"
+#include "tlv.h"
 
 static int32_t g_operator_num = 0;
+
+static uint8_t *g_buf = NULL;
+static uint16_t g_buf_size = 0;
+static int32_t encode_cb_fun(const void *buffer, size_t size, void *app_key)
+{
+    g_buf = rt_os_realloc(g_buf, g_buf_size + size);
+    if (!g_buf) {
+        MSG_PRINTF(LOG_ERR, "realloc failed!!\n");
+        return RT_ERROR;
+    }
+    rt_os_memcpy(g_buf + g_buf_size, (void *) buffer, size);
+    g_buf_size += size;
+    return RT_SUCCESS;
+}
 
 static int32_t insert_profile(const uint8_t *buf, int32_t len)
 {
@@ -37,6 +52,78 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     ProfileInfo_t **p = NULL;
     uint8_t num = 0, i;
 
+    /******************************************************************************/
+    uint32_t all_profile_len = 0;
+    uint8_t *all_profile_buf = NULL;
+
+    all_profile_len = get_length((uint8_t *)card_buf, 0);
+    all_profile_buf = get_value_buffer((uint8_t *)card_buf);
+
+    MSG_INFO_ARRAY("all_profile_buf: ", all_profile_buf, all_profile_len);
+    /******************************************************************************/
+    uint32_t all_profile_no_hash_len = 0;
+    uint8_t *all_profile_no_hash_buf = NULL;
+
+    all_profile_no_hash_len = get_length(all_profile_buf, 0);
+    all_profile_no_hash_buf = get_value_buffer(all_profile_buf);
+
+    MSG_INFO_ARRAY("all_profile_no_hash_buf: ", all_profile_no_hash_buf, all_profile_no_hash_len);
+    /******************************************************************************/
+    uint32_t profile_info_len = 0;
+    uint32_t profile_info_tag_len = 0;
+    uint8_t *profile_info_buf = NULL;
+
+    profile_info_len = get_length(all_profile_no_hash_buf, 0);
+    profile_info_tag_len = get_length(all_profile_no_hash_buf, 1);
+    profile_info_buf = get_value_buffer(all_profile_no_hash_buf);
+
+    MSG_INFO_ARRAY("profile_info_buf: ", profile_info_buf, profile_info_len);
+    /******************************************************************************/
+    //need offset
+    uint32_t root_key_len = 0;
+    uint32_t root_key_tag_len = 0;
+    uint8_t *root_key_buf = NULL;
+
+    root_key_len = get_length(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len, 0);
+    root_key_tag_len = get_length(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len, 1);
+    root_key_buf = get_value_buffer(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len);
+
+    MSG_INFO_ARRAY("root_key_buf: ", root_key_buf, root_key_len);
+    /******************************************************************************/
+    //need offset
+    uint32_t aes_key_len = 0;
+    uint32_t aes_key_tag_len = 0;
+    uint8_t *aes_key_buf = NULL;
+
+    aes_key_len = get_length(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len+root_key_len+root_key_tag_len, 0);
+    aes_key_tag_len = get_length(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len+root_key_len+root_key_tag_len, 1);
+    aes_key_buf = get_value_buffer(all_profile_no_hash_buf+profile_info_len+profile_info_tag_len+root_key_len+root_key_tag_len);
+
+    MSG_INFO_ARRAY("aes_key_buf: ", aes_key_buf, aes_key_len);
+    /******************************************************************************/
+    asn_enc_rval_t ec;
+    SetRootKeyRequest_t key_request = {0};
+
+    key_request.rootEccSk = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, root_key_buf, root_key_len);
+    key_request.rootAesKey = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, aes_key_buf, aes_key_len);
+
+    g_buf_size = 0;
+    ec = der_encode(&asn_DEF_SetRootKeyRequest, &key_request, encode_cb_fun, NULL);
+    if (ec.encoded == -1) {
+        MSG_PRINTF(LOG_ERR, "encoded:%ld\n", ec.encoded);
+    }
+
+    MSG_INFO_ARRAY("g_buf: ", g_buf, g_buf_size);
+    /******************************************************************************/
+    ret = rt_open_channel(&channel);
+    MSG_PRINTF(LOG_TRACE, "rt_open_channel ret is : %d \n", ret);
+    ret = cmd_store_data(g_buf, g_buf_size, rsp_buf, &rsp_len, channel);
+    MSG_PRINTF(LOG_TRACE, "root_aes_key_apdu cmd_store_data ret is : %d \n", ret);
+    ret = rt_close_channel(channel);
+    MSG_PRINTF(LOG_TRACE, "rt_close_channel ret is : %d \n", ret);
+    rt_os_free(g_buf);
+    g_buf = NULL;
+    /******************************************************************************/
     rt_open_channel(&channel);
     ret = cmd_store_data((const uint8_t *)apdu_info, 3, rsp_buf, &rsp_len, channel);
 
@@ -46,8 +133,8 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
         ret = RT_ERROR;
         goto end;
     }
-    MSG_PRINTF(LOG_INFO, "present: %d\n", rsp->present);
-    MSG_PRINTF(LOG_INFO, "count: %d\n", rsp->choice.profileInfoListOk.list.count);
+    MSG_PRINTF(LOG_TRACE, "present: %d\n", rsp->present);
+    MSG_PRINTF(LOG_TRACE, "count: %d\n", rsp->choice.profileInfoListOk.list.count);
 
     if (rsp->present != ProfileInfoListResponse_PR_profileInfoListOk) {
         ret = RT_ERROR;
@@ -113,7 +200,7 @@ static int32_t parse_profile(void)
     int32_t operator_num;
     uint32_t profile_seq;
     char *apn_name = NULL;
-    char *mcc_mnc = NULL;    
+    char *mcc_mnc = NULL;
 
     dc = ber_decode(NULL, &asn_DEF_ProfileFile, (void **) &profile_file, card_buf, sizeof(card_buf));
     if (dc.code != RC_OK) {
@@ -131,7 +218,7 @@ static int32_t parse_profile(void)
     profiles = profile_file->sharedProfile.optProfiles.list.array[g_operator_num]->content.buf;
     size = profile_file->sharedProfile.optProfiles.list.array[g_operator_num]->content.size;
     size = size / profile_info->totalNum;  // one profile size
-    
+
     profile_seq = get_selecte_profile_index(profile_info->totalNum);
 
     MSG_INFO_ARRAY("insert profile buffer: ", profiles + (profile_seq * size), size);
@@ -162,7 +249,7 @@ int32_t backup_process(lpa_channel_type_e channel_mode)
     int32_t ret;
 
     MSG_PRINTF(LOG_INFO, "Begin to select profile from backup-profile ...\r\n");
-    ret = parse_profile();   
+    ret = parse_profile();
 
     if (channel_mode == LPA_CHANNEL_BY_IPC) {
         trigger_swap_card(1);  // reset card

@@ -9,6 +9,7 @@ extern "C" {
 #include "http.h"
 #include "rt_type.h"
 #include "cJSON.h"
+#include "https.h"
 
 /* uuid sample: 6c90fcc5-a30d-444f-9ba4-5bc433895699 */
 #define MAX_UUID_LEN                37  //(32+4+1)

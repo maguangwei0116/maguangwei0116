@@ -18,6 +18,9 @@ REDTEA_RELEASE_README=README.txt
 REDTEA_CHANGE_LOG=../doc/change-log.txt
 REDTEA_SHELL_APP=../doc/shells/open/start_redtea_app
 REDTEA_SHELL_KEEP=../doc/shells/open/start_redtea_keep
+REDTEA_SKB_SO=../sysapp/monitor/vuicc/lib/libskb.so
+REDTEA_SHARE_PROFILES=../doc/share_profile/*.der
+REDTEA_SHARE_PROFILE=rt_share_profile.der
 REDTEA_ADB_PUSH_SHELL=adb-push.sh
 REDTEA_SHELL_ADB_PUSH=../doc/shells/open/$(REDTEA_ADB_PUSH_SHELL)
 RELEASE_AUTHOR=$(shell whoami)
@@ -81,8 +84,10 @@ endef
 define COPY_RELEASE_TARGETS
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(REDTEA_RELEASE_APP_TARGETS)
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(REDTEA_RELEASE_APP_TARGETS)
-	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/test_lpa $(REDTEA_RELEASE_APP_TARGETS)	
+	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/test_lpa $(REDTEA_RELEASE_APP_TARGETS)
 	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(REDTEA_RELEASE_APP_TARGETS)
+	-$(Q)cp -rf $(REDTEA_SHARE_PROFILES) $(REDTEA_RELEASE_APP_TARGETS)/$(REDTEA_SHARE_PROFILE)
+	-$(Q)cp -rf $(REDTEA_SKB_SO) $(REDTEA_RELEASE_APP_TARGETS)
 	-$(Q)cp -rf $(REDTEA_SHELL_APP) $(REDTEA_RELEASE_APP_SHELLS)
 	-$(Q)cp -rf $(REDTEA_SHELL_KEEP) $(REDTEA_RELEASE_APP_SHELLS)
 	-$(Q)cp -rf $(REDTEA_SHELL_ADB_PUSH) $(RELEASE_INSTALL_PATH)
@@ -91,7 +96,7 @@ endef
 
 # Tar all release targets
 define TAR_RELEASE_TARGETS
-	cd $(1)/../; rm -rf $(1)/*.zip; zip -q -r $(2) ./$(shell basename $(1)); mv $(2) $(1) 
+	cd $(1)/../; rm -rf $(1)/*.zip; zip -q -r $(2) ./$(shell basename $(1)); mv $(2) $(1)
 endef
 
 release:
@@ -100,7 +105,7 @@ release:
 	$(Q)$(call COPY_RELEASE_TARGETS)
 	$(Q)test -e $(RELEASE_INSTALL_PATH)/$(REDTEA_RELEASE_README) || $(call CREATE_RELEASE_README,$(RELEASE_INSTALL_PATH)/$(REDTEA_RELEASE_README))
 	$(Q)$(call TAR_RELEASE_TARGETS,$(RELEASE_INSTALL_PATH),$(RELEASE_TAR_FILE))
-	
+
 release-clean:
 	rm -rf $(RELEASE_INSTALL_PATH) $(RELEASE_BUILD_DIR)
 

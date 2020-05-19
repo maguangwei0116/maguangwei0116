@@ -66,7 +66,7 @@ static int32_t card_check_provisoning_conflict(rt_bool clear_flg)
         cur_time[i] = time(NULL);
     }
 
-    MSG_PRINTF(LOG_INFO, "cur_time: %ld, [%ld], %ld, [%ld], %ld\r\n", \
+    MSG_PRINTF(LOG_TRACE, "cur_time: %ld, [%ld], %ld, [%ld], %ld\r\n", \
         cur_time[0], cur_time[1] - cur_time[0], cur_time[1], cur_time[2] - cur_time[1], cur_time[2]);
     for (i = 0; i < (SUCCESSIVE_NO_NET_NUM - 1); i++) {
         if ((cur_time[i + 1] == 0) || (cur_time[i] == 0) || (cur_time[i + 1] - cur_time[i]) > SUCCESSIVE_NO_NET_TIME) {
@@ -102,11 +102,11 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
 {
     if (PROFILE_TYPE_PROVISONING == *g_cur_profile_type || PROFILE_TYPE_TEST == *g_cur_profile_type) {
         if (*type != *g_cur_profile_type) { /* provisoning -> operational */
-            MSG_PRINTF(LOG_WARN, "provionsing iccid detected [%d] ==> [%d]\r\n", *type, *g_cur_profile_type);
+            MSG_PRINTF(LOG_INFO, "provionsing iccid detected [%d] ==> [%d]\r\n", *type, *g_cur_profile_type);
             *type = *g_cur_profile_type;
             return RT_SUCCESS;
         } else {
-            MSG_PRINTF(LOG_INFO, "provionsing iccid detected ...\r\n");
+            MSG_PRINTF(LOG_WARN, "provionsing iccid detected ...\r\n");
             *type = *g_cur_profile_type;
             return RT_ERROR;
         }
@@ -114,7 +114,7 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
 
     if (PROFILE_TYPE_OPERATIONAL == *g_cur_profile_type) {
         if ((rt_os_strcmp(iccid, g_cur_iccid)) || (*type != *g_cur_profile_type)) {
-            MSG_PRINTF(LOG_WARN, "iccid changed: (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_cur_iccid, *g_cur_profile_type);
+            MSG_PRINTF(LOG_INFO, "iccid changed: (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_cur_iccid, *g_cur_profile_type);
             snprintf(iccid, size, "%s", g_cur_iccid);
             *type = *g_cur_profile_type;
             return RT_SUCCESS;

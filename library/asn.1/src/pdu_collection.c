@@ -4,7 +4,12 @@
 
 struct asn_TYPE_descriptor_s;	/* Forward declaration */
 
-extern struct asn_TYPE_descriptor_s asn_DEF_Credential;
+extern struct asn_TYPE_descriptor_s asn_DEF_PersonalizeRequest;
+extern struct asn_TYPE_descriptor_s asn_DEF_PersonalizeResponse;
+extern struct asn_TYPE_descriptor_s asn_DEF_SetRootKeyRequest;
+extern struct asn_TYPE_descriptor_s asn_DEF_SetRootKeyResponse;
+extern struct asn_TYPE_descriptor_s asn_DEF_SignRequest;
+extern struct asn_TYPE_descriptor_s asn_DEF_SignResponse;
 extern struct asn_TYPE_descriptor_s asn_DEF_ProfileElement;
 extern struct asn_TYPE_descriptor_s asn_DEF_EUICCResponse;
 extern struct asn_TYPE_descriptor_s asn_DEF_X520name;
@@ -124,8 +129,13 @@ extern struct asn_TYPE_descriptor_s asn_DEF_BootstrapResponse;
 
 
 struct asn_TYPE_descriptor_s *asn_pdu_collection[] = {
-	/* From module Credential in Credential.asn */
-	&asn_DEF_Credential,	
+	/* From module Personalize in Credential.asn */
+	&asn_DEF_PersonalizeRequest,	
+	&asn_DEF_PersonalizeResponse,	
+	&asn_DEF_SetRootKeyRequest,	
+	&asn_DEF_SetRootKeyResponse,	
+	&asn_DEF_SignRequest,	
+	&asn_DEF_SignResponse,	
 	/* From module PEDefinitions in PEDefinitionsV2.2.asn */
 	&asn_DEF_ProfileElement,	
 	&asn_DEF_EUICCResponse,	

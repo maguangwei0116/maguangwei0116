@@ -6,12 +6,12 @@ config BR2_CFG_SYSTEM_NAME
 
 config BR2_CFG_PRODUCT_NAME
 	string "Product Name"
-	default "euicc"	
-	
+	default "euicc"
+
 config BR2_CFG_SOFTWARE_NAME
 	string "Software Name"
 	default "general"
-		  
+
 choice
 	prompt "Module Type"
 	default BR2_CFG_OPEN_MODULE
@@ -27,9 +27,14 @@ config BR2_CFG_STANDARD_MODULE
 	bool "BR2_CFG_STANDARD_MODULE"
 	help
 	  Standard module.
-	  
+
 endchoice
-	
+
+config BR2_CFG_MODULE_TYPE
+	string
+	default "open"               if BR2_CFG_OPEN_MODULE
+	default "standard"           if BR2_CFG_STANDARD_MODULE
+
 choice
 	prompt "Build for Platform"
 	default BR2_CFG_PLATFORM_9X07
@@ -43,19 +48,19 @@ config BR2_CFG_PLATFORM_9X07
 	bool "9x07"
 	help
 	  Build for 9x07 platform
-	  
+
 config BR2_CFG_PLATFORM_ANDROID_ARM32
 	bool "android-arm32"
 	select BR2_CFG_PLATFORM_ANDROID
 	help
 	  Build for android (ARM32) platform
-	  
+
 config BR2_CFG_PLATFORM_ANDROID_ARM64
 	bool "android-arm64"
 	select BR2_CFG_PLATFORM_ANDROID
 	help
 	  Build for android (ARM64) platform
-	  
+
 endchoice
 
 config BR2_CFG_PLATFORM_ANDROID
@@ -112,6 +117,52 @@ config BR2_CFG_ENV_TYPE_STAGING
 	  Running at staging environment.
 
 endchoice
+
+choice
+	prompt "Mqtt Type"
+	default BR2_CFG_DOWN_EMQ_MQTT_ENABLE
+	help
+	  Set mqtt type (mqtt or mqtts)
+
+config BR2_CFG_DOWN_EMQ_MQTT_ENABLE
+	bool "BR2_CFG_DOWN_EMQ_MQTT_ENABLE"
+	help
+	  mqtt type. This is the default.
+
+config BR2_CFG_DOWN_EMQ_MQTTS_ENABLE
+	bool "BR2_CFG_DOWN_EMQ_MQTTS_ENABLE"
+	help
+	  mqtts type.
+
+endchoice
+
+choice
+	prompt "Http Type"
+	default BR2_CFG_UPLOAD_HTTP_ENABLE
+	help
+	  Set http type (http or https)
+
+config BR2_CFG_UPLOAD_HTTP_ENABLE
+	bool "BR2_CFG_UPLOAD_HTTP_ENABLE"
+	help
+	  http type. This is the default.
+
+config BR2_CFG_UPLOAD_HTTPS_ENABLE
+	bool "BR2_CFG_UPLOAD_HTTPS_ENABLE"
+	help
+	  https type.
+
+endchoice
+
+config BR2_CFG_HTTP_TYPE
+	string
+	default "https"		    if BR2_CFG_UPLOAD_HTTPS_ENABLE
+	default "http"	        if BR2_CFG_UPLOAD_HTTP_ENABLE
+
+config BR2_CFG_MQTT_TYPE
+	string
+	default "mqtts"		    if BR2_CFG_DOWN_EMQ_MQTTS_ENABLE
+	default "mqtt"	        if BR2_CFG_DOWN_EMQ_MQTT_ENABLE
 
 config BR2_CFG_ENV_TYPE
 	string

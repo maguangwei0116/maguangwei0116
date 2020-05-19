@@ -13,7 +13,7 @@
 
 #include "apdu.h"
 #include "rt_qmi.h"
-#include "card.h"
+#include "vuicc_apdu.h"
 #include "parse_backup.h"
 
 #define SW_BUFFER_LEN               100
@@ -32,12 +32,10 @@ void init_apdu_channel(lpa_channel_type_e channel_mode)
 
 static uint16_t monitor_send_apdu(uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len)
 {
-    uint16_t sw;
+    int32_t  sw;
 
     MSG_INFO_ARRAY("B-APDU REQ: ", apdu, apdu_len);
-    sw = card_cmd((uint8_t *)apdu, apdu_len, rsp, rsp_len);
-    rsp[(*rsp_len)++] = (sw >> 8) & 0xFF;
-    rsp[(*rsp_len)++] = sw & 0xFF;
+    sw = vuicc_lpa_cmd((uint8_t *)apdu, apdu_len, rsp, rsp_len);
     MSG_INFO_ARRAY("B-APDU RSP: ", rsp, *rsp_len);
 
     return RT_SUCCESS;
@@ -87,7 +85,7 @@ int rt_open_channel(uint8_t *channel)
     } else {
         ret = rt_qmi_open_channel(euicc_aid, sizeof(euicc_aid), channel);
     }
-    MSG_PRINTF(LOG_INFO, "Open Channel: %d\n", *channel);
+    MSG_PRINTF(LOG_TRACE, "Open Channel: %d\n", *channel);
 
     return ret;
 }
@@ -118,7 +116,7 @@ int rt_close_channel(uint8_t channel)
     } else {
         ret = rt_qmi_close_channel(channel);
     }
-    MSG_PRINTF(LOG_INFO, "channel %d, ret:%d\n", channel, ret);
+    MSG_PRINTF(LOG_TRACE, "channel %d, ret:%d\n", channel, ret);
 
     return ret;
 }
@@ -206,6 +204,10 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
                 }
                 *rsp_len += size-2;
                 sw = get_sw(rsp,size);
+                // for cos return data
+                if ((rsp[0] == 0xFF) && (rsp[1] == 0x22) && (rsp[2] == 0x03) && (rsp[3] == 0x80) && (rsp[4] == 0x01) && (rsp[5] == 0x7F) && (rsp[6] == 0x90) && (rsp[7] == 0x00)) {
+                    return RT_ERROR;
+                }
                 rsp += size-2;
             } else {
                 break;

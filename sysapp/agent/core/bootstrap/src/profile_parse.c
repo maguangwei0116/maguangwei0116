@@ -16,6 +16,7 @@
 #include "ProfileInfo1.h"
 #include "FileInfo.h"
 #include "TBHRequest.h"
+#include "SetRootKeyRequest.h"
 #include "BootstrapRequest.h"
 #include "tlv.h"
 #include "agent_queue.h"
@@ -176,7 +177,7 @@ static uint16_t rt_init_file_info(rt_fshandle_t fp)
     g_data.operator_num = p[0];
 
     MSG_PRINTF(LOG_INFO, "operator_num:%d\n", g_data.operator_num);
-    MSG_PRINTF(LOG_INFO, "file_version_offset:%d\n", g_data.file_version_offset);
+    MSG_PRINTF(LOG_TRACE, "file_version_offset:%d\n", g_data.file_version_offset);
 }
 
 static uint32_t rt_get_root_sk_offset(rt_fshandle_t fp, uint32_t *size)
@@ -222,7 +223,7 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     linux_fseek(fp, profile_off, RT_FS_SEEK_SET);
     linux_fread(buf, 1, sizeof(buf), fp);
     hash_off += get_length(buf, 0) + get_length(buf, 1);
-    MSG_PRINTF(LOG_INFO, "file_size=%d, profile_off=%d, hash_off=%d\n", file_size, profile_off, hash_off);
+    MSG_PRINTF(LOG_TRACE, "file_size=%d, profile_off=%d, hash_off=%d\n", file_size, profile_off, hash_off);
 
     linux_fseek(fp, hash_off, RT_FS_SEEK_SET);
     rt_os_memset(buf, 0, sizeof(buf));
@@ -451,12 +452,12 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         rt_os_memcpy(buffer, bootstrap_request->tbhRequest.imsi.buf, bootstrap_request->tbhRequest.imsi.size);
         swap_nibble(buffer, bootstrap_request->tbhRequest.imsi.size);
         bytes2hexstring(buffer, bootstrap_request->tbhRequest.imsi.size, select_buffer);
-        MSG_PRINTF(LOG_WARN, "selected_imsi : %s\n", &select_buffer[3]);
+        MSG_PRINTF(LOG_INFO, "selected_imsi : %s\n", &select_buffer[3]);
         rt_os_memset(buffer, 0 ,sizeof(buffer));
         rt_os_memcpy(buffer, bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
         swap_nibble(buffer, bootstrap_request->tbhRequest.iccid.size);
         bytes2hexstring(buffer, bootstrap_request->tbhRequest.iccid.size, select_buffer);
-        MSG_PRINTF(LOG_WARN, "selected_iccid: %s\n", select_buffer);
+        MSG_PRINTF(LOG_INFO, "selected_iccid: %s\n", select_buffer);
     }
 
     if (rt_os_memcmp(bootstrap_request->tbhRequest.imsi.buf, jt, 4) == 0){
@@ -589,7 +590,7 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
 {
     rt_fshandle_t fp = NULL;
     int32_t length = 0;
-    uint8_t buf[128];
+    uint8_t buf[256];
     uint8_t *buffer = NULL;
 
     fp = open_share_profile(g_share_profile, RT_FS_READ);
@@ -615,13 +616,35 @@ static int32_t get_specify_data(uint8_t *data, int32_t *data_len, uint32_t offse
     return RT_SUCCESS;
 }
 
-int32_t bootstrap_get_profile_aes_key(uint8_t *data, int32_t *data_len)
+int32_t bootstrap_get_key(void)
 {
-    return get_specify_data(data, data_len, g_data.aes_key_offset);
-}
+    uint8_t data[512];
+    int32_t data_len = 0;
+    asn_enc_rval_t ec;
+    int32_t ret = RT_ERROR;
+    SetRootKeyRequest_t key_request = {0};
 
-int32_t bootstrap_get_profile_root_sk(uint8_t *data, int32_t *data_len){
-    return get_specify_data(data, data_len, g_data.root_sk_offset);
+    get_specify_data(data, &data_len, g_data.root_sk_offset);
+    key_request.rootEccSk = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, data_len);
+
+    get_specify_data(data , &data_len, g_data.aes_key_offset);
+    key_request.rootAesKey = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, data_len);
+
+    g_buf_size = 0;
+    ec = der_encode(&asn_DEF_SetRootKeyRequest, &key_request, encode_cb_fun, NULL);
+    if (ec.encoded == -1) {
+        MSG_PRINTF(LOG_ERR, "encoded:%ld\n", ec.encoded);
+        goto end;
+    }
+
+    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_KEY, g_buf, g_buf_size);
+    ret = RT_SUCCESS;
+end:
+    //ASN_STRUCT_FREE(asn_DEF_SetRootKeyRequest, &key_request);
+    rt_os_free(g_buf);
+    g_buf = NULL;
+
+    return ret;
 }
 
 int32_t get_share_profile_version(char *batch_code, int32_t b_size, char *version, int32_t v_size)
@@ -766,9 +789,9 @@ int32_t selected_profile(uint16_t mcc, char *apn, char *mcc_mnc, uint8_t *profil
 
     g_data.priority++;
     ret = RT_SUCCESS;
-    
+
 end:
-    
+
     if (fp) {
         linux_fclose(fp);
         fp = NULL;

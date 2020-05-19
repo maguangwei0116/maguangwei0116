@@ -1,7 +1,6 @@
 #! /bin/sh
 
 set -e
-echo 4096 > /proc/sys/vm/min_free_kbytes
 process=/oemapp/rt_monitor
 keep_process=/oemapp/start_redtea_keep
 

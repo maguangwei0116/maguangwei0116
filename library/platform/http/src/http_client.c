@@ -23,7 +23,7 @@ static void display_progress(const http_client_struct_t *obj)
 {
 #if (VERSION_TYPE == DEBUG) // only for debug version
     int percentage = ((float)obj->process_length / (obj->file_length + obj->range)) * 100;
-    MSG_PRINTF(LOG_WARN, "file download [%s] : %3d%% (%7d/%-7d)\r\n", \
+    MSG_PRINTF(LOG_TRACE, "file download [%s] : %3d%% (%7d/%-7d)\r\n", \
                     obj->file_path, percentage, obj->process_length, (obj->file_length + obj->range));
     //rt_os_sleep(1);  // only for test
 #else
@@ -33,6 +33,42 @@ static void display_progress(const http_client_struct_t *obj)
 
 static int http_client_upload_init(http_client_struct_t *obj)
 {
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    int32_t ret = RT_ERROR;
+    char port[6] = {0};
+    int32_t status = 0;
+
+    if (obj->https_ctx.ssl == NULL) {
+        MSG_PRINTF(LOG_DBG, "tls https_init\n");
+        ret = http_parse_url(obj->http_header.url, obj->http_header.addr, obj->http_header.url_interface, &obj->http_header.port);
+        if (0 != ret) {
+            return RT_ERROR;
+        }
+        MSG_PRINTF(LOG_INFO, "upload file_name:%s\n", obj->file_path);
+        obj->file_length  = linux_rt_file_size(obj->file_path);
+        obj->remain_length = obj->file_length;
+        obj->process_length = 0;
+        MSG_PRINTF(LOG_INFO, "upload file_name:%s,file_size:%d\n", obj->file_path, obj->file_length);
+        obj->fp = linux_rt_fopen(obj->file_path, "r");  // ´ò¿ªÎÄ¼þ
+        if (NULL == obj->fp) {
+            MSG_PRINTF(LOG_WARN, "linux_rt_fopen error\n");
+            return RT_ERROR;
+        }
+        obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN);
+        if (NULL == obj->buf) {
+            MSG_PRINTF(LOG_WARN, "malloc obj->buf error\n");
+            return RT_ERROR;
+        }
+        sprintf(port, "%d", obj->http_header.port);
+        status = https_init(&(obj->https_ctx), obj->http_header.addr, port, "./ca-chain.pem", 1); // "./ca-chain.pem" unuse
+        if (status < 0) {
+            https_free(&(obj->https_ctx));
+            MSG_PRINTF(LOG_ERR, "https_init is status %d ...\r\n", status);
+            return RT_ERROR;
+        }
+    }
+    return RT_SUCCESS;
+#else
     int ret = RT_ERROR;
     struct sockaddr_in server_addr;
     struct in_addr ipAddr;
@@ -46,9 +82,9 @@ static int http_client_upload_init(http_client_struct_t *obj)
 
     obj->remain_length = obj->file_length;
     obj->process_length = 0;
-    MSG_PRINTF(LOG_WARN, "upload file_name:%s,file_size:%d\n", obj->file_path, obj->file_length);
+    MSG_PRINTF(LOG_TRACE, "upload file_name:%s,file_size:%d\n", obj->file_path, obj->file_length);
 
-    RT_CHECK_ERR(obj->fp = linux_rt_fopen(obj->file_path, "r"), NULL);  // ���ļ�
+    RT_CHECK_ERR(obj->fp = linux_rt_fopen(obj->file_path, "r"), NULL);  // ´ò¿ªÎÄ¼þ
     RT_CHECK_ERR(obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN), NULL);
 
     /* connect server */
@@ -74,10 +110,48 @@ static int http_client_upload_init(http_client_struct_t *obj)
      ret = RT_SUCCESS;
 end:
     return ret;
+#endif
 }
 
 static int http_client_download_init(http_client_struct_t *obj)
 {
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    int32_t ret = RT_ERROR;
+    char port[6] = {0};
+    int32_t status = 0;
+
+    if (obj->https_ctx.ssl == NULL) {
+        MSG_PRINTF(LOG_DBG, "tls https_init\n");
+        ret = http_parse_url(obj->http_header.url, obj->http_header.addr, obj->http_header.url_interface, &obj->http_header.port);
+        if (0 != ret) {
+            MSG_PRINTF(LOG_WARN, "http_parse_url error\n");
+            return RT_ERROR;
+        }
+        MSG_PRINTF(LOG_INFO, "download file_name:%s\n", obj->file_path);
+
+        obj->fp = linux_rt_fopen(obj->file_path, "a");
+        if (NULL == obj->fp) {
+            MSG_PRINTF(LOG_WARN, "linux_rt_fopen error\n");
+            return RT_ERROR;
+        }
+        obj->process_length = 0;
+        obj->process_set = 0;
+        obj->remain_length = 0;
+        sprintf(port, "%d", obj->http_header.port);
+        obj->buf = (char *)rt_os_malloc(MAX_BLOCK_LEN);
+        if (NULL == obj->buf) {
+            MSG_PRINTF(LOG_WARN, "malloc obj->buf error\n");
+            return RT_ERROR;
+        }
+        status = https_init(&(obj->https_ctx), obj->http_header.addr, port, "./ca-chain.pem", 1); // "./ca-chain.pem" unuse
+        if (status < 0) {
+            https_free(&(obj->https_ctx));
+            MSG_PRINTF(LOG_ERR, "https_init is status %d ...\r\n", status);
+            return RT_ERROR;
+        }
+    }
+    return RT_SUCCESS;
+#else
     int ret = -1;
     struct sockaddr_in server_addr;
     struct in_addr ipAddr;
@@ -115,6 +189,7 @@ static int http_client_download_init(http_client_struct_t *obj)
     ret = 0;
 end:
     return ret;
+#endif
 }
 
 static void http_client_release(http_client_struct_t *obj)
@@ -133,10 +208,30 @@ static void http_client_release(http_client_struct_t *obj)
         close(obj->socket);
         obj->socket = -1;
     }
+
+    https_free(&(obj->https_ctx));
 }
 
 static int http_client_send(http_client_struct_t *obj)
 {
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    int32_t sent = 0;
+    int32_t tmpres = 0;
+
+    while (sent < obj->process_set) {
+        tmpres = https_post(&(obj->https_ctx), obj->buf + sent);
+        if (tmpres == -1) {
+            MSG_PRINTF(LOG_WARN, "tmpres is error:%s\n", strerror(errno));
+            if (errno == SIGPIPE) {
+                MSG_PRINTF(LOG_WARN, "socket disconnected by peer !\r\n");
+                return -2;
+            }
+            return -1;
+        }
+        sent += tmpres;
+    }
+    return sent;
+#else
     int sent = 0;
     int tmpres = 0;
 
@@ -153,15 +248,52 @@ static int http_client_send(http_client_struct_t *obj)
         sent += tmpres;
     }
     return sent;
+#endif
 }
 
 static int http_client_recv(http_client_struct_t *obj)
 {
     int cnt = 0;
     int recvnum = 0;
+    int original_len = obj->process_set;
 
     rt_os_memset(obj->buf, 0, MAX_BLOCK_LEN);
     while(1) {
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+        MSG_PRINTF(LOG_DBG, "obj->process_set is %d\n", obj->process_set);
+        MSG_PRINTF(LOG_DBG, "recvnum is %d\n", recvnum);
+        MSG_PRINTF(LOG_DBG, "original_len is %d\n", original_len);
+
+        cnt = https_read(&(obj->https_ctx), obj->buf + recvnum, original_len);
+
+        MSG_PRINTF(LOG_DBG, "obj->process_set is %d\n", obj->process_set);
+        MSG_PRINTF(LOG_DBG, "recvnum is %d\n", recvnum);
+        MSG_PRINTF(LOG_DBG, "original_len is %d\n", original_len);
+        MSG_PRINTF(LOG_DBG, "cnt is %d\n", cnt);
+        //MSG_PRINTF(LOG_WARN, "Recv cnt: %d, obj->process_set=%d !!!\n", cnt, obj->process_set);
+        if (cnt > 0) {
+            original_len -= cnt;
+            recvnum += cnt;
+            if (recvnum == obj->process_set) {
+                break;
+            } else {
+                continue;
+            }
+        } else if (cnt == 0) {
+            MSG_PRINTF(LOG_WARN, "Recv error because socket disconnect!!!\n");
+            recvnum = -1;
+            break;
+        } else {
+            if((cnt < 0) && (errno == EINTR)){
+              continue;
+            }
+            recvnum = -1;
+            MSG_PRINTF(LOG_WARN, "Recv data error result:%s\n", strerror(errno));
+            break;
+        }
+    }
+    return recvnum;
+#else
         cnt = (int)recv(obj->socket, obj->buf + recvnum, obj->process_set, MSG_WAITALL);
         //MSG_PRINTF(LOG_WARN, "Recv cnt: %d, obj->process_set=%d !!!\n", cnt, obj->process_set);
         if (cnt > 0) {
@@ -181,6 +313,9 @@ static int http_client_recv(http_client_struct_t *obj)
         }
     }
     return recvnum;
+
+#endif
+
 }
 
 static int http_client_send_header(http_client_struct_t *obj)
@@ -292,6 +427,31 @@ end:
 
 static int http_client_get_resp_header(http_client_struct_t *obj)
 {
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    int32_t flag = 0;
+
+    obj->process_length = 0;
+    rt_os_memset(obj->buf,0 ,MAX_BLOCK_LEN);
+
+    while (https_read(&(obj->https_ctx), obj->buf + obj->process_length, 1) == 1) {
+        /* http header end with a empty line (at least 3 '\r' or '\n', normal for 4 '\r' or '\n') */
+        if (flag < 3) {
+            if (obj->buf[obj->process_length] == '\r' || obj->buf[obj->process_length] == '\n') {
+                flag++;
+            } else {
+                flag = 0;
+            }
+        } else {
+            obj->buf[obj->process_length] = '\0';
+            MSG_PRINTF(LOG_TRACE,"recv http header ok, flag:%d, buf:%s\n", flag, obj->buf);
+            return 0;
+        }
+        //MSG_PRINTF(LOG_INFO,"->>> flag:%d, char:%c\n", flag, obj->buf[obj->process_length]);
+        obj->process_length++;
+    }
+    MSG_PRINTF(LOG_WARN,"recv http header fail, flag:%d, buf:%s\n", flag, obj->buf);
+    return RT_ERROR;
+#else
     int flag = 0;
 
     obj->process_length = 0;
@@ -307,7 +467,7 @@ static int http_client_get_resp_header(http_client_struct_t *obj)
             }
         } else {
             obj->buf[obj->process_length] = '\0';
-            MSG_PRINTF(LOG_INFO,"recv http header ok, flag:%d, buf:%s\n", flag, obj->buf);
+            MSG_PRINTF(LOG_TRACE,"recv http header ok, flag:%d, buf:%s\n", flag, obj->buf);
             return 0;
         }
         //MSG_PRINTF(LOG_INFO,"->>> flag:%d, char:%c\n", flag, obj->buf[obj->process_length]);
@@ -315,6 +475,7 @@ static int http_client_get_resp_header(http_client_struct_t *obj)
     }
     MSG_PRINTF(LOG_WARN,"recv http header fail, flag:%d, buf:%s\n", flag, obj->buf);
     return -1;
+#endif
 }
 
 static int http_client_recv_data(http_client_struct_t *obj)
@@ -383,7 +544,7 @@ static int http_client_error_prase(http_client_struct_t *obj)
 
     RT_CHECK_ERR(obj, NULL);
 
-    MSG_PRINTF(LOG_INFO, "respond header:\n%s\n", obj->buf);
+    MSG_PRINTF(LOG_TRACE, "respond header:\n%s\n", obj->buf);
     rt_os_memset(length, 0, sizeof(length));
 
     RT_CHECK_ERR(pos = rt_os_strstr((const char *)obj->buf, (const char *)"HTTP/"), NULL);
@@ -405,7 +566,7 @@ static int http_client_error_prase(http_client_struct_t *obj)
         rt_os_memcpy(length, pos + 16, length_char_len);
         length[length_char_len] = '\0';
         obj->file_length = msg_string_to_int((uint8_t *)length);
-        MSG_PRINTF(LOG_WARN, "Download file size:%d\n", obj->file_length);
+        MSG_PRINTF(LOG_TRACE, "Download file size:%d\n", obj->file_length);
         obj->remain_length = obj->file_length;
     }
 
@@ -457,7 +618,7 @@ int http_client_file_download(http_client_struct_t *d_state)
     RT_CHECK_LES(http_client_get_resp_header(d_state), 0);
     RT_CHECK_LES(http_client_error_prase(d_state), 0);
     RT_CHECK_ERR(http_client_recv_data(d_state), -1);
-    MSG_PRINTF(LOG_WARN, "Download  %s success\n", d_state->file_path);
+    MSG_PRINTF(LOG_INFO, "Download  %s success\n", d_state->file_path);
     ret = RT_SUCCESS;
 
 end:
@@ -471,15 +632,19 @@ int http_client_file_upload(http_client_struct_t *up_state)
     int ret = RT_ERROR;
 
     RT_CHECK_ERR(up_state, NULL);
+    MSG_PRINTF(LOG_DBG, "start http upload init\n");
     RT_CHECK_NEQ(http_client_upload_init(up_state), 0);
+    MSG_PRINTF(LOG_DBG, "start http send header\n");
     RT_CHECK_LES(http_client_send_header(up_state), 0);
+    MSG_PRINTF(LOG_DBG, "start http send body\n");
     RT_CHECK_LES(http_client_send_body(up_state), 0);
+    MSG_PRINTF(LOG_DBG, "start http get header\n");
     RT_CHECK_LES(http_client_get_resp_header(up_state), 0);
     RT_CHECK_LES(http_client_error_prase(up_state), 0);
-    MSG_PRINTF(LOG_WARN, "Uplaad  %s success\n", up_state->file_path);
+    MSG_PRINTF(LOG_INFO, "Upload  %s success\n", up_state->file_path);
 
     ret = RT_SUCCESS;
 end:
-    http_client_release(up_state);  // �ͷŽṹ
+    http_client_release(up_state);  // ÊÍ·Å½á¹¹
     return ret;
 }

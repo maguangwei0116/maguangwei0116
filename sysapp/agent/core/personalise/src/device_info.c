@@ -42,7 +42,7 @@ int32_t init_device_info(void *arg)
     MD5Final(&ctx, device_id);
     get_ascii_string((uint8_t *)device_id, MAX_DEVICE_ID_LEN/2, (uint8_t *)info.device_id);
     
-    MSG_PRINTF(LOG_WARN, "device_id:[%s] imei:[%s] model:[%s] sn:[%s]\n", info.device_id, info.imei, info.model, info.sn);
+    MSG_PRINTF(LOG_INFO, "device_id:[%s] imei:[%s] model:[%s] sn:[%s]\n", info.device_id, info.imei, info.model, info.sn);
     
     ((public_value_list_t *)arg)->device_info = &info;
 

@@ -14,7 +14,7 @@ TARGET                              = $(shell pwd | sed 's/^\(.*\)[/]//')
 ENV_TYPE                            = $(SYSAPP_ENV_TYPE)
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
-LOCAL_TARGET_VERSION                = 0.0.0.12
+LOCAL_TARGET_VERSION                = 0.0.0.13
 
 # Check input tag version
 ifdef AGENT_VERSION
@@ -44,11 +44,12 @@ LOCAL_CFLAGS                        += -DOPENSSL=1
 
 # Config your own libraries
 ifeq ($(SYSAPP_PLATFORM_9X07), y)
-QMI-LIB                             = dsi_netctrl dsutils qcmapipc qmi qmi_cci qmi_sap qmiservices
+QMI-LIB                             = dsi_netctrl dsutils qmi_cci qmiservices
 COMM-LIB                            = comm ssl crypto pthread dl
 ifeq ($(CFG_STANDARD_MODULE),y)
 QMI-LIB                             += ql_softsim_extsdk
 endif
+
 endif
 ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 COMM-LIB                            = comm z ssl crypto

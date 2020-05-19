@@ -11,7 +11,7 @@
 #include "base64.h"
 
 extern const char curve_parameter[192];
-static const char *opt_string = "glll:s:?:v:h:i:s:p:f:b:t:";
+static const char *opt_string = "glll:s:?:v:h:i:s:p:f:b:t:r:";
 volatile int32_t toStop = 0;
 
 static void display_usage(void)
@@ -23,9 +23,10 @@ static void display_usage(void)
     fprintf(stderr, "  -i\thash signature\n");
     fprintf(stderr, "  -p\tpublic key\n");
     fprintf(stderr, "  -s\tsecuret key\n");
-
+    fprintf(stderr, "  -t\tfile data\n");
     fprintf(stderr, "  -f\thash signature base64 format\n");
     fprintf(stderr, "  -b\tpublic key base64 format\n");
+    fprintf(stderr, "  -r\trequest signature from server\n");
 }
 
 int softsim_printf (int leve, int flag, const char *msg, ...)
@@ -62,6 +63,14 @@ int main(int argc, char * const *argv)
     uint8_t base64_out[512];
     int output_len = 0;
     int input_len = 0;
+    FILE *fp;
+    uint8_t buffer_in[1024] = {0};
+    uint8_t buffer_out[1024] = {0};
+    int vault_len = 0;
+    uint8_t *vault_key = NULL;
+    uint8_t signature_key[256] = {0};
+    uint8_t en_base64[512];
+    int flag_r = 0;
 
     init_curve_parameter(curve_parameter);
 
@@ -119,6 +128,22 @@ int main(int argc, char * const *argv)
                 input_len = (int)strlen((char *)input_text);
                 printf("string:%s, len:%d\n", input_text, input_len);
                 break;
+            case 'r':
+                do {
+                    flag_r = 1;
+                    vault_key = (uint8_t *)optarg;
+                    rt_base64_encode(argv[2], strlen(argv[2]), en_base64);
+                    sprintf(buffer_in, "echo %s | %s", en_base64, argv[3]);
+                    fp = popen(buffer_in, "r");
+                    fgets(buffer_out, sizeof(buffer_out), fp);
+                    rt_base64_decode(buffer_out, base64_out, &vault_len);
+                    pclose(fp);
+                } while(vault_len != 70);
+                bytes2hexstring(base64_out, vault_len, vault_key);
+                strncpy(signature_key, vault_key+8, 64);
+                strncpy(signature_key+64, vault_key+76, 64);
+                printf("%s", signature_key);
+                break;
             case '?':
                 display_usage();
                 break;
@@ -135,7 +160,7 @@ int main(int argc, char * const *argv)
         LOG_INFO_ARRAY(output, output_len, "signature:");
     } else if ((input_text != NULL) && (signature != NULL) && (pk_key != NULL)) {
         ecc_verify(input_text, input_len, pk_key, pk_len, signature, s_len);
-    } else if (pk_len == 0) {
+    } else if (pk_len == 0 && flag_r == 0) {
         printf("Input parameter error!!\n");
     }
 

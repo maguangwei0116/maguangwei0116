@@ -140,9 +140,9 @@ static void agent_queue_task(void)
         rt_os_memset(&que_t, 0, sizeof(agent_que_t));
         if (rt_receive_msg_queue(g_queue_id, (void *) &que_t, len, AGENT_QUEUE_MSG_TYPE, 0) == RT_SUCCESS) {
             #if (AGENT_MSG_DEBUG)
-            MSG_PRINTF(LOG_INFO, "<=recv agent queue: [%s], mode: [%s]\n", g_msg_id_e[que_t.msg_id], g_msg_mode_e[que_t.mode]);
+            MSG_PRINTF(LOG_TRACE, "<=recv agent queue: [%s], mode: [%s]\n", g_msg_id_e[que_t.msg_id], g_msg_mode_e[que_t.mode]);
             #else
-            MSG_PRINTF(LOG_INFO, "que_t.msg_id:%d, mode:%d\n", que_t.msg_id, que_t.mode);
+            MSG_PRINTF(LOG_TRACE, "que_t.msg_id:%d, mode:%d\n", que_t.msg_id, que_t.mode);
             #endif
             switch (que_t.msg_id) {
                 case MSG_ID_BOOT_STRAP:
@@ -358,7 +358,7 @@ int32_t msg_send_upload_queue(void *buffer, int32_t len)
     que_t.data_len  = len;
     que_t.data_buf  = (void *)rt_os_malloc(que_t.data_len + 1);
     rt_os_memcpy(que_t.data_buf, buffer, len);
-    //MSG_PRINTF(LOG_ERR, "que_t.data_buf: %p, buffer: %p, len: %d\n", que_t.data_buf, buffer, len);
+    //MSG_PRINTF(LOG_TRACE, "que_t.data_buf: %p, buffer: %p, len: %d\n", que_t.data_buf, buffer, len);
     *(((uint8_t *)que_t.data_buf) + len) = '\0';
     len = sizeof(upload_que_t) - sizeof(long);
     ret = rt_send_msg_queue(g_upload_queue_id, (const void *)&que_t, len, 0);

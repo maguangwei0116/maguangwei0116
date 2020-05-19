@@ -18,6 +18,7 @@ extern "C" {
 #include "rt_os.h"
 #include "log.h"
 #include "file.h"
+#include "https.h"
 
 #define RT_CHECK_ERR(process, result) \
     if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
@@ -73,6 +74,7 @@ typedef struct HTTP_CLIENT_STRUCT {
     char *                              buf;            /* the buffer which used to send block data 
                                                          * in the upload process and
                                                          * used to send body in the download process*/
+    https_ctx_t                         https_ctx;
 } http_client_struct_t;
 
 extern int http_client_file_download(http_client_struct_t *d_state);

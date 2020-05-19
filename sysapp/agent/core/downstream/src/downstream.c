@@ -81,7 +81,7 @@ static int32_t downstream_msg_get_method(const char *msg, char *method)
     string_trim_backslash(method, ret, method);
 
     //MSG_PRINTF(LOG_INFO, "get msg method : [%s]\n", method);
-    MSG_PRINTF(LOG_WARN, "<-------%s\n", method);
+    MSG_PRINTF(LOG_INFO, "<-------%s\n", method);
 
     ret = 0;
 

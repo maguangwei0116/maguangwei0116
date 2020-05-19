@@ -25,6 +25,7 @@
 #include "lpa_error_codes.h"
 #include "rt_os.h"
 #include "lpa_https.h"
+#include "tlv.h"
 
 static uint8_t g_buf[10*1024];
 static uint16_t g_buf_size;
@@ -363,12 +364,12 @@ static int get_status_codes(const char *in, char *sc, char *rc)
     p1 += 1;  // Skip "
     p2 = strstr(p1, "\"");  // Find the secoond " after :
     RT_CHECK_GO(p2, RT_ERR_HTTPS_SMDP_ERROR, end);
-    MSG_INFO("p1: %s\np2: %s\n", p1, p2);
+    MSG_DBG("p1: %s\np2: %s\n", p1, p2);
 
     // Now we get subjectCode, and p1 points to the start and p2 points to the end of the subjectCode
     memcpy(sc, p1, p2 - p1);
     sc[p2-p1] = '\0';
-    MSG_INFO("sc: %s\n", sc);
+    MSG_DBG("sc: %s\n", sc);
 
     p2 = strstr(p2, "\"reasonCode\""); // Find "reasonCode"
     RT_CHECK_GO(p2, RT_ERR_HTTPS_SMDP_ERROR, end);
@@ -380,12 +381,12 @@ static int get_status_codes(const char *in, char *sc, char *rc)
     p1 += 1;  // Skipp "
     p2 = strstr(p1, "\"");  // Find the secoond " after :
     RT_CHECK_GO(p2, RT_ERR_HTTPS_SMDP_ERROR, end);
-    MSG_INFO("p1: %s\np2: %s\n", p1, p2);
+    MSG_DBG("p1: %s\np2: %s\n", p1, p2);
 
     // Now we get subjectCode, and p1 points to the start and p2 points to the end of the reasonCode
     memcpy(rc, p1, p2 - p1);
     rc[p2-p1] = '\0';
-    MSG_INFO("rc: %s\n", rc);
+    MSG_DBG("rc: %s\n", rc);
 
     ret = 1;
 
@@ -539,7 +540,7 @@ static int get_asn1_from_json(cJSON *json, const char *key,
 
     b64_str = cJSON_GetObjectItem(json, key)->valuestring;
     RT_CHECK_GO(b64_str, RT_ERR_CJSON_ERROR, end);
-    MSG_INFO("%s: %s\n", key, b64_str);
+    MSG_DBG("%s: %s\n", key, b64_str);
 
     asn1 = malloc(strlen(b64_str));
     RT_CHECK_GO(asn1, RT_ERR_OUT_OF_MEMORY, end);
@@ -570,7 +571,7 @@ static int get_signature_from_json(cJSON *json, const char *key, void **req)
 
     b64_str = cJSON_GetObjectItem(json, key)->valuestring;
     RT_CHECK_GO(b64_str, RT_ERR_CJSON_ERROR, end);
-    MSG_INFO("%s: %s\n", key, b64_str);
+    MSG_DBG("%s: %s\n", key, b64_str);
 
     asn1 = malloc(strlen(b64_str));
     RT_CHECK_GO(asn1, RT_ERR_OUT_OF_MEMORY, end);
@@ -710,19 +711,19 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     char *data = NULL;
     char *b64_in = NULL;
     int b64_len = 0;
-    
+
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
-    MSG_INFO("transactionId: %s\n", g_transaction_id);
-    
+    MSG_DBG("transactionId: %s\n", g_transaction_id);
+
     b64_len = ((in_size + 2) / 3) * 4 + 1;
     b64_in = malloc(b64_len);
-    rt_os_memset(b64_in, 0, b64_len);    
+    rt_os_memset(b64_in, 0, b64_len);
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("b64_in:\n%s\n", b64_in);
+    MSG_DBG("b64_in:\n%s\n", b64_in);
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
@@ -824,13 +825,13 @@ int get_bound_profile_package(const char *smdp_addr, const uint8_t *in, uint16_t
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
-    MSG_INFO("transactionId: %s\n", g_transaction_id);
+    MSG_DBG("transactionId: %s\n", g_transaction_id);
 
     b64_in = malloc(((in_size + 2) / 3) * 4 + 1);
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("b64_in[%d]:\n%s\n", strlen(b64_in), b64_in);
+    MSG_DBG("b64_in[%d]:\n%s\n", strlen(b64_in), b64_in);
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
@@ -927,12 +928,13 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     buf = strchr(get_cb_data(),0x88);
     p = get_cb_data();
     len = buf-get_cb_data();  // TODO: Make it general
-    MSG_INFO("len: %d\n", len);
+    MSG_DBG("len: %d\n", len);
     ret = cmd_store_data(p, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     // Send sequenceOf88 Value
     cnt = bpp->sequenceOf88.list.count;
+    // according to BF37
     for (i = 0; i < cnt; i++) {
         req = bpp->sequenceOf88.list.array[i];
         clean_cb_data();
@@ -944,6 +946,93 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         MSG_DUMP_ARRAY("sequenceOf88TLV\n", get_cb_data(), get_cb_size());
         ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
+
+        /* check result code */
+        MSG_DUMP_ARRAY("sequenceOf88TLV out\n", out, *out_size);
+        if (*out_size != 2) {
+            uint32_t profile_installation_result_data_len = 0;
+            uint8_t *profile_installation_result_data_buf = NULL;
+
+            profile_installation_result_data_len = get_length(out, 0);
+            profile_installation_result_data_buf = get_value_buffer(out);
+            MSG_INFO_ARRAY("ProfileInstallationResultData_buf: ", profile_installation_result_data_buf, profile_installation_result_data_len);
+
+            uint32_t metadata1_len = 0;
+            uint8_t *metadata1_buf = NULL;
+
+            metadata1_len = get_length(profile_installation_result_data_buf, 0);
+            metadata1_buf = get_value_buffer(profile_installation_result_data_buf);
+            MSG_INFO_ARRAY("metadata1_buf: ", metadata1_buf, metadata1_len);
+
+            uint32_t metadata2_len = 0;
+            uint32_t metadata2_tag_len = 0;
+            uint8_t *metadata2_buf = NULL;
+
+            metadata2_len = get_length(metadata1_buf, 0);
+            metadata2_tag_len = get_length(metadata1_buf, 1);
+            metadata2_buf = get_value_buffer(metadata1_buf);
+            MSG_INFO_ARRAY("metadata2_buf: ", metadata2_buf, metadata2_len);
+
+            uint32_t metadata3_len = 0;
+            uint32_t metadata3_tag_len = 0;
+            uint8_t *metadata3_buf = NULL;
+
+            metadata3_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len, 0);
+            metadata3_tag_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len, 1);
+            metadata3_buf = get_value_buffer(metadata1_buf+metadata2_len+metadata2_tag_len);
+            MSG_INFO_ARRAY("metadata3_buf: ", metadata3_buf, metadata3_len);
+
+            uint32_t metadata4_len = 0;
+            uint32_t metadata4_tag_len = 0;
+            uint8_t *metadata4_buf = NULL;
+
+            metadata4_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len, 0);
+            metadata4_tag_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len, 1);
+            metadata4_buf = get_value_buffer(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len);
+            MSG_INFO_ARRAY("metadata4_buf: ", metadata4_buf, metadata4_len);
+
+            uint32_t metadata5_len = 0;
+            uint32_t metadata5_tag_len = 0;
+            uint8_t *metadata5_buf = NULL;
+
+            metadata5_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len+metadata4_len+metadata4_tag_len, 0);
+            metadata5_tag_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len+metadata4_len+metadata4_tag_len, 1);
+            metadata5_buf = get_value_buffer(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len+metadata4_len+metadata4_tag_len);
+            MSG_INFO_ARRAY("metadata5_buf: ", metadata5_buf, metadata5_len);
+
+
+            uint32_t metadata6_len = 0;
+            uint8_t *metadata6_buf = NULL;
+
+            metadata6_len = get_length(metadata5_buf, 0);
+            metadata6_buf = get_value_buffer(metadata5_buf);
+            MSG_INFO_ARRAY("metadata6_buf: ", metadata6_buf, metadata6_len);
+
+
+            uint32_t err_id_len = 0;
+            uint32_t err_id_tag_len = 0;
+            uint8_t *err_id_buf = NULL;
+
+            err_id_len = get_length(metadata6_buf, 0);
+            err_id_tag_len = get_length(metadata6_buf, 1);
+            err_id_buf = get_value_buffer(metadata6_buf);
+            MSG_INFO_ARRAY("err_id_buf: ", err_id_buf, err_id_len);
+
+            uint32_t err_res_len = 0;
+            uint32_t err_res_tag_len = 0;
+            uint8_t *err_res_buf = NULL;
+
+            err_res_len = get_length(metadata6_buf+err_id_len+err_id_tag_len, 0);
+            err_res_tag_len = get_length(metadata6_buf+err_id_len+err_id_tag_len, 1);
+            err_res_buf = get_value_buffer(metadata6_buf+err_id_len+err_id_tag_len);
+            MSG_INFO_ARRAY("err_res_buf: ", err_res_buf, err_res_len);
+
+            if ((*err_id_buf == 0x02) && (*err_res_buf == 0x09)) {
+                ret = RT_ERR_APDU_STORE_DATA_FAIL;
+                goto end;
+            }
+        }
+
     }
 
     // ES8+ Replace Session Keys
@@ -973,13 +1062,13 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     buf = strchr(get_cb_data(), 0x86);
     p = get_cb_data();
     len = buf-get_cb_data();  // TODO: Make it general
-    MSG_INFO("len: %d\n", len);
+    MSG_DBG("len: %d\n", len);
     ret = cmd_store_data(p, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     // Send sequenceOf86 Value
     cnt = bpp->sequenceOf86.list.count;
-    MSG_INFO("cnt: %d\n", cnt);
+    MSG_DBG("cnt: %d\n", cnt);
     for (i = 0; i < cnt; i++) {
         req = bpp->sequenceOf86.list.array[i];
         clean_cb_data();
@@ -1017,13 +1106,13 @@ int handle_notification(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
-    MSG_INFO("transactionId: %s\n", g_transaction_id);
+    MSG_DBG("transactionId: %s\n", g_transaction_id);
 
     b64_in = malloc(((in_size + 2) / 3) * 4 + 1);
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("b64_in:\n%s\n", b64_in);
+    MSG_DBG("b64_in:\n%s\n", b64_in);
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
@@ -1061,13 +1150,13 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     if ((in == NULL) || (out == NULL) || (out_size == NULL)){
         return RT_ERR_NULL_POINTER;
     }
-    MSG_INFO("transactionId: %s\n", g_transaction_id);
+    MSG_DBG("transactionId: %s\n", g_transaction_id);
 
     b64_in = malloc(((in_size + 2) / 3) * 4 + 1);
     RT_CHECK_GO(b64_in, RT_ERR_OUT_OF_MEMORY, end);
     ret = rt_base64_encode(in, in_size, b64_in);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_INFO("b64_in:\n%s\n", b64_in);
+    MSG_DBG("b64_in:\n%s\n", b64_in);
 
     content = cJSON_CreateObject();
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
@@ -1095,24 +1184,16 @@ end:
     return ret;
 }
 
-int load_cert(const uint8_t *data, uint16_t data_len, uint8_t channel)
+int load_customized_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
     int ret = RT_SUCCESS;
 
     ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000
     if (ret == RT_SUCCESS) {
-        return g_buf[5];
-    }
-
-    return ret;
-}
-
-int load_profile(const uint8_t *data, uint16_t data_len, uint8_t channel)
-{
-    int ret = RT_SUCCESS;
-
-    ret = cmd_store_data(data, data_len, g_buf, &g_buf_size, channel);  // Should only contain 9000
-    if (ret == RT_SUCCESS) {
+        if ((rsp != NULL) && (rsp_len != NULL)) {
+            memcpy(rsp, g_buf, g_buf_size);
+            *rsp_len = g_buf_size;
+        }
         return g_buf[5];
     }
 

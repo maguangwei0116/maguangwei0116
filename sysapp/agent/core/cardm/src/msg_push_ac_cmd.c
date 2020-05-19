@@ -24,7 +24,7 @@ static uint8_t g_iccid[THE_ICCID_LENGTH + 1] = {0};
 
 static cJSON *upload_push_ac_packer(void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "Upload push ac\n");
+    MSG_PRINTF(LOG_INFO, "Upload push ac\n");
 exit_entry:
     return (cJSON *)arg;
 }
@@ -46,7 +46,7 @@ static int32_t push_ac_parser(const void *in, char *tranid, void **out)
     int8_t md5_out_now[MD5_STRING_LENGTH + 1];
     uint8_t *buf = NULL;
     int32_t len = 0;
-    MSG_PRINTF(LOG_INFO, "In buffer:%s\n", in);
+    MSG_PRINTF(LOG_TRACE, "In buffer:%s\n", in);
     get_md5_string((int8_t *)in, md5_out_now);
     md5_out_now[MD5_STRING_LENGTH] = '\0';
     if (rt_os_strncmp(md5_out_pro, md5_out_now, MD5_STRING_LENGTH) == 0) {
@@ -81,7 +81,7 @@ static int32_t push_ac_parser(const void *in, char *tranid, void **out)
         }
         rt_os_memcpy(buf, payload->valuestring, len);
         buf[len] = '\0';
-        MSG_PRINTF(LOG_INFO, "payload:%s,len:%d\n", buf, len);
+        MSG_PRINTF(LOG_TRACE, "payload:%s,len:%d\n", buf, len);
         ret = RT_SUCCESS;
     } while(0);
     *out = (void *)buf;
@@ -134,10 +134,10 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
         return ERROR_NO_REQUIRED_DATA;
     }
     *prio = priority->valueint;
-    
+
     while(1) {
         //debug_json_data(activation_code, activation_code);
-        MSG_PRINTF(LOG_INFO, "AC: %s\r\n", activation_code->valuestring);
+        MSG_PRINTF(LOG_TRACE, "AC: %s\r\n", activation_code->valuestring);
         state = msg_download_profile(simple_check_ac_format(activation_code->valuestring), cc, iccid, avariable_num);
         if ((state == -302) || (state == -309) || (state == -310) || (state == -311)) {  // retry three times
             count++;
@@ -205,7 +205,7 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
         goto end;
     }
     do {
-        MSG_PRINTF(LOG_INFO, "payload:%s\n", (uint8_t *)in);
+        MSG_PRINTF(LOG_TRACE, "payload:%s\n", (uint8_t *)in);
         payload = cJSON_Parse((uint8_t *)in);
         if (!payload) {
             MSG_PRINTF(LOG_ERR, "Parse payload failed!!\n");
@@ -226,7 +226,7 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
             MSG_PRINTF(LOG_ERR, "Parse acInfos failed!!\n");
             break;
         }
-        MSG_PRINTF(LOG_INFO, "to_enable:%d\r\n", to_enable->valueint);
+        MSG_PRINTF(LOG_DBG, "to_enable:%d\r\n", to_enable->valueint);
         item = cJSON_GetArraySize(ac_infos);
 
         card_get_avariable_profile_num(&avariable_num);
@@ -242,7 +242,7 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
             cJSON_AddItemToObject(code_info, "code", cJSON_CreateNumber(code));
             cJSON_AddItemToObject(code_info, "iccid", cJSON_CreateString(iccid_t));
             cJSON_AddItemToArray(install_result, code_info);
-            MSG_PRINTF(LOG_WARN, "add %d, code:%d, iccid_t=%s\r\n", ii, code, iccid_t);
+            MSG_PRINTF(LOG_TRACE, "add %d, code:%d, iccid_t=%s\r\n", ii, code, iccid_t);
             if (code == RT_SUCCESS) {
                 //MSG_PRINTF(LOG_INFO, "111111 min_prio_value=%d, priority=%d\r\n", min_prio_value, priority);
                 if ((frist_download_ok == RT_TRUE) || (priority <= min_prio_value)) {

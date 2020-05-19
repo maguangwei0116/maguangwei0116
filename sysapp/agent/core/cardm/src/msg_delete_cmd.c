@@ -20,7 +20,7 @@
 
 static cJSON *upload_on_delete_packer(void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "Upload on delete\n");
+    MSG_PRINTF(LOG_INFO, "Upload on delete\n");
 exit_entry:
     return (cJSON *)arg;
 }
@@ -71,7 +71,7 @@ static int32_t delete_parser(const void *in, char *tranid, void **out)
         }
         rt_os_memcpy(buf, payload->valuestring, len);
         buf[len] = '\0';
-        MSG_PRINTF(LOG_INFO, "payload:%s,len:%d\n", buf, len);
+        MSG_PRINTF(LOG_TRACE, "payload:%s,len:%d\n", buf, len);
         ret = RT_SUCCESS;
     } while(0);
 
@@ -111,7 +111,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         goto end;
     }
     do {
-        MSG_PRINTF(LOG_INFO, "payload:%s\n", (uint8_t *)in);
+        MSG_PRINTF(LOG_TRACE, "payload:%s\n", (uint8_t *)in);
         payload = cJSON_Parse((uint8_t *)in);
         if (!payload) {
             MSG_PRINTF(LOG_ERR, "Parse payload failed!!\n");
@@ -128,6 +128,9 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
             break;
         }
         all_iccid_num = cJSON_GetArraySize(iccids);
+
+        card_force_enable_provisoning_profile();
+        rt_os_sleep(3);
 
         /* update current profile list */
         if (card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP) == RT_SUCCESS) {
@@ -150,7 +153,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
             opr_iccid_using = RT_FALSE;
             code = msg_delete_profile(iccid->valuestring, &opr_iccid_using);
             if (opr_iccid_using && code == RT_SUCCESS) {
-                MSG_PRINTF(LOG_WARN, "delete using operational profile, start bootstrap ...\n");
+                MSG_PRINTF(LOG_TRACE, "delete using operational profile, start bootstrap ...\n");
                 bootstrap_flag = UPDATE_JUDGE_BOOTSTRAP;
             }
             if (RT_ERR_APDU_SEND_FAIL == code) {
@@ -164,7 +167,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 if (code == 1) {
                     code = RT_SUCCESS;
                     if (opr_iccid_using) {
-                        MSG_PRINTF(LOG_WARN, "delete using operational profile, start bootstrap ...\n");
+                        MSG_PRINTF(LOG_TRACE, "delete using operational profile, start bootstrap ...\n");
                         bootstrap_flag = UPDATE_JUDGE_BOOTSTRAP;
                     }
                 }
@@ -197,12 +200,14 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
     It will call network_set_apn_handler, and start bootstrap.
     It will avoid repporting ON_DELETE twice.
     */ 
+#if 0
     if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
         card_force_enable_provisoning_profile();
     }
     rt_os_sleep(3);
+#endif
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-       
+
 #endif
     *out = content;
 end:

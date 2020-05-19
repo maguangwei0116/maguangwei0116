@@ -18,10 +18,12 @@
 #include "card_ext.h"
 #include "lpa.h"
 #include "lpa_error_codes.h"
+#include "bootstrap.h"
 
 #define RT_LAST_EID                 "rt_last_eid"
 #define RT_LAST_USED_CARD_TYPE      "rt_last_card_type"
 #define RT_PROFILE_STATE_ENABLED    2
+#define RT_RETRY_COUNT              3
 
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
@@ -93,7 +95,7 @@ static int32_t card_update_eid(rt_bool init)
     int32_t ret = RT_ERROR;
     uint8_t eid[MAX_EID_HEX_LEN] = {0};
 
-    MSG_PRINTF(LOG_WARN, "card_update_eid()\n");
+    MSG_PRINTF(LOG_TRACE, "card_update_eid()\n");
     ret = lpa_get_eid(eid);
     if (!ret) {
         bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
@@ -130,15 +132,18 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
         if (i == g_p_info.num) {
             g_p_info.type = PROFILE_TYPE_TEST;
         }
-        MSG_PRINTF(LOG_WARN, "using iccid: %s, type: %d, profile num: %d\n",
+        MSG_PRINTF(LOG_INFO, "using iccid: %s, type: %d, profile num: %d\n",
                 g_p_info.iccid, g_p_info.type, g_p_info.num);
         if ((g_p_info.type == PROFILE_TYPE_TEST) ||
             (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
-            rt_write_data(RT_LAST_USED_CARD_TYPE, 0, &(g_p_info.type), sizeof(profile_type_e));
             if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
                 rt_os_sleep(1);  // dealy some time after get profile info
                 msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
             }
+        }
+        if (g_p_info.last_type != g_p_info.type) {
+            rt_write_data(RT_LAST_USED_CARD_TYPE, 0, &(g_p_info.type), sizeof(profile_type_e));
+            g_p_info.last_type = g_p_info.type;
         }
     }
 
@@ -274,7 +279,7 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
     }
 
     if ((ret == RT_SUCCESS) || (ret == RT_PROFILE_STATE_ENABLED)) {
-        ret = lpa_load_profile(buf, len);
+        ret = lpa_load_customized_data(buf, len, NULL, NULL);
         if (ret) {
             MSG_PRINTF(LOG_WARN, "lpa load porfile fail, ret=%d\r\n", ret);
         } else {
@@ -299,8 +304,8 @@ static int32_t card_load_cert(const uint8_t *buf, int32_t len)
     int32_t ret = RT_ERROR;
 
     do {
-        MSG_PRINTF(LOG_INFO, "lpa load cert ...\r\n");
-        ret = lpa_load_cert(buf, len);
+        MSG_PRINTF(LOG_TRACE, "lpa load cert ...\r\n");
+        ret = lpa_load_customized_data(buf, len, NULL, NULL);
         if (ret) {
             MSG_PRINTF(LOG_WARN, "lpa load cert fail, ret=%d\r\n", ret);
             break;
@@ -333,7 +338,7 @@ static int32_t card_init_profile_type(init_profile_type_e type)
 {
     int32_t ret = RT_SUCCESS;
 
-    MSG_PRINTF(LOG_INFO, "init profile type = %d\r\n", type);
+    MSG_PRINTF(LOG_TRACE, "init profile type = %d\r\n", type);
     if (INIT_PROFILE_TYPE_LAST_USED != type) {
         char iccid[THE_ICCID_LENGTH + 1] = {0};
 
@@ -376,18 +381,34 @@ static int32_t card_init_profile_type(init_profile_type_e type)
     return ret;
 }
 
+static int32_t card_key_data_init(void)
+{
+    return bootstrap_get_key();
+}
+
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
-
     init_profile_type_e init_profile_type;
 
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
     init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
-    rt_os_memset(&g_p_info.eid, 'F', MAX_EID_LEN);
+    rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
+
+    if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
+        MSG_PRINTF(LOG_DBG, "((public_value_list_t *)arg)->profile_damaged is %d\r\n", *(((public_value_list_t *)arg)->profile_damaged));
+        if (*(((public_value_list_t *)arg)->profile_damaged) == 0) {
+            ret = card_key_data_init();
+            if (ret) {
+                MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
+            }
+        } else {
+            ;
+        }
+    }
 
     ret = card_last_type_init();
     if (ret) {
@@ -459,7 +480,7 @@ int32_t card_get_avariable_profile_num(int32_t *avariable_num)
 {
     if (avariable_num) {
         *avariable_num = THE_MAX_CARD_NUM - g_p_info.num;
-        MSG_PRINTF(LOG_INFO, "profile num: %d - %d = %d\r\n", THE_MAX_CARD_NUM, g_p_info.num, *avariable_num);
+        MSG_PRINTF(LOG_DBG, "profile num: %d - %d = %d\r\n", THE_MAX_CARD_NUM, g_p_info.num, *avariable_num);
         return RT_SUCCESS;
     }
 
@@ -469,9 +490,12 @@ int32_t card_get_avariable_profile_num(int32_t *avariable_num)
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t ret = RT_ERROR;
+    int i = 0;
 
-    switch (mode) {
+    for ( i = 0; i <= RT_RETRY_COUNT; i++) {
+       switch (mode) {
         case MSG_CARD_SETTING_KEY:
+            ret = lpa_load_customized_data(buf, len, NULL, NULL);       // RT_SUCCESS
             break;
 
         case MSG_CARD_SETTING_PROFILE:
@@ -513,10 +537,15 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
         case MSG_CARD_DISABLE_EXIST_CARD:
             ret = card_disable_profile(buf);
             break;
-            
+
         default:
             //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;
+        }
+
+        if (ret == RT_SUCCESS) {
+            break;
+        }
     }
 
     return ret;
@@ -530,9 +559,9 @@ int32_t card_manager_update_profiles_event(const uint8_t *buf, int32_t len, int3
     switch (mode) {
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
-            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);           
+            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             break;
-            
+
         default:
             //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;
@@ -545,11 +574,11 @@ int32_t card_manager_update_profiles_event(const uint8_t *buf, int32_t len, int3
 int32_t card_ext_get_eid(char *eid, int32_t size)
 {
     int32_t ret = RT_ERROR;
-    
+
     if (eid && size > MAX_EID_LEN) {
         snprintf(eid, size, "%s", g_p_info.eid);  // get eid from RAM
     } else {
-        MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
+        MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n");
     }
 
     return ret;
@@ -590,15 +619,15 @@ int32_t card_ext_get_profiles_info(char *profiles_info_json, int32_t size)
                 snprintf(profiles_info_json, size, "%s", profile_str);
                 ret = RT_SUCCESS;
             } else {
-                MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
+                MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n");
                 ret = RT_ERROR;
             }
         } else {
-            MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n"); 
+            MSG_PRINTF(LOG_WARN, "NULL, or size too less\r\n");
             ret = RT_ERROR;
         }
     } else {
-        MSG_PRINTF(LOG_WARN, "update profiles fail, ret=%d\r\n", ret); 
+        MSG_PRINTF(LOG_WARN, "update profiles fail, ret=%d\r\n", ret);
     }
 
     if (profiles_obj) {

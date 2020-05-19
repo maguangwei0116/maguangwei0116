@@ -42,4 +42,18 @@ if [ "$quiet" == "0" ];then
 echo "signature "${signature}    # len = 129
 fi
 
+hash=`echo $hash | tr 'a-z' 'A-Z'`
+
+if [ $4 ] ; then
+	CONFIG_FILE=$4
+fi
+
+if grep ^BR2_CFG_ENV_TYPE_STAGING=y $CONFIG_FILE > /dev/null ; then
+signature=`${path}/crypto -r ${hash} ${path}/curl_staging.sh`
+fi
+
+if grep ^BR2_CFG_ENV_TYPE_PROD=y $CONFIG_FILE > /dev/null ; then
+signature=`${path}/crypto -r ${hash} ${path}/curl_prod.sh`
+fi
+
 echo -n ${signature:0:128} >> ${file}

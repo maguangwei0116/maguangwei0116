@@ -8,6 +8,7 @@
 #include "random.h"
 #include "upload.h"
 #include "cJSON.h"
+#include "https.h"
 
 #define MAX_UPLOAD_TIMES                    3
 #define MAX_BOOT_INFO_INTERVAL              5       // unit: second
@@ -37,8 +38,12 @@ static rt_bool g_upload_mqtt                    = RT_FALSE;
 
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
-    MSG_PRINTF(LOG_DBG, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
-    return http_post_raw(host_addr, port, buffer, len, cb);
+    MSG_PRINTF(LOG_INFO, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
+    #if (CFG_UPLOAD_HTTPS_ENABLE)
+        return https_post_raw(g_upload_addr, g_upload_api, buffer, NULL, NULL, cb);
+    #else
+        return http_post_raw(host_addr, port, buffer, len, cb);
+    #endif
 }
 
 static int32_t upload_deal_rsp_msg(const char *msg)
@@ -93,7 +98,7 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
 
     //send report by http
     snprintf(upload_url, sizeof(upload_url), "http://%s:%d%s", g_upload_addr, g_upload_port, g_upload_api);
-    MSG_PRINTF(LOG_INFO, "upload_url: %s\r\n", upload_url);
+    MSG_PRINTF(LOG_TRACE, "upload_url: %s\r\n", upload_url);
     if (http_parse_url(upload_url, host_addr, file, &port)) {
         MSG_PRINTF(LOG_WARN, "http_parse_url failed!\n");
         ret = HTTP_PARAMETER_ERROR;
@@ -102,8 +107,13 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
 
     snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, md5_out, data_len, data);
     send_len = rt_os_strlen(lpbuf);
-    ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
-    //MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
+
+    #if (CFG_UPLOAD_HTTPS_ENABLE)
+        ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, data, rt_os_strlen(data));
+    #else
+        ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
+        // MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
+    #endif
 
 exit_entry:
 
@@ -389,7 +399,7 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             cJSON *content = NULL;
             int32_t ret = RT_ERROR;
 
-            MSG_PRINTF(LOG_WARN, "------->%s\n", event);
+            MSG_PRINTF(LOG_INFO, "------->%s\n", event);
 
             content = obj->packer(private_arg);
             //MSG_PRINTF(LOG_WARN, "content [%p] tran_id: %s, status: %d !!!\r\n", content, tran_id, status);
@@ -441,7 +451,7 @@ static int32_t upload_boot_info_event(void)
     static time_t g_boot_timestamp;
     time_t tmp_timestamp = time(NULL);
 
-    if ((g_report_boot_event == RT_FALSE) && (*g_last_card_type != PROFILE_TYPE_PROVISONING)) {
+    if (g_report_boot_event == RT_FALSE) {// && (*g_last_card_type != PROFILE_TYPE_PROVISONING)) {
         upload_event_report("BOOT", NULL, 0, NULL);
         g_report_boot_event = RT_TRUE;
         g_boot_timestamp = time(NULL);

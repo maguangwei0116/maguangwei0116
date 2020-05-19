@@ -159,24 +159,24 @@ void qmi_serving_system_dump(qmi_serving_system_info_t *info)
     };
     int i;
 
-    MSG_PRINTF(LOG_WARN, "Registration State: %s\n",
+    MSG_PRINTF(LOG_INFO, "Registration State: %s\n",
             info->serving_system.registration_state <= 4 ?
             register_str[info->serving_system.registration_state] : "Invalid value");
 
-    MSG_PRINTF(LOG_WARN, "Circuit switch domain attach state: %s\n",
+    MSG_PRINTF(LOG_INFO, "Circuit switch domain attach state: %s\n",
             info->serving_system.cs_attach_state <= 2 ?
             attach_str[info->serving_system.cs_attach_state] : "Invalid value");
 
-    MSG_PRINTF(LOG_WARN, "Packet switch domain attach state: %s\n",
+    MSG_PRINTF(LOG_INFO, "Packet switch domain attach state: %s\n",
             info->serving_system.ps_attach_state <= 2 ?
             attach_str[info->serving_system.ps_attach_state] : "Invalid value");
 
-    MSG_PRINTF(LOG_WARN, "Registered Network: %s\n",
+    MSG_PRINTF(LOG_INFO, "Registered Network: %s\n",
             info->serving_system.selected_network <= 2 ?
             selected_network_str[info->serving_system.selected_network] : "Invalid value");
 
     for(i = 0; i < info->serving_system.radio_if_len; i ++) {
-        MSG_PRINTF(LOG_WARN, "Radio Interface %d: %s\n", i + 1,
+        MSG_PRINTF(LOG_INFO, "Radio Interface %d: %s\n", i + 1,
                 info->serving_system.radio_if[i] <= 9 ?
                 radio_str[info->serving_system.radio_if[i]] : "Invalid value");
     }

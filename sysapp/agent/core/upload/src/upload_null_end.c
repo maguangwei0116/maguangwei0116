@@ -5,7 +5,7 @@
 
 static cJSON *upload_null_end_packer(void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "\n");
+    MSG_PRINTF(LOG_INFO, "\n");
 
 exit_entry:
 

@@ -700,7 +700,7 @@ void MQTTClient_closeSession(Clients* client)
     client->good = 0;
     client->ping_outstanding = 0;
 
-    RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d\r\n", __func__, client->net.socket);
+    RT_MQTT_LOG(LOG_DBG, "%s, socket fd: %d\r\n", __func__, client->net.socket);
     if (client->net.socket > 0)
     {
         if (client->connected)
@@ -955,7 +955,7 @@ exit:
     {
         Thread_unlock_mutex(mqttclient_mutex);
         Log(TRACE_MIN, -1, "mqtt client disconnect, millisecsTimeout=%ld ...\r\n", millisecsTimeout);
-        RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d\r\n", __func__, ((MQTTClients *)handle)->c->net.socket);
+        RT_MQTT_LOG(LOG_DBG, "%s, socket fd: %d\r\n", __func__, ((MQTTClients *)handle)->c->net.socket);
         MQTTClient_disconnect1(handle, 0, 0, (MQTTVersion == 3)); /* not "internal" because we don't want to call connection lost */
         Thread_lock_mutex(mqttclient_mutex);
     }
@@ -1131,7 +1131,7 @@ exit:
     }
     Thread_unlock_mutex(mqttclient_mutex);
     FUNC_EXIT_RC(rc);
-    RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d, rc: %d\r\n", __func__, ((MQTTClients *)handle)->c->net.socket, rc);
+    RT_MQTT_LOG(LOG_DBG, "%s, socket fd: %d, rc: %d\r\n", __func__, ((MQTTClients *)handle)->c->net.socket, rc);
   
     return rc;
 }
@@ -1201,7 +1201,7 @@ exit:
 int MQTTClient_disconnect_internal(MQTTClient handle, int timeout)
 {
     if (handle) {
-        RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d, connected: %d\r\n", __func__, \
+        RT_MQTT_LOG(LOG_DBG, "%s, socket fd: %d, connected: %d\r\n", __func__, \
             ((MQTTClients *)handle)->c->net.socket, ((MQTTClients *)handle)->c->connected);
     }
     
@@ -1218,7 +1218,7 @@ void MQTTProtocol_closeSession(Clients* c, int sendwill)
 int MQTTClient_disconnect(MQTTClient handle, int timeout)
 {
     if (handle) {
-        RT_MQTT_LOG(LOG_INFO, "%s, socket fd: %d, connected: %d\r\n", __func__, \
+        RT_MQTT_LOG(LOG_DBG, "%s, socket fd: %d, connected: %d\r\n", __func__, \
             ((MQTTClients *)handle)->c->net.socket, ((MQTTClients *)handle)->c->connected);
     }
     return MQTTClient_disconnect1(handle, timeout, 0, 1);

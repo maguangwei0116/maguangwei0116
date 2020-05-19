@@ -12,7 +12,7 @@ static int32_t downstream_null_start_parser(const void *in, char *tranId, void *
     (void)tranId;
     (void)out;
 
-    MSG_PRINTF(LOG_WARN, "\n");
+    MSG_PRINTF(LOG_INFO, "\n");
 
 exit_entry:
 
@@ -25,7 +25,7 @@ static int32_t downstream_null_start_handler(const void *in, const char *event, 
     (void)event;
     (void)out;
 
-    MSG_PRINTF(LOG_WARN, "\n");
+    MSG_PRINTF(LOG_INFO, "\n");
 
 exit_entry:
 

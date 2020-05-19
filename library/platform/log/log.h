@@ -23,9 +23,10 @@ typedef enum LOG_LEVE {
     LOG_NONE    = 0,
     LOG_ERR     = 1,
     LOG_WARN    = 2,
-    LOG_DBG     = 3,
-    LOG_INFO    = 4,
-    LOG_ALL     = 5,     
+    LOG_INFO    = 3,
+    LOG_DBG     = 4,
+    LOG_TRACE   = 5,
+    LOG_ALL     = 6,
 } log_level_e;
 
 typedef enum LOG_MODE {
@@ -56,11 +57,11 @@ extern log_level_e log_get_level(const char *level_string);
     do {                                                                        \
         uint8_t *_p_ = (uint8_t *)(array);                                      \
         uint16_t i;                                                             \
-        log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF,"(%d bytes) %s", (len), (tag)); \
+        log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF,"(%d bytes) %s", (len), (tag)); \
         for (i = 0; i < (len); i++) {                                           \
-            log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF, "%02X", _p_[i]);           \
+            log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF, "%02X", _p_[i]);           \
         }                                                                       \
-        log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF, "\r\n");                       \
+        log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF, "\r\n");                       \
     } while(0)
 #endif
 #ifdef CFG_PLATFORM_ANDROID
@@ -84,7 +85,7 @@ static inline void ARRAY_PRINTF(const char *tag, const uint8_t *array, uint16_t 
         _len -= 2;
     }                                                                       
     snprintf(_msg, _len, "\r\n");                          
-    log_print(LOG_INFO, LOG_NO_LEVEL_PRINTF, "%s", msg);                          
+    log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF, "%s", msg);
 } 
 #endif
 #define MSG_INFO_ARRAY(tag, array, len)         ARRAY_PRINTF(tag, array, len)

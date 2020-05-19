@@ -1,4 +1,6 @@
 
+TARGETS += backup_profile
+
 REDTEA_SUPPORT_SCRIPTS_PATH=$(PWD)/support/scripts
 MAKE_BACKUP_PROFILE_ARRAY_TOOL=$(REDTEA_SUPPORT_SCRIPTS_PATH)/make_array.py
 CUR_BACKUP_PROFILE=../doc/backup_profile/*.der

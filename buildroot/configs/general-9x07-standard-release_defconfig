@@ -15,11 +15,11 @@ BR2_CFG_PLATFORM_X86=n
 BR2_CFG_PLATFORM_9X07=y
 BR2_CFG_PLATFORM_ANDROID=n
 
-BR2_CFG_SOFTWARE_TYPE_RELEASE=n
-BR2_CFG_SOFTWARE_TYPE_DEBUG=y
+BR2_CFG_SOFTWARE_TYPE_RELEASE=y
+BR2_CFG_SOFTWARE_TYPE_DEBUG=n
 
-BR2_CFG_ENV_TYPE_PROD=n
-BR2_CFG_ENV_TYPE_STAGING=y
+BR2_CFG_ENV_TYPE_PROD=y
+BR2_CFG_ENV_TYPE_STAGING=n
 
 #
 # Common config
@@ -59,8 +59,10 @@ BR2_OPTIMIZE_S=y
 # BR2_PREFER_STATIC_LIB is not set
 BR2_CFG_ENABLE_LIBUNWIND=n
 BR2_CFG_ENABLE_MEMWATCH=n
-BR2_CFG_OPEN_MODULE=y
-BR2_CFG_STANDARD_MODULE=n
+BR2_CFG_OPEN_MODULE=n
+BR2_CFG_DOWN_EMQ_MQTT_ENABLE=y
+BR2_CFG_UPLOAD_HTTP_ENABLE=y
+BR2_CFG_STANDARD_MODULE=y
 BR2_CFG_USR_DNS_API=y
 BR2_PACKAGE_OVERRIDE_FILE="$(TOPDIR)/local.mk"
 
@@ -71,7 +73,7 @@ BR2_TOOLCHAIN_URL="none defined"
 BR2_TOOLCHAIN_INSTALL_PATH="/opt/ql-ol-sdk/ql-ol-crosstool"
 BR2_TOOLCHAIN_PREFIX="sysroots/x86_64-oesdk-linux/usr/bin/arm-oe-linux-gnueabi/arm-oe-linux-gnueabi-"
 BR2_TOOLCHAIN_SYSROOT="/opt/ql-ol-sdk/ql-ol-crosstool/sysroots/armv7a-vfp-neon-oe-linux-gnueabi"
-BR2_TOOLCHAIN_SYSINC="/usr/include/ /usr/include/data/ /usr/include/dsutils/ /usr/include/qmi-framework/ /usr/include/qmi-manager/ /usr/include/qmi/ /sdk/include/"
+BR2_TOOLCHAIN_SYSINC="/usr/include/ /usr/include/data/ /usr/include/dsutils/ /usr/include/qmi-framework/ /usr/include/qmi-manager/ /usr/include/qmi/"
 
 #
 # SDK
