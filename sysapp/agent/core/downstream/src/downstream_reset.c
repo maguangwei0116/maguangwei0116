@@ -35,7 +35,7 @@ static int32_t downstream_reset_parser(const void *in, char *tranId, void **out)
         ret = RT_ERROR;
         goto exit_entry;
     }
-    
+
     rt_os_strcpy(tranId, tran_id->valuestring);
     MSG_PRINTF(LOG_TRACE, "tranId: %s, %p, stelen=%d\n", tranId, tranId, rt_os_strlen(tran_id->valuestring));
 
@@ -58,7 +58,7 @@ static int32_t downstream_reset_handler(const void *in, const char *event, void 
     (void)in;
     (void)event;
     *out = NULL;
-    
+
     MSG_PRINTF(LOG_WARN, "wait 3 seconds to reset terminal ...\n");
     rt_os_sleep(3);
     rt_os_reboot();  // reset terminal
