@@ -85,7 +85,7 @@ typedef struct MQTT_INFO {
 } mqtt_info_t;
 
 static mqtt_param_t g_mqtt_param = {MQTTClient_connectOptions_initializer, 0};
-#if (CFG_EMQ_MQTTS_ENABLE)
+#if (CFG_DOWN_EMQ_MQTTS_ENABLE)
 static MQTTClient_SSLOptions g_mqtts_opts = MQTTClient_SSLOptions_initializer; 
 #endif
 static mqtt_info_t g_mqtt_info;
@@ -833,7 +833,7 @@ static void mqtt_init_param(void)
     g_mqtt_param.opts.try_connect_timer     = 0;  // Initialize the connect timer
     g_mqtt_param.opts.last_connect_status   = MQTT_CONNECT_SUCCESS;  // Initialize the last link push the state of the system
 
-#if (CFG_EMQ_MQTTS_ENABLE)
+#if (CFG_DOWN_EMQ_MQTTS_ENABLE)
     /* 0: disable verify server cert; 1: enable verify server cert, need CA cert input !!! */
     g_mqtts_opts.enableServerCertAuth       = 0;
     g_mqtt_param.conn_opts.ssl              = &g_mqtts_opts;

@@ -36,7 +36,7 @@ static int32_t mqtt_redtea_ticket_server_cb(const char *json_data)
                 snprintf(reg_info->password, sizeof(reg_info->password), password->valuestring);
                 snprintf(reg_info->channel, sizeof(reg_info->channel), channel->valuestring);
                 snprintf(reg_info->ticket_server, sizeof(reg_info->ticket_server), ticket_url->valuestring);
-#if (CFG_EMQ_MQTTS_ENABLE)
+#if (CFG_DOWN_EMQ_MQTTS_ENABLE)
                 snprintf(reg_info->url, sizeof(reg_info->url), "ssl://%s:%d", host->valuestring, port->valueint);
 #else
                 snprintf(reg_info->url, sizeof(reg_info->url), "tcp://%s:%d", host->valuestring, port->valueint);
@@ -68,7 +68,7 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
         return RT_ERROR;
     }
 
-#if (CFG_EMQ_MQTTS_ENABLE)
+#if (CFG_DOWN_EMQ_MQTTS_ENABLE)
     if (!opts->device_id) {
         snprintf(json_data, sizeof(json_data), "{\"a\":\"%s\",\"ssl_enabled\":true}", appkey);
     } else {
