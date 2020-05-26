@@ -120,7 +120,7 @@ int close_channel(uint8_t channel)
     } else {
         ret = rt_qmi_close_channel(channel);
     }
-    MSG_INFO("close channel %d, ret:%d\n", channel, ret);
+    MSG_DBG("close channel %d, ret:%d\n", channel, ret);
     return ret;
 }
 
