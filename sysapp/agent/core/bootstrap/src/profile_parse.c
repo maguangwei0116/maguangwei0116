@@ -452,12 +452,12 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         rt_os_memcpy(buffer, bootstrap_request->tbhRequest.imsi.buf, bootstrap_request->tbhRequest.imsi.size);
         swap_nibble(buffer, bootstrap_request->tbhRequest.imsi.size);
         bytes2hexstring(buffer, bootstrap_request->tbhRequest.imsi.size, select_buffer);
-        MSG_PRINTF(LOG_INFO, "selected_imsi : %s\n", &select_buffer[3]);
+        MSG_PRINTF(LOG_DBG, "selected_imsi : %s\n", &select_buffer[3]);
         rt_os_memset(buffer, 0 ,sizeof(buffer));
         rt_os_memcpy(buffer, bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
         swap_nibble(buffer, bootstrap_request->tbhRequest.iccid.size);
         bytes2hexstring(buffer, bootstrap_request->tbhRequest.iccid.size, select_buffer);
-        MSG_PRINTF(LOG_INFO, "selected_iccid: %s\n", select_buffer);
+        MSG_PRINTF(LOG_DBG, "selected_iccid: %s\n", select_buffer);
     }
 
     if (rt_os_memcmp(bootstrap_request->tbhRequest.imsi.buf, jt, 4) == 0){

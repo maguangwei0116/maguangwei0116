@@ -199,7 +199,7 @@ int get_profiles_info(search_criteria_t sc, uint8_t *criteria, uint16_t c_size,
     }
     clean_cb_data();
     ec = der_encode(&asn_DEF_ProfileInfoListRequest, req, encode_cb, NULL);
-    MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
+    MSG_DBG("ec.encoded: %d\n", (int)ec.encoded);
     if(ec.encoded == -1) {
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         ret = RT_ERR_ASN1_ENCODE_FAIL;
