@@ -493,8 +493,7 @@ int32_t main(int32_t argc, const char *argv[])
     cos_get_ver(cos_ver, &cos_ver_len);
     bytes2hexstring(cos_ver, cos_ver_len, cos_hexstring);
 
-    MSG_PRINTF(LOG_INFO, "cos version major is %c%c\r\n", cos_hexstring[0], cos_hexstring[1]);
-    MSG_PRINTF(LOG_INFO, "cos version minor is %c%c\r\n", cos_hexstring[2], cos_hexstring[3]);
+    MSG_PRINTF(LOG_INFO, "cos version major is %c%c minor is %c%c\r\n", cos_hexstring[0], cos_hexstring[1], cos_hexstring[2], cos_hexstring[3]);
 
     for (ii = 8; ii < cos_ver_len * 2; ii = ii + 2) {
         bytes_sum = 0;
