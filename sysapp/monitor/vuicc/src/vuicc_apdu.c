@@ -23,8 +23,10 @@ typedef enum APDU_RESPONSE_STATE{
     APDU_RESPONSE_LOGIC_USED
 } apdu_response_state_e;
 
+
 static apdu_response_state_e g_response_state = APDU_RESPONSE_NOT_USED;
 static pthread_mutex_t g_apdu_mutex;
+
 
 int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
 {
@@ -79,7 +81,19 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
 
 static int32_t vuicc_get_atr(uint8_t *atr, uint8_t *atr_size)
 {
-    rt_mutex_lock(&g_apdu_mutex);
+    struct timespec time_out;
+    clock_gettime(CLOCK_REALTIME, &time_out);
+    int ret_lock = 0;
+
+    time_out.tv_sec += 10;
+    ret_lock = pthread_mutex_timedlock(&g_apdu_mutex, &time_out);
+
+    if (ret_lock == ETIMEDOUT) {
+        rt_mutex_unlock(&g_apdu_mutex);
+        rt_mutex_lock(&g_apdu_mutex);
+    } else if (ret_lock == 0) {
+        ;
+    }
     cos_client_reset((uint8_t *)atr, (uint8_t *)atr_size);
     rt_mutex_unlock(&g_apdu_mutex);
 }
