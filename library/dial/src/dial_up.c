@@ -315,7 +315,7 @@ static rt_bool dial_up_get_regist_state(void)
         return RT_TRUE;
     }
     MSG_PRINTF(LOG_DBG, "regist state:%d, ret=%d\n", regist_state, ret);
-    
+
     return RT_FALSE;
 }
 
