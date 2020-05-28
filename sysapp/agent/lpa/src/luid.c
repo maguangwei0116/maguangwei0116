@@ -132,14 +132,14 @@ int get_eid(uint8_t *eid, uint16_t *size, uint8_t channel)
     req.tagList.size = 1;
     clean_cb_data();
     ec = der_encode(&asn_DEF_GetEuiccDataRequest, &req, encode_cb, NULL);
-    MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
+    MSG_DBG("ec.encoded: %d\n", (int)ec.encoded);
     if(ec.encoded == -1) {
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     MSG_DUMP_ARRAY("GetEuiccDataRequest: ", get_cb_data(), get_cb_size());
     RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), eid, size, channel));
-    MSG_INFO("get_eid  *size: %d\n", *size);
+    MSG_DBG("get_eid  *size: %d\n", *size);
     *size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
@@ -199,7 +199,7 @@ int get_profiles_info(search_criteria_t sc, uint8_t *criteria, uint16_t c_size,
     }
     clean_cb_data();
     ec = der_encode(&asn_DEF_ProfileInfoListRequest, req, encode_cb, NULL);
-    MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
+    MSG_DBG("ec.encoded: %d\n", (int)ec.encoded);
     if(ec.encoded == -1) {
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         ret = RT_ERR_ASN1_ENCODE_FAIL;

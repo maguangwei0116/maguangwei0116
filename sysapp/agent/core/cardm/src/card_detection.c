@@ -13,6 +13,7 @@
 
 static int32_t g_card_detect_interval       = CARD_DETECT_INTERVAL;
 static rt_bool g_card_detecting_flg         = RT_FALSE;
+static rt_bool g_sync_profile_type_flg      = RT_FALSE;
 static const char *g_cur_iccid              = NULL;
 static profile_type_e *g_cur_profile_type   = NULL;
 
@@ -25,6 +26,11 @@ int32_t card_detection_enable(void)
 
 int32_t card_detection_disable(void)
 {
+    /* enable => disable */
+    if (g_card_detecting_flg) {
+        g_sync_profile_type_flg = RT_TRUE;
+    }
+
     g_card_detecting_flg = RT_FALSE;
 
     return RT_SUCCESS;
@@ -160,6 +166,12 @@ static void card_detection_task(void)
             }
 
             rt_os_sleep(g_card_detect_interval);
+        }
+
+        // enable into disable  network ok
+        if (g_sync_profile_type_flg) {
+            card_load_using_card(iccid, sizeof(iccid), &type);
+            g_sync_profile_type_flg = RT_FALSE;
         }
 
         rt_os_msleep(100);
