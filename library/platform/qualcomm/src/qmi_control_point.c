@@ -21,7 +21,7 @@ qmi_client_error_type qmi_ctrl_point_init(
     qmi_client_error_type err;
     qmi_service_info service_info;
     uint32_t num_services = 0, num_entries = 0;
-    static error_time = 0;
+    static uint32_t error_time = 0;
 
     if (idl_service_object == NULL) {
         MSG_PRINTF(LOG_WARN, "Invalid IDL_SERVICE_OBJECT\n");

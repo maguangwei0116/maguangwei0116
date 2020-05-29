@@ -102,6 +102,7 @@ int qmi_get_serving_system(qmi_serving_system_info_t *info)
     qmi_client_error_type err;
     nas_get_serving_system_req_msg_v01 req = { 0 };
     nas_get_serving_system_resp_msg_v01 resp = { 0 };
+    static uint32_t err_count = 0;
 
     rt_os_memset(info, 0, sizeof(qmi_serving_system_info_t));
 
@@ -120,6 +121,12 @@ int qmi_get_serving_system(qmi_serving_system_info_t *info)
              rt_os_memcpy(&info->mnc_includes_pcs_digit, &resp.mnc_includes_pcs_digit, sizeof(info->mnc_includes_pcs_digit));
         }
 
+        err_count = 0;
+    } else {
+        if (err_count >= 10) {
+            rt_os_reboot();
+        }
+        err_count++;
     }
 
 out:
