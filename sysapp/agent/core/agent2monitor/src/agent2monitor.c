@@ -291,7 +291,7 @@ int32_t ipc_file_verify_by_monitor(const char *abs_file, char *real_file_name)
     if (!ret) {
         get_real_file_name(real_name, MAX_NAME_BLOCK_SIZE);
         rt_os_strcpy(real_file_name, real_name);
-        MSG_PRINTF(LOG_INFO, "real_file_name: %s\r\n", real_file_name);
+        MSG_PRINTF(LOG_DBG, "real_file_name: %s\r\n", real_file_name);
     } else {
         rt_os_memset(real_name, 0, sizeof(real_name));
         MSG_PRINTF(LOG_WARN, "read real_name  : %s\r\n", real_name);
@@ -304,8 +304,12 @@ exit_entry:
     if (fp != NULL) {
         linux_fclose(fp);
     }
+    if (ret == RT_SUCCESS) {
+        MSG_PRINTF(LOG_DBG, "private file sign verify %s !\r\n", !ret ? "ok" : "fail");
+    } else {
+        MSG_PRINTF(LOG_ERR, "private file sign verify %s !\r\n", !ret ? "ok" : "fail");
+    }
 
-    MSG_PRINTF(LOG_INFO, "private file sign verify %s !\r\n", !ret ? "ok" : "fail");
     return ret;
 }
 
