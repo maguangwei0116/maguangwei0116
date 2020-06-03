@@ -216,11 +216,12 @@ rt_bool inspect_abstract_content(uint8_t *input, uint8_t *signature)
     rt_open_channel(&channel);
     ret = cmd_store_data(default_apdu, all_len, buf, &rsp_len, channel);
     rt_close_channel(channel);
-    MSG_PRINTF(LOG_INFO, "inspect file ret is %d\n", ret);
 
     if (ret == 0) {
+        MSG_PRINTF(LOG_DBG, "inspect file ret is %d\n", ret);
         return RT_TRUE;
     } else {
+        MSG_PRINTF(LOG_ERR, "inspect file ret is %d\n", ret);
         return RT_FALSE;
     }
 }
