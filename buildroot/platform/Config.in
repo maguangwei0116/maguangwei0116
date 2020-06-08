@@ -116,6 +116,11 @@ config BR2_CFG_ENV_TYPE_STAGING
 	help
 	  Running at staging environment.
 
+config BR2_CFG_ENV_TYPE_QA
+	bool "qa"
+	help
+	  Running at qa environment.
+
 endchoice
 
 choice
@@ -168,6 +173,7 @@ config BR2_CFG_ENV_TYPE
 	string
 	default "staging"		if BR2_CFG_ENV_TYPE_STAGING
 	default "prod"	        if BR2_CFG_ENV_TYPE_PROD
+	default "qa" 			if BR2_CFG_ENV_TYPE_QA
 
 config BR2_OUTPUT_PATH
 	string "Output Path"

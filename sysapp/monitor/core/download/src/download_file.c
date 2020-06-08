@@ -20,13 +20,19 @@
 #include "rt_qmi.h"
 #include "inspect_file.h"
 
-#define DEFAULT_OTI_ENVIRONMENT_PORT    7082
-
 #if (CFG_ENV_TYPE_PROD)
-#define DOWNLOAD_OTA_ADDR               "52.220.34.227"
+    #define DOWNLOAD_OTA_ADDR                   "52.220.34.227"
+    #define DEFAULT_OTI_ENVIRONMENT_PORT        7082
+#elif (CFG_ENV_TYPE_STAGING)
+    #define DOWNLOAD_OTA_ADDR                   "54.222.248.186"
+    #define DEFAULT_OTI_ENVIRONMENT_PORT        7082
+#elif (CFG_ENV_TYPE_QA)
+    #define DOWNLOAD_OTA_ADDR                   "54.222.248.186"
+    #define DEFAULT_OTI_ENVIRONMENT_PORT        7083
 #else
-#define DOWNLOAD_OTA_ADDR               "54.222.248.186"
+    // do something
 #endif
+
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do {                 \
