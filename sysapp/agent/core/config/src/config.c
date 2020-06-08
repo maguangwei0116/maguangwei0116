@@ -25,7 +25,7 @@
 #if (CFG_UPLOAD_HTTPS_ENABLE)
     #define RT_OTI_SERVER_PORT                  443
 #else
-    #if (CFG_ENV_TYPE_PROD) || (CFG_ENV_TYPE_STAGING)
+    #if (CFG_ENV_TYPE_PROD) || (CFG_ENV_TYPE_STAG)
         #define RT_OTI_SERVER_PORT                  7082
     #elif (CFG_ENV_TYPE_QA)
         #define RT_OTI_SERVER_PORT                  7083
@@ -169,7 +169,7 @@ static config_item_t g_config_items[] =
     #endif
 ITEM(EMQ_SERVER_ADDR,               NULL,                   STRING,     "18.136.190.97",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
 ITEM(PROXY_SERVER_ADDR,             NULL,                   STRING,     "smdp.redtea.io",               "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
-#elif (CFG_ENV_TYPE_STAGING) || (CFG_ENV_TYPE_QA)
+#elif (CFG_ENV_TYPE_STAG) || (CFG_ENV_TYPE_QA)
     #if (CFG_UPLOAD_HTTPS_ENABLE)
         ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "oti-staging.redtea.io",        "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
     #else

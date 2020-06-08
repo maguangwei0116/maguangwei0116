@@ -23,7 +23,7 @@
 #if (CFG_ENV_TYPE_PROD)
     #define DOWNLOAD_OTA_ADDR                   "52.220.34.227"
     #define DEFAULT_OTI_ENVIRONMENT_PORT        7082
-#elif (CFG_ENV_TYPE_STAGING)
+#elif (CFG_ENV_TYPE_STAG)
     #define DOWNLOAD_OTA_ADDR                   "54.222.248.186"
     #define DEFAULT_OTI_ENVIRONMENT_PORT        7082
 #elif (CFG_ENV_TYPE_QA)

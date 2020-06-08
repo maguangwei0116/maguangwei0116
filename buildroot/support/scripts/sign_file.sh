@@ -52,7 +52,7 @@ if grep ^BR2_CFG_ENV_TYPE_QA=y $CONFIG_FILE > /dev/null ; then
 signature=`${path}/crypto -r ${hash} ${path}/curl_staging.sh`
 fi
 
-if grep ^BR2_CFG_ENV_TYPE_STAGING=y $CONFIG_FILE > /dev/null ; then
+if grep ^BR2_CFG_ENV_TYPE_STAG=y $CONFIG_FILE > /dev/null ; then
 signature=`${path}/crypto -r ${hash} ${path}/curl_staging.sh`
 fi
 
