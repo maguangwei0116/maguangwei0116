@@ -28,10 +28,6 @@ int32_t init_device_info(void *arg)
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Get imei failed\n");
     }
-    ret = rt_qmi_get_model(info.model, sizeof(info.model));
-    if (ret != RT_SUCCESS) {
-        MSG_PRINTF(LOG_ERR, "Get model failed\n");
-    }
     info.model[MAX_DEVICE_MODEL_LEN - 1] = '\0';  // max (MAX_DEVICE_MODEL_LEN-1) bytes on valid model string value !!!
     info.imei[MAX_DEVICE_IMEI_LEN] = '\0';    
     

@@ -2,8 +2,7 @@
 #include "rt_type.h"
 #include "cJSON.h"
 #include "rt_mqtt.h"
-
-#define TICKET_SERVER_CACHE             "rt_ticket_server"
+#include "usrdata.h"
 
 /* save cache ticket server which got from adapter into cache file */
 rt_bool mqtt_save_ticket_server(const mqtt_opts_t *opts)
@@ -31,17 +30,12 @@ rt_bool mqtt_save_ticket_server(const mqtt_opts_t *opts)
     data_len[0] = (length >> 8) & 0xff;
     data_len[1] = length & 0xff;
 
-    if (rt_create_file(TICKET_SERVER_CACHE) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt create_file  error\n");
-        goto exit_entry;
-    }
-
-    if (rt_write_data(TICKET_SERVER_CACHE, 0, data_len, sizeof(data_len)) == RT_ERROR) {
+    if (rt_write_ticket(0, data_len, sizeof(data_len)) == RT_ERROR) {
         MSG_PRINTF(LOG_WARN, "rt write_data data_len error\n");
         goto exit_entry;
     }
 
-    if (rt_write_data(TICKET_SERVER_CACHE, sizeof(data_len), save_info, rt_os_strlen(save_info)) == RT_ERROR) {
+    if (rt_write_ticket(sizeof(data_len), save_info, rt_os_strlen(save_info)) == RT_ERROR) {
         MSG_PRINTF(LOG_WARN, "rt write_data TICKET_SERVER_CACHE error\n");
         goto exit_entry;
     }
@@ -71,7 +65,7 @@ rt_bool mqtt_get_ticket_server(mqtt_opts_t *opts)
     cJSON   *ticket_server = NULL;
     rt_bool ret = RT_FALSE;
 
-    if (rt_read_data(TICKET_SERVER_CACHE, 0, data_len, sizeof(data_len)) == RT_ERROR) {
+    if (rt_read_ticket(0, data_len, sizeof(data_len)) == RT_ERROR) {
         MSG_PRINTF(LOG_WARN, "rt read_data data_len error\n");
         goto exit_entry;
     }
@@ -83,8 +77,8 @@ rt_bool mqtt_get_ticket_server(mqtt_opts_t *opts)
         goto exit_entry;
     }
 
-    if (rt_read_data(TICKET_SERVER_CACHE, sizeof(data_len), save_info, length) == RT_ERROR) {
-        MSG_PRINTF(LOG_WARN, "rt read_data save_info error\n");
+    if (rt_read_ticket(sizeof(data_len), save_info, length) == RT_ERROR) {
+        MSG_PRINTF(LOG_WARN, "rt read_data TICKET_SERVER_CACHE error\n");
         goto exit_entry;
     }
 
@@ -116,4 +110,3 @@ exit_entry:
 
     return ret;
 }
-

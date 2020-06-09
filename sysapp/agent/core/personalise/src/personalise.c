@@ -17,14 +17,16 @@
 #include "rt_qmi.h"
 #include "agent_queue.h"
 
-const devicde_info_t *g_personalise_device_info = NULL;
-static int32_t *g_share_profile_damaged         = NULL;
+const devicde_info_t *g_personalise_device_info     = NULL;
+const target_versions_t *g_personalise_version_info = NULL;
+static int32_t *g_share_profile_damaged             = NULL;
 
 int32_t init_personalise(void *arg)
 {
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
     g_personalise_device_info   = (const devicde_info_t *)public_value_list->device_info;
+    g_personalise_version_info  = (const target_versions_t *)public_value_list->version_info;
     g_share_profile_damaged     = (int32_t *)public_value_list->profile_damaged;
 
     return RT_SUCCESS;
