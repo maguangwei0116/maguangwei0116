@@ -30,11 +30,13 @@
 #define AT_GET_EID                      '0'
 #define AT_GET_ICCIDS                   '1'
 #define AT_GET_UICC_TYPE                '2'
+#define AT_GET_ENV_TYPE                 '4'
 
 #define AT_SWITCH_TO_PROVISIONING       '0'
 #define AT_SWITCH_TO_OPERATION          '1'
 #define AT_CONFIG_LPA_CHANNEL           '2'
 #define AT_UPGRADE_UBI_FILE             '3'
+#define AT_UPDATE_ENV                   '4'
 
 #define AT_CONTENT_DELIMITER            ','
 
@@ -216,6 +218,25 @@ static int32_t apdu_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
 }
 
+#ifdef CFG_REDTEA_READY_ON
+static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
+{
+    int32_t ret = RT_ERROR;
+
+    MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
+
+    ret = config_update_device_key(&cmd[1]);
+    if (ret == RT_TRUE) {
+        /* rsp: ,para,"device key" */
+        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Welcome to RedteaReady!");
+    } else if (ret == RT_FALSE) {
+        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Please enter the correct Device Key!");
+    }
+
+    return RT_SUCCESS;
+}
+#endif
+
 int32_t init_at_command(void *arg)
 {
     g_p_value_list = ((public_value_list_t *)arg);
@@ -225,6 +246,9 @@ int32_t init_at_command(void *arg)
 
     /* install "APDU" at command */
     AT_CMD_INSTALL(apdu);
+
+    /* install "deviceKey" at command */
+    AT_CMD_INSTALL(dkey);
 
     return RT_SUCCESS;
 }

@@ -20,7 +20,7 @@
 #include "rt_qmi.h"
 #include "inspect_file.h"
 
-#define DEFAULT_OTI_ENVIRONMENT_PORT    7082
+#define DEFAULT_OTI_ENVIRONMENT_PORT    7083
 
 #if (CFG_ENV_TYPE_PROD)
 #define DOWNLOAD_OTA_ADDR               "52.220.34.227"

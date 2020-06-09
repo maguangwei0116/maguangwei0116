@@ -76,6 +76,7 @@ vpath %.c ./core/queue
 vpath %.c ./core/cardflow
 vpath %.c ./core/cardm
 vpath %.c ./core/logm
+vpath %.c ./core/usrdata
 vpath %.c ./core/networkd
 vpath %.c ./main
 vpath %.c ./ipc
@@ -109,6 +110,7 @@ SRC-y                                   += src/card_flow_control.c
 SRC-y                                   += src/msg_process.c
 SRC-y                                   += src/ipc_socket_client.c
 SRC-y                                   += src/network_detection.c
+SRC-y                                   += src/ping_task.c
 SRC-y                                   += src/lpa.c
 SRC-y                                   += src/lpdd.c
 SRC-y                                   += src/luid.c
@@ -131,6 +133,7 @@ SRC-y                                   += ./core/downstream/src/downstream_rese
 SRC-y                                   += ./core/cardm/src/msg_push_ac_cmd.c
 SRC-y                                   += ./core/cardm/src/msg_delete_cmd.c
 SRC-y                                   += ./core/cardm/src/msg_enable_cmd.c
+SRC-y                                   += ./core/cardm/src/msg_update_cmd.c
 SRC-y                                   += ./core/networkd/src/upload_network.c
 
 # Personalise module
@@ -145,6 +148,9 @@ SRC-$(CFG_AGENT_OTA_ON)                 += ./core/ota/src/ota_upgrade.c
 
 # logger manager module
 SRC-y                                   += ./core/logm/src/logm.c
+
+# usrdata manager module
+SRC-y                                   += ./core/usrdata/src/usrdata.c
 
 # agent 2 monitor
 SRC-y                                   += ./core/agent2monitor/src/agent2monitor.c
@@ -180,6 +186,7 @@ INC-PATH-y 		                        += ./core/logm/
 INC-PATH-y 		                        += ./core/agent2monitor/
 INC-PATH-y 		                        += ./core/at/
 INC-PATH-y 		                        += ./core/cardflow/
+INC-PATH-y 		                        += ./core/usrdata/
 
 INC-y 			                        += ./
 INC-y 			                        += $(INC-PATH-y)

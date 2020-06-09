@@ -51,10 +51,17 @@ static int32_t card_check_provisoning_conflict(rt_bool clear_flg)
     static char cur_iccid[THE_ICCID_LENGTH + 1] = {0};
     static uint32_t cur_cnt = 0;
 
+#ifdef CFG_REDTEA_READY_ON
+    MSG_PRINTF(LOG_DBG, "g_cur_profile_type is %d\r\n", *g_cur_profile_type);
+    if (PROFILE_TYPE_OPERATIONAL == *g_cur_profile_type || PROFILE_TYPE_SIM == *g_cur_profile_type) { // 是业务卡或者是sim，那就直接返回
+        return RT_ERROR;
+    }
+#else
     if (PROFILE_TYPE_OPERATIONAL == *g_cur_profile_type) {
         return RT_ERROR;
     }
 
+#endif
     if (clear_flg) {
         index = 0;
         cur_cnt = 0;
@@ -127,6 +134,10 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
         }
     }
 
+    if (PROFILE_TYPE_SIM == *g_cur_profile_type) {
+        return RT_SUCCESS;
+    }
+
     return RT_ERROR;
 }
 
@@ -158,14 +169,16 @@ static void card_detection_task(void)
     MSG_PRINTF(LOG_INFO, "g_cur_iccid: %s, g_cur_profile_type: %d\r\n", g_cur_iccid, *g_cur_profile_type);
 
     while (1) {
-        if (g_card_detecting_flg) {
-            msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_UPDATE, NULL, 0);
-            rt_os_sleep(2);
-            if (RT_SUCCESS == card_load_using_card(iccid, sizeof(iccid), &type)) {
-                card_changed_handle((const char *)iccid, type);
-            }
+        if (*g_cur_profile_type != PROFILE_TYPE_SIM) {
+            if (g_card_detecting_flg) {
+                msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_UPDATE, NULL, 0);
+                rt_os_sleep(2);
+                if (RT_SUCCESS == card_load_using_card(iccid, sizeof(iccid), &type)) {
+                    card_changed_handle((const char *)iccid, type);
+                }
 
-            rt_os_sleep(g_card_detect_interval);
+                rt_os_sleep(g_card_detect_interval);
+            }
         }
 
         // enable into disable  network ok
@@ -209,6 +222,9 @@ int32_t init_card_detection(void *arg)
     g_cur_profile_type  = &(((public_value_list_t *)arg)->card_info->type);
     g_cur_iccid         = (const char *)&(((public_value_list_t *)arg)->card_info->iccid);
 
+#ifdef CFG_REDTEA_READY_ON
+    MSG_PRINTF(LOG_DBG, "g_cur_profile_type is %d\r\n", *g_cur_profile_type);
+#endif
     ret = rt_create_task(&id_detection, (void *)card_detection_task, NULL);
     if (ret == RT_ERROR) {
         MSG_PRINTF(LOG_ERR, "create card detection task error, err(%d)=%s\r\n", errno, strerror(errno));

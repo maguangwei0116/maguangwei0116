@@ -33,6 +33,9 @@ typedef enum PROFILE_TYPE {
     PROFILE_TYPE_TEST               = 0,
     PROFILE_TYPE_PROVISONING        = 1,
     PROFILE_TYPE_OPERATIONAL        = 2,
+#ifdef CFG_REDTEA_READY_ON
+    PROFILE_TYPE_SIM                = 3,
+#endif
 } profile_type_e;
 
 typedef enum CARD_STATE {
@@ -46,8 +49,14 @@ typedef enum INIT_PROFILE_TYPE {
     INIT_PROFILE_TYPE_LAST_USED     = 2,
 } init_profile_type_e;
 
+typedef struct PROFILE_SIM_INFO {
+    char iccid[21];             // 20-digit ICCID, padded with F
+    uint8_t state;              // 0 not cpin, 1 cpin
+} profile_sim_info;
+
 typedef struct CARD_INFO {
     profile_info_t                  info[THE_MAX_CARD_NUM];
+    profile_sim_info                sim_info;
     uint8_t                         num;
     uint8_t                         eid[MAX_EID_LEN + 1];
     profile_type_e                  type;                      // used card type

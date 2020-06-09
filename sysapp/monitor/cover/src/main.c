@@ -84,6 +84,9 @@ typedef struct MONITOR_VERSION {
 
 typedef struct INFO_VUICC_DATA {
     uint8_t             vuicc_switch;              // lpa_channel_type_e, IPC used for vuicc
+#ifdef CFG_REDTEA_READY_ON
+    uint8_t             sim_mode;
+#endif
     uint8_t             log_level;                 // log_level_e
     uint8_t             reserve[2];                // reserve for keep 4 bytes aligned
     uint32_t            log_size;                  // unit: bytes, little endian
@@ -96,6 +99,8 @@ typedef enum AGENT_MONITOR_CMD {
     CMD_GET_MONITOR_VER = 0x03,
     CMD_RESTART_MONITOR = 0x04,
     CMD_RFU             = 0x05,
+    CMD_START_VUICC     = 0x06,
+    CMD_REMOVE_VUICC    = 0x07,
 } agent_monitor_cmd_e;
 
 static void cfinish(int32_t sig)
@@ -158,7 +163,16 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (info->vuicc_switch == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
         type = info->vuicc_switch;
         if (info->vuicc_switch == LPA_CHANNEL_BY_IPC) {
+#ifdef CFG_REDTEA_READY_ON
+            if (info->sim_mode == 0) {
+                MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", info->sim_mode);
+                init_trigger(info->vuicc_switch);
+            } else {
+                MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", info->sim_mode);
+            }
+#else
             init_trigger(info->vuicc_switch);
+#endif
             *rsp_len = 0;
         }
         MSG_PRINTF(LOG_INFO, "set log_level=%d, log_max_size=%d\n", info->log_level, info->log_size);
@@ -201,6 +215,13 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         register_timer(delay, 0, &monitor_exit);
         rsp[0] = RT_TRUE;
         *rsp_len = 1;
+    } else if (cmd == CMD_START_VUICC) {
+        // info->vuicc_switch = LPA_CHANNEL_BY_IPC;
+        init_trigger(LPA_CHANNEL_BY_IPC);
+        *rsp_len = 0;
+    } else if (cmd == CMD_REMOVE_VUICC) {
+        trigger_remove_card(1);
+        *rsp_len = 0;
     }
 
     return RT_SUCCESS;

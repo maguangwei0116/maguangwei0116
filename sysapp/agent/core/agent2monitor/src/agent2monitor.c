@@ -87,6 +87,9 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
     //MSG_PRINTF(LOG_INFO, "atom len:%d\n", sizeof(atom_data_t));
 
     info.vuicc_switch = config_info->lpa_channel_type;
+#ifdef CFG_REDTEA_READY_ON
+    info.sim_mode = config_info->sim_mode;
+#endif
     info.log_level = config_info->monitor_log_level;
     info.log_size = config_info->log_max_size;
 
@@ -304,6 +307,7 @@ exit_entry:
     if (fp != NULL) {
         linux_fclose(fp);
     }
+
     if (ret == RT_SUCCESS) {
         MSG_PRINTF(LOG_DBG, "private file sign verify %s !\r\n", !ret ? "ok" : "fail");
     } else {
@@ -355,6 +359,56 @@ int32_t ipc_select_profile_by_monitor(void)
     ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
 
     if (len == 1 && buf[0] == RT_TRUE) {
+        return RT_SUCCESS;
+    } else {
+        return RT_ERROR;
+    }
+}
+
+int32_t ipc_start_vuicc(uint8_t delay)
+{
+    atom_data_t c_data = {0};
+    uint8_t buf[256] = {0};
+    uint16_t len = 1;
+    uint16_t ret_len = 0;
+
+    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
+    c_data.cmd = CMD_START_VUICC;
+    c_data.data_len = (uint8_t)len;
+    c_data.data = (uint8_t *)&delay;
+    len = sizeof(atom_data_t) - sizeof(uint8_t *);
+    rt_os_memcpy(&buf[0], &c_data, len);
+    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
+    len += c_data.data_len;
+
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
+
+    if (ret_len == 1 && buf[0] == RT_TRUE) {
+        return RT_SUCCESS;
+    } else {
+        return RT_ERROR;
+    }
+}
+
+int32_t ipc_remove_vuicc(uint8_t delay)
+{
+    atom_data_t c_data = {0};
+    uint8_t buf[256] = {0};
+    uint16_t len = 1;
+    uint16_t ret_len = 0;
+
+    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
+    c_data.cmd = CMD_REMOVE_VUICC;
+    c_data.data_len = (uint8_t)len;
+    c_data.data = (uint8_t *)&delay;
+    len = sizeof(atom_data_t) - sizeof(uint8_t *);
+    rt_os_memcpy(&buf[0], &c_data, len);
+    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
+    len += c_data.data_len;
+
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
+
+    if (ret_len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;
     } else {
         return RT_ERROR;

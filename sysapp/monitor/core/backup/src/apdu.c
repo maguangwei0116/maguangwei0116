@@ -27,7 +27,11 @@ static lpa_channel_type_e g_channel_mode = LPA_CHANNEL_BY_IPC;
 
 void init_apdu_channel(lpa_channel_type_e channel_mode)
 {
+#ifdef CFG_REDTEA_READY_ON
+    g_channel_mode = LPA_CHANNEL_BY_IPC;
+#else
     g_channel_mode = channel_mode;
+#endif
 }
 
 static uint16_t monitor_send_apdu(uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len)
@@ -43,6 +47,9 @@ static uint16_t monitor_send_apdu(uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp
 
 static int32_t send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len, uint8_t channel)
 {
+#ifdef CFG_REDTEA_READY_ON
+    g_channel_mode = LPA_CHANNEL_BY_IPC;
+#endif
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         return monitor_send_apdu((uint8_t *)data, data_len, rsp, rsp_len);
     } else if (g_channel_mode == LPA_CHANNEL_BY_QMI) {
@@ -63,6 +70,9 @@ int rt_open_channel(uint8_t *channel)
     int ret = RT_SUCCESS;
     uint8_t cmd[6] = {0x80,0xC0,0x00,0x00,0x00};
 
+#ifdef CFG_REDTEA_READY_ON
+    g_channel_mode = LPA_CHANNEL_BY_IPC;
+#endif
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
@@ -95,6 +105,9 @@ int rt_close_channel(uint8_t channel)
     int ret = RT_SUCCESS;
     uint8_t cmd[6] = {0x80,0xC0,0x00,0x00,0x00};
 
+#ifdef CFG_REDTEA_READY_ON
+    g_channel_mode = LPA_CHANNEL_BY_IPC;
+#endif
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         char rsp[SW_BUFFER_LEN + 2] = {0};
         uint16_t sw = 0;
@@ -141,6 +154,9 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
     if (channel < 0) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
+#ifdef CFG_REDTEA_READY_ON
+    g_channel_mode = LPA_CHANNEL_BY_IPC;
+#endif
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         // select aid
         uint8_t cmd[6] = {0x80,0xC0,0x00,0x00,0x00};
