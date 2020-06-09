@@ -32,6 +32,10 @@
 #include "libcomm.h"
 #include "agent_main.h"
 #include "rt_timer.h"
+#ifdef CFG_REDTEA_READY_ON
+#include "ping_task.h"
+#endif
+#include "usrdata.h"
 #ifdef CFG_STANDARD_MODULE
 #include "customer_at.h"
 #include "at_command.h"
@@ -234,7 +238,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_rt_file_path,         g_app_path),
     INIT_OBJ(init_log_file,             RT_AGENT_LOG),
     INIT_OBJ(init_config,               (void *)&g_value_list),
-
+    INIT_OBJ(init_run_config,           NULL),
 #ifdef CFG_ENABLE_LIBUNWIND
     INIT_OBJ(init_backtrace,            agent_printf),
 #endif
@@ -242,7 +246,6 @@ static const init_obj_t g_init_objs[] =
 #ifdef CFG_STANDARD_MODULE
     INIT_OBJ(init_at_command,           (void *)&g_value_list),
 #endif
-
     INIT_OBJ(init_bootstrap,            (void *)&g_value_list),
     INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_versions,             (void *)&g_value_list),
@@ -264,6 +267,9 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_upgrade,              (void *)&g_value_list),
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
     INIT_OBJ(init_logm,                 (void *)&g_value_list),
+#ifdef CFG_REDTEA_READY_ON
+    INIT_OBJ(init_ping_task,            (void *)&g_value_list),
+#endif
 };
 
 static int32_t agent_init_call(void)

@@ -10,20 +10,35 @@
 #include "agent_queue.h"
 #include "rt_qmi.h"
 
+#include "usrdata.h"
 #include "cJSON.h"
 
 extern const devicde_info_t *g_upload_device_info;
 extern const card_info_t *g_upload_card_info;
 extern const target_versions_t *g_upload_ver_info;
 
+static rt_bool device_key_check_memory(const void *buf, int32_t len, int32_t value)
+{
+    int32_t i = 0;
+    const uint8_t *p = (const uint8_t *)buf;
+
+    for (i = 0; i < len; i++) {
+        if (p[i] != value) {
+            return RT_FALSE;
+        }
+    }
+    return RT_TRUE;
+}
+
 static cJSON *upload_event_boot_device_info(void)
 {
-    int32_t ret         = RT_ERROR;
-    cJSON *deviceInfo   = NULL;
-    const char *imei    = g_upload_device_info->imei;
-    const char *deviceId= g_upload_device_info->device_id;
-    const char *sn      = g_upload_device_info->sn;
-    const char *model   = g_upload_device_info->model;
+    int32_t ret             = RT_ERROR;
+    cJSON *deviceInfo       = NULL;
+    const char *imei        = g_upload_device_info->imei;
+    const char *deviceId    = g_upload_device_info->device_id;
+    const char *sn          = g_upload_device_info->sn;
+    const char *model       = g_upload_device_info->model;
+    char deviceKey[DEVICE_KEY_SIZE + 1] = {0};
 
     deviceInfo = cJSON_CreateObject();
     if (!deviceInfo) {
@@ -35,7 +50,18 @@ static cJSON *upload_event_boot_device_info(void)
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, deviceId);
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, sn);
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, model);
+
+#ifdef CFG_REDTEA_READY_ON
+    rt_read_devicekey(0, deviceKey, DEVICE_KEY_SIZE);
+    if (device_key_check_memory(deviceKey, DEVICE_KEY_SIZE, 'F')) {
+        MSG_PRINTF(LOG_WARN, "upload device key : %s\n", deviceKey);
+    } else {
+        deviceKey[DEVICE_KEY_SIZE] = '\0';
+        CJSON_ADD_NEW_STR_OBJ(deviceInfo, deviceKey);
+    }
     
+#endif
+
     ret = RT_SUCCESS;
     
 exit_entry:
@@ -79,6 +105,22 @@ static cJSON *upload_event_boot_profiles_info(void)
         CJSON_ADD_NEW_INT_OBJ(profile, type);
         cJSON_AddItemToArray(profiles, profile);
     }
+
+#ifdef CFG_REDTEA_READY_ON
+    if (g_upload_card_info->sim_info.state == 1) {
+        profile = cJSON_CreateObject();
+        if (!profile) {
+            MSG_PRINTF(LOG_WARN, "The profile is error\n");
+            goto exit_entry;
+        }
+
+        iccid = g_upload_card_info->sim_info.iccid;
+        type = 3;
+        CJSON_ADD_NEW_STR_OBJ(profile, iccid);
+        CJSON_ADD_NEW_INT_OBJ(profile, type);
+        cJSON_AddItemToArray(profiles, profile);
+    }
+#endif
 
     ret = RT_SUCCESS;
     
