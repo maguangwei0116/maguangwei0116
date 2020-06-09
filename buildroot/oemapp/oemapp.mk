@@ -33,7 +33,7 @@ REDTEA_OEMAPP_SHELL_APP=../doc/shells/standard/start_redtea_app
 REDTEA_OEMAPP_SHELL_KEEP=../doc/shells/standard/start_redtea_keep
 REDTEA_OEMAPP_SKB_SO=../sysapp/monitor/vuicc/lib/libskb.so
 REDTEA_OEMAPP_TOOLS=../doc/tools/
-REDTEA_OEMAPP_SHARE_PROFILES=../doc/share_profile/*.der
+REDTEA_OEMAPP_SHARE_PROFILES=../doc/share_profile/$(RELEASE_OEMAPP_SOFTWARE_TYPE)/*.der
 REDTEA_OEMAPP_SHARE_PROFILE=rt_share_profile.der
 REDTEA_OEMAPP_LOCAL_BUILD_DATE=$(shell date "+%Y%m%d")
 

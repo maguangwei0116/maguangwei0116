@@ -3,6 +3,7 @@ ifeq ($(BR2_PACKAGE_RELEASE_BUILD),y)
 TARGETS += release
 
 RELEASE_INSTALL_PATH=$(call qstrip,$(BR2_RELEASE_INSTALL_PATH))
+RELEASE_OEMAPP_SOFTWARE_TYPE=$(call qstrip,$(BR2_CFG_SOFTWARE_TYPE))
 RELEASE_STANDARD_MODULE=$(call qstrip,$(BR2_CFG_STANDARD_MODULE))
 ifeq ($(RELEASE_STANDARD_MODULE),)
 RELEASE_STANDARD_MODULE=n
@@ -19,7 +20,7 @@ REDTEA_CHANGE_LOG=../doc/change-log.txt
 REDTEA_SHELL_APP=../doc/shells/open/start_redtea_app
 REDTEA_SHELL_KEEP=../doc/shells/open/start_redtea_keep
 REDTEA_SKB_SO=../sysapp/monitor/vuicc/lib/libskb.so
-REDTEA_SHARE_PROFILES=../doc/share_profile/*.der
+REDTEA_SHARE_PROFILES=../doc/share_profile/$(RELEASE_OEMAPP_SOFTWARE_TYPE)/*.der
 REDTEA_SHARE_PROFILE=rt_share_profile.der
 REDTEA_ADB_PUSH_SHELL=adb-push.sh
 REDTEA_SHELL_ADB_PUSH=../doc/shells/open/$(REDTEA_ADB_PUSH_SHELL)
