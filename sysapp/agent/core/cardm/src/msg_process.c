@@ -16,9 +16,14 @@
 #include "cJSON.h"
 #include "rt_qmi.h"
 #include "lpa_error_codes.h"
+#include "usrdata.h"
+#include "trigger.h"
+#include "file.h"
+#include "hash.h"
 
-#define  MSG_ONE_BLOCK_SIZE     128
-#define  APN_LIST               "rt_apn_list"
+#define MSG_ONE_BLOCK_SIZE                  128
+#define DEVICE_PUBLIC_KEY                   "e30211481a3ead603da4fbb06c62ed4c46aaac3394c31f20fbca686ba2efb043"
+#define RT_CHECK_ERR(process, result)       if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
 static const card_info_t *g_card_info;
 static const char *g_smdp_proxy_addr = NULL;
@@ -27,9 +32,11 @@ int32_t init_msg_process(void *arg, void *proxy_addr)
 {
     g_card_info = (card_info_t *)arg;
     g_smdp_proxy_addr = (const char *)proxy_addr;
-    if (!linux_rt_file_exist(APN_LIST)) {
-        rt_create_file(APN_LIST);
+
+    if (!linux_rt_file_exist(RUN_CONFIG_FILE)) {
+        rt_create_file(RUN_CONFIG_FILE);
     }
+
     return RT_SUCCESS;
 }
 
@@ -64,9 +71,10 @@ static int32_t msg_select(const char *iccid, uint8_t *buffer)
     uint8_t tmp_buffer[MSG_ONE_BLOCK_SIZE + 1] = {0};
 
     while (1) {
-        if (rt_read_data(APN_LIST, ii * MSG_ONE_BLOCK_SIZE, tmp_buffer, MSG_ONE_BLOCK_SIZE) < 0) {
+        if (rt_read_apnlist(ii * MSG_ONE_BLOCK_SIZE, tmp_buffer, MSG_ONE_BLOCK_SIZE) < 0) {
             break;
         }
+
         agent_msg = cJSON_Parse(tmp_buffer);
         if (agent_msg != NULL) {
             s_iccid = cJSON_GetObjectItem(agent_msg, "iccid");
@@ -101,7 +109,7 @@ static int32_t msg_get_free_block(uint8_t *buffer)
 {
     int32_t ii = 0;
     while (1) {
-        if (rt_read_data(APN_LIST, ii * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE) < 0) {
+        if (rt_read_apnlist(ii * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE) < 0) {
             break;
         }
         ii++;
@@ -123,15 +131,16 @@ static int32_t msg_get_free_block(uint8_t *buffer)
 static int32_t msg_insert(uint8_t *iccid, uint8_t *buffer)
 {
     int32_t num = 0;
+    int32_t ret = RT_ERROR;
     uint8_t buff[MSG_ONE_BLOCK_SIZE];
 
     num = msg_select(iccid, buff);
     if (num == RT_ERROR) {
         num = msg_get_free_block(buff);
     }
-    MSG_PRINTF(LOG_TRACE, "Insert iccid %s apn data !\r\n", iccid);
-    rt_write_data(APN_LIST, num * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE);
-    return RT_SUCCESS;
+    MSG_PRINTF(LOG_INFO, "Insert iccid %s apn data !\r\n", iccid);
+    ret = rt_write_apnlist(num * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE);
+    return ret;
 }
 
 /**
@@ -221,19 +230,20 @@ static int32_t msg_delete(const char *iccid)
     }
 
     MSG_PRINTF(LOG_DBG, "num:%d,block:%d\n", num, block);
+
     if (block != num - 1) {
-        if (rt_read_data(APN_LIST, (num - 1) * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE) < 0) {
+        if (rt_read_apnlist((num - 1) * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE) < 0) {
             MSG_PRINTF(LOG_WARN, "rt read data failed\n");
             return RT_ERROR;
         } else {
-            if (rt_write_data(APN_LIST, block * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE) < 0) {
+            if (rt_write_apnlist(block * MSG_ONE_BLOCK_SIZE, buffer, MSG_ONE_BLOCK_SIZE) < 0) {
                 MSG_PRINTF(LOG_WARN, "rt write data failed\n");
                 return RT_ERROR;
             }
         }
     }
 
-    rt_truncate_data(APN_LIST, (num - 1) * MSG_ONE_BLOCK_SIZE);
+    rt_truncate_apnlist((num - 1) * MSG_ONE_BLOCK_SIZE);
     MSG_PRINTF(LOG_INFO, "delete iccid: %s\r\n", iccid);
 
     return RT_SUCCESS;
@@ -389,3 +399,233 @@ int32_t mqtt_msg_event(const uint8_t *buf, int32_t len)
     return RT_SUCCESS;
 }
 
+int32_t msg_switch_card_handler(cJSON *switchparams)
+{
+    cJSON *card_type = NULL;
+    int32_t state = RT_ERROR;
+
+    card_type = cJSON_GetObjectItem(switchparams, "type");
+    if (card_type != NULL) {
+        if (card_type->valueint == 1) {
+            ipc_remove_vuicc(1); // 移除所占用的卡槽
+            MSG_PRINTF(LOG_INFO, "SIM first\n");
+        } else if (card_type->valueint == 2) {
+            // 保留
+            MSG_PRINTF(LOG_INFO, "eSIM\n");
+        } else {
+            // 不处理
+            MSG_PRINTF(LOG_INFO, "No identify\n");
+        }
+
+        state = RT_SUCCESS;
+    } else {
+        MSG_PRINTF(LOG_WARN, "card_type content failed!!\n");
+    }
+
+    return state;
+}
+
+
+int32_t msg_apnlist_handler(cJSON *apnparams_list)
+{
+    // apnparams
+    cJSON *new_command_content = NULL;
+    cJSON *apnparams_item = NULL;
+    cJSON *apn_list = NULL;
+    cJSON *iccid = NULL;
+    int32_t apnparams_num = 0;
+    uint8_t *apn_list_c;
+    int16_t count_index = 0;
+    int16_t ii = 0;
+    int32_t state = RT_ERROR;
+
+    apnparams_num = cJSON_GetArraySize(apnparams_list);
+    count_index = apnparams_num - 1;
+    for (ii = 0; ii < apnparams_num; ii++) {
+
+#if 0
+        if (ii >= count_index) {
+            apnparams_item = cJSON_GetArrayItem(apnparams_list, count_index);
+        } else {
+            apnparams_item = cJSON_GetArrayItem(apnparams_list, ii);
+        }
+#else
+        apnparams_item = cJSON_GetArrayItem(apnparams_list, ii);
+#endif
+        if (apnparams_item != NULL) {
+            iccid = cJSON_GetObjectItem(apnparams_item, "iccid");
+            apn_list = cJSON_GetObjectItem(apnparams_item, "apnInfos");
+            if (apn_list != NULL) {
+                // write file
+                new_command_content = cJSON_CreateObject();
+                if (!new_command_content) {
+                    MSG_PRINTF(LOG_WARN, "The new_command_content is error!!\n");
+                } else {
+                    /* add iccid information */
+                    cJSON_AddItemToObject(new_command_content, "iccid", cJSON_CreateString((const char *)iccid->valuestring));
+                    /* add apn list information */
+                    apn_list_c = cJSON_PrintUnformatted(apn_list);
+                    /* create a new apn list json object */
+                    cJSON_AddItemToObject(new_command_content, "apnInfos", cJSON_Parse((const char *)apn_list_c));
+                    state = msg_analyse_apn(new_command_content, iccid->valuestring);
+                    cJSON_Delete(new_command_content);
+                    cJSON_free(apn_list_c);
+
+                    if (state == RT_ERROR) {
+                        MSG_PRINTF(LOG_WARN, "start delete apn list\n");
+#if 0
+                        msg_delete((const char *)iccid->valuestring);
+                        if (ii >= count_index) {
+                            cJSON_DeleteItemFromArray(apnparams_list, count_index);
+                        } else {
+                            cJSON_DeleteItemFromArray(apnparams_list, ii);
+                        }
+#else
+                        if (ii >= count_index) {
+                            cJSON_DeleteItemFromArray(apn_list, count_index);
+                        } else {
+                            cJSON_DeleteItemFromArray(apn_list, ii);
+                        }
+#endif
+                        count_index--;
+                    }
+                }
+            }
+        }
+    }
+    return state;
+}
+
+void msg_monitorstrategy_handler(cJSON *monitorstrategyparams)
+{
+    cJSON *enabled = NULL;
+    cJSON *interval = NULL;
+    cJSON *strategy_type = NULL;
+    cJSON *strategy_list = NULL;
+    cJSON *strategy_item = NULL;
+    cJSON *domain = NULL;
+    cJSON *level = NULL;
+    int32_t strategy_num = NULL;
+    char send_buff[1];
+    int16_t ii = 0;
+
+    enabled = cJSON_GetObjectItem(monitorstrategyparams, "enabled");
+    if (!enabled) {
+        MSG_PRINTF(LOG_WARN, "enabled content failed!!\n");
+    } else {
+        if(enabled->valueint == RT_TRUE) {
+            send_buff[0] = NETWORK_DETECT_SUCESS;
+        } else {
+            send_buff[0] = NETWORK_DETECT_ERROR;
+        }
+        msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_NETWORK_DETECT, send_buff, sizeof(send_buff));
+    }
+
+#if 0
+    interval = cJSON_GetObjectItem(monitorstrategyparams, "interval");
+    if (!interval) {
+        MSG_PRINTF(LOG_WARN, "interval content failed!!\n");
+    }
+    strategy_type = cJSON_GetObjectItem(monitorstrategyparams, "type");
+    if (!strategy_type) {
+        MSG_PRINTF(LOG_WARN, "strategy type content failed!!\n");
+    }
+
+    strategy_list = cJSON_GetObjectItem(monitorstrategyparams, "monitorStrategies");
+    if (strategy_list != NULL) {
+        strategy_num = cJSON_GetArraySize(strategy_list);
+        for (ii = 0; ii < strategy_num; ii++) {
+            strategy_item = cJSON_GetArrayItem(strategy_list, ii);
+            domain = cJSON_GetObjectItem(strategy_item, "domain");
+            if (!domain) {
+                MSG_PRINTF(LOG_WARN, "domain content failed!!\n");
+            }
+            level = cJSON_GetObjectItem(strategy_item, "level");
+            if (!level) {
+                MSG_PRINTF(LOG_WARN, "level content failed!!\n");
+            }
+        }
+    } else {
+        MSG_PRINTF(LOG_WARN, "strategy list is error");
+    }
+#endif
+
+}
+
+int32_t inspect_device_key(const char *file_name)
+{
+    rt_fshandle_t fp = NULL;
+    sha256_ctx_t  sha_ctx;
+    rt_bool ret = RT_FALSE;
+    int8_t  file_buffer[DEVICE_KEY_LEN + 1];
+    int8_t  hash_result[MAX_FILE_HASH_LEN + 1];
+    int8_t  hash_out[MAX_FILE_HASH_BYTE_LEN + 1];
+    int8_t  inspect_buff[DEVICE_KEY_LEN + 1];
+
+    rt_os_memset(file_buffer, 0, DEVICE_KEY_LEN);
+    rt_os_memset(inspect_buff, 0, DEVICE_KEY_LEN);
+
+    RT_CHECK_ERR(fp = linux_fopen((char *)file_name, "r"), NULL);
+    linux_fseek(fp, RT_DEVICE_KEY_OFFSET, RT_FS_SEEK_SET);
+    RT_CHECK_ERR(linux_fread(file_buffer, DEVICE_KEY_LEN, 1, fp), 0);
+
+    sha256_init(&sha_ctx);
+    sha256_update(&sha_ctx, (uint8_t *)file_buffer, DEVICE_KEY_LEN);         // app key
+    sha256_update(&sha_ctx, (uint8_t *)DEVICE_PUBLIC_KEY, MAX_FILE_HASH_LEN);   // fix key
+    sha256_final(&sha_ctx, (uint8_t *)hash_out);
+    bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
+
+    rt_read_devicekey(DEVICE_KEY_LEN, inspect_buff, DEVICE_KEY_LEN);
+    inspect_buff[DEVICE_KEY_LEN] = '\0';
+    if (!rt_os_strncasecmp(hash_result, inspect_buff, DEVICE_KEY_LEN)) {
+        MSG_PRINTF(LOG_WARN, "Device Key compare success!\n");
+        ret = RT_TRUE;
+    } else {
+        MSG_PRINTF(LOG_WARN, "Device Key compare fail!\n");
+    }
+
+end:
+    if (fp != NULL) {
+        linux_fclose(fp);
+    }
+
+    return ret;
+}
+
+int32_t config_update_device_key(const char *devicekey)
+{
+    char inspect_file[128] = {0};
+    char send_buff[1];
+    rt_bool ret = RT_FALSE;
+
+    rt_write_devicekey(0, devicekey, DEVICE_KEY_SIZE);
+    snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
+    ret = inspect_device_key(inspect_file);
+
+    if(ret == RT_TRUE) {
+        send_buff[0] = DEVICE_KEY_SUCESS;
+    } else {
+        send_buff[0] = DEVICE_KEY_ERROR;
+    }
+    msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_NETWORK_DETECT, send_buff, sizeof(send_buff));
+
+    return ret;
+}
+
+int32_t msg_analyse_strategy(cJSON *command_content)
+{
+    int8_t *out = NULL;
+    uint8_t buffer[RT_STRATEGY_LIST_LEN + 1] = {0};
+    int ret = RT_ERROR;
+
+    out = cJSON_PrintUnformatted(command_content);
+    rt_os_memset(buffer, 'F', RT_STRATEGY_LIST_LEN);
+    rt_os_memcpy(buffer, out, rt_os_strlen(out));
+    buffer[sizeof(buffer) - 1] = '\0';
+    MSG_PRINTF(LOG_INFO, "buffer=%s, rt_os_strlen(out)=%d\r\n", buffer, rt_os_strlen(out));
+
+    ret = rt_write_strategy(0, buffer, RT_STRATEGY_LIST_LEN);
+    rt_os_free(out);
+
+    return ret;
+}

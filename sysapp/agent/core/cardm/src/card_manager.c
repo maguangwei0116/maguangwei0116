@@ -19,15 +19,19 @@
 #include "lpa.h"
 #include "lpa_error_codes.h"
 #include "bootstrap.h"
+#include "trigger.h"
+#include "network_detection.h"
+#include "usrdata.h"
+#include "card_manager.h"
+#include "agent2monitor.h"
 
-#define RT_LAST_EID                 "rt_last_eid"
-#define RT_LAST_USED_CARD_TYPE      "rt_last_card_type"
 #define RT_PROFILE_STATE_ENABLED    2
 #define RT_RETRY_COUNT              3
 
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
 static rt_bool                      g_frist_bootstrap_ok = RT_FALSE;
+static int32_t                      g_circle_len = 0;
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -45,6 +49,9 @@ static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 static int32_t card_check_init_upload(const uint8_t *eid)
 {
     rt_bool update_last_eid = RT_FALSE;
+    if (g_p_info.type == PROFILE_TYPE_SIM) {
+        return RT_SUCCESS;
+    }
 
     if (eid_check_memory(eid, MAX_EID_LEN, 'F') || eid_check_memory(eid, MAX_EID_LEN, '0')) {
         update_last_eid = RT_TRUE;
@@ -60,7 +67,7 @@ static int32_t card_check_init_upload(const uint8_t *eid)
 
     if (update_last_eid) {
         snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
-        rt_write_data(RT_LAST_EID, 0, g_last_eid, sizeof(g_last_eid));
+        rt_write_eid(0, g_last_eid, sizeof(g_last_eid));
     }
 
     return RT_SUCCESS;
@@ -68,24 +75,20 @@ static int32_t card_check_init_upload(const uint8_t *eid)
 
 static int32_t card_last_eid_init(void)
 {
-    if (!linux_rt_file_exist(RT_LAST_EID)) {
-        rt_create_file(RT_LAST_EID);
-    } else {
-        rt_read_data(RT_LAST_EID, 0, g_last_eid, sizeof(g_last_eid));
-        MSG_PRINTF(LOG_INFO, "g_last_eid=%s\r\n", g_last_eid);
-    }
+    rt_read_eid(0, g_last_eid, sizeof(g_last_eid));
+    MSG_PRINTF(LOG_INFO, "g_last_eid=%s\r\n", g_last_eid);
 
     return RT_SUCCESS;
 }
 
 static int32_t card_last_type_init(void)
 {
-    if (!linux_rt_file_exist(RT_LAST_USED_CARD_TYPE)) {
-        rt_create_file(RT_LAST_USED_CARD_TYPE);
-    } else {
-        rt_read_data(RT_LAST_USED_CARD_TYPE, 0, &(g_p_info.last_type), sizeof(profile_type_e));
-        MSG_PRINTF(LOG_INFO, "g_p_info.last_type=%d\r\n", g_p_info.last_type);
+    rt_read_card_type(0, (char *)&(g_p_info.last_type), sizeof(profile_type_e));
+    if (g_p_info.last_type < 0 || g_p_info.last_type > 2 ) {
+        g_p_info.last_type = 0;
     }
+
+    MSG_PRINTF(LOG_INFO, "g_p_info.last_type=%d\r\n", g_p_info.last_type);
 
     return RT_SUCCESS;
 }
@@ -142,7 +145,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
             }
         }
         if (g_p_info.last_type != g_p_info.type) {
-            rt_write_data(RT_LAST_USED_CARD_TYPE, 0, &(g_p_info.type), sizeof(profile_type_e));
+            rt_write_card_type(0, (char *)&(g_p_info.type), sizeof(profile_type_e));
             g_p_info.last_type = g_p_info.type;
         }
     }
@@ -336,6 +339,7 @@ int32_t card_set_opr_profile_apn(void)
 
 static int32_t card_init_profile_type(init_profile_type_e type)
 {
+    // uicc_sim 、sim_mode、profile_type_e
     int32_t ret = RT_SUCCESS;
 
     MSG_PRINTF(LOG_TRACE, "init profile type = %d\r\n", type);
@@ -385,7 +389,103 @@ static int32_t card_key_data_init(void)
 {
     return bootstrap_get_key();
 }
+#ifdef CFG_REDTEA_READY_ON
+int32_t init_card_manager(void *arg)
+{
+    int32_t ret = RT_ERROR;
+    init_profile_type_e init_profile_type;
+    int32_t sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
+    uint8_t tmp_iccid[21] = {0};
+    init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
+    ((public_value_list_t *)arg)->card_info = &g_p_info;
+    MSG_PRINTF(LOG_DBG, "get sizeof g_p_info is %d\n", sizeof(g_p_info));
+    MSG_PRINTF(LOG_DBG, "get g_p_info.type is %d\n", g_p_info.type);
+    init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr);
+    rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
+    rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
+    rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
+    if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
+        g_p_info.type = PROFILE_TYPE_SIM;
+    }
+    lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
+    qmi_get_elementary_iccid_file(tmp_iccid);
+    MSG_PRINTF(LOG_DBG, "get tmp_iccid is %s\n", tmp_iccid);
+    if (rt_os_strlen(tmp_iccid) == 0) {
+        ;
+    } else {
+        g_p_info.sim_info.state = 1;
+        rt_os_strncpy(g_p_info.sim_info.iccid, tmp_iccid, 20);
+    }
+    // 为0的时候，vuicc only
+    if ((sim_mode == SIM_MODE_TYPE_VUICC_ONLY) || (sim_mode == SIM_MODE_TYPE_SIM_FIRST)) {
+        MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", sim_mode);
+        MSG_PRINTF(LOG_DBG, "g_p_info.type is %d\n", g_p_info.type);
+        if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
+            MSG_PRINTF(LOG_DBG, "((public_value_list_t *)arg)->profile_damaged is %d\r\n", *(((public_value_list_t *)arg)->profile_damaged));
+            if (*(((public_value_list_t *)arg)->profile_damaged) == 0) {
+                ret = card_key_data_init();
+                if (ret) {
+                    MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
+                }
+            } else {
+                ;
+            }
+        }
+    } else {
+        MSG_PRINTF(LOG_DBG, "set sim_mode is %d\n", sim_mode);
+    }
 
+    ret = card_last_type_init();
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card update last card type fail, ret=%d\r\n", ret);
+    }
+    ret = card_update_eid(RT_TRUE);
+    MSG_PRINTF(LOG_WARN, "g_p_info.eid=%s\r\n", g_p_info.eid);
+    if ((sim_mode == SIM_MODE_TYPE_VUICC_ONLY) || (sim_mode == SIM_MODE_TYPE_SIM_FIRST)) {
+        if (g_p_info.type != PROFILE_TYPE_SIM) {
+            MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", sim_mode);
+            ret = card_update_eid(RT_TRUE);
+            if (ret) {
+                MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
+                if (((public_value_list_t *)arg)->config_info->lpa_channel_type == LPA_CHANNEL_BY_QMI) {
+                    MSG_PRINTF(LOG_WARN, "eUICC mode with no EID, stay here forever !\r\n");
+                    while (1) {
+                        rt_os_sleep(1);
+                    }
+                }
+            } else {
+                rt_os_sleep(1);
+            }
+            ret = card_init_profile_type(init_profile_type);
+            if (ret) {
+                MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
+            }
+        }
+    } else {
+        g_p_info.type = PROFILE_TYPE_SIM;
+        MSG_PRINTF(LOG_DBG, "set sim_mode is %d\n", sim_mode);
+    }
+
+    if (sim_mode == SIM_MODE_TYPE_VUICC_ONLY) {
+        MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", sim_mode);
+        ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
+        }
+
+        ret = card_last_eid_init();
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "card update last eid fail, ret=%d\r\n", ret);
+        }
+    } else {
+        MSG_PRINTF(LOG_DBG, "set sim_mode is %d\n", sim_mode);
+    }
+
+    card_set_opr_profile_apn();
+    MSG_PRINTF(LOG_DBG, "init_card_manager over get sim_mode is %d\n", g_p_info.type);
+    return ret;
+}
+#else
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
@@ -470,6 +570,7 @@ int32_t init_card_manager(void *arg)
 
     return ret;
 }
+#endif
 
 int32_t card_manager_install_profile_ok(void)
 {
@@ -486,7 +587,82 @@ int32_t card_get_avariable_profile_num(int32_t *avariable_num)
 
     return RT_ERROR;
 }
+#ifdef CFG_REDTEA_READY_ON
+int32_t card_change_profile(const uint8_t *buf)
+{
+    int32_t i = 0;
+    int32_t ii = 0;
+    int32_t len = 0;
+    int32_t used_seq = 0;
+    uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
+    int32_t jj = 0;
 
+    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+    MSG_PRINTF(LOG_INFO, "g_p_info.num %d\r\n", g_p_info.num);
+    if ((buf[1] == '1') && (buf[2] == '1')) { // 种子卡可以用
+        MSG_PRINTF(LOG_INFO, "provisioning card can use, wait platform send enable\r\n");
+        g_p_info.type = PROFILE_TYPE_PROVISONING;
+    } else if ((buf[1] == '1') && (buf[2] == '0')) { // 种子卡不可以用
+        MSG_PRINTF(LOG_INFO, "provisioning card can not use, change to sim card\r\n");
+        g_p_info.type = PROFILE_TYPE_SIM;
+        ipc_remove_vuicc(1);
+    } else if ((buf[3] == '1') && (buf[4] == '1')) { // 业务卡卡可以用
+        MSG_PRINTF(LOG_INFO, "operational card can use, nothing to do\r\n");
+        g_p_info.type = PROFILE_TYPE_OPERATIONAL;
+    } else if ((buf[3] == '1') && (buf[4] == '0')) {
+        MSG_PRINTF(LOG_INFO, "operational card can not use\r\n");
+        MSG_PRINTF(LOG_INFO, "g_circle_len is %d\r\n", g_circle_len);
+        if (g_circle_len == g_p_info.num - 2) { // 循环了一遍，所有的业务卡都不能用，再切到种子卡
+            g_circle_len = 0;
+            card_force_enable_provisoning_profile();
+            g_p_info.type = PROFILE_TYPE_PROVISONING;
+        } else {
+            g_circle_len ++;
+
+            for (ii = 0; ii < g_p_info.num; ii++) {
+                if (g_p_info.info[ii].state == 1) {
+                    used_seq = ii; //找到当前再用的卡
+                }
+            }
+
+            if (used_seq == g_p_info.num - 1) { // 如果是最后一张业务卡，则，切到第一张业务卡
+                len = rt_os_strlen(g_p_info.info[1].iccid);
+                rt_os_memcpy(iccid, g_p_info.info[1].iccid, len);
+            } else { // 如果不是最后一张，那么就切到下一张
+                len = rt_os_strlen(g_p_info.info[used_seq + 1].iccid);
+                rt_os_memcpy(iccid, g_p_info.info[used_seq + 1].iccid, len);
+            }
+
+            msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, iccid, rt_os_strlen(iccid));
+            g_p_info.type = PROFILE_TYPE_OPERATIONAL;
+        }
+
+    } else if ((buf[5] == '1') && (buf[6] == '1')) {
+        MSG_PRINTF(LOG_INFO, "sim card can use, nothing to do\r\n");
+        g_p_info.type = PROFILE_TYPE_SIM;
+    } else if ((buf[5] == '1') && (buf[6] == '0')) {
+        MSG_PRINTF(LOG_INFO, "sim card can not use, change to vuicc card\r\n");
+        MSG_PRINTF(LOG_INFO, "we don't care what card use, but we want change to vuicc card\r\n");
+        ipc_start_vuicc(1);
+        MSG_PRINTF(LOG_INFO, "now change is over\r\n");
+        // rt_os_sleep(30);
+        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+        // lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
+        MSG_PRINTF(LOG_INFO, "g_p_info.num is %d \r\n", g_p_info.num);
+        for (jj = 0; jj < g_p_info.num; ++jj) {
+            MSG_PRINTF(LOG_INFO, "now g_p_info.info[jj].state is %d \r\n", g_p_info.info[jj].state);
+            MSG_PRINTF(LOG_INFO, "now g_p_info.info[jj].class is %d \r\n", g_p_info.info[jj].class);
+            if (g_p_info.info[jj].state == 1) {
+                g_p_info.type = g_p_info.info[jj].class;
+            }
+        }
+    } else {
+        MSG_PRINTF(LOG_INFO, "buf unknow is %s\r\n", buf);
+    }
+
+    return 0;
+}
+#endif
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t ret = RT_ERROR;
@@ -538,6 +714,11 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             ret = card_disable_profile(buf);
             break;
 
+#ifdef CFG_REDTEA_READY_ON
+        case MSG_PING_RES:
+            ret = card_change_profile(buf);
+            break;
+#endif
         default:
             //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;
@@ -559,7 +740,9 @@ int32_t card_manager_update_profiles_event(const uint8_t *buf, int32_t len, int3
     switch (mode) {
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
-            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+            if (g_p_info.type != PROFILE_TYPE_SIM) {
+                ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+            }
             break;
 
         default:
