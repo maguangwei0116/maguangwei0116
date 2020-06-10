@@ -17,6 +17,15 @@
 #include "md5.h"
 #include "downstream.h"
 #include "upload.h"
+#include "hash.h"
+#include "usrdata.h"
+
+#if (CFG_OPEN_MODULE)
+#define RT_DATA_PATH                        "/data/redtea/"
+#elif (CFG_STANDARD_MODULE)
+#define RT_DATA_PATH                        "/usrdata/redtea/"
+#endif
+
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)                       (sizeof((a)) / sizeof((a)[0]))
@@ -25,9 +34,8 @@
 #if (CFG_UPLOAD_HTTPS_ENABLE)
     #define RT_OTI_SERVER_PORT                  443
 #else
-    #define RT_OTI_SERVER_PORT                  7082
+    #define RT_OTI_SERVER_PORT                  7083
 #endif
-
 
 
 #define M_BYTES                             (1024 * 1024)
@@ -140,7 +148,11 @@ static int32_t config_log_size(const void *in, char *out)
 /* value: [0,1] */
 static int32_t config_uicc_mode(const void *in, char *out)
 {
+#ifdef CFG_REDTEA_READY_ON
+    return config_range_int_value(in, 0, 2, out);
+#else
     return config_range_int_value(in, 0, 1, out);
+#endif
 }
 
 /* value: [0,1] */
@@ -179,7 +191,11 @@ ITEM(MBN_CONFIGURATION,     config_switch_value,        INTEGER,    "1",        
 ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,       INTEGER,    "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
 ITEM(RPLMN_ENABLE,          NULL,                       INTEGER,    "1",                            "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,         config_log_size,            INTEGER,    "1",                            "The max size of rt_log file (MB)"),
+#ifdef CFG_REDTEA_READY_ON
+ITEM(UICC_MODE,             config_uicc_mode,           INTEGER,    "1",                            "The mode of SIM (0:vUICC only  1:SIM first 2:SIM only)"),
+#else
 ITEM(UICC_MODE,             config_uicc_mode,           INTEGER,    "0",                            "The mode of UICC (0:vUICC  1:eUICC)"),
+#endif
 #if (CFG_SOFTWARE_TYPE_RELEASE)
 ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
@@ -435,8 +451,19 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
         return RT_ERROR;
     }
 
+#ifdef CFG_REDTEA_READY_ON
+    infos->lpa_channel_type  = LPA_CHANNEL_BY_IPC;
+    infos->sim_mode = atoi(local_config_get_data("UICC_MODE"));
+    if (infos->sim_mode >= 0 && infos->sim_mode <= 2) {
+        ;
+    } else {
+        infos->sim_mode = SIM_MODE_TYPE_SIM_FIRST;
+    }
+    MSG_PRINTF(LOG_DBG, "infos->sim_mode is %d\r\n", infos->sim_mode);
+#else
     infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
                                                     LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
+#endif
 
     size = msg_string_to_int(local_config_get_data("LOG_FILE_SIZE"));
     if (size > 0) {
@@ -446,6 +473,7 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     infos->mbn_enable = msg_string_to_int(local_config_get_data("MBN_CONFIGURATION"));
 
     infos->init_profile_type = msg_string_to_int(local_config_get_data("INIT_PROFILE_TYPE"));
+    MSG_PRINTF(LOG_DBG, "infos->init_profile_type is %d\r\n", infos->init_profile_type);
 
     log_level = log_get_level(local_config_get_data("MONITOR_LOG_LEVEL"));
     infos->monitor_log_level = (LOG_UNKNOW == log_level) ? LOG_INFO : log_level;
@@ -472,7 +500,11 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_INFO, "INIT_PROFILE_TYPE     : %s\n", local_config_get_data("INIT_PROFILE_TYPE"));
     MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n", local_config_get_data("RPLMN_ENABLE"));
     MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
+#ifdef CFG_REDTEA_READY_ON
+    MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n", local_config_get_data("UICC_MODE"));
+#else
     MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n", !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? "vUICC" : "eUICC");
+#endif
     MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n", local_config_get_data("MONITOR_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n", local_config_get_data("AGENT_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n", local_config_get_data("USAGE_ENABLE"));

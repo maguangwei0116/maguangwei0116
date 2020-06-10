@@ -132,7 +132,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     } else {
         MSG_PRINTF(LOG_WARN, "apnparams content failed!\n");
     }
-     
+
     // monitorstrategyparams
     monitorstrategyparams = cJSON_GetObjectItem(properties, "monitorstrategyparams");
     if (monitorstrategyparams != NULL) {

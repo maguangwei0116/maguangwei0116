@@ -90,6 +90,9 @@ static MQTTClient_SSLOptions g_mqtts_opts = MQTTClient_SSLOptions_initializer;
 #endif
 static mqtt_info_t g_mqtt_info;
 
+#ifdef CFG_REDTEA_READY_ON
+static int g_sim_mode;
+#endif
 static rt_bool mqtt_eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
     int32_t i = 0;
@@ -356,10 +359,19 @@ static rt_bool mqtt_check_topic(const char *topic)
     }
 
     for (i = 0; i < g_mqtt_info.sub_info.cnt; i++) {
+        MSG_PRINTF(LOG_DBG, "topic content: %s\r\n", g_mqtt_info.sub_info.topic[i]);
         if (!rt_os_strcmp(g_mqtt_info.sub_info.topic[i], topic)) {
             return RT_TRUE;
         }
     }
+
+    MSG_PRINTF(LOG_DBG, "start compare deviceId and topic, device id :%s\n", g_mqtt_info.device_id);
+
+    // something g_mqtt_info.sub_info.topic[i] is null
+    if (!rt_os_strcmp(g_mqtt_info.device_id, topic)) {
+        return RT_TRUE;
+    }
+
     return RT_FALSE;
 }
 
@@ -449,7 +461,7 @@ static void mqtt_connection_lost(void *context, char *cause)
 
 static rt_bool mqtt_eid_check_upload(void)
 {
-    if (mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
+    if (mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0') || mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, 'F')) {
         personalise_upload_no_cert(NULL);
         return RT_TRUE;
     }
@@ -537,8 +549,21 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
         upload_event_report("REGISTERED", NULL, 0, NULL);
     }
 
+#ifdef CFG_REDTEA_READY_ON
+    if (g_sim_mode == 0 || g_sim_mode == 1) {
+        MSG_PRINTF(LOG_DBG, "g_mqtt_info.type is %d\n", *(g_mqtt_info.type));
+        // g_mqtt_info.type = PROFILE_TYPE_SIM;
+        if (*(g_mqtt_info.type) != PROFILE_TYPE_SIM) {
+            MSG_PRINTF(LOG_DBG, "get g_sim_mode is %d\n", g_sim_mode);
+            mqtt_eid_check_upload();
+        }
+    } else {
+        MSG_PRINTF(LOG_DBG, "get g_sim_mode is %d\n", g_sim_mode);
+    }
+#else
     mqtt_eid_check_upload();
 
+#endif
     return RT_TRUE;
 }
 
@@ -868,6 +893,7 @@ int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
 
 int32_t init_mqtt(void *arg)
 {
+    // rt_os_sleep(1);
     int32_t ret = RT_ERROR;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
@@ -880,6 +906,9 @@ int32_t init_mqtt(void *arg)
     g_mqtt_info.oti_addr            = (const char *)public_value_list->config_info->oti_addr;
     g_mqtt_info.oti_port            = public_value_list->config_info->oti_port;
     g_mqtt_info.type                = (const profile_type_e *)&(public_value_list->card_info->type);
+#ifdef CFG_REDTEA_READY_ON
+    g_sim_mode                      = public_value_list->config_info->sim_mode;
+#endif
 
     mqtt_init_param();
 
