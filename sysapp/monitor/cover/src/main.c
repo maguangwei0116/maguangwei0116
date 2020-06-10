@@ -218,10 +218,12 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
     } else if (cmd == CMD_START_VUICC) {
         // info->vuicc_switch = LPA_CHANNEL_BY_IPC;
         init_trigger(LPA_CHANNEL_BY_IPC);
-        *rsp_len = 0;
+        rsp[0] = RT_TRUE;
+        *rsp_len = 1;
     } else if (cmd == CMD_REMOVE_VUICC) {
         trigger_remove_card(1);
-        *rsp_len = 0;
+        rsp[0] = RT_TRUE;
+        *rsp_len = 1;
     }
 
     return RT_SUCCESS;
@@ -340,6 +342,8 @@ static int32_t agent_task_check_start(rt_bool frist_start)
         }
         rt_os_sleep(1);
     } while(1);
+
+    linux_delete_file(RT_AGENT_FILE);       // debug
 
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE, RT_AGENT_NAME) != RT_TRUE) {

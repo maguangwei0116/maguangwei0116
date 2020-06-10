@@ -17,6 +17,16 @@
 #include "rt_type.h"
 #include "dial_up.h"
 
+typedef enum REDTEA_READY_PING_STATUS_CMD {
+    PROVISONING_HAVE_INTERNET       = 0,
+    PROVISONING_NO_INTERNET,
+    OPERATIONAL_HAVE_INTERNET,
+    OPERATIONAL_NO_INTERNET,
+    SIM_CARD_HAVE_INTERNET,
+    SIM_CARD_NO_INTERNET,
+} redtea_ready_ping_status_cmd_e;
+
+
 int32_t init_ping_task(void *arg);
 int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode);
 

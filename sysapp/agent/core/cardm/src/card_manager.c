@@ -24,6 +24,7 @@
 #include "usrdata.h"
 #include "card_manager.h"
 #include "agent2monitor.h"
+#include "ping_task.h"
 
 #define RT_PROFILE_STATE_ENABLED    2
 #define RT_RETRY_COUNT              3
@@ -587,6 +588,7 @@ int32_t card_get_avariable_profile_num(int32_t *avariable_num)
 
     return RT_ERROR;
 }
+
 #ifdef CFG_REDTEA_READY_ON
 int32_t card_change_profile(const uint8_t *buf)
 {
@@ -597,21 +599,28 @@ int32_t card_change_profile(const uint8_t *buf)
     uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
     int32_t jj = 0;
 
+    byte recv_buf = buf[0];
+
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-    MSG_PRINTF(LOG_INFO, "g_p_info.num %d\r\n", g_p_info.num);
-    if ((buf[1] == '1') && (buf[2] == '1')) { // 种子卡可以用
-        MSG_PRINTF(LOG_INFO, "provisioning card can use, wait platform send enable\r\n");
+    MSG_PRINTF(LOG_INFO, "g_p_info.num %d\n", g_p_info.num);
+
+    if (recv_buf == PROVISONING_HAVE_INTERNET) {
+        MSG_PRINTF(LOG_INFO, "Hold Provisioning\r\n");
         g_p_info.type = PROFILE_TYPE_PROVISONING;
-    } else if ((buf[1] == '1') && (buf[2] == '0')) { // 种子卡不可以用
-        MSG_PRINTF(LOG_INFO, "provisioning card can not use, change to sim card\r\n");
+
+    } else if (recv_buf == PROVISONING_NO_INTERNET) {
+        MSG_PRINTF(LOG_INFO, "Provisioning ====> SIM\n");
         g_p_info.type = PROFILE_TYPE_SIM;
         ipc_remove_vuicc(1);
-    } else if ((buf[3] == '1') && (buf[4] == '1')) { // 业务卡卡可以用
-        MSG_PRINTF(LOG_INFO, "operational card can use, nothing to do\r\n");
+
+    } else if (recv_buf == OPERATIONAL_HAVE_INTERNET) {
+        MSG_PRINTF(LOG_INFO, "Hold opeational\r\n");
         g_p_info.type = PROFILE_TYPE_OPERATIONAL;
-    } else if ((buf[3] == '1') && (buf[4] == '0')) {
-        MSG_PRINTF(LOG_INFO, "operational card can not use\r\n");
-        MSG_PRINTF(LOG_INFO, "g_circle_len is %d\r\n", g_circle_len);
+
+    } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
+        MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
+        MSG_PRINTF(LOG_INFO, "g_circle_len is %d\n", g_circle_len);
+
         if (g_circle_len == g_p_info.num - 2) { // 循环了一遍，所有的业务卡都不能用，再切到种子卡
             g_circle_len = 0;
             card_force_enable_provisoning_profile();
@@ -637,18 +646,23 @@ int32_t card_change_profile(const uint8_t *buf)
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
         }
 
-    } else if ((buf[5] == '1') && (buf[6] == '1')) {
-        MSG_PRINTF(LOG_INFO, "sim card can use, nothing to do\r\n");
+    } else if (recv_buf == SIM_CARD_HAVE_INTERNET) {
+        MSG_PRINTF(LOG_INFO, "sim card can use, nothing to do\n");
         g_p_info.type = PROFILE_TYPE_SIM;
-    } else if ((buf[5] == '1') && (buf[6] == '0')) {
-        MSG_PRINTF(LOG_INFO, "sim card can not use, change to vuicc card\r\n");
-        MSG_PRINTF(LOG_INFO, "we don't care what card use, but we want change to vuicc card\r\n");
+
+    } else if (recv_buf == SIM_CARD_NO_INTERNET) {
+        MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
         ipc_start_vuicc(1);
-        MSG_PRINTF(LOG_INFO, "now change is over\r\n");
+        MSG_PRINTF(LOG_INFO, "SIM ====> vUICC over\n");
         // rt_os_sleep(30);
         card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         // lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
-        MSG_PRINTF(LOG_INFO, "g_p_info.num is %d \r\n", g_p_info.num);
+        MSG_PRINTF(LOG_INFO, "g_p_info.num is %d \n", g_p_info.num);
+
+        if (g_p_info.num == 1) {
+            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+        }
+
         for (jj = 0; jj < g_p_info.num; ++jj) {
             MSG_PRINTF(LOG_INFO, "now g_p_info.info[jj].state is %d \r\n", g_p_info.info[jj].state);
             MSG_PRINTF(LOG_INFO, "now g_p_info.info[jj].class is %d \r\n", g_p_info.info[jj].class);
@@ -660,9 +674,10 @@ int32_t card_change_profile(const uint8_t *buf)
         MSG_PRINTF(LOG_INFO, "buf unknow is %s\r\n", buf);
     }
 
-    return 0;
+    return RT_SUCCESS;
 }
 #endif
+
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t ret = RT_ERROR;

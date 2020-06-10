@@ -15,12 +15,12 @@
 #include "network_detection.h"
 #include "agent_queue.h"
 #include "usrdata.h"
+#include "ping_task.h"
 
 #define RT_LOST_ALL         100
 #define RT_AND              1
 #define RT_OR               0
 #define RT_NOT_DEFINE       -1
-#define SEND_BUF_LEN        8
 #define RT_STRATEGY_NUM     2
 #define RT_DOMAIN_LEN       64
 #define RT_INSPECT_FILE     128
@@ -43,7 +43,7 @@
 #define NONE_DEFINE         0
 
 static profile_type_e *             g_sim_type = NULL;
-static int32_t                      g_to_start = 0;
+static rt_bool                      g_to_start = RT_FALSE;
 static msg_mode_e                   g_ping_task_network_state = MSG_NETWORK_CONNECTED;
 
 int32_t ping_task_get_event(const uint8_t *buf, int32_t len, int32_t mode)
@@ -251,7 +251,7 @@ int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
     if(device_key_status == RT_TRUE && network_detect_status == RT_TRUE) {
         switch (mode) {
             case MSG_NETWORK_DETECT:
-                g_to_start = 1;
+                g_to_start = RT_TRUE;
                 MSG_PRINTF(LOG_DBG, "wait for network detect()\n");
                 ret = RT_SUCCESS;
                 break;
@@ -259,7 +259,7 @@ int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
                 break;
         }
     } else {
-        g_to_start = 0;
+        g_to_start = RT_FALSE;
     }
 
     return ret;
@@ -281,7 +281,6 @@ static void network_ping_task(void *arg)
     int32_t rt_level[RT_STRATEGY_NUM] = {-1, -1};
     int8_t rt_domain[RT_STRATEGY_NUM][RT_DOMAIN_LEN] = {0};
     int8_t inspect_file[RT_INSPECT_FILE] = {0};
-    int8_t send_buf[SEND_BUF_LEN] = {'F','F','F','F','F','F','F'};
     uint8_t tmp_buffer[RT_STRATEGY_LIST_LEN + 1] = {0};
     rt_bool detect_flg = RT_FALSE;
     cJSON *enabled = NULL;
@@ -293,27 +292,29 @@ static void network_ping_task(void *arg)
     cJSON *level = NULL;
     cJSON *rt_type = NULL;
 
+
+    char send_buf[1] = {0};
+
+
     while (1) {
         MSG_PRINTF(LOG_DBG, "g_sim_type is %d\n", *g_sim_type);
-
-        for (i = 0; i < SEND_BUF_LEN - 1; ++i) {
-            send_buf[i] = 'F';
-        }
 
         if (!linux_rt_file_exist(RUN_CONFIG_FILE)) {
             rt_create_file(RUN_CONFIG_FILE);
         }
+
         snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
         detect_flg = inspect_device_key(inspect_file);
 
         rt_read_strategy(0, tmp_buffer, RT_STRATEGY_LIST_LEN);
         if (tmp_buffer[0] != '{') {
-            MSG_PRINTF(LOG_WARN, "no strategy\n");
-            return ;
+            MSG_PRINTF(LOG_ERR, "Read data is error, Use default monitor strategy !\n");
+            rt_write_default_strategy();
         }
+
         if (tmp_buffer != NULL) {
             network_detect = cJSON_Parse(tmp_buffer);
-            MSG_PRINTF(LOG_WARN, "network_detect : %s\n", cJSON_Print(network_detect));
+            // MSG_PRINTF(LOG_WARN, "network_detect : %s\n", cJSON_Print(network_detect));
             if (network_detect != NULL) {
                 enabled = cJSON_GetObjectItem(network_detect, "enabled");
                 interval = cJSON_GetObjectItem(network_detect, "interval");
@@ -321,21 +322,19 @@ static void network_ping_task(void *arg)
         }
 
         if (detect_flg == RT_TRUE && enabled->valueint == RT_TRUE) {
-            g_to_start = 1;
+            g_to_start = RT_TRUE;
         } else {
-            g_to_start = 0;
+            g_to_start = RT_FALSE;
         }
+
         MSG_PRINTF(LOG_DBG, "interval->valueint is %d\r\n", interval->valueint);
 
         rt_type = cJSON_GetObjectItem(network_detect, "type");
         MSG_PRINTF(LOG_DBG, "rt_type->valueint is %d\n",  rt_type->valueint);
-        if (!rt_type) {
-            rt_type->valueint = -1;
-        }
-        MSG_PRINTF(LOG_DBG, "rt_type->valueint is %d\n",  rt_type->valueint);
-        rt_os_sleep(interval->valueint * 60); // first wait interval mins for dail up
+
+        rt_os_sleep(interval->valueint * 60);       // first wait interval mins for dail up
+
         strategy_list = cJSON_GetObjectItem(network_detect, "strategies");
-    
         if (strategy_list != NULL) {
             strategy_num = cJSON_GetArraySize(strategy_list);
             MSG_PRINTF(LOG_DBG, "strategy_num is %d\n", strategy_num);
@@ -343,53 +342,68 @@ static void network_ping_task(void *arg)
             for (ii = 0; ii < strategy_num; ii++) {
                 strategy_item = cJSON_GetArrayItem(strategy_list, ii);
                 domain = cJSON_GetObjectItem(strategy_item, "domain");
+
                 MSG_PRINTF(LOG_DBG, "domain->valuestring is %s\n",  domain->valuestring);
                 strcpy(rt_domain[ii], domain->valuestring);
+
                 if (!domain) {
                     MSG_PRINTF(LOG_WARN, "domain content failed!!\n");
                 }
+
                 MSG_PRINTF(LOG_DBG, "rt_domain is %s\n",  rt_domain[ii]);
                 level = cJSON_GetObjectItem(strategy_item, "level");
                 MSG_PRINTF(LOG_DBG, "level_value is %d\n",  level->valueint);
                 rt_level[ii] = level->valueint;
+
                 if (!level) {
                     MSG_PRINTF(LOG_WARN, "level content failed!!\n");
                 }
                 MSG_PRINTF(LOG_DBG, "level is %d\n",  rt_level[ii]);
-
             }
         } else {
             MSG_PRINTF(LOG_WARN, "strategies list is error\r\n");
         }
-    
-        if (g_to_start) {
 
+        if (network_detect != NULL) {
+            cJSON_Delete(network_detect);
+        }
+
+        if (g_to_start == RT_TRUE) {
             MSG_PRINTF(LOG_DBG, "into tostart\r\n");
 
             if (*g_sim_type == PROFILE_TYPE_PROVISONING) {
-                send_buf[1] = '1';
                 ret = ping_provisoning();
-                if (0 == ret) {
-                    send_buf[2] = '1';
+
+                MSG_PRINTF(LOG_DBG, "ping_provisoning status : %d\n", ret);
+
+                if (ret == RT_SUCCESS) {
+                    send_buf[0] = PROVISONING_HAVE_INTERNET;
                 } else {
-                    send_buf[2] = '0';
+                    send_buf[0] = PROVISONING_NO_INTERNET;
                 }
+
             } else if (*g_sim_type == PROFILE_TYPE_OPERATIONAL) {
-                send_buf[3] = '1';
                 ret = ping_operational(rt_domain[0], rt_level[0], rt_domain[1], rt_level[1], rt_type->valueint);
-                if (0 == ret) {
-                    send_buf[4] = '1';
+
+                MSG_PRINTF(LOG_DBG, "ping_operational status : %d\n", ret);
+
+                if (ret == RT_SUCCESS) {
+                    send_buf[0] = OPERATIONAL_HAVE_INTERNET;
                 } else {
-                    send_buf[4] = '0';
+                    send_buf[0] = OPERATIONAL_NO_INTERNET;
                 }
+
             } else if (*g_sim_type == PROFILE_TYPE_SIM) {
-                send_buf[5] = '1';
                 ret = ping_sim(rt_domain[0], rt_level[0], rt_domain[1], rt_level[1], rt_type->valueint);
-                if (0 == ret) {
-                    send_buf[6] = '1';
+
+                MSG_PRINTF(LOG_DBG, "ping_sim status : %d\n", ret);
+
+                if (ret == RT_SUCCESS) {
+                    send_buf[0] = SIM_CARD_HAVE_INTERNET;
                 } else {
-                    send_buf[6] = '0';
+                    send_buf[0] = SIM_CARD_NO_INTERNET;
                 }
+
             } else {
                 MSG_PRINTF(LOG_INFO, "unkown g_sim_type is %d\n", *g_sim_type);
             }
