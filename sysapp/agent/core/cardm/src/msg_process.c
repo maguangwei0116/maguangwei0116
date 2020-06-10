@@ -442,16 +442,7 @@ int32_t msg_apnlist_handler(cJSON *apnparams_list)
     apnparams_num = cJSON_GetArraySize(apnparams_list);
     count_index = apnparams_num - 1;
     for (ii = 0; ii < apnparams_num; ii++) {
-
-#if 0
-        if (ii >= count_index) {
-            apnparams_item = cJSON_GetArrayItem(apnparams_list, count_index);
-        } else {
-            apnparams_item = cJSON_GetArrayItem(apnparams_list, ii);
-        }
-#else
         apnparams_item = cJSON_GetArrayItem(apnparams_list, ii);
-#endif
         if (apnparams_item != NULL) {
             iccid = cJSON_GetObjectItem(apnparams_item, "iccid");
             apn_list = cJSON_GetObjectItem(apnparams_item, "apnInfos");
@@ -473,20 +464,11 @@ int32_t msg_apnlist_handler(cJSON *apnparams_list)
 
                     if (state == RT_ERROR) {
                         MSG_PRINTF(LOG_WARN, "start delete apn list\n");
-#if 0
-                        msg_delete((const char *)iccid->valuestring);
-                        if (ii >= count_index) {
-                            cJSON_DeleteItemFromArray(apnparams_list, count_index);
-                        } else {
-                            cJSON_DeleteItemFromArray(apnparams_list, ii);
-                        }
-#else
                         if (ii >= count_index) {
                             cJSON_DeleteItemFromArray(apn_list, count_index);
                         } else {
                             cJSON_DeleteItemFromArray(apn_list, ii);
                         }
-#endif
                         count_index--;
                     }
                 }
@@ -520,36 +502,6 @@ void msg_monitorstrategy_handler(cJSON *monitorstrategyparams)
         }
         msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_NETWORK_DETECT, send_buff, sizeof(send_buff));
     }
-
-#if 0
-    interval = cJSON_GetObjectItem(monitorstrategyparams, "interval");
-    if (!interval) {
-        MSG_PRINTF(LOG_WARN, "interval content failed!!\n");
-    }
-    strategy_type = cJSON_GetObjectItem(monitorstrategyparams, "type");
-    if (!strategy_type) {
-        MSG_PRINTF(LOG_WARN, "strategy type content failed!!\n");
-    }
-
-    strategy_list = cJSON_GetObjectItem(monitorstrategyparams, "monitorStrategies");
-    if (strategy_list != NULL) {
-        strategy_num = cJSON_GetArraySize(strategy_list);
-        for (ii = 0; ii < strategy_num; ii++) {
-            strategy_item = cJSON_GetArrayItem(strategy_list, ii);
-            domain = cJSON_GetObjectItem(strategy_item, "domain");
-            if (!domain) {
-                MSG_PRINTF(LOG_WARN, "domain content failed!!\n");
-            }
-            level = cJSON_GetObjectItem(strategy_item, "level");
-            if (!level) {
-                MSG_PRINTF(LOG_WARN, "level content failed!!\n");
-            }
-        }
-    } else {
-        MSG_PRINTF(LOG_WARN, "strategy list is error");
-    }
-#endif
-
 }
 
 int32_t inspect_device_key(const char *file_name)
