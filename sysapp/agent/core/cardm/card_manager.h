@@ -73,5 +73,6 @@ int32_t card_force_enable_provisoning_profile(void);
 int32_t card_force_enable_provisoning_profile_update(void);
 int32_t card_manager_install_profile_ok(void);
 int32_t card_get_avariable_profile_num(int32_t *avariable_num);
+int32_t card_switch_type(cJSON *switchparams);
 
 #endif // __CARD_MANAGER_H__

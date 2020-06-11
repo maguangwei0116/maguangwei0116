@@ -120,7 +120,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     // switchparams
     switchparams = cJSON_GetObjectItem(properties, "switchparams");
     if (switchparams != NULL) {
-        state = msg_switch_card_handler(switchparams);
+        state = card_switch_type(switchparams);
     } else {
         MSG_PRINTF(LOG_WARN, "switchparams content failed!\n");
     }

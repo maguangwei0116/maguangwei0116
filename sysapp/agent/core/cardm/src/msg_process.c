@@ -399,33 +399,6 @@ int32_t mqtt_msg_event(const uint8_t *buf, int32_t len)
     return RT_SUCCESS;
 }
 
-int32_t msg_switch_card_handler(cJSON *switchparams)
-{
-    cJSON *card_type = NULL;
-    int32_t state = RT_ERROR;
-
-    card_type = cJSON_GetObjectItem(switchparams, "type");
-    if (card_type != NULL) {
-        if (card_type->valueint == 1) {
-            ipc_remove_vuicc(1); // 移除所占用的卡槽
-            MSG_PRINTF(LOG_INFO, "SIM first\n");
-        } else if (card_type->valueint == 2) {
-            // 保留
-            MSG_PRINTF(LOG_INFO, "eSIM\n");
-        } else {
-            // 不处理
-            MSG_PRINTF(LOG_INFO, "No identify\n");
-        }
-
-        state = RT_SUCCESS;
-    } else {
-        MSG_PRINTF(LOG_WARN, "card_type content failed!!\n");
-    }
-
-    return state;
-}
-
-
 int32_t msg_apnlist_handler(cJSON *apnparams_list)
 {
     // apnparams

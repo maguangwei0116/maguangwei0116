@@ -390,6 +390,7 @@ static int32_t card_key_data_init(void)
 {
     return bootstrap_get_key();
 }
+
 #ifdef CFG_REDTEA_READY_ON
 int32_t init_card_manager(void *arg)
 {
@@ -441,7 +442,6 @@ int32_t init_card_manager(void *arg)
         MSG_PRINTF(LOG_WARN, "card update last card type fail, ret=%d\r\n", ret);
     }
     ret = card_update_eid(RT_TRUE);
-    MSG_PRINTF(LOG_WARN, "g_p_info.eid=%s\r\n", g_p_info.eid);
     if ((sim_mode == SIM_MODE_TYPE_VUICC_ONLY) || (sim_mode == SIM_MODE_TYPE_SIM_FIRST)) {
         if (g_p_info.type != PROFILE_TYPE_SIM) {
             MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", sim_mode);
@@ -590,7 +590,33 @@ int32_t card_get_avariable_profile_num(int32_t *avariable_num)
 }
 
 #ifdef CFG_REDTEA_READY_ON
-int32_t card_change_profile(const uint8_t *buf)
+int32_t card_switch_type(cJSON *switchparams)
+{
+    cJSON *card_type = NULL;
+    int32_t state = RT_ERROR;
+
+    card_type = cJSON_GetObjectItem(switchparams, "type");
+    if (card_type != NULL) {
+        if (card_type->valueint == 1) {
+            g_p_info.type = PROFILE_TYPE_SIM;
+            ipc_remove_vuicc(1); // 移除所占用的卡槽
+            MSG_PRINTF(LOG_INFO, "SIM first\n");
+        } else if (card_type->valueint == 2) {
+            // 保留
+            MSG_PRINTF(LOG_INFO, "eSIM\n");
+        } else {
+            // 不处理
+            MSG_PRINTF(LOG_INFO, "No identify\n");
+        }
+
+        state = RT_SUCCESS;
+    } else {
+        MSG_PRINTF(LOG_WARN, "card_type content failed!!\n");
+    }
+
+    return state;
+}
+static int32_t card_change_profile(const uint8_t *buf)
 {
     int32_t i = 0;
     int32_t ii = 0;
@@ -651,9 +677,8 @@ int32_t card_change_profile(const uint8_t *buf)
         g_p_info.type = PROFILE_TYPE_SIM;
 
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
         ipc_start_vuicc(1);
-        MSG_PRINTF(LOG_INFO, "SIM ====> vUICC over\n");
+        MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
         // rt_os_sleep(30);
         card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         // lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);

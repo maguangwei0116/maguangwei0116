@@ -20,9 +20,6 @@
 #define RT_LOST_ALL         100
 #define RT_AND              1
 #define RT_OR               0
-#define RT_NOT_DEFINE       -1
-#define RT_STRATEGY_NUM     2
-#define RT_DOMAIN_LEN       64
 #define RT_INSPECT_FILE     128
 
 #define EXCELLENT_DELAY     100
@@ -53,10 +50,10 @@ int32_t ping_task_get_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     if (MSG_NETWORK_CONNECTED == mode) {
         g_ping_task_network_state = MSG_NETWORK_CONNECTED;
-        MSG_PRINTF(LOG_DBG, "network connected\r\n");
+        MSG_PRINTF(LOG_DBG, "network connecte\n");
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
         g_ping_task_network_state = MSG_NETWORK_DISCONNECTED;
-        MSG_PRINTF(LOG_DBG, "network disconnected\r\n");
+        MSG_PRINTF(LOG_DBG, "network disconnected\n");
     }
 
     return RT_SUCCESS;
@@ -64,7 +61,7 @@ int32_t ping_task_get_event(const uint8_t *buf, int32_t len, int32_t mode)
 
 int32_t ping_provisoning()
 {
-    MSG_PRINTF(LOG_DBG, "g_ping_task_network_state is %d\r\n", g_ping_task_network_state);
+    MSG_PRINTF(LOG_DBG, "g_ping_task_network_state is %d\n", g_ping_task_network_state);
 
     if (g_ping_task_network_state == MSG_NETWORK_DISCONNECTED) {
         return RT_ERROR;
@@ -73,161 +70,32 @@ int32_t ping_provisoning()
     }
 }
 
-int32_t ping_operational(int8_t *domain1, int32_t level1, int8_t *domain2, int32_t level2, int32_t type)
+int32_t rt_ping_event(int8_t *ip, int32_t level, int32_t type)
 {
-    int32_t pr_argc = 4;
-    int32_t lost1, lost2;
-    int32_t local_level1 = 0;
-    int32_t local_level2 = 0;
-    int32_t ret = RT_ERROR;
-    int8_t *pr_argv1[] = {"redtea", "-c", "10", domain1};
-    int8_t *pr_argv2[] = {"redtea", "-c", "10", domain2};
-    double avg_delay1, mdev1, avg_delay2, mdev2;
+    int32_t lost;
+    int32_t network_level;
+    double delay, shake;
 
-    if (type == RT_NOT_DEFINE) {
-        // only one
-        local_ping(pr_argc, pr_argv1, &avg_delay1, &lost1, &mdev1);
+    MSG_PRINTF(LOG_DBG, "ip : %s, level %d, type : %d\n", ip, level, type);
 
-        if ((avg_delay1 <= EXCELLENT_DELAY) && (lost1 == EXCELLENT_LOST) && (mdev1 <= EXCELLENT_MDEV)) {
-            local_level1 = EXCELLENT;
-        } else if ((avg_delay1 <= GOOD_DELAY) && ((lost1 <= GOOD_LOST) || (mdev1 <= GOOD_MDEV))) {
-            local_level1 = GOOD;
-        } else if ((avg_delay1 <= COMMON_DELAY) && ((lost1 <= COMMON_LOST) || (mdev1 <= COMMON_MDEV))) {
-            local_level1 = COMMON;
-        } else {
-            local_level1 = NONE_DEFINE;
-        }
+    rt_local_ping(ip, &delay, &lost, &shake);
 
-        MSG_PRINTF(LOG_DBG, "ping %s operational is %lf----%lf----%d\n", domain1, avg_delay1, mdev1, lost1);
+    if ((delay <= EXCELLENT_DELAY) && (lost == EXCELLENT_LOST) && (shake <= EXCELLENT_MDEV)) {
+        network_level = EXCELLENT;
 
-        if (local_level1 >= level1) {
-            ret = RT_SUCCESS;
-        } else {
-            ret = RT_ERROR;
-        }
+    } else if ( (delay <= GOOD_DELAY) && ( (lost <= GOOD_LOST) || (shake <= GOOD_MDEV))) {
+        network_level = GOOD;
+
+    } else if ( (delay <= COMMON_DELAY) && ( (lost <= COMMON_LOST) || (shake <= COMMON_MDEV))) {
+        network_level = COMMON;
+
     } else {
-        local_ping(pr_argc, pr_argv1, &avg_delay1, &lost1, &mdev1);
-
-        if ((avg_delay1 <= EXCELLENT_DELAY) && (lost1 == EXCELLENT_LOST) && (mdev1 <= EXCELLENT_MDEV)) {
-            local_level1 = EXCELLENT;
-        } else if ( (avg_delay1 <= GOOD_DELAY) && ( (lost1 <= GOOD_LOST) || (mdev1 <= GOOD_MDEV))) {
-            local_level1 = GOOD;
-        } else if ( (avg_delay1 <= COMMON_DELAY) && ( (lost1 <= COMMON_LOST) || (mdev1 <= COMMON_MDEV))) {
-            local_level1 = COMMON;
-        } else {
-            local_level1 = NONE_DEFINE;
-        }
-
-        local_ping(pr_argc, pr_argv2, &avg_delay2, &lost2, &mdev2);
-
-        if ((avg_delay2 <= EXCELLENT_DELAY) && (lost2 == EXCELLENT_LOST) && (mdev2 <= EXCELLENT_MDEV)) {
-            local_level2 = EXCELLENT;
-        } else if ( (avg_delay2 <= GOOD_DELAY) && ( (lost2 <= GOOD_LOST) || (mdev2 <= GOOD_MDEV))) {
-            local_level2 = GOOD;
-        } else if ( (avg_delay2 <= COMMON_DELAY) && ( (lost2 <= COMMON_LOST) || (mdev2 <= COMMON_MDEV))) {
-            local_level2 = COMMON;
-        } else {
-            local_level2 = NONE_DEFINE;
-        }
-
-        MSG_PRINTF(LOG_DBG, "ping %s operational is %lf----%lf----%d\n", domain1, avg_delay1, mdev1, lost1);
-        MSG_PRINTF(LOG_DBG, "ping %s operational is %lf----%lf----%d\n", domain2, avg_delay2, mdev2, lost2);
-
-        if (type == RT_OR) {
-            if ((local_level1 >= level1) || (local_level2 >= level2)) {
-                ret = RT_SUCCESS;
-            } else {
-                ret = RT_ERROR;
-            }
-        } else if (type == RT_AND) {
-            if ((local_level1 >= level1) && (local_level2 >= level2)) {
-                ret = RT_SUCCESS;
-            } else {
-                ret = RT_ERROR;
-            }
-        } else {
-            ret = RT_ERROR;
-        }
+        network_level = NONE_DEFINE;
     }
 
-    return ret;
-}
+    MSG_PRINTF(LOG_DBG, "ping %s network_level : %d, operational is %lf----%lf----%d\n", ip, network_level, delay, shake, lost);
 
-int32_t ping_sim(int8_t *domain1, int32_t level1, int8_t *domain2, int32_t level2, int32_t type)
-{
-    int32_t pr_argc = 4;
-    int32_t lost1, lost2;
-    int32_t local_level1 = 0;
-    int32_t local_level2 = 0;
-    int32_t ret = RT_ERROR;
-    // unuse redtea
-    int8_t *pr_argv1[] = {"redtea", "-c", "10", domain1};
-    int8_t *pr_argv2[] = {"redtea", "-c", "10", domain2};
-    double avg_delay1,  mdev1, avg_delay2, mdev2;
-
-    if (type == RT_NOT_DEFINE) {
-        // only one
-        local_ping(pr_argc, pr_argv1, &avg_delay1, &lost1, &mdev1);
-
-        if ((avg_delay1 <= EXCELLENT_DELAY) && (lost1 == EXCELLENT_LOST) && (mdev1 <= EXCELLENT_MDEV)) {
-            local_level1 = EXCELLENT;
-        } else if ( (avg_delay1 <= GOOD_DELAY) && ( (lost1 <= GOOD_LOST) || (mdev1 <= GOOD_MDEV))) {
-            local_level1 = GOOD;
-        } else if ( (avg_delay1 <= COMMON_DELAY) && ( (lost1 <= COMMON_LOST) || (mdev1 <= COMMON_MDEV))) {
-            local_level1 = COMMON;
-        } else {
-            local_level1 = NONE_DEFINE;
-        }
-        MSG_PRINTF(LOG_DBG, "ping %s sim is %lf----%lf----%d\n", domain1, avg_delay1, mdev1, lost1);
-        if (local_level1 >= level1) {
-            ret = RT_SUCCESS;
-        } else {
-            ret = RT_ERROR;
-        }
-    } else {
-        local_ping(pr_argc, pr_argv1, &avg_delay1, &lost1, &mdev1);
-
-        if ((avg_delay1 <= EXCELLENT_DELAY) && (lost1 == EXCELLENT_LOST) && (mdev1 <= EXCELLENT_MDEV)) {
-            local_level1 = EXCELLENT;
-        } else if ( (avg_delay1 <= GOOD_DELAY) && ( (lost1 <= GOOD_LOST) || (mdev1 <= GOOD_MDEV))) {
-            local_level1 = GOOD;
-        } else if ( (avg_delay1 <= COMMON_DELAY) && ( (lost1 <= COMMON_LOST) || (mdev1 <=COMMON_MDEV))) {
-            local_level1 = COMMON;
-        } else {
-            local_level1 = NONE_DEFINE;
-        }
-
-        local_ping(pr_argc, pr_argv2, &avg_delay2, &lost2, &mdev2);
-
-        if ((avg_delay2 <= EXCELLENT_DELAY) && (lost2 == EXCELLENT_LOST) && (mdev2 <= EXCELLENT_MDEV)) {
-            local_level2 = EXCELLENT;
-        } else if ( (avg_delay2 <= GOOD_DELAY) && ( (lost2 <= GOOD_LOST) || (mdev2 <= GOOD_MDEV))) {
-            local_level2 = GOOD;
-        } else if ( (avg_delay2 <= COMMON_DELAY) && ( (lost2 <= COMMON_LOST) || (mdev2 <= COMMON_MDEV))) {
-            local_level2 = COMMON;
-        } else {
-            local_level2 = NONE_DEFINE;
-        }
-        MSG_PRINTF(LOG_DBG, "ping %s sim is %lf----%lf----%d\n", domain1, avg_delay1, mdev1, lost1);
-        MSG_PRINTF(LOG_DBG, "ping %s sim is %lf----%lf----%d\n", domain2, avg_delay2, mdev2, lost2);
-        if (type == 0) {
-            if ((local_level1 >= level1) || (local_level2 >= level2)) {
-                ret = RT_SUCCESS;
-            } else {
-                ret = RT_ERROR;
-            }
-        } else if (type == 1) {
-            if ((local_level1 >= level1) && (local_level2 >= level2)) {
-                ret = RT_SUCCESS;
-            } else {
-                ret = RT_ERROR;
-            }
-        } else {
-            ret = RT_ERROR;
-        }
-    }
-
-    return ret;
+    return network_level;
 }
 
 int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
@@ -265,21 +133,12 @@ int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
     return ret;
 }
 
-
-/*
-    此函数功能为ping逻辑的实现
-    send_buf FFFFFFFF
-    第一位、第三位、第五位分别代表种子卡、业务卡、实体卡；1表示在用、F表示不在用
-    第二位、第四位、第六位分别代表能否满足网络条件，1表示满足网络条件，0表示不满足条件
- */
 static void network_ping_task(void *arg)
 {
     int32_t i = 0;
     int32_t ii = 0;
-    int32_t ret = 0;
+    int32_t ret = RT_ERROR;
     int32_t strategy_num = NULL;
-    int32_t rt_level[RT_STRATEGY_NUM] = {-1, -1};
-    int8_t rt_domain[RT_STRATEGY_NUM][RT_DOMAIN_LEN] = {0};
     int8_t inspect_file[RT_INSPECT_FILE] = {0};
     uint8_t tmp_buffer[RT_STRATEGY_LIST_LEN + 1] = {0};
     rt_bool detect_flg = RT_FALSE;
@@ -292,9 +151,8 @@ static void network_ping_task(void *arg)
     cJSON *level = NULL;
     cJSON *rt_type = NULL;
 
-
     char send_buf[1] = {0};
-
+    int32_t network_level;
 
     while (1) {
         MSG_PRINTF(LOG_DBG, "g_sim_type is %d\n", *g_sim_type);
@@ -314,68 +172,59 @@ static void network_ping_task(void *arg)
 
         if (tmp_buffer != NULL) {
             network_detect = cJSON_Parse(tmp_buffer);
-            // MSG_PRINTF(LOG_WARN, "network_detect : %s\n", cJSON_Print(network_detect));
             if (network_detect != NULL) {
                 enabled = cJSON_GetObjectItem(network_detect, "enabled");
                 interval = cJSON_GetObjectItem(network_detect, "interval");
+            } else {
+                MSG_PRINTF(LOG_ERR, "cJSON_Parse error !\n");
             }
         }
 
-        if (detect_flg == RT_TRUE && enabled->valueint == RT_TRUE) {
+        if (/*detect_flg == RT_TRUE && */enabled->valueint == RT_TRUE) {        // test !!!
             g_to_start = RT_TRUE;
         } else {
             g_to_start = RT_FALSE;
         }
 
-        MSG_PRINTF(LOG_DBG, "interval->valueint is %d\r\n", interval->valueint);
-
-        rt_type = cJSON_GetObjectItem(network_detect, "type");
-        MSG_PRINTF(LOG_DBG, "rt_type->valueint is %d\n",  rt_type->valueint);
+        MSG_PRINTF(LOG_DBG, "======================> wait %d min\n", interval->valueint);
 
         rt_os_sleep(interval->valueint * 60);       // first wait interval mins for dail up
 
-        strategy_list = cJSON_GetObjectItem(network_detect, "strategies");
-        if (strategy_list != NULL) {
-            strategy_num = cJSON_GetArraySize(strategy_list);
-            MSG_PRINTF(LOG_DBG, "strategy_num is %d\n", strategy_num);
-
-            for (ii = 0; ii < strategy_num; ii++) {
-                strategy_item = cJSON_GetArrayItem(strategy_list, ii);
-                domain = cJSON_GetObjectItem(strategy_item, "domain");
-
-                MSG_PRINTF(LOG_DBG, "domain->valuestring is %s\n",  domain->valuestring);
-                strcpy(rt_domain[ii], domain->valuestring);
-
-                if (!domain) {
-                    MSG_PRINTF(LOG_WARN, "domain content failed!!\n");
-                }
-
-                MSG_PRINTF(LOG_DBG, "rt_domain is %s\n",  rt_domain[ii]);
-                level = cJSON_GetObjectItem(strategy_item, "level");
-                MSG_PRINTF(LOG_DBG, "level_value is %d\n",  level->valueint);
-                rt_level[ii] = level->valueint;
-
-                if (!level) {
-                    MSG_PRINTF(LOG_WARN, "level content failed!!\n");
-                }
-                MSG_PRINTF(LOG_DBG, "level is %d\n",  rt_level[ii]);
-            }
-        } else {
-            MSG_PRINTF(LOG_WARN, "strategies list is error\r\n");
-        }
-
-        if (network_detect != NULL) {
-            cJSON_Delete(network_detect);
-        }
-
         if (g_to_start == RT_TRUE) {
-            MSG_PRINTF(LOG_DBG, "into tostart\r\n");
+
+            MSG_PRINTF(LOG_DBG, "start monitor !!!!!!!!!!\n");
+
+            rt_type = cJSON_GetObjectItem(network_detect, "type");
+
+            strategy_list = cJSON_GetObjectItem(network_detect, "strategies");
+            if (strategy_list != NULL) {
+                strategy_num = cJSON_GetArraySize(strategy_list);
+                MSG_PRINTF(LOG_DBG, "strategy_num is %d\n", strategy_num);
+
+                for (ii = 0; ii < strategy_num; ii++) {
+                    strategy_item = cJSON_GetArrayItem(strategy_list, ii);
+                    domain = cJSON_GetObjectItem(strategy_item, "domain");
+                    level = cJSON_GetObjectItem(strategy_item, "level");
+
+                    network_level = rt_ping_event(domain->valuestring, level->valueint, rt_type->valueint);
+
+                    if (rt_type->valueint == RT_OR) {
+                        if (network_level >= level->valueint) {     // 当为or时，第一个满足则break;
+                            ret = RT_SUCCESS;
+                            break;
+                        }
+                    } else if (rt_type->valueint == RT_AND) {
+                        if (network_level < level->valueint) {     // 当为and时，第一个不满足则break;
+                            ret = RT_ERROR;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                MSG_PRINTF(LOG_WARN, "strategies list is error\n");
+            }
 
             if (*g_sim_type == PROFILE_TYPE_PROVISONING) {
-                ret = ping_provisoning();
-
-                MSG_PRINTF(LOG_DBG, "ping_provisoning status : %d\n", ret);
-
                 if (ret == RT_SUCCESS) {
                     send_buf[0] = PROVISONING_HAVE_INTERNET;
                 } else {
@@ -383,10 +232,6 @@ static void network_ping_task(void *arg)
                 }
 
             } else if (*g_sim_type == PROFILE_TYPE_OPERATIONAL) {
-                ret = ping_operational(rt_domain[0], rt_level[0], rt_domain[1], rt_level[1], rt_type->valueint);
-
-                MSG_PRINTF(LOG_DBG, "ping_operational status : %d\n", ret);
-
                 if (ret == RT_SUCCESS) {
                     send_buf[0] = OPERATIONAL_HAVE_INTERNET;
                 } else {
@@ -394,21 +239,20 @@ static void network_ping_task(void *arg)
                 }
 
             } else if (*g_sim_type == PROFILE_TYPE_SIM) {
-                ret = ping_sim(rt_domain[0], rt_level[0], rt_domain[1], rt_level[1], rt_type->valueint);
-
-                MSG_PRINTF(LOG_DBG, "ping_sim status : %d\n", ret);
-
                 if (ret == RT_SUCCESS) {
                     send_buf[0] = SIM_CARD_HAVE_INTERNET;
                 } else {
                     send_buf[0] = SIM_CARD_NO_INTERNET;
                 }
-
             } else {
                 MSG_PRINTF(LOG_INFO, "unkown g_sim_type is %d\n", *g_sim_type);
             }
 
             msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_PING_RES, send_buf, sizeof(send_buf));
+        }
+
+        if (network_detect != NULL) {
+            cJSON_Delete(network_detect);
         }
     }
 
@@ -423,11 +267,11 @@ int32_t init_ping_task(void *arg)
     int32_t ret = RT_ERROR;
     int32_t uicc_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
 
-    if ((uicc_mode == SIM_MODE_TYPE_VUICC_ONLY || uicc_mode == SIM_MODE_TYPE_SIM_ONLY)) {
+    if (uicc_mode == SIM_MODE_TYPE_SIM_FIRST || uicc_mode == SIM_MODE_TYPE_VUICC_ONLY) {
+        MSG_PRINTF(LOG_DBG, "uicc_mode is %d\n", uicc_mode);
+    } else if (uicc_mode == SIM_MODE_TYPE_SIM_ONLY) {
         MSG_PRINTF(LOG_DBG, "uicc_mode is %d\n", uicc_mode);
         return RT_SUCCESS;
-    } else if (uicc_mode == SIM_MODE_TYPE_SIM_FIRST) {
-        MSG_PRINTF(LOG_DBG, "uicc_mode is %d\n", uicc_mode);
     } else {
         MSG_PRINTF(LOG_DBG, "uicc_mode is %d\n", uicc_mode);
         return RT_ERROR;
