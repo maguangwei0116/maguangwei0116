@@ -631,7 +631,7 @@ static int32_t card_change_profile(const uint8_t *buf)
     MSG_PRINTF(LOG_INFO, "g_p_info.num %d\n", g_p_info.num);
 
     if (recv_buf == PROVISONING_HAVE_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "Hold Provisioning\r\n");
+        MSG_PRINTF(LOG_INFO, "====> Hold Provisioning\r\n");
         g_p_info.type = PROFILE_TYPE_PROVISONING;
 
     } else if (recv_buf == PROVISONING_NO_INTERNET) {
@@ -640,7 +640,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         ipc_remove_vuicc(1);
 
     } else if (recv_buf == OPERATIONAL_HAVE_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "Hold opeational\r\n");
+        MSG_PRINTF(LOG_INFO, "====> Hold opeational\r\n");
         g_p_info.type = PROFILE_TYPE_OPERATIONAL;
 
     } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
@@ -673,7 +673,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         }
 
     } else if (recv_buf == SIM_CARD_HAVE_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "sim card can use, nothing to do\n");
+        MSG_PRINTF(LOG_INFO, "====> Hold SIM\n");
         g_p_info.type = PROFILE_TYPE_SIM;
 
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
