@@ -10,10 +10,9 @@
 #include <sys/time.h>
 #include <errno.h>
 
-#define DATA_SIZE 32
+#include "rt_type.h"
 
-#define pri_debug printf
-#define pri_error printf
+#define DATA_SIZE 32
 
 typedef struct tag_icmp_header
 {
@@ -93,7 +92,7 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
 
     if(domain == NULL)
     {
-        pri_debug("ping_host_ip domain is NULL!\n");
+        MSG_PRINTF(LOG_ERR, "ping_host_ip domain is NULL !\n");
         return ret;
     }
 
@@ -110,7 +109,7 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
     client_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (client_fd == -1)
     {
-        pri_error("socket error: %s!\n", strerror(errno));
+        MSG_PRINTF(LOG_ERR, "socket error: %s !\n", strerror(errno));
         return ret;
     }
 
@@ -119,13 +118,13 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
     setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
     if(setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)))
     {
-        pri_error("setsocketopt SO_RCVTIMEO error!\n");
+        MSG_PRINTF(LOG_ERR, "setsocketopt SO_RCVTIMEO error !\n");
         return ret;
     }
 
     if(setsockopt(client_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(struct timeval)))
     {
-        pri_error("setsockopt SO_SNDTIMEO error!\n");
+        MSG_PRINTF(LOG_ERR, "setsockopt SO_SNDTIMEO error !\n");
         return ret;
     }
 
@@ -142,7 +141,7 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
     icmp_head->code = 0;
     icmp_head->id = 1;
 
-    pri_debug("PING %s (%s).\n", domain, inet_ntoa(*((struct in_addr*)&dest_ip)));
+    // MSG_PRINTF(LOG_DBG, "PING %s (%s)\n", domain, inet_ntoa(*((struct in_addr*)&dest_ip)));
 
     for(i = 0; i < 10; i++)
     {
@@ -167,8 +166,9 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
         {
             time_sum += 9999.99;
             time_interval[i] = 9999.99;
-            printf("time_sum is %lf\n", time_sum);
-            pri_debug("PING: sendto: Network is unreachable\n");
+            MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
+            MSG_PRINTF(LOG_DBG, "PING: sendto: Network is unreachable\n");
+
             continue;
         }
 
@@ -189,13 +189,13 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
 
                 if(recv_icmp_header->type != 0)
                 {
-                    pri_error("error type %d received, error code %d \n", recv_icmp_header->type, recv_icmp_header->code);
+                    MSG_PRINTF(LOG_ERR, "error type %d received, error code %d \n", recv_icmp_header->type, recv_icmp_header->code);
                     break;
                 }
 
                 if(recv_icmp_header->id != icmp_head->id)
                 {
-                    pri_error("some else's packet\n");
+                    MSG_PRINTF(LOG_ERR, "some else's packet\n");
                     continue;
                 }
 
@@ -203,23 +203,24 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
                     sizeof(icmp_header) + DATA_SIZE))
                 {
                     double tmp_time = get_time_interval(&start, &end);
-                    pri_debug("%ld bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n",
-                        read_length, domain, inet_ntoa(from.sin_addr), recv_icmp_header->seq / 256,
-                        ip_ttl, tmp_time);
+                    // MSG_PRINTF(LOG_DBG, "%ld bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n",
+                    //     read_length, domain, inet_ntoa(from.sin_addr), recv_icmp_header->seq / 256,
+                    //     ip_ttl, tmp_time);
 
                     ret = 0;
                     recv_count ++;
                     time_sum += tmp_time;
                     time_interval[i] = tmp_time;
-                    printf("time_sum is %lf\n", time_sum);
-                    printf("time_interval[i] is %lf\n", time_interval[i]);
+
+                    // MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
+                    // MSG_PRINTF(LOG_INFO, "time_interval[%d] is %lf\n", i, time_interval[i]);
                 }
 
                 break;
             }
             else
             {
-                pri_error("receive data error!\n");
+                MSG_PRINTF(LOG_ERR, "receive data error !\n");
                 time_sum += 9999.99;
                 time_interval[i] = 9999.99;
                 break;
@@ -247,9 +248,9 @@ PING_EXIT:
         }
     }
 
-    printf("lost is %d\n", (10 - recv_count) * 10);
-    printf("time_sum / 10 is %lf\n", time_sum / 10);
-    printf("time_mdev / 10 is %lf\n", time_mdev / 10);
+    // MSG_PRINTF(LOG_INFO, "lost is %d\n", (10 - recv_count) * 10);
+    // MSG_PRINTF(LOG_INFO, "time_sum / 10 is %lf\n", time_sum / 10);
+    // MSG_PRINTF(LOG_INFO, "time_mdev / 10 is %lf\n", time_mdev / 10);
 
     *lost = (10 - recv_count) * 10;
     *avg_delay = time_sum / 10;
