@@ -32,9 +32,9 @@ typedef enum REDTEA_READY_NETWORK_DETECT_CMD {
 
 #define MAX_FILE_HASH_LEN                   64
 #define MAX_FILE_HASH_BYTE_LEN              32
-#define CHECK_STRATEGY_HEAD                 32
 #define DEVICE_KEY_SIZE                     32
 #define DEVICE_KEY_LEN                      16
+#define CHECK_STRATEGY_HEAD                 16
 
 #define RT_CARD_TYPE_LEN                    64
 #define RT_LAST_EID_LEN                     64
