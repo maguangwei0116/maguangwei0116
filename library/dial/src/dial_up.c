@@ -27,6 +27,9 @@
 #define MAX_BAD_DSI_CALL_CNT        10      
 #define RT_FORCE_DSI_EVT_NET_NO_NET 99          // others see dsi_net_evt_t at dsi_netctrl.h
 
+#define CHINA_DNS                   "114.114.114.114"
+#define GOOGLE_NDS                  "8.8.8.8"
+
 typedef enum LOCAL_DIAL_UP_STATE {
     LOCAL_DIAL_UP_NO_NET = 0,
     LOCAL_DIAL_UP_IS_CONN,
@@ -158,6 +161,14 @@ static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
             ds_system_call(command, rt_os_strlen(command));
         }
     }
+
+    // add china NDS and google NDS
+    snprintf(command, sizeof(command), "echo 'nameserver %s' >> /etc/resolv.conf", CHINA_DNS);
+    ds_system_call(command, rt_os_strlen(command));
+
+    snprintf(command, sizeof(command), "echo 'nameserver %s' >> /etc/resolv.conf", GOOGLE_NDS);
+    ds_system_call(command, rt_os_strlen(command));
+
     return RT_SUCCESS;
 }
 
