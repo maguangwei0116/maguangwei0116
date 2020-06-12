@@ -115,7 +115,7 @@ static cJSON *upload_event_boot_profiles_info(void)
         }
 
         iccid = g_upload_card_info->sim_info.iccid;
-        type = 3;
+        type = PROFILE_TYPE_SIM;
         CJSON_ADD_NEW_STR_OBJ(profile, iccid);
         CJSON_ADD_NEW_INT_OBJ(profile, type);
         cJSON_AddItemToArray(profiles, profile);

@@ -624,24 +624,14 @@ static int32_t card_change_profile(const uint8_t *buf)
     int32_t used_seq = 0;
     uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
     int32_t jj = 0;
-
     byte recv_buf = buf[0];
 
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-    MSG_PRINTF(LOG_INFO, "g_p_info.num %d\n", g_p_info.num);
 
-    if (recv_buf == PROVISONING_HAVE_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "====> Hold Provisioning\r\n");
-        g_p_info.type = PROFILE_TYPE_PROVISONING;
-
-    } else if (recv_buf == PROVISONING_NO_INTERNET) {
+    if (recv_buf == PROVISONING_NO_INTERNET) {
         MSG_PRINTF(LOG_INFO, "Provisioning ====> SIM\n");
         g_p_info.type = PROFILE_TYPE_SIM;
         ipc_remove_vuicc(1);
-
-    } else if (recv_buf == OPERATIONAL_HAVE_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "====> Hold opeational\r\n");
-        g_p_info.type = PROFILE_TYPE_OPERATIONAL;
 
     } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
         MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
@@ -672,15 +662,11 @@ static int32_t card_change_profile(const uint8_t *buf)
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
         }
 
-    } else if (recv_buf == SIM_CARD_HAVE_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "====> Hold SIM\n");
-        g_p_info.type = PROFILE_TYPE_SIM;
-
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
         ipc_start_vuicc(1);
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
         // rt_os_sleep(30);
-        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+        // card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         // lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
         MSG_PRINTF(LOG_INFO, "g_p_info.num is %d \n", g_p_info.num);
 
@@ -688,15 +674,15 @@ static int32_t card_change_profile(const uint8_t *buf)
             card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
         }
 
-        for (jj = 0; jj < g_p_info.num; ++jj) {
-            MSG_PRINTF(LOG_INFO, "now g_p_info.info[jj].state is %d \r\n", g_p_info.info[jj].state);
-            MSG_PRINTF(LOG_INFO, "now g_p_info.info[jj].class is %d \r\n", g_p_info.info[jj].class);
-            if (g_p_info.info[jj].state == 1) {
-                g_p_info.type = g_p_info.info[jj].class;
-            }
-        }
+        // for (jj = 0; jj < g_p_info.num; ++jj) {
+        //     MSG_PRINTF(LOG_INFO, "now g_p_info.info[%d].state is %d \r\n", jj, g_p_info.info[jj].state);
+        //     MSG_PRINTF(LOG_INFO, "now g_p_info.info[%d].class is %d \r\n", jj, g_p_info.info[jj].class);
+        //     if (g_p_info.info[jj].state == 1) {
+        //         g_p_info.type = g_p_info.info[jj].class;
+        //     }
+        // }
     } else {
-        MSG_PRINTF(LOG_INFO, "buf unknow is %s\r\n", buf);
+        MSG_PRINTF(LOG_INFO, "recv buff unknow ! buff : %s \n", buf);
     }
 
     return RT_SUCCESS;

@@ -71,10 +71,10 @@ int32_t ping_task_get_event(const uint8_t *buf, int32_t len, int32_t mode)
         if (*g_sim_type == PROFILE_TYPE_SIM) {
             sim_switch_enable();
         }
-        MSG_PRINTF(LOG_DBG, "================> msg recv network connecte\n");
+        MSG_PRINTF(LOG_DBG, "====> msg recv network connecte\n");
     } else if (mode == MSG_NETWORK_DISCONNECTED) {
         g_network_state = MSG_NETWORK_DISCONNECTED;
-        MSG_PRINTF(LOG_DBG, "================> msg recv network disconnected\n");
+        MSG_PRINTF(LOG_DBG, "====> msg recv network disconnected\n");
     }
 
     return RT_SUCCESS;
@@ -115,18 +115,23 @@ int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
         network_level = NONE_DEFINE;
     }
 
-    MSG_PRINTF(LOG_DBG, "ping %s network_level : %d, delay :%lf, lost : %d, shake : %lf\n", ip, network_level, delay, lost, shake);
+    MSG_PRINTF(LOG_DBG, "ping %s network_level : %d\n", ip, network_level);
+    MSG_PRINTF(LOG_DBG, "delay : %lf, lost : %d, shake : %lf\n", delay, lost, shake);
 
     return network_level;
 }
 
-void rt_send_msg_card_status(int32_t ret)
+static int32_t rt_send_msg_card_status(int32_t ret)
 {
     char send_buf[1] = {0};
+
+    // 当网络良好时,不发送消息队列,等待下次监控 
 
     if (*g_sim_type == PROFILE_TYPE_PROVISONING) {
         if (ret == RT_SUCCESS) {
             send_buf[0] = PROVISONING_HAVE_INTERNET;
+            MSG_PRINTF(LOG_INFO, "====> Hold Provisioning\r\n");
+            return RT_SUCCESS;
         } else {
             sim_switch_disable();                   // 当种子卡没网切换到实体卡后, 程序不再进行网络检测
             send_buf[0] = PROVISONING_NO_INTERNET;
@@ -134,12 +139,16 @@ void rt_send_msg_card_status(int32_t ret)
     } else if (*g_sim_type == PROFILE_TYPE_OPERATIONAL) {
         if (ret == RT_SUCCESS) {
             send_buf[0] = OPERATIONAL_HAVE_INTERNET;
+            MSG_PRINTF(LOG_INFO, "====> Hold Opeational\r\n");
+            return RT_SUCCESS;
         } else {
             send_buf[0] = OPERATIONAL_NO_INTERNET;
         }
     } else if (*g_sim_type == PROFILE_TYPE_SIM) {
         if (ret == RT_SUCCESS) {
             send_buf[0] = SIM_CARD_HAVE_INTERNET;
+            MSG_PRINTF(LOG_INFO, "====> Hold SIM\n");
+            return RT_SUCCESS;
         } else {
             send_buf[0] = SIM_CARD_NO_INTERNET;
         }
@@ -173,19 +182,21 @@ static void network_ping_task(void *arg)
 
     while (1) {
 
-        MSG_PRINTF(LOG_INFO, "=============> card type : %d\n", *g_sim_type);
-        MSG_PRINTF(LOG_INFO, "=============> sim switch enable : %d\n", g_sim_switch);
-
         if (*g_sim_type == PROFILE_TYPE_PROVISONING && g_network_state == MSG_NETWORK_CONNECTED) {       // 当为种子卡且ping通后,则后续不进行监控
-            MSG_PRINTF(LOG_INFO, "=============> provisoning network well !\n");
+            MSG_PRINTF(LOG_INFO, "====> provisoning network well !\n");
             sleep(NETWORK_MONITOR_GAP);
             continue;
         }
 
         if (*g_sim_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {
-            MSG_PRINTF(LOG_INFO, "=============> sim network bad !\n");
+            MSG_PRINTF(LOG_INFO, "====> sim network bad !\n");
             sleep(NETWORK_MONITOR_GAP);
             continue;
+        }
+
+        if (*g_sim_type == PROFILE_TYPE_OPERATIONAL) {
+
+            sleep(60);
         }
 
         snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
@@ -216,11 +227,13 @@ static void network_ping_task(void *arg)
         if (g_to_start == RT_TRUE) {
             if (*g_sim_type == PROFILE_TYPE_PROVISONING) {
                 ret = rt_ping_provisoning_get_status();
+
             } else if (*g_sim_type == PROFILE_TYPE_OPERATIONAL || *g_sim_type == PROFILE_TYPE_SIM) {
                 rt_type = cJSON_GetObjectItem(network_detect, "type");
                 strategy_list = cJSON_GetObjectItem(network_detect, "strategies");
                 if (strategy_list != NULL) {
                     strategy_num = cJSON_GetArraySize(strategy_list);
+                    
                     for (ii = 0; ii < strategy_num; ii++) {
                         strategy_item = cJSON_GetArrayItem(strategy_list, ii);
                         domain = cJSON_GetObjectItem(strategy_item, "domain");
@@ -250,12 +263,10 @@ static void network_ping_task(void *arg)
                 MSG_PRINTF(LOG_ERR, "unknow card type !\n");
             }
 
-            MSG_PRINTF(LOG_ERR, "============> get level ret : %d\n", ret);
-
             rt_send_msg_card_status(ret);
 
-            MSG_PRINTF(LOG_DBG, "======================> wait %d min\n", interval->valueint);
-            rt_os_sleep(interval->valueint * 60);       // first wait interval mins for dail up
+            MSG_PRINTF(LOG_DBG, "====> wait %d min\n", interval->valueint);
+            rt_os_sleep(interval->valueint * 60);
         }
 
         if (network_detect != NULL) {
