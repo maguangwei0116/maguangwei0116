@@ -667,9 +667,6 @@ static mqtt_event_e mqtt_state_wait_events(void)
     network_state_info_e state = g_mqtt_param.network_state;
 
     while (1) {
-
-        MSG_PRINTF(LOG_INFO, "=============> wait for event !\n");
-
         if (g_mqtt_param.network_state != state) {
             event = (g_mqtt_param.network_state == NETWORK_CONNECTED) ? MQTT_NETWORK_CONNECTED : MQTT_NETWORK_DISCONNECTED;
             break;
