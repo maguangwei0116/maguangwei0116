@@ -117,39 +117,49 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
 {
     int32_t ret = RT_ERROR;
     int32_t i;
+    uint8_t card_iccid[21] = {0};
 
-    ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
-    if (ret == RT_SUCCESS) {
-        /* get current profile type */
-        for (i = 0; i < g_p_info.num; i++) {
-            MSG_PRINTF(LOG_INFO, "iccid   #%2d: %s state:%d type:%d\n", i + 1, g_p_info.info[i].iccid,
-                g_p_info.info[i].state, g_p_info.info[i].class);
-        }
-        for (i = 0; i < g_p_info.num; i++) {
-            if (g_p_info.info[i].state == PROFILE_ENABLED) {
-                g_p_info.type = g_p_info.info[i].class;
-                rt_os_memcpy(g_p_info.iccid, g_p_info.info[i].iccid, THE_MAX_CARD_NUM);
-                g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';
-                break;
+    if (g_p_info.type == PROFILE_TYPE_SIM) {
+        qmi_get_elementary_iccid_file(card_iccid);
+        rt_os_strncpy(g_p_info.sim_info.iccid, card_iccid, 20);
+        MSG_PRINTF(LOG_INFO, "SIM using, iccid: %s\n", g_p_info.sim_info.iccid);
+
+    } else {
+        ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
+        if (ret == RT_SUCCESS) {
+            /* get current profile type */
+            for (i = 0; i < g_p_info.num; i++) {
+                MSG_PRINTF(LOG_INFO, "iccid   #%2d: %s state:%d type:%d\n", i + 1, g_p_info.info[i].iccid,
+                    g_p_info.info[i].state, g_p_info.info[i].class);
             }
-        }
-        if (i == g_p_info.num) {
-            g_p_info.type = PROFILE_TYPE_TEST;
-        }
-        MSG_PRINTF(LOG_INFO, "using iccid: %s, type: %d, profile num: %d\n",
-                g_p_info.iccid, g_p_info.type, g_p_info.num);
-        if ((g_p_info.type == PROFILE_TYPE_TEST) ||
-            (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
-            if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
-                rt_os_sleep(1);  // dealy some time after get profile info
-                msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
+            for (i = 0; i < g_p_info.num; i++) {
+                if (g_p_info.info[i].state == PROFILE_ENABLED) {
+                    g_p_info.type = g_p_info.info[i].class;
+                    rt_os_memcpy(g_p_info.iccid, g_p_info.info[i].iccid, THE_MAX_CARD_NUM);
+                    g_p_info.iccid[THE_MAX_CARD_NUM] = '\0';
+                    break;
+                }
             }
-        }
-        if (g_p_info.last_type != g_p_info.type) {
-            rt_write_card_type(0, (char *)&(g_p_info.type), sizeof(profile_type_e));
-            g_p_info.last_type = g_p_info.type;
+            if (i == g_p_info.num) {
+                g_p_info.type = PROFILE_TYPE_TEST;
+            }
+            MSG_PRINTF(LOG_INFO, "using iccid: %s, type: %d, profile num: %d\n",
+                    g_p_info.iccid, g_p_info.type, g_p_info.num);
+
+            if ((g_p_info.type == PROFILE_TYPE_TEST) ||
+                (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
+                if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+                    rt_os_sleep(1);  // dealy some time after get profile info
+                    msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
+                }
+            }
+            if (g_p_info.last_type != g_p_info.type) {
+                rt_write_card_type(0, (char *)&(g_p_info.type), sizeof(profile_type_e));
+                g_p_info.last_type = g_p_info.type;
+            }
         }
     }
+
 
     return ret;
 }
@@ -159,7 +169,8 @@ static int32_t card_enable_profile(const uint8_t *iccid)
     int32_t ret = RT_ERROR;
     int32_t ii = 0;
 
-    MSG_PRINTF(LOG_INFO, "iccid:%s, len:%d\n", iccid, rt_os_strlen(iccid));
+    MSG_PRINTF(LOG_INFO, "enable iccid:%s, len:%d\n", iccid, rt_os_strlen(iccid));
+
     for (ii = 0; ii < g_p_info.num; ii++) {
         if (rt_os_strncmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
             if (g_p_info.info[ii].state == PROFILE_DISABLED) {
@@ -397,27 +408,35 @@ int32_t init_card_manager(void *arg)
     int32_t ret = RT_ERROR;
     init_profile_type_e init_profile_type;
     int32_t sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
-    uint8_t tmp_iccid[21] = {0};
+    uint8_t card_iccid[21] = {0};
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
-    MSG_PRINTF(LOG_DBG, "get sizeof g_p_info is %d\n", sizeof(g_p_info));
-    MSG_PRINTF(LOG_DBG, "get g_p_info.type is %d\n", g_p_info.type);
+
     init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
     rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
+
     if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
         g_p_info.type = PROFILE_TYPE_SIM;
     }
+
     lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
-    qmi_get_elementary_iccid_file(tmp_iccid);
-    MSG_PRINTF(LOG_DBG, "get tmp_iccid is %s\n", tmp_iccid);
-    if (rt_os_strlen(tmp_iccid) == 0) {
-        ;
+    qmi_get_elementary_iccid_file(card_iccid);
+
+    if (rt_os_strlen(card_iccid) == 0) {
+        MSG_PRINTF(LOG_DBG, "SIM not exist !");
+        g_p_info.sim_info.state = 0;
     } else {
+        MSG_PRINTF(LOG_DBG, "SIM using iccid : %s\n", card_iccid);
         g_p_info.sim_info.state = 1;
-        rt_os_strncpy(g_p_info.sim_info.iccid, tmp_iccid, 20);
+        rt_os_strncpy(g_p_info.sim_info.iccid, card_iccid, 20);
+
+        if (sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
+            rt_os_strncpy(g_p_info.iccid, card_iccid, 20);
+        }
     }
+
     // 为0的时候，vuicc only
     if ((sim_mode == SIM_MODE_TYPE_VUICC_ONLY) || (sim_mode == SIM_MODE_TYPE_SIM_FIRST)) {
         MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", sim_mode);
@@ -442,30 +461,30 @@ int32_t init_card_manager(void *arg)
         MSG_PRINTF(LOG_WARN, "card update last card type fail, ret=%d\r\n", ret);
     }
     ret = card_update_eid(RT_TRUE);
-    if ((sim_mode == SIM_MODE_TYPE_VUICC_ONLY) || (sim_mode == SIM_MODE_TYPE_SIM_FIRST)) {
-        if (g_p_info.type != PROFILE_TYPE_SIM) {
-            MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", sim_mode);
-            ret = card_update_eid(RT_TRUE);
-            if (ret) {
-                MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
-                if (((public_value_list_t *)arg)->config_info->lpa_channel_type == LPA_CHANNEL_BY_QMI) {
-                    MSG_PRINTF(LOG_WARN, "eUICC mode with no EID, stay here forever !\r\n");
-                    while (1) {
-                        rt_os_sleep(1);
-                    }
-                }
-            } else {
-                rt_os_sleep(1);
-            }
-            ret = card_init_profile_type(init_profile_type);
-            if (ret) {
-                MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
-            }
-        }
-    } else {
-        g_p_info.type = PROFILE_TYPE_SIM;
-        MSG_PRINTF(LOG_DBG, "set sim_mode is %d\n", sim_mode);
-    }
+    // if ((sim_mode == SIM_MODE_TYPE_VUICC_ONLY) || (sim_mode == SIM_MODE_TYPE_SIM_FIRST)) {
+    //     if (g_p_info.type != PROFILE_TYPE_SIM) {
+    //         MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", sim_mode);
+    //         ret = card_update_eid(RT_TRUE);
+    //         if (ret) {
+    //             MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
+    //             if (((public_value_list_t *)arg)->config_info->lpa_channel_type == LPA_CHANNEL_BY_QMI) {
+    //                 MSG_PRINTF(LOG_WARN, "eUICC mode with no EID, stay here forever !\r\n");
+    //                 while (1) {
+    //                     rt_os_sleep(1);
+    //                 }
+    //             }
+    //         } else {
+    //             rt_os_sleep(1);
+    //         }
+    //         ret = card_init_profile_type(init_profile_type);
+    //         if (ret) {
+    //             MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
+    //         }
+    //     }
+    // } else {
+    //     g_p_info.type = PROFILE_TYPE_SIM;
+    //     MSG_PRINTF(LOG_DBG, "set sim_mode is %d\n", sim_mode);
+    // }
 
     if (sim_mode == SIM_MODE_TYPE_VUICC_ONLY) {
         MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", sim_mode);
@@ -484,6 +503,7 @@ int32_t init_card_manager(void *arg)
 
     card_set_opr_profile_apn();
     MSG_PRINTF(LOG_DBG, "init_card_manager over get sim_mode is %d\n", g_p_info.type);
+
     return ret;
 }
 #else
@@ -626,6 +646,8 @@ static int32_t card_change_profile(const uint8_t *buf)
     int32_t jj = 0;
     byte recv_buf = buf[0];
 
+    MSG_PRINTF(LOG_INFO, "+++++++++++++++++msg recv card type : %d\n", g_p_info.type);
+
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
     if (recv_buf == PROVISONING_NO_INTERNET) {
@@ -637,7 +659,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
         MSG_PRINTF(LOG_INFO, "g_circle_len is %d\n", g_circle_len);
 
-        if (g_circle_len == g_p_info.num - 2) { // 循环了一遍，所有的业务卡都不能用，再切到种子卡
+        if (g_circle_len == g_p_info.num - 2) {                 // 循环了一遍，所有的业务卡都不能用，再切到种子卡
             g_circle_len = 0;
             card_force_enable_provisoning_profile();
             g_p_info.type = PROFILE_TYPE_PROVISONING;
@@ -646,14 +668,14 @@ static int32_t card_change_profile(const uint8_t *buf)
 
             for (ii = 0; ii < g_p_info.num; ii++) {
                 if (g_p_info.info[ii].state == 1) {
-                    used_seq = ii; //找到当前再用的卡
+                    used_seq = ii;                      //找到当前再用的卡
                 }
             }
 
-            if (used_seq == g_p_info.num - 1) { // 如果是最后一张业务卡，则，切到第一张业务卡
+            if (used_seq == g_p_info.num - 1) {                                 // 如果是最后一张业务卡，则，切到第一张业务卡
                 len = rt_os_strlen(g_p_info.info[1].iccid);
                 rt_os_memcpy(iccid, g_p_info.info[1].iccid, len);
-            } else { // 如果不是最后一张，那么就切到下一张
+            } else {                                                            // 如果不是最后一张，那么就切到下一张
                 len = rt_os_strlen(g_p_info.info[used_seq + 1].iccid);
                 rt_os_memcpy(iccid, g_p_info.info[used_seq + 1].iccid, len);
             }
@@ -665,22 +687,14 @@ static int32_t card_change_profile(const uint8_t *buf)
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
         ipc_start_vuicc(1);
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
-        // rt_os_sleep(30);
-        // card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-        // lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
         MSG_PRINTF(LOG_INFO, "g_p_info.num is %d \n", g_p_info.num);
 
         if (g_p_info.num == 1) {
+            g_p_info.type = PROFILE_TYPE_PROVISONING;
             card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+        } else {
+            g_p_info.type = PROFILE_TYPE_OPERATIONAL;
         }
-
-        // for (jj = 0; jj < g_p_info.num; ++jj) {
-        //     MSG_PRINTF(LOG_INFO, "now g_p_info.info[%d].state is %d \r\n", jj, g_p_info.info[jj].state);
-        //     MSG_PRINTF(LOG_INFO, "now g_p_info.info[%d].class is %d \r\n", jj, g_p_info.info[jj].class);
-        //     if (g_p_info.info[jj].state == 1) {
-        //         g_p_info.type = g_p_info.info[jj].class;
-        //     }
-        // }
     } else {
         MSG_PRINTF(LOG_INFO, "recv buff unknow ! buff : %s \n", buf);
     }

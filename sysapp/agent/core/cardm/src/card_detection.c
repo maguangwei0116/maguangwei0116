@@ -135,6 +135,7 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
     }
 
     if (PROFILE_TYPE_SIM == *g_cur_profile_type) {
+        MSG_PRINTF(LOG_INFO, "SIM using\n");
         return RT_SUCCESS;
     }
 

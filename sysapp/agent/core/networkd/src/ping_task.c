@@ -178,24 +178,34 @@ static void network_ping_task(void *arg)
     cJSON *level = NULL;
     cJSON *rt_type = NULL;
 
+    profile_type_e last_card_type = *g_sim_type;
+
+
     sleep(RT_INIT_TIME);          // 模组上电后,需要进行驻网拨号,初始化完成后再开始网络监测
 
     while (1) {
 
+        MSG_PRINTF(LOG_INFO, "==============> last card type : %d\n", last_card_type);
+        MSG_PRINTF(LOG_INFO, "==============> now  card type : %d\n", *g_sim_type);
+
         if (*g_sim_type == PROFILE_TYPE_PROVISONING && g_network_state == MSG_NETWORK_CONNECTED) {       // 当为种子卡且ping通后,则后续不进行监控
             MSG_PRINTF(LOG_INFO, "====> provisoning network well !\n");
-            sleep(NETWORK_MONITOR_GAP);
+            last_card_type = *g_sim_type;
+            sleep(5);
             continue;
         }
 
-        if (*g_sim_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {
+        if (*g_sim_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {                              // vUICC --> SIM 则暂停网络监控
             MSG_PRINTF(LOG_INFO, "====> sim network bad !\n");
-            sleep(NETWORK_MONITOR_GAP);
+            last_card_type = *g_sim_type;
+            sleep(5);
             continue;
         }
 
-        if (*g_sim_type == PROFILE_TYPE_OPERATIONAL) {
+        if (last_card_type != *g_sim_type) {            // 当识别到切卡,100s时间进行初始化和拨号
 
+            MSG_PRINTF(LOG_INFO, "==============> card switch !\n");
+            last_card_type = *g_sim_type;
             sleep(60);
         }
 
