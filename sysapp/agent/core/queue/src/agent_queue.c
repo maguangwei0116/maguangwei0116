@@ -132,7 +132,6 @@ const char * g_msg_mode_e[] =
     "MSG_CARD_UPDATE_SEED",
 #ifdef CFG_REDTEA_READY_ON
     "MSG_PING_RES",
-    "MSG_NETWORK_DETECT",
 #endif
 };
 #endif
@@ -176,9 +175,6 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_NETWORK_DECTION:
-#ifdef CFG_REDTEA_READY_ON
-                    network_detect_event(que_t.data_buf, que_t.data_len, que_t.mode);
-#endif
                     break;
 
                 case MSG_ID_BROAD_CAST_NETWORK:

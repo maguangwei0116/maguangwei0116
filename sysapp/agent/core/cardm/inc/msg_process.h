@@ -60,7 +60,6 @@ int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid);
 int32_t msg_apnlist_handler(cJSON *apnparams_list);
 int32_t config_update_device_key(const char *devicekey);
 int32_t msg_analyse_strategy(cJSON *command_content);
-void msg_monitorstrategy_handler(cJSON *monitorstrategyparams);
 rt_bool inspect_device_key(const char *file_name);
 
 #endif // __MSG_PROCESS_H__

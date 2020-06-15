@@ -451,32 +451,6 @@ int32_t msg_apnlist_handler(cJSON *apnparams_list)
     return state;
 }
 
-void msg_monitorstrategy_handler(cJSON *monitorstrategyparams)
-{
-    cJSON *enabled = NULL;
-    cJSON *interval = NULL;
-    cJSON *strategy_type = NULL;
-    cJSON *strategy_list = NULL;
-    cJSON *strategy_item = NULL;
-    cJSON *domain = NULL;
-    cJSON *level = NULL;
-    int32_t strategy_num = NULL;
-    char send_buff[1];
-    int16_t ii = 0;
-
-    enabled = cJSON_GetObjectItem(monitorstrategyparams, "enabled");
-    if (!enabled) {
-        MSG_PRINTF(LOG_WARN, "enabled content failed!!\n");
-    } else {
-        if(enabled->valueint == RT_TRUE) {
-            send_buff[0] = NETWORK_DETECT_ENABLE;
-        } else {
-            send_buff[0] = NETWORK_DETECT_DISABLE;
-        }
-        msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_NETWORK_DETECT, send_buff, sizeof(send_buff));
-    }
-}
-
 rt_bool inspect_device_key(const char *file_name)
 {
     rt_fshandle_t fp = NULL;
@@ -527,13 +501,6 @@ int32_t config_update_device_key(const char *devicekey)
     snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
     ret = inspect_device_key(inspect_file);
 
-    if(ret == RT_TRUE) {
-        send_buff[0] = DEVICE_KEY_SUCESS;
-    } else {
-        send_buff[0] = DEVICE_KEY_ERROR;
-    }
-    msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_NETWORK_DETECT, send_buff, sizeof(send_buff));
-
     return ret;
 }
 
@@ -547,7 +514,7 @@ int32_t msg_analyse_strategy(cJSON *command_content)
     rt_os_memset(buffer, 'F', RT_STRATEGY_LIST_LEN);
     rt_os_memcpy(buffer, out, rt_os_strlen(out));
     buffer[sizeof(buffer) - 1] = '\0';
-    MSG_PRINTF(LOG_INFO, "buffer=%s, rt_os_strlen(out)=%d\r\n", buffer, rt_os_strlen(out));
+    // MSG_PRINTF(LOG_INFO, "buffer=%s, rt_os_strlen(out)=%d\r\n", buffer, rt_os_strlen(out));
 
     ret = rt_write_strategy(0, buffer, RT_STRATEGY_LIST_LEN);
     rt_os_free(out);

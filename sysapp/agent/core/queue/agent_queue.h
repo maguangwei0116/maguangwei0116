@@ -57,7 +57,6 @@ typedef enum MSG_MODE {
     MSG_CARD_UPDATE_SEED,
 #ifdef CFG_REDTEA_READY_ON
     MSG_PING_RES,
-    MSG_NETWORK_DETECT,
 #endif
 } msg_mode_e;
 

@@ -137,7 +137,6 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     monitorstrategyparams = cJSON_GetObjectItem(properties, "monitorstrategyparams");
     if (monitorstrategyparams != NULL) {
         state = msg_analyse_strategy(monitorstrategyparams);
-        msg_monitorstrategy_handler(monitorstrategyparams);
     } else {
         MSG_PRINTF(LOG_WARN, "monitorstrategyparams content failed!!\n");
     }

@@ -47,7 +47,6 @@
 
 static rt_bool                      g_sim_switch = RT_TRUE;
 static profile_type_e *             g_sim_type = NULL;
-static rt_bool                      g_to_start = RT_FALSE;
 static msg_mode_e                   g_network_state = MSG_NETWORK_DISCONNECTED;
 
 
@@ -220,6 +219,7 @@ static void network_ping_task(void *arg)
     cJSON *level = NULL;
     cJSON *rt_type = NULL;
     profile_type_e last_card_type = *g_sim_type;
+    rt_bool ping_start = RT_FALSE;
 
     sleep(RT_INIT_TIME);          // 模组上电后,需要进行驻网拨号,初始化完成后再开始网络监测
 
@@ -246,12 +246,12 @@ static void network_ping_task(void *arg)
         }
 
         if (/*devicekey_status == RT_TRUE && */enabled->valueint == RT_TRUE) {        // test !!!
-            g_to_start = RT_TRUE;
+            ping_start = RT_TRUE;
         } else {
-            g_to_start = RT_FALSE;
+            ping_start = RT_FALSE;
         }
 
-        if (g_to_start == RT_TRUE) {
+        if (ping_start == RT_TRUE) {
             if (*g_sim_type == PROFILE_TYPE_PROVISONING) {
                 ret = rt_ping_provisoning_get_status();
 
@@ -304,40 +304,6 @@ static void network_ping_task(void *arg)
 exit_entry:
 
     rt_exit_task(NULL);
-}
-
-int32_t network_detect_event(const uint8_t *buf, int32_t len, int32_t mode)
-{
-    static rt_bool device_key_status;
-    static rt_bool network_detect_status;
-    int32_t ret = RT_ERROR;
-    int8_t recv_buff;
-    recv_buff = buf[0];
-
-    if (recv_buff == DEVICE_KEY_SUCESS) {
-        device_key_status = RT_TRUE;
-    } else if (recv_buff == DEVICE_KEY_ERROR) {
-        device_key_status = RT_FALSE;
-    } else if (recv_buff == NETWORK_DETECT_ENABLE) {
-        network_detect_status = RT_TRUE;
-    } else if (recv_buff == NETWORK_DETECT_DISABLE) {
-        network_detect_status = RT_FALSE;
-    }
-
-    if(device_key_status == RT_TRUE && network_detect_status == RT_TRUE) {
-        switch (mode) {
-            case MSG_NETWORK_DETECT:
-                g_to_start = RT_TRUE;
-                ret = RT_SUCCESS;
-                break;
-            default:
-                break;
-        }
-    } else {
-        g_to_start = RT_FALSE;
-    }
-
-    return ret;
 }
 
 int32_t init_ping_task(void *arg)
