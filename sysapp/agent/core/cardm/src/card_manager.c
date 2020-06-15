@@ -642,6 +642,7 @@ int32_t card_switch_type(cJSON *switchparams)
 static int32_t card_change_profile(const uint8_t *buf)
 {
     int32_t ii = 0;
+    int32_t jj = 0;
     int32_t len = 0;
     int32_t used_seq = 0;
     uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
@@ -651,6 +652,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         MSG_PRINTF(LOG_INFO, "Provisioning ====> SIM\n");
         g_p_info.type = PROFILE_TYPE_SIM;
         ipc_remove_vuicc(1);
+        rt_os_sleep(5);
 
     } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
         MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
@@ -683,15 +685,19 @@ static int32_t card_change_profile(const uint8_t *buf)
 
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
         ipc_start_vuicc(1);
+        rt_os_sleep(5);
+
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
         MSG_PRINTF(LOG_INFO, "g_p_info.num is %d \n", g_p_info.num);
 
-        if (g_p_info.num == 1) {
-            g_p_info.type = PROFILE_TYPE_PROVISONING;
-            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
-            return RT_SUCCESS;
-        } else {
-            g_p_info.type = PROFILE_TYPE_OPERATIONAL;
+        for (jj = 0; jj < g_p_info.num; jj++) {
+            if (g_p_info.info[jj].state == 1) {
+                g_p_info.type = g_p_info.info[jj].class;
+                if (g_p_info.type == PROFILE_TYPE_PROVISONING) {
+                    card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+                    return RT_SUCCESS;
+                }
+            }
         }
     } else {
         MSG_PRINTF(LOG_INFO, "recv buff unknow ! buff : %s \n", buf);

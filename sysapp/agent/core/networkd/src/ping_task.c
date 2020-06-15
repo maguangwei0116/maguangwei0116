@@ -245,7 +245,7 @@ static void network_ping_task(void *arg)
             }
         }
 
-        if (/*devicekey_status == RT_TRUE && */enabled->valueint == RT_TRUE) {        // test !!!
+        if (devicekey_status == RT_TRUE && enabled->valueint == RT_TRUE) {
             ping_start = RT_TRUE;
         } else {
             ping_start = RT_FALSE;
