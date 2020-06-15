@@ -620,7 +620,7 @@ int32_t card_switch_type(cJSON *switchparams)
         if (card_type->valueint == 1) {
             g_p_info.type = PROFILE_TYPE_SIM;
             ipc_remove_vuicc(1); // 移除所占用的卡槽
-            MSG_PRINTF(LOG_INFO, "SIM first\n");
+            MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
         } else if (card_type->valueint == 2) {
             // 保留
             MSG_PRINTF(LOG_INFO, "eSIM\n");
@@ -646,8 +646,6 @@ static int32_t card_change_profile(const uint8_t *buf)
     int32_t jj = 0;
     byte recv_buf = buf[0];
 
-    MSG_PRINTF(LOG_INFO, "+++++++++++++++++msg recv card type : %d\n", g_p_info.type);
-
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
     if (recv_buf == PROVISONING_NO_INTERNET) {
@@ -659,7 +657,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
         MSG_PRINTF(LOG_INFO, "g_circle_len is %d\n", g_circle_len);
 
-        if (g_circle_len == g_p_info.num - 2) {                 // 循环了一遍，所有的业务卡都不能用，再切到种子卡
+        if (g_circle_len == g_p_info.num - 2) {         // 循环了一遍，所有的业务卡都不能用，再切到种子卡
             g_circle_len = 0;
             card_force_enable_provisoning_profile();
             g_p_info.type = PROFILE_TYPE_PROVISONING;
@@ -691,7 +689,7 @@ static int32_t card_change_profile(const uint8_t *buf)
 
         if (g_p_info.num == 1) {
             g_p_info.type = PROFILE_TYPE_PROVISONING;
-            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+            // card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
         } else {
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
         }

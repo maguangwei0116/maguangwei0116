@@ -53,7 +53,7 @@ static int32_t card_check_provisoning_conflict(rt_bool clear_flg)
 
 #ifdef CFG_REDTEA_READY_ON
     MSG_PRINTF(LOG_DBG, "g_cur_profile_type is %d\r\n", *g_cur_profile_type);
-    if (PROFILE_TYPE_OPERATIONAL == *g_cur_profile_type || PROFILE_TYPE_SIM == *g_cur_profile_type) { // 是业务卡或者是sim，那就直接返回
+    if (PROFILE_TYPE_OPERATIONAL == *g_cur_profile_type || PROFILE_TYPE_SIM == *g_cur_profile_type) {
         return RT_ERROR;
     }
 #else
@@ -170,16 +170,14 @@ static void card_detection_task(void)
     MSG_PRINTF(LOG_INFO, "g_cur_iccid: %s, g_cur_profile_type: %d\r\n", g_cur_iccid, *g_cur_profile_type);
 
     while (1) {
-        if (*g_cur_profile_type != PROFILE_TYPE_SIM) {
-            if (g_card_detecting_flg) {
-                msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_UPDATE, NULL, 0);
-                rt_os_sleep(2);
-                if (RT_SUCCESS == card_load_using_card(iccid, sizeof(iccid), &type)) {
-                    card_changed_handle((const char *)iccid, type);
-                }
-
-                rt_os_sleep(g_card_detect_interval);
+        if (g_card_detecting_flg) {
+            msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_UPDATE, NULL, 0);
+            rt_os_sleep(2);
+            if (RT_SUCCESS == card_load_using_card(iccid, sizeof(iccid), &type)) {
+                card_changed_handle((const char *)iccid, type);
             }
+
+            rt_os_sleep(g_card_detect_interval);
         }
 
         // enable into disable  network ok

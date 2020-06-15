@@ -469,15 +469,15 @@ void msg_monitorstrategy_handler(cJSON *monitorstrategyparams)
         MSG_PRINTF(LOG_WARN, "enabled content failed!!\n");
     } else {
         if(enabled->valueint == RT_TRUE) {
-            send_buff[0] = NETWORK_DETECT_SUCESS;
+            send_buff[0] = NETWORK_DETECT_ENABLE;
         } else {
-            send_buff[0] = NETWORK_DETECT_ERROR;
+            send_buff[0] = NETWORK_DETECT_DISABLE;
         }
         msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_NETWORK_DETECT, send_buff, sizeof(send_buff));
     }
 }
 
-int32_t inspect_device_key(const char *file_name)
+rt_bool inspect_device_key(const char *file_name)
 {
     rt_fshandle_t fp = NULL;
     sha256_ctx_t  sha_ctx;

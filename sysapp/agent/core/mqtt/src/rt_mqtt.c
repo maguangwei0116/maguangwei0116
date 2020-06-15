@@ -550,7 +550,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     }
 
 #ifdef CFG_REDTEA_READY_ON
-    if (g_sim_mode == 0 || g_sim_mode == 1) {
+    if (g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY || g_sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
         MSG_PRINTF(LOG_DBG, "g_mqtt_info.type is %d\n", *(g_mqtt_info.type));
         // g_mqtt_info.type = PROFILE_TYPE_SIM;
         if (*(g_mqtt_info.type) != PROFILE_TYPE_SIM) {
