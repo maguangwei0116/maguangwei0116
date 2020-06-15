@@ -618,9 +618,11 @@ int32_t card_switch_type(cJSON *switchparams)
     card_type = cJSON_GetObjectItem(switchparams, "type");
     if (card_type != NULL) {
         if (card_type->valueint == 1) {
-            g_p_info.type = PROFILE_TYPE_SIM;
-            ipc_remove_vuicc(1); // 移除所占用的卡槽
-            MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
+            if (g_p_info.type != PROFILE_TYPE_SIM) {
+                g_p_info.type = PROFILE_TYPE_SIM;
+                ipc_remove_vuicc(1); // 移除所占用的卡槽
+                MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
+            }
         } else if (card_type->valueint == 2) {
             // 保留
             MSG_PRINTF(LOG_INFO, "eSIM\n");
