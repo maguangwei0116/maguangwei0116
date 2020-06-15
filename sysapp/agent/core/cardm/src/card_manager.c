@@ -117,13 +117,10 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
 {
     int32_t ret = RT_ERROR;
     int32_t i;
-    uint8_t card_iccid[21] = {0};
 
     if (g_p_info.type == PROFILE_TYPE_SIM) {
-        // qmi_get_elementary_iccid_file(card_iccid);
-        // rt_os_strncpy(g_p_info.sim_info.iccid, card_iccid, 20);
         MSG_PRINTF(LOG_INFO, "SIM using, iccid: %s\n", g_p_info.sim_info.iccid);
-
+        ret == RT_SUCCESS;
     } else {
         ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
         if (ret == RT_SUCCESS) {
@@ -159,7 +156,6 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
             }
         }
     }
-
 
     return ret;
 }
@@ -278,6 +274,10 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
 {
     int32_t ret = RT_SUCCESS;
     char iccid[THE_ICCID_LENGTH + 1] = {0};
+
+    if (g_p_info.type == PROFILE_TYPE_SIM) {        // vUICC-->SIM, Bootstrap会触发card load profile
+        return RT_SUCCESS;
+    }
 
     ret = card_get_provisioning_profile_iccid(iccid);
     if (ret) {
@@ -636,17 +636,14 @@ int32_t card_switch_type(cJSON *switchparams)
 
     return state;
 }
+
 static int32_t card_change_profile(const uint8_t *buf)
 {
-    int32_t i = 0;
     int32_t ii = 0;
     int32_t len = 0;
     int32_t used_seq = 0;
     uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
-    int32_t jj = 0;
     byte recv_buf = buf[0];
-
-    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
     if (recv_buf == PROVISONING_NO_INTERNET) {
         MSG_PRINTF(LOG_INFO, "Provisioning ====> SIM\n");
@@ -678,8 +675,8 @@ static int32_t card_change_profile(const uint8_t *buf)
                 rt_os_memcpy(iccid, g_p_info.info[used_seq + 1].iccid, len);
             }
 
-            msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, iccid, rt_os_strlen(iccid));
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
+            msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, iccid, rt_os_strlen(iccid));
         }
 
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
@@ -690,13 +687,15 @@ static int32_t card_change_profile(const uint8_t *buf)
         if (g_p_info.num == 1) {
             g_p_info.type = PROFILE_TYPE_PROVISONING;
             card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+            return RT_SUCCESS;
         } else {
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
-            card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         }
     } else {
         MSG_PRINTF(LOG_INFO, "recv buff unknow ! buff : %s \n", buf);
     }
+
+    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
     return RT_SUCCESS;
 }
