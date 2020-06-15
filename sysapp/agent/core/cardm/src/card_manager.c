@@ -120,8 +120,8 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     uint8_t card_iccid[21] = {0};
 
     if (g_p_info.type == PROFILE_TYPE_SIM) {
-        qmi_get_elementary_iccid_file(card_iccid);
-        rt_os_strncpy(g_p_info.sim_info.iccid, card_iccid, 20);
+        // qmi_get_elementary_iccid_file(card_iccid);
+        // rt_os_strncpy(g_p_info.sim_info.iccid, card_iccid, 20);
         MSG_PRINTF(LOG_INFO, "SIM using, iccid: %s\n", g_p_info.sim_info.iccid);
 
     } else {
@@ -689,9 +689,10 @@ static int32_t card_change_profile(const uint8_t *buf)
 
         if (g_p_info.num == 1) {
             g_p_info.type = PROFILE_TYPE_PROVISONING;
-            // card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
         } else {
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
+            card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         }
     } else {
         MSG_PRINTF(LOG_INFO, "recv buff unknow ! buff : %s \n", buf);

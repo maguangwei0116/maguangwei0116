@@ -175,14 +175,12 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
 
         if (*g_sim_type == PROFILE_TYPE_PROVISONING && g_network_state == MSG_NETWORK_CONNECTED) {       // 当为种子卡且ping通后,则后续不进行监控
             MSG_PRINTF(LOG_INFO, "====> provisoning network well !\n");
-            // *last_card_type = *g_sim_type;
             sleep(10);       // 后续是否需要修改
             continue;
         }
 
         if (*g_sim_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {                              // vUICC --> SIM 则暂停网络监控
             MSG_PRINTF(LOG_ERR, "====> sim network bad !\n");
-            // *last_card_type = *g_sim_type;
             sleep(10);       // 后续是否需要修改
             continue;
         }
