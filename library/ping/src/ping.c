@@ -40,14 +40,12 @@ typedef struct tag_iphdr
 unsigned short generation_checksum(unsigned short * buf, int size)
 {
     unsigned long cksum = 0;
-    while(size > 1)
-    {
+    while(size > 1) {
         cksum += *buf++;
         size -= sizeof(unsigned short);
     }
 
-    if(size)
-    {
+    if(size) {
         cksum += *buf++;
     }
 
@@ -64,8 +62,8 @@ double get_time_interval(struct timeval * start, struct timeval * end)
 
     tp.tv_sec = end->tv_sec - start->tv_sec;
     tp.tv_usec = end->tv_usec - start->tv_usec;
-    if(tp.tv_usec < 0)
-    {
+
+    if(tp.tv_usec < 0) {
         tp.tv_sec -= 1;
         tp.tv_usec += 1000000;
     }
@@ -90,15 +88,13 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
     icmp_header * icmp_head;
     struct sockaddr_in dest_socket_addr;
 
-    if(domain == NULL)
-    {
+    if(domain == NULL) {
         MSG_PRINTF(LOG_ERR, "ping_host_ip domain is NULL !\n");
         return ret;
     }
 
     dest_ip = inet_addr(domain);
-    if(dest_ip == INADDR_NONE)
-    {
+    if(dest_ip == INADDR_NONE) {
         struct hostent* p_hostent = gethostbyname(domain);
         if(p_hostent)
         {
@@ -107,8 +103,7 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
     }
 
     client_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-    if (client_fd == -1)
-    {
+    if (client_fd == -1) {
         MSG_PRINTF(LOG_ERR, "socket error: %s !\n", strerror(errno));
         return ret;
     }
@@ -116,14 +111,13 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
     setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
-    if(setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)))
-    {
+
+    if(setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval))) {
         MSG_PRINTF(LOG_ERR, "setsocketopt SO_RCVTIMEO error !\n");
         return ret;
     }
 
-    if(setsockopt(client_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(struct timeval)))
-    {
+    if(setsockopt(client_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(struct timeval))) {
         MSG_PRINTF(LOG_ERR, "setsockopt SO_SNDTIMEO error !\n");
         return ret;
     }
@@ -143,8 +137,7 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
 
     // MSG_PRINTF(LOG_DBG, "PING %s (%s)\n", domain, inet_ntoa(*((struct in_addr*)&dest_ip)));
 
-    for(i = 0; i < 10; i++)
-    {
+    for(i = 0; i < 10; i++) {
         sleep(1);
         struct timeval start;
         struct timeval end;
@@ -162,8 +155,8 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
         result = sendto(client_fd, icmp, sizeof(icmp_header) +
             DATA_SIZE, 0, (struct sockaddr *)&dest_socket_addr,
             sizeof(dest_socket_addr));
-        if(result == -1)
-        {
+
+        if(result == -1) {
             time_sum += 9999.99;
             time_interval[i] = 9999.99;
             MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
@@ -174,35 +167,31 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
 
         from_packet_len = sizeof(from);
         memset(recv_buf, 0, sizeof(recv_buf));
-        while(1)
-        {
+
+        while(1) {
             read_length = recvfrom(client_fd, recv_buf, 1024, 0,
                 (struct sockaddr*)&from, &from_packet_len);
             gettimeofday( &end, NULL );
 
-            if(read_length != -1)
-            {
+            if(read_length != -1) {
                 ip_header * recv_ip_header = (ip_header*)recv_buf;
                 int ip_ttl = (int)recv_ip_header->ip_ttl;
                 icmp_header * recv_icmp_header = (icmp_header *)(recv_buf +
                     (recv_ip_header->ip_head_verlen & 0x0F) * 4);
 
-                if(recv_icmp_header->type != 0)
-                {
+                if(recv_icmp_header->type != 0) {
                     MSG_PRINTF(LOG_ERR, "error type %d received, error code %d \n", recv_icmp_header->type, recv_icmp_header->code);
                     break;
                 }
 
-                if(recv_icmp_header->id != icmp_head->id)
-                {
+                if(recv_icmp_header->id != icmp_head->id) {
                     MSG_PRINTF(LOG_ERR, "some else's packet\n");
                     continue;
                 }
 
-                if(read_length >= (sizeof(ip_header) +
-                    sizeof(icmp_header) + DATA_SIZE))
-                {
+                if(read_length >= (sizeof(ip_header) + sizeof(icmp_header) + DATA_SIZE)) {
                     double tmp_time = get_time_interval(&start, &end);
+
                     // MSG_PRINTF(LOG_DBG, "%ld bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n",
                     //     read_length, domain, inet_ntoa(from.sin_addr), recv_icmp_header->seq / 256,
                     //     ip_ttl, tmp_time);
@@ -212,14 +201,12 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
                     time_sum += tmp_time;
                     time_interval[i] = tmp_time;
 
-                    // MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
-                    // MSG_PRINTF(LOG_INFO, "time_interval[%d] is %lf\n", i, time_interval[i]);
+                    MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
+                    MSG_PRINTF(LOG_INFO, "time_interval[%d] is %lf\n", i, time_interval[i]);
                 }
 
                 break;
-            }
-            else
-            {
+            } else {
                 MSG_PRINTF(LOG_ERR, "receive data error !\n");
                 time_sum += 9999.99;
                 time_interval[i] = 9999.99;
@@ -229,14 +216,12 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
     }
 
 PING_EXIT:
-    if(NULL != icmp)
-    {
+    if(NULL != icmp) {
         free(icmp);
         icmp = NULL;
     }
 
-    if(client_fd != -1)
-    {
+    if(client_fd != -1) {
         close(client_fd);
     }
 
