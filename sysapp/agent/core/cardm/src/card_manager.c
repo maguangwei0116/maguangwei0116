@@ -118,10 +118,13 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     int32_t ret = RT_ERROR;
     int32_t i;
 
+#ifdef CFG_REDTEA_READY_ON
     if (g_p_info.type == PROFILE_TYPE_SIM) {
         MSG_PRINTF(LOG_INFO, "SIM using, iccid: %s\n", g_p_info.sim_info.iccid);
-        ret == RT_SUCCESS;
-    } else {
+        ret = RT_SUCCESS;
+    } else
+#endif
+    {
         ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
         if (ret == RT_SUCCESS) {
             /* get current profile type */
@@ -437,13 +440,13 @@ int32_t init_card_manager(void *arg)
         }
     }
 
-    // 为0的时候，vuicc only
     if ((sim_mode == SIM_MODE_TYPE_VUICC_ONLY) || (sim_mode == SIM_MODE_TYPE_SIM_FIRST)) {
         MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", sim_mode);
         MSG_PRINTF(LOG_DBG, "g_p_info.type is %d\n", g_p_info.type);
+
         if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
             MSG_PRINTF(LOG_DBG, "((public_value_list_t *)arg)->profile_damaged is %d\r\n", *(((public_value_list_t *)arg)->profile_damaged));
-            if (*(((public_value_list_t *)arg)->profile_damaged) == 0) {
+            if (*(((public_value_list_t *)arg)->profile_damaged) == RT_SUCCESS) {
                 ret = card_key_data_init();
                 if (ret) {
                     MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
@@ -621,6 +624,8 @@ int32_t card_switch_type(cJSON *switchparams)
             if (g_p_info.type != PROFILE_TYPE_SIM) {
                 g_p_info.type = PROFILE_TYPE_SIM;
                 ipc_remove_vuicc(1); // 移除所占用的卡槽
+                rt_os_sleep(5);
+                network_force_down();
                 MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
             }
         } else if (card_type->valueint == 2) {
@@ -653,6 +658,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         g_p_info.type = PROFILE_TYPE_SIM;
         ipc_remove_vuicc(1);
         rt_os_sleep(5);
+        network_force_down();
 
     } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
         MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
@@ -686,22 +692,17 @@ static int32_t card_change_profile(const uint8_t *buf)
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
         ipc_start_vuicc(1);
         rt_os_sleep(5);
+        network_force_down();
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
 
         for (jj = 0; jj < g_p_info.num; jj++) {
             if (g_p_info.info[jj].state == 1) {
                 g_p_info.type = g_p_info.info[jj].class;
-                if (g_p_info.type == PROFILE_TYPE_PROVISONING) {
-                    card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
-                    return RT_SUCCESS;
-                }
             }
         }
     } else {
         MSG_PRINTF(LOG_INFO, "recv buff unknow ! buff : %s \n", buf);
     }
-
-    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
     return RT_SUCCESS;
 }
@@ -784,9 +785,7 @@ int32_t card_manager_update_profiles_event(const uint8_t *buf, int32_t len, int3
     switch (mode) {
         case MSG_NETWORK_CONNECTED:
             ret = card_check_init_upload(g_p_info.eid);
-            if (g_p_info.type != PROFILE_TYPE_SIM) {
-                ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-            }
+            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             break;
 
         default:
