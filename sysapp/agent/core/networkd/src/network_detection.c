@@ -29,9 +29,8 @@ typedef struct TASK_PARAM {
     profile_type_e *    type;
 } task_param_t;
 
-static task_param_t     g_task_param;
-static network_update_switch_e g_update_network_state = NETWORK_UPDATE_ENABLE;
-static net_uicc_mode = 0;
+static task_param_t             g_task_param;
+static network_update_switch_e  g_update_network_state = NETWORK_UPDATE_ENABLE;
 
 void network_update_switch(network_update_switch_e state)
 {
@@ -40,44 +39,6 @@ void network_update_switch(network_update_switch_e state)
 
 void network_update_state(int32_t state)
 {
-#ifdef CFG_REDTEA_READY_ON
-    #define NETWORK_STATE_NOT_READY     -1
-
-    static int32_t g_network_state      = NETWORK_STATE_NOT_READY;
-
-    if (state == g_network_state) {
-        return;
-    } else if (g_update_network_state == NETWORK_UPDATE_DISABLE) {
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, &g_update_network_state, sizeof(g_update_network_state));
-        if (*(g_task_param.type) != PROFILE_TYPE_SIM) {
-            card_detection_disable();
-        }
-        return;
-    }
-
-    MSG_PRINTF(LOG_INFO, "network state changed: %d -> %d, g_update_network_state:%d\r\n", g_network_state, state, sizeof(g_update_network_state));
-    g_network_state = state;
-
-    if (g_network_state == RT_DSI_STATE_CALL_CONNECTED) {  // network connected
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
-        if (*(g_task_param.type) != PROFILE_TYPE_SIM) {
-            card_detection_disable();
-        }
-    } else if (g_network_state == RT_DSI_STATE_CALL_IDLE) {  // network disconnected
-        msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
-        if (*(g_task_param.type) != PROFILE_TYPE_SIM) {
-            card_detection_enable();
-        }
-        g_network_state = NETWORK_STATE_NOT_READY;
-    }
-
-    #undef NETWORK_STATE_NOT_READY
-
-    // sim only nothing to do
-    if (net_uicc_mode == 2) {
-        return ;
-    }
-#else
     #define NETWORK_STATE_NOT_READY     -1
 
     static int32_t g_network_state      = NETWORK_STATE_NOT_READY;
@@ -103,12 +64,9 @@ void network_update_state(int32_t state)
     }
 
     #undef NETWORK_STATE_NOT_READY
-#endif
 }
 
 #ifdef CFG_PLATFORM_9X07
-
-
 
 /*
 avoid this case:
@@ -198,7 +156,6 @@ int32_t init_network_detection(void *arg)
 
     g_task_param.type               = &(((public_value_list_t *)arg)->card_info->type);
     g_task_param.profile_damaged    = ((public_value_list_t *)arg)->profile_damaged;
-    net_uicc_mode                   = ((public_value_list_t *)arg)->config_info->sim_mode;
 
     ret = rt_create_task(&task_id, (void *)network_detection_task, &g_task_param);
     if (ret != RT_SUCCESS) {
