@@ -203,13 +203,13 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
 
 static void network_ping_task(void *arg)
 {
-    int32_t i = 0;
     int32_t ii = 0;
     int32_t ret = RT_ERROR;
     int32_t network_level;
     int32_t strategy_num = NULL;
     uint8_t tmp_buffer[RT_STRATEGY_LIST_LEN + 1] = {0};
     rt_bool devicekey_status = RT_FALSE;
+    rt_bool ping_start = RT_FALSE;
     cJSON *enabled = NULL;
     cJSON *interval = NULL;
     cJSON *network_detect = NULL;
@@ -219,7 +219,6 @@ static void network_ping_task(void *arg)
     cJSON *level = NULL;
     cJSON *rt_type = NULL;
     profile_type_e last_card_type = *g_sim_type;
-    rt_bool ping_start = RT_FALSE;
 
     sleep(RT_INIT_TIME);          // 模组上电后,需要进行驻网拨号,初始化完成后再开始网络监测
 

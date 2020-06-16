@@ -686,9 +686,7 @@ static int32_t card_change_profile(const uint8_t *buf)
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
         ipc_start_vuicc(1);
         rt_os_sleep(5);
-
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
-        MSG_PRINTF(LOG_INFO, "g_p_info.num is %d \n", g_p_info.num);
 
         for (jj = 0; jj < g_p_info.num; jj++) {
             if (g_p_info.info[jj].state == 1) {
