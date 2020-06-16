@@ -122,7 +122,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     if (switchparams != NULL) {
         state = card_switch_type(switchparams);
     } else {
-        MSG_PRINTF(LOG_WARN, "switchparams content failed!\n");
+        MSG_PRINTF(LOG_WARN, "switchparams content NULL!\n");
     }
 
     // apnparams
@@ -130,7 +130,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     if (apnparams_list != NULL) {
         state = msg_apnlist_handler(apnparams_list);
     } else {
-        MSG_PRINTF(LOG_WARN, "apnparams content failed!\n");
+        MSG_PRINTF(LOG_WARN, "apnparams content NULL!\n");
     }
 
     // monitorstrategyparams
@@ -138,7 +138,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     if (monitorstrategyparams != NULL) {
         state = msg_analyse_strategy(monitorstrategyparams);
     } else {
-        MSG_PRINTF(LOG_WARN, "monitorstrategyparams content failed!!\n");
+        MSG_PRINTF(LOG_WARN, "monitorstrategyparams content NULL!!\n");
     }
 
     // upload
