@@ -185,7 +185,7 @@ static void agent_queue_task(void)
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode); // It will waste a few time
-                    ping_task_get_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    ping_task_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 case MSG_ID_MQTT:

@@ -14,6 +14,7 @@
 #define MBN_AUTO_SELECT_STATE       "at+qmbncfg=\"autosel\"\r\n"
 #define MBN_CONFIG_AUTO_STATE       "at+qmbncfg=\"autosel\",%d\r\n"
 #define MNB_CONFIG_DEACTUCATE       "at+qmbncfg=\"Deactivate\"\r\n"
+#define AT_ROAMSERVICE              "AT+QCFG=\"ROAMSERVICE\",2\r\n"   // 2 is force open
 #define MBN_ROW_ITEM                "ROW_Generic_3GPP"
 #define MBN_AUTO_SELECT             "AutoSel"
 #define MBN_ECHO_OFF                "ATE0\r\n"
@@ -102,6 +103,7 @@ static int32_t mbn_config_device(void)
 {
     char at_rsp[128];
     
+    at_send_recv(AT_ROAMSERVICE, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);       // Set roaming switch
     at_send_recv(MBN_ECHO_OFF, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);
     
     if (mbn_get_auto_state() == RT_FALSE) {
