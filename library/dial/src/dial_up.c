@@ -508,7 +508,7 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                             exit_flag = RT_TRUE;
                             *state = LOCAL_DIAL_UP_NO_NET;
                             break;
-                            
+
                         /* Data call is disconnected */
                         case DSI_EVT_NET_NO_NET:
                             MSG_PRINTF(LOG_INFO, "DSI_EVT_NET_NO_NET\n");
