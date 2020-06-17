@@ -49,14 +49,19 @@ typedef enum INIT_PROFILE_TYPE {
     INIT_PROFILE_TYPE_LAST_USED     = 2,
 } init_profile_type_e;
 
+typedef enum PROFILE_SIM_CPIN {
+    SIM_CPIN_NO_READY               = 0,
+    SIM_CPIN_READY                  = 1,
+} profile_sim_cpin_e;
+
 typedef struct PROFILE_SIM_INFO {
     char iccid[21];             // 20-digit ICCID, padded with F
     uint8_t state;              // 0 not cpin, 1 cpin
-} profile_sim_info;
+} profile_sim_info_t;
 
 typedef struct CARD_INFO {
     profile_info_t                  info[THE_MAX_CARD_NUM];
-    profile_sim_info                sim_info;
+    profile_sim_info_t              sim_info;
     uint8_t                         num;
     uint8_t                         eid[MAX_EID_LEN + 1];
     profile_type_e                  type;                      // used card type

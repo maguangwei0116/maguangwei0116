@@ -423,10 +423,10 @@ int32_t init_card_manager(void *arg)
 
         if (rt_os_strlen(sim_iccid) == 0) {
             MSG_PRINTF(LOG_DBG, "SIM not exist !");
-            g_p_info.sim_info.state = 0;
+            g_p_info.sim_info.state = SIM_CPIN_NO_READY;
         } else {
             MSG_PRINTF(LOG_DBG, "SIM exist, iccid : %s\n", sim_iccid);
-            g_p_info.sim_info.state = 1;
+            g_p_info.sim_info.state = SIM_CPIN_READY;
             rt_os_strncpy(g_p_info.sim_info.iccid, sim_iccid, 20);
             rt_os_strncpy(g_p_info.iccid, sim_iccid, 20);
         }

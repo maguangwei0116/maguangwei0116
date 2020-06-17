@@ -14,7 +14,7 @@
 static int32_t g_card_detect_interval       = CARD_DETECT_INTERVAL;
 static rt_bool g_card_detecting_flg         = RT_FALSE;
 static const char *g_cur_iccid              = NULL;
-static profile_sim_info *g_sim_iccid        = NULL;
+static profile_sim_info_t *g_sim_iccid        = NULL;
 static profile_type_e *g_cur_profile_type   = NULL;
 
 
