@@ -477,7 +477,6 @@ rt_bool inspect_device_key(const char *file_name)
     rt_read_devicekey(DEVICE_KEY_LEN, inspect_buff, DEVICE_KEY_LEN);
     inspect_buff[DEVICE_KEY_LEN] = '\0';
     if (!rt_os_strncasecmp(hash_result, inspect_buff, DEVICE_KEY_LEN)) {
-        MSG_PRINTF(LOG_INFO, "Device Key compare success!\n");
         ret = RT_TRUE;
     } else {
         MSG_PRINTF(LOG_ERR, "Device Key compare fail!\n");
