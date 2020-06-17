@@ -550,20 +550,13 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     }
 
 #ifdef CFG_REDTEA_READY_ON
-    if (g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY || g_sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
-        MSG_PRINTF(LOG_DBG, "g_mqtt_info.type is %d\n", *(g_mqtt_info.type));
-        // g_mqtt_info.type = PROFILE_TYPE_SIM;
-        if (*(g_mqtt_info.type) != PROFILE_TYPE_SIM) {
-            MSG_PRINTF(LOG_DBG, "get g_sim_mode is %d\n", g_sim_mode);
-            mqtt_eid_check_upload();
-        }
-    } else {
-        MSG_PRINTF(LOG_DBG, "get g_sim_mode is %d\n", g_sim_mode);
+    if (*(g_mqtt_info.type) != PROFILE_TYPE_SIM) {      // SIM不上报NO CERT
+        mqtt_eid_check_upload();
     }
 #else
     mqtt_eid_check_upload();
-
 #endif
+
     return RT_TRUE;
 }
 
