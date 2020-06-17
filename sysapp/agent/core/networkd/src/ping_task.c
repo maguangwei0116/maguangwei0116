@@ -17,7 +17,6 @@
 #include "usrdata.h"
 #include "ping_task.h"
 
-#define RT_LOST_ALL             100
 #define RT_AND                  1
 #define RT_OR                   0
 #define RT_INSPECT_FILE         128
@@ -40,34 +39,38 @@
 #define COMMON                  1
 #define NONE_DEFINE             0
 
-#define NETWORK_MONITOR_GAP     5
 #define RT_INIT_TIME            60
 
 #define PROVISONING_PING_IP     "23.91.101.68"
 
 static rt_bool                      g_sim_switch = RT_TRUE;
-static profile_type_e *             g_sim_type = NULL;
+static rt_bool                      g_external_cut_card = RT_FALSE;
+static profile_type_e *             g_card_type = NULL;
 static msg_mode_e                   g_network_state = MSG_NETWORK_DISCONNECTED;
 
+void rt_external_cut_card()
+{
+    g_external_cut_card = RT_TRUE;
+}
 
-void sim_switch_enable()
+static void sim_switch_enable()
 {
     g_sim_switch = RT_TRUE;
 }
 
-void sim_switch_disable()
+static void sim_switch_disable()
 {
     g_sim_switch = RT_FALSE;
 }
 
-int32_t ping_task_get_event(const uint8_t *buf, int32_t len, int32_t mode)
+int32_t ping_task_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     (void)buf;
     (void)len;
 
     if (mode == MSG_NETWORK_CONNECTED) {
         g_network_state = MSG_NETWORK_CONNECTED;
-        if (*g_sim_type == PROFILE_TYPE_SIM) {
+        if (*g_card_type == PROFILE_TYPE_SIM) {
             sim_switch_enable();
         }
         MSG_PRINTF(LOG_DBG, "====> msg recv network connecte\n");
@@ -79,7 +82,7 @@ int32_t ping_task_get_event(const uint8_t *buf, int32_t len, int32_t mode)
     return RT_SUCCESS;
 }
 
-int32_t rt_ping_provisoning_get_status()
+static int32_t rt_ping_provisoning_get_status()
 {
     int32_t lost;
     int32_t ret = RT_ERROR;
@@ -94,13 +97,11 @@ int32_t rt_ping_provisoning_get_status()
     return ret;
 }
 
-int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
+static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
 {
     int32_t lost;
     int32_t network_level;
     double delay, shake;
-
-    MSG_PRINTF(LOG_DBG, "ip : %s, level %d, type : %d\n", ip, level, type);
 
     rt_local_ping(ip, &delay, &lost, &shake);
 
@@ -114,7 +115,7 @@ int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
         network_level = NONE_DEFINE;
     }
 
-    MSG_PRINTF(LOG_DBG, "ping %s network_level : %d\n", ip, network_level);
+    MSG_PRINTF(LOG_DBG, "ping %s, get network_level : %d\n", ip, network_level);
     MSG_PRINTF(LOG_DBG, "delay : %lf, lost : %d, shake : %lf\n", delay, lost, shake);
 
     return network_level;
@@ -124,18 +125,16 @@ static int32_t rt_send_msg_card_status(int32_t ret)
 {
     char send_buf[1] = {0};
 
-    // 当网络良好时,不发送消息队列,等待下次监控 
-
-    if (*g_sim_type == PROFILE_TYPE_PROVISONING) {
+    if (*g_card_type == PROFILE_TYPE_PROVISONING) {
         if (ret == RT_SUCCESS) {
             send_buf[0] = PROVISONING_HAVE_INTERNET;
             MSG_PRINTF(LOG_INFO, "====> Hold Provisioning\r\n");
             return RT_SUCCESS;
         } else {
-            sim_switch_disable();                   // 当种子卡没网切换到实体卡后, 程序不再进行网络检测
+            sim_switch_disable();                   // 当种子卡没网切换到实体卡后, 不再进行网络检测
             send_buf[0] = PROVISONING_NO_INTERNET;
         }
-    } else if (*g_sim_type == PROFILE_TYPE_OPERATIONAL) {
+    } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL) {
         if (ret == RT_SUCCESS) {
             send_buf[0] = OPERATIONAL_HAVE_INTERNET;
             MSG_PRINTF(LOG_INFO, "====> Hold Opeational\r\n");
@@ -143,7 +142,7 @@ static int32_t rt_send_msg_card_status(int32_t ret)
         } else {
             send_buf[0] = OPERATIONAL_NO_INTERNET;
         }
-    } else if (*g_sim_type == PROFILE_TYPE_SIM) {
+    } else if (*g_card_type == PROFILE_TYPE_SIM) {
         if (ret == RT_SUCCESS) {
             send_buf[0] = SIM_CARD_HAVE_INTERNET;
             MSG_PRINTF(LOG_INFO, "====> Hold SIM\n");
@@ -152,10 +151,12 @@ static int32_t rt_send_msg_card_status(int32_t ret)
             send_buf[0] = SIM_CARD_NO_INTERNET;
         }
     } else {
-        MSG_PRINTF(LOG_INFO, "unkown g_sim_type is %d\n", *g_sim_type);
+        MSG_PRINTF(LOG_INFO, "unkown g_card_type is %d\n", *g_card_type);
     }
 
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_PING_RES, send_buf, sizeof(send_buf));
+
+    return RT_SUCCESS;
 }
 
 static rt_bool rt_get_devicekey_status()
@@ -170,33 +171,37 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
 {
     while (1) {
         MSG_PRINTF(LOG_INFO, "==============> last card type : %d\n", *last_card_type);
-        MSG_PRINTF(LOG_INFO, "==============> now  card type : %d\n", *g_sim_type);
+        MSG_PRINTF(LOG_INFO, "==============> now  card type : %d\n", *g_card_type);
 
-        if (*g_sim_type == PROFILE_TYPE_PROVISONING && g_network_state == MSG_NETWORK_CONNECTED) {       // 当为种子卡且ping通后,则后续不进行监控
-            MSG_PRINTF(LOG_INFO, "====> provisoning network well !\n");
-            *last_card_type = *g_sim_type;
-            sleep(10);       // 后续是否需要修改
-            continue;
-        }
+        if (*last_card_type != *g_card_type || g_external_cut_card == RT_TRUE) {                   // 极端情况: 切卡的同时开始网络检测, 需要预留时间拨号
+            MSG_PRINTF(LOG_DBG, "card type switch [%d] ====> [%d]\n", *last_card_type, *g_card_type);
+            *last_card_type = *g_card_type;
 
-        if (*g_sim_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {                              // vUICC --> SIM 则暂停网络监控
-            MSG_PRINTF(LOG_ERR, "====> sim network bad !\n");
-            *last_card_type = *g_sim_type;
-            sleep(10);       // 后续是否需要修改
-            continue;
-        }
-
-        // 这里后续再优化
-        if (*last_card_type != *g_sim_type) {                   // 极端情况: 切卡的同时开始网络检测, 需要预留时间拨号
-            MSG_PRINTF(LOG_DBG, "card type switch [%d] ====> [%d]\n", *last_card_type, *g_sim_type);
-            *last_card_type = *g_sim_type;
-
-            if (g_network_state == MSG_NETWORK_DISCONNECTED) {  // 切卡后, 如果网络状态为断开, 则重新拨号
+            /*
+                两种情况需要重新拨号：
+                1. 切卡后, 网络状态为断开则重新拨号; (如业务卡切到种子卡,拨号还在进行,则预留时间拨号)
+                2. 平台下发切到SIM卡, 且当前网络断开则重新拨号
+            */
+            if (g_network_state == MSG_NETWORK_DISCONNECTED || (g_external_cut_card == RT_TRUE && g_network_state == MSG_NETWORK_DISCONNECTED) ) {
                 MSG_PRINTF(LOG_ERR, "reset dial up !\n");
+                g_external_cut_card = RT_FALSE;
                 network_force_down();
-                sleep(60);                                      // 经验值, 后续是否需要修改
+                sleep(80);                                      // 经验值, 后续是否需要修改
             }
         }
+
+        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == MSG_NETWORK_CONNECTED) {       // 当为种子卡且ping通后,则后续不进行监控
+            MSG_PRINTF(LOG_INFO, "====> provisoning network well !\n");
+            sleep(10);       // 后续是否需要修改
+            continue;
+        }
+
+        if (*g_card_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {                              // vUICC --> SIM 则暂停网络监控
+            MSG_PRINTF(LOG_ERR, "====> sim network bad !\n");
+            sleep(10);       // 后续是否需要修改
+            continue;
+        }
+
         break;
     }
 }
@@ -218,7 +223,7 @@ static void network_ping_task(void *arg)
     cJSON *domain = NULL;
     cJSON *level = NULL;
     cJSON *rt_type = NULL;
-    profile_type_e last_card_type = *g_sim_type;
+    profile_type_e last_card_type = *g_card_type;
 
     sleep(RT_INIT_TIME);          // 模组上电后,需要进行驻网拨号,初始化完成后再开始网络监测
 
@@ -226,6 +231,10 @@ static void network_ping_task(void *arg)
 
         rt_judge_card_status(&last_card_type);
         devicekey_status = rt_get_devicekey_status();
+        // if (devicekey_status == RT_FALSE) {
+        //     sleep(60);      // 后续是否需要修改; device key校验失败60s后再检测
+        //     continue;
+        // }
 
         // 后续优化为一个接口
         rt_read_strategy(0, tmp_buffer, RT_STRATEGY_LIST_LEN);
@@ -244,17 +253,17 @@ static void network_ping_task(void *arg)
             }
         }
 
-        if (devicekey_status == RT_TRUE && enabled->valueint == RT_TRUE) {
+        if (/*devicekey_status == RT_TRUE && */enabled->valueint == RT_TRUE) {
             ping_start = RT_TRUE;
         } else {
             ping_start = RT_FALSE;
         }
 
         if (ping_start == RT_TRUE) {
-            if (*g_sim_type == PROFILE_TYPE_PROVISONING) {
+            if (*g_card_type == PROFILE_TYPE_PROVISONING) {
                 ret = rt_ping_provisoning_get_status();
 
-            } else if (*g_sim_type == PROFILE_TYPE_OPERATIONAL || *g_sim_type == PROFILE_TYPE_SIM) {
+            } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL || *g_card_type == PROFILE_TYPE_SIM) {
                 rt_type = cJSON_GetObjectItem(network_detect, "type");
                 strategy_list = cJSON_GetObjectItem(network_detect, "strategies");
                 if (strategy_list != NULL) {
@@ -311,17 +320,12 @@ int32_t init_ping_task(void *arg)
     int32_t ret = RT_ERROR;
     int32_t uicc_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
 
-    if (uicc_mode == SIM_MODE_TYPE_SIM_FIRST || uicc_mode == SIM_MODE_TYPE_VUICC_ONLY) {
-        MSG_PRINTF(LOG_DBG, "uicc_mode is %d\n", uicc_mode);
-    } else if (uicc_mode == SIM_MODE_TYPE_SIM_ONLY) {
-        MSG_PRINTF(LOG_DBG, "uicc_mode is %d\n", uicc_mode);
-        return RT_SUCCESS;
-    } else {
-        MSG_PRINTF(LOG_DBG, "uicc_mode is %d\n", uicc_mode);
+    if (uicc_mode == SIM_MODE_TYPE_SIM_ONLY) {
+        MSG_PRINTF(LOG_ERR, "SIM Only, Not open ping task ...\n");
         return RT_ERROR;
     }
 
-    g_sim_type = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
+    g_card_type = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
     ret = rt_create_task(&task_id, (void *)network_ping_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");

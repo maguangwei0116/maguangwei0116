@@ -27,7 +27,9 @@ typedef enum REDTEA_READY_PING_STATUS_CMD {
 } redtea_ready_ping_status_cmd_e;
 
 
+void rt_external_cut_card();
 int32_t init_ping_task(void *arg);
+int32_t ping_task_event(const uint8_t *buf, int32_t len, int32_t mode);
 
 #endif // __NETWORK_DETECTION_H__
 
