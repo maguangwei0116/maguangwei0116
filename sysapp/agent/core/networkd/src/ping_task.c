@@ -43,10 +43,10 @@
 
 #define PROVISONING_PING_IP     "23.91.101.68"
 
-static rt_bool                      g_sim_switch = RT_TRUE;
-static rt_bool                      g_external_cut_card = RT_FALSE;
-static profile_type_e *             g_card_type = NULL;
-static msg_mode_e                   g_network_state = MSG_NETWORK_DISCONNECTED;
+static rt_bool              g_sim_switch            = RT_TRUE;
+static rt_bool              g_external_cut_card     = RT_FALSE;
+static profile_type_e *     g_card_type             = NULL;
+static msg_mode_e           g_network_state         = MSG_NETWORK_DISCONNECTED;
 
 void rt_external_cut_card()
 {
