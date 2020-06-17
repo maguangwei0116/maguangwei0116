@@ -14,7 +14,9 @@
 static int32_t g_card_detect_interval       = CARD_DETECT_INTERVAL;
 static rt_bool g_card_detecting_flg         = RT_FALSE;
 static const char *g_cur_iccid              = NULL;
+static profile_sim_info *g_sim_iccid        = NULL;
 static profile_type_e *g_cur_profile_type   = NULL;
+
 
 int32_t card_detection_enable(void)
 {
@@ -123,8 +125,9 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
 
 #ifdef CFG_REDTEA_READY_ON
     if (PROFILE_TYPE_SIM == *g_cur_profile_type) {
-        if (*type != *g_cur_profile_type) {         // vUICC -> SIM
-            MSG_PRINTF(LOG_INFO, "SIM detected [%d] ==> [%d]\r\n", *type, *g_cur_profile_type);
+        if ((rt_os_strcmp(iccid, g_sim_iccid)) || *type != *g_cur_profile_type) {         // vUICC -> SIM
+            MSG_PRINTF(LOG_INFO, "SIM detected (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_sim_iccid, *g_cur_profile_type);
+            snprintf(iccid, size, "%s", g_sim_iccid);
             *type = *g_cur_profile_type;
             return RT_SUCCESS;
         }
@@ -139,6 +142,7 @@ static int32_t card_changed_handle(const char *iccid, profile_type_e type)
     int32_t ret = RT_ERROR;
 
     MSG_PRINTF(LOG_INFO, "card changed iccid: %s, type: %d\r\n", iccid, type);
+
     if (PROFILE_TYPE_OPERATIONAL == type) {
         card_set_opr_profile_apn();
     } else if (PROFILE_TYPE_PROVISONING == type || PROFILE_TYPE_TEST == type) {
@@ -158,7 +162,7 @@ static int32_t card_changed_handle(const char *iccid, profile_type_e type)
 static void card_detection_task(void)
 {
     profile_type_e  type = PROFILE_TYPE_TEST;
-    char            iccid[THE_ICCID_LENGTH+1] = {0};
+    char            iccid[THE_ICCID_LENGTH + 1] = {0};
 
     rt_os_sleep(5);
     card_load_using_card(iccid, sizeof(iccid), &type);
@@ -208,6 +212,7 @@ int32_t init_card_detection(void *arg)
 
     g_cur_profile_type  = &(((public_value_list_t *)arg)->card_info->type);
     g_cur_iccid         = (const char *)&(((public_value_list_t *)arg)->card_info->iccid);
+    g_sim_iccid         = &(((public_value_list_t *)arg)->card_info->sim_info.iccid);
 
     ret = rt_create_task(&id_detection, (void *)card_detection_task, NULL);
     if (ret == RT_ERROR) {
