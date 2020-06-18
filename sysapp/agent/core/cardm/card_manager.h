@@ -50,7 +50,7 @@ typedef enum INIT_PROFILE_TYPE {
 } init_profile_type_e;
 
 typedef enum PROFILE_SIM_CPIN {
-    SIM_CPIN_NO_READY               = 0,
+    SIM_CPIN_ERROR                  = 0,
     SIM_CPIN_READY                  = 1,
 } profile_sim_cpin_e;
 

@@ -39,13 +39,14 @@
 #define COMMON                  1
 #define NONE_DEFINE             0
 
-#define RT_INIT_TIME            60
+#define RT_INIT_TIME            80
 
 #define PROVISONING_PING_IP     "23.91.101.68"
 
 static rt_bool              g_sim_switch            = RT_TRUE;
 static rt_bool              g_external_cut_card     = RT_FALSE;
 static profile_type_e *     g_card_type             = NULL;
+static profile_sim_cpin_e * g_sim_cpin              = NULL;
 static msg_mode_e           g_network_state         = MSG_NETWORK_DISCONNECTED;
 
 void rt_external_cut_card()
@@ -186,7 +187,7 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
                 MSG_PRINTF(LOG_ERR, "reset dial up !\n");
                 g_external_cut_card = RT_FALSE;
                 network_force_down();
-                sleep(80);                                      // 经验值, 后续是否需要修改
+                sleep(RT_INIT_TIME);                                      // 经验值, 后续是否需要修改
             }
         }
 
@@ -225,7 +226,14 @@ static void network_ping_task(void *arg)
     cJSON *rt_type = NULL;
     profile_type_e last_card_type = *g_card_type;
 
-    sleep(RT_INIT_TIME);          // 模组上电后,需要进行驻网拨号,初始化完成后再开始网络监测
+    if (*g_sim_cpin == SIM_CPIN_ERROR) {
+        MSG_PRINTF(LOG_ERR, "cpin error!\n");
+        rt_send_msg_card_status(RT_ERROR);          // 开机没有检测到实体卡, 切到vUICC
+    } else if (*g_sim_cpin == SIM_CPIN_READY) {
+        MSG_PRINTF(LOG_ERR, "cpin ready\n");
+    }
+
+    sleep(RT_INIT_TIME);          // 模组上电后, 需要进行驻网拨号, 初始化完成后再开始网络监测
 
     while (1) {
 
@@ -319,13 +327,14 @@ int32_t init_ping_task(void *arg)
     rt_task task_id = 0;
     int32_t ret = RT_ERROR;
     int32_t uicc_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
+    g_card_type = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
+    g_sim_cpin  = (profile_sim_cpin_e *)&(((public_value_list_t *)arg)->card_info->sim_info.state);
 
     if (uicc_mode == SIM_MODE_TYPE_SIM_ONLY) {
         MSG_PRINTF(LOG_ERR, "SIM Only, Not open ping task ...\n");
         return RT_ERROR;
     }
 
-    g_card_type = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
     ret = rt_create_task(&task_id, (void *)network_ping_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create task fail\n");
@@ -334,5 +343,3 @@ int32_t init_ping_task(void *arg)
 
     return RT_SUCCESS;
 }
-
-

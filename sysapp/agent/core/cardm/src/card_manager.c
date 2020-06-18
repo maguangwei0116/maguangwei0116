@@ -423,12 +423,12 @@ int32_t init_card_manager(void *arg)
 
         if (rt_os_strlen(sim_iccid) == 0) {
             MSG_PRINTF(LOG_DBG, "SIM not exist !");
-            g_p_info.sim_info.state = SIM_CPIN_NO_READY;
+            g_p_info.sim_info.state = SIM_CPIN_ERROR;
         } else {
             MSG_PRINTF(LOG_DBG, "SIM exist, iccid : %s\n", sim_iccid);
             g_p_info.sim_info.state = SIM_CPIN_READY;
             rt_os_strncpy(g_p_info.sim_info.iccid, sim_iccid, 20);
-            rt_os_strncpy(g_p_info.iccid, sim_iccid, 20);
+            rt_os_strncpy(g_p_info.iccid, sim_iccid, 20);           // 为了 card_detection_task 的打印
         }
     }
 
@@ -661,13 +661,8 @@ static int32_t card_change_profile(const uint8_t *buf)
         ipc_start_vuicc(1);
         rt_os_sleep(5);
 
-        g_p_info.type = PROFILE_TYPE_PROVISONING;       // 第一次SIM --> vUICC, num为0;
-
-        for (jj = 0; jj < g_p_info.num; jj++) {
-            if (g_p_info.info[jj].state == 1) {
-                g_p_info.type = g_p_info.info[jj].class;
-            }
-        }
+        g_p_info.type = PROFILE_TYPE_PROVISONING;       // 第一次 SIM --> vUICC
+        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
     } else {
         MSG_PRINTF(LOG_INFO, "recv buff unknow ! buff : %s \n", buf);
