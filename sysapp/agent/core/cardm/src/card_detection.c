@@ -14,7 +14,7 @@
 static int32_t g_card_detect_interval       = CARD_DETECT_INTERVAL;
 static rt_bool g_card_detecting_flg         = RT_FALSE;
 static const char *g_cur_iccid              = NULL;
-static profile_sim_info_t *g_sim_iccid        = NULL;
+static const char *g_sim_iccid              = NULL;
 static profile_type_e *g_cur_profile_type   = NULL;
 
 
@@ -212,7 +212,7 @@ int32_t init_card_detection(void *arg)
 
     g_cur_profile_type  = &(((public_value_list_t *)arg)->card_info->type);
     g_cur_iccid         = (const char *)&(((public_value_list_t *)arg)->card_info->iccid);
-    g_sim_iccid         = &(((public_value_list_t *)arg)->card_info->sim_info.iccid);
+    g_sim_iccid         = (const char *)&(((public_value_list_t *)arg)->card_info->sim_info.iccid);
 
     ret = rt_create_task(&id_detection, (void *)card_detection_task, NULL);
     if (ret == RT_ERROR) {
