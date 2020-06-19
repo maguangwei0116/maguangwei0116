@@ -94,10 +94,17 @@ static void network_detection_task(void *arg)
 
     MSG_PRINTF(LOG_INFO, "start with profile (%d,%d) ...\r\n", *type, *profile_damaged);
 
+#ifdef CFG_REDTEA_READY_ON
+    /* non-operational profile && share profile ok */
+    if ((*type == PROFILE_TYPE_TEST || *type == PROFILE_TYPE_PROVISONING) && *profile_damaged == RT_SUCCESS) {
+        network_wait_bootstrap_start(MAX_WAIT_BOOTSTRAP_TIME);
+    }
+#else
     /* non-operational profile && share profile ok */
     if (*type != PROFILE_TYPE_OPERATIONAL && *profile_damaged == RT_SUCCESS) {
         network_wait_bootstrap_start(MAX_WAIT_BOOTSTRAP_TIME);
     }
+#endif
 
     /* operational profile && share profile damaged */
     if (*type == PROFILE_TYPE_OPERATIONAL && *profile_damaged == RT_ERROR) {
@@ -112,6 +119,7 @@ static void network_detection_task(void *arg)
         /* init dial up */
         ret = dial_up_init(&dsi_net_hndl);
         sleep(3);
+
         if (ret != RT_SUCCESS) {
             if (++cnt < MAX_INIT_RETRY_CNT) {
                 MSG_PRINTF(LOG_ERR, "dial up init error (%d)\r\n", cnt);
