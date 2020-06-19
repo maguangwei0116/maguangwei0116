@@ -25,6 +25,7 @@
 #include "download_file.h"
 #include "file.h"
 #include "vuicc_apdu.h"
+#include "network_detection.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_MONITOR_RESTART          "monitor restart"
@@ -164,11 +165,8 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         type = info->vuicc_switch;
         if (info->vuicc_switch == LPA_CHANNEL_BY_IPC) {
 #ifdef CFG_REDTEA_READY_ON
-            if (info->sim_mode == 0) {
-                MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", info->sim_mode);
+            if (info->sim_mode == SIM_MODE_TYPE_VUICC_ONLY) {
                 init_trigger(info->vuicc_switch);
-            } else {
-                MSG_PRINTF(LOG_DBG, "get sim_mode is %d\n", info->sim_mode);
             }
 #else
             init_trigger(info->vuicc_switch);
@@ -216,7 +214,6 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         rsp[0] = RT_TRUE;
         *rsp_len = 1;
     } else if (cmd == CMD_START_VUICC) {
-        // info->vuicc_switch = LPA_CHANNEL_BY_IPC;
         init_trigger(LPA_CHANNEL_BY_IPC);
         rsp[0] = RT_TRUE;
         *rsp_len = 1;
