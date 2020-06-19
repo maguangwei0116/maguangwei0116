@@ -588,12 +588,14 @@ int32_t card_switch_type(cJSON *switchparams)
     card_type = cJSON_GetObjectItem(switchparams, "type");
     if (card_type != NULL) {
         if (card_type->valueint == 1) {
-            if (g_p_info.type != PROFILE_TYPE_SIM) {
+            if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_CPIN_READY) {
                 MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
                 rt_external_cut_card();         // 极端情况: 在未同步卡状态, 且外部进行了切卡, 没有时间进行拨号
                 ipc_remove_vuicc(1);
-                rt_os_sleep(5);
+                rt_os_sleep(3);
+
                 g_p_info.type = PROFILE_TYPE_SIM;
+                return RT_SUCCESS;
             }
         } else if (card_type->valueint == 2) {
             // 保留
@@ -602,10 +604,12 @@ int32_t card_switch_type(cJSON *switchparams)
             // 不处理
             MSG_PRINTF(LOG_INFO, "No identify\n");
         }
-
-        state = RT_SUCCESS;
     } else {
         MSG_PRINTF(LOG_WARN, "card_type content NULL!!\n");
+    }
+
+    if (g_p_info.sim_info.state == SIM_CPIN_ERROR) {
+        return -2;
     }
 
     return state;
@@ -624,7 +628,7 @@ static int32_t card_change_profile(const uint8_t *buf)
     if (recv_buf == PROVISONING_NO_INTERNET) {
         MSG_PRINTF(LOG_INFO, "Provisioning ====> SIM\n");
         ipc_remove_vuicc(1);
-        rt_os_sleep(5);
+        rt_os_sleep(3);
         g_p_info.type = PROFILE_TYPE_SIM;
 
     } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
@@ -659,7 +663,7 @@ static int32_t card_change_profile(const uint8_t *buf)
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
         ipc_start_vuicc(1);
-        rt_os_sleep(5);
+        rt_os_sleep(3);
 
         g_p_info.type = PROFILE_TYPE_PROVISONING;           // 第一次 SIM --> vUICC
         card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);   // type会在这里更新
