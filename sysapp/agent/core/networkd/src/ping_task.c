@@ -116,8 +116,9 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
         network_level = NONE_DEFINE;
     }
 
-    MSG_PRINTF(LOG_DBG, "ping %s, get network_level : %d\n", ip, network_level);
+    MSG_PRINTF(LOG_DBG, "ping : %s\n", ip);
     MSG_PRINTF(LOG_DBG, "delay : %lf, lost : %d, shake : %lf\n", delay, lost, shake);
+    MSG_PRINTF(LOG_DBG, "need level : %d, get level : %d\n", level, network_level);
 
     return network_level;
 }
@@ -283,15 +284,15 @@ static void network_ping_task(void *arg)
                         level = cJSON_GetObjectItem(strategy_item, "level");
                         network_level = rt_ping_get_level(domain->valuestring, level->valueint, rt_type->valueint);
 
-                        if (rt_type->valueint == RT_OR) {
-                            if (network_level >= level->valueint) {     // 当为or时，第一个满足则break;
+                        if (rt_type->valueint == RT_AND) {
+                            if (network_level >= level->valueint) {     // 当为and时, 有一个满足则不切卡
                                 ret = RT_SUCCESS;
                                 break;
                             } else {
                                 ret = RT_ERROR;
                             }
-                        } else if (rt_type->valueint == RT_AND) {
-                            if (network_level < level->valueint) {     // 当为and时，第一个不满足则break;
+                        } else if (rt_type->valueint == RT_OR) {        // 当为or, 有一个不满足则切卡
+                            if (network_level < level->valueint) {
                                 ret = RT_ERROR;
                                 break;
                             } else {
