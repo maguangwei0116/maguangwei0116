@@ -661,8 +661,8 @@ static int32_t card_change_profile(const uint8_t *buf)
         ipc_start_vuicc(1);
         rt_os_sleep(5);
 
-        g_p_info.type = PROFILE_TYPE_PROVISONING;       // 第一次 SIM --> vUICC
-        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+        g_p_info.type = PROFILE_TYPE_PROVISONING;           // 第一次 SIM --> vUICC
+        card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);   // type会在这里更新
 
     } else {
         MSG_PRINTF(LOG_INFO, "recv buff unknow ! buff : %s \n", buf);
