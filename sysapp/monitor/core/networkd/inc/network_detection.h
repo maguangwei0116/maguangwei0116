@@ -16,6 +16,13 @@
 
 #include "rt_type.h"
 
+typedef enum SIM_MODE_TYPE {
+    SIM_MODE_TYPE_VUICC_ONLY = 0,     // vUICC mode
+    SIM_MODE_TYPE_SIM_FIRST,
+    SIM_MODE_TYPE_SIM_ONLY
+} sim_mode_type_e;
+
+
 void network_detection_task(void);
 
 #endif // __NETWORK_DETECTION_H__
