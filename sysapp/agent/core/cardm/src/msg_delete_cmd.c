@@ -129,9 +129,6 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         }
         all_iccid_num = cJSON_GetArraySize(iccids);
 
-        card_force_enable_provisoning_profile();
-        rt_os_sleep(3);
-
         /* update current profile list */
         if (card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP) == RT_SUCCESS) {
             rt_os_sleep(1);
@@ -200,12 +197,10 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
     It will call network_set_apn_handler, and start bootstrap.
     It will avoid repporting ON_DELETE twice.
     */ 
-#if 0
     if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
         card_force_enable_provisoning_profile();
     }
     rt_os_sleep(3);
-#endif
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
 #endif
