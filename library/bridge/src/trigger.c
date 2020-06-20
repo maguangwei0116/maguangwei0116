@@ -169,10 +169,21 @@ static int process_ind_reset(qmi_client_type user_handle, unsigned int msg_id,
     uim_remote_event_resp_msg_v01 resp = {0};
     uim_remote_card_reset_ind_msg_v01 ind_msg = {0};
     int rc;
+    int i = 0;
 
     MSG_PRINTF(LOG_DBG,"QMI_UIM_REMOTE_CARD_RESET_IND_V01\n");
-    rc = qmi_client_message_decode(user_handle, QMI_IDL_INDICATION, msg_id, ind_buf,
-                                    ind_buf_len, &ind_msg, sizeof(uim_remote_card_power_up_ind_msg_v01));
+
+    for (i = 0; i < 3; i++) {
+        rc = qmi_client_message_decode(user_handle, QMI_IDL_INDICATION, msg_id, ind_buf,
+                ind_buf_len, &ind_msg, sizeof(uim_remote_card_power_up_ind_msg_v01));
+
+        if (rc == RT_SUCCESS) {
+            break;
+        }
+    }
+
+    MSG_PRINTF(LOG_WARN,"qmi_client_message_decode failed rc = %d\n", rc);
+
     if(rc != RT_SUCCESS) {
         MSG_PRINTF(LOG_WARN,"qmi_client_message_decode failed rc = %d\n", rc);
         return rc;
@@ -288,7 +299,7 @@ int t9x07_swap_card(uim_remote_slot_type_enum_v01 slot)
 {
     // TODO: figure out why swap not working...
     t9x07_remove_card(UIM_REMOTE_SLOT_1_V01);
-    sleep(1);
+    sleep(3);
     t9x07_insert_card(UIM_REMOTE_SLOT_1_V01);
     return RT_SUCCESS;
 }
