@@ -18,6 +18,8 @@
 #include "md5.h"
 #include "lpa_error_codes.h"
 
+extern const card_info_t *g_upload_card_info;
+
 static cJSON *upload_on_delete_packer(void *arg)
 {
     MSG_PRINTF(LOG_INFO, "Upload on delete\n");
@@ -185,7 +187,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
 
 #if 0
     rt_os_sleep(1);
-    card_update_profile_info(bootstrap_flag);    
+    card_update_profile_info(bootstrap_flag);
     if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
         rt_os_sleep(5);  // wait some time for provisioning network disconnected, or it may report ON_DELETE twice !!!
     }
@@ -196,12 +198,18 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
     Need to enable provisoning profile frist.
     It will call network_set_apn_handler, and start bootstrap.
     It will avoid repporting ON_DELETE twice.
-    */ 
-    if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
-        card_force_enable_provisoning_profile();
+    */
+#ifdef CFG_REDTEA_READY_ON
+    if (g_upload_card_info->type != PROFILE_TYPE_SIM)
+#else
+    {
+        if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+            card_force_enable_provisoning_profile();
+        }
+        rt_os_sleep(3);
+        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
     }
-    rt_os_sleep(3);
-    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+#endif
 
 #endif
     *out = content;
