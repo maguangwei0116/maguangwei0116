@@ -114,6 +114,8 @@ static cJSON *upload_event_boot_profiles_info(void)
             goto exit_entry;
         }
 
+        qmi_get_elementary_iccid_file(g_upload_card_info->sim_info.iccid);
+
         iccid = g_upload_card_info->sim_info.iccid;
         type = PROFILE_TYPE_SIM;
         CJSON_ADD_NEW_STR_OBJ(profile, iccid);
