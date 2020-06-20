@@ -37,10 +37,27 @@ int32_t rt_write_default_strategy()
     return  ret;
 }
 
+void rt_inspect_monitor_strategy(inspect_strategy_e type)
+{
+    uint8_t network_strategy_buff[CHECK_STRATEGY_HEAD + 1] = {0};
+
+    rt_read_strategy(0, network_strategy_buff, CHECK_STRATEGY_HEAD);
+    if (type == RT_BOOT_CHECK) {
+        if(network_strategy_check_memory(network_strategy_buff, CHECK_STRATEGY_HEAD, 'F')) {
+            MSG_PRINTF(LOG_ERR, "Read data is empty, Use default monitor strategy !\n");
+            rt_write_default_strategy();
+        }
+    } else if(type == RT_RUN_CHECK) {
+        if(rt_os_strncmp(network_strategy_buff, DEFAULT_STRATEGY, CHECK_STRATEGY_HEAD) != RT_SUCCESS) {
+            MSG_PRINTF(LOG_ERR, "Read data is error, Use default monitor strategy !\n");
+            rt_write_default_strategy();
+        }
+    }
+}
+
 int32_t init_run_config()
 {
     uint8_t init_buff[RT_APN_LIST_OFFSET + 1] = {0};                // init data before apn
-    uint8_t network_strategy_buff[CHECK_STRATEGY_HEAD + 1] = {0};
 
     rt_os_memset(init_buff, 'F', RT_APN_LIST_OFFSET);
 
@@ -49,12 +66,7 @@ int32_t init_run_config()
         rt_write_data(RUN_CONFIG_FILE, 0, init_buff, RT_APN_LIST_OFFSET);
     }
 
-    // check strategy
-    rt_read_strategy(0, network_strategy_buff, CHECK_STRATEGY_HEAD);
-    if(network_strategy_check_memory(network_strategy_buff, CHECK_STRATEGY_HEAD, 'F')) {
-        MSG_PRINTF(LOG_ERR, "Read data is empty, Use default monitor strategy !\n");
-        rt_write_default_strategy();
-    }
+    rt_inspect_monitor_strategy(RT_BOOT_CHECK);
 
     return RT_SUCCESS;
 }

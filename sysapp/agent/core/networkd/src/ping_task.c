@@ -74,10 +74,10 @@ int32_t ping_task_event(const uint8_t *buf, int32_t len, int32_t mode)
         if (*g_card_type == PROFILE_TYPE_SIM) {
             sim_switch_enable();
         }
-        MSG_PRINTF(LOG_DBG, "====> msg recv network connecte\n");
+        MSG_PRINTF(LOG_DBG, "====> ping task msg recv network connecte\n");
     } else if (mode == MSG_NETWORK_DISCONNECTED) {
         g_network_state = MSG_NETWORK_DISCONNECTED;
-        MSG_PRINTF(LOG_DBG, "====> msg recv network disconnected\n");
+        MSG_PRINTF(LOG_DBG, "====> ping task msg recv network disconnected\n");
     }
 
     return RT_SUCCESS;
@@ -169,13 +169,19 @@ static rt_bool rt_get_devicekey_status()
     return inspect_device_key(inspect_file);
 }
 
+/*
+    三种情况需要等待:
+    1. 当识别到外部切卡时; 如从SIM-->Operational需要时间拨号
+    2. 当种子卡ping通后, 后续不在进行ping
+    3. 从Provisioning-->SIM, 后续不再进行网络检测
+*/
 static void rt_judge_card_status(profile_type_e *last_card_type)
 {
     while (1) {
         MSG_PRINTF(LOG_INFO, "==============> last card type : %d\n", *last_card_type);
         MSG_PRINTF(LOG_INFO, "==============> now  card type : %d\n", *g_card_type);
 
-        if (*last_card_type != *g_card_type || g_external_cut_card == RT_TRUE) {                   // 极端情况: 切卡的同时开始网络检测, 需要预留时间拨号
+        if (*last_card_type != *g_card_type || g_external_cut_card == RT_TRUE) {                   // g_external_cut_card: RRP下发切SIM卡标识位
             MSG_PRINTF(LOG_DBG, "card type switch [%d] ====> [%d]\n", *last_card_type, *g_card_type);
             *last_card_type = *g_card_type;
 
@@ -185,20 +191,20 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
                 2. 平台下发切到SIM卡, 且当前网络断开则重新拨号
             */
             if (g_network_state == MSG_NETWORK_DISCONNECTED || (g_external_cut_card == RT_TRUE && g_network_state == MSG_NETWORK_DISCONNECTED) ) {
-                MSG_PRINTF(LOG_ERR, "reset dial up !\n");
+                MSG_PRINTF(LOG_DBG, "reset dial up !\n");
                 g_external_cut_card = RT_FALSE;
                 network_force_down();
-                sleep(RT_INIT_TIME);                                      // 经验值, 后续是否需要修改
+                sleep(RT_INIT_TIME);    // 经验值, 后续是否需要修改
             }
         }
 
-        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == MSG_NETWORK_CONNECTED) {       // 当为种子卡且ping通后,则后续不进行监控
+        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == MSG_NETWORK_CONNECTED) {       // 当种子卡ping通后, 后续不在进行ping
             MSG_PRINTF(LOG_INFO, "====> provisoning network well !\n");
             sleep(10);       // 后续是否需要修改
             continue;
         }
 
-        if (*g_card_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {                              // vUICC --> SIM 则暂停网络监控
+        if (*g_card_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {                              // Provisioning-->SIM, 不再进行网络检测
             MSG_PRINTF(LOG_ERR, "====> sim network bad !\n");
             sleep(10);       // 后续是否需要修改
             continue;
@@ -237,21 +243,16 @@ static void network_ping_task(void *arg)
     sleep(RT_INIT_TIME);          // 模组上电后, 需要进行驻网拨号, 初始化完成后再开始网络监测
 
     while (1) {
-
-        rt_judge_card_status(&last_card_type);
         devicekey_status = rt_get_devicekey_status();
         // if (devicekey_status == RT_FALSE) {
         //     sleep(60);      // 后续是否需要修改; device key校验失败60s后再检测
         //     continue;
         // }
 
-        // 后续优化为一个接口
-        rt_read_strategy(0, tmp_buffer, RT_STRATEGY_LIST_LEN);
-        if (tmp_buffer[0] != '{') {
-            MSG_PRINTF(LOG_ERR, "Read data is error, Use default monitor strategy !\n");
-            rt_write_default_strategy();
-        }
+        rt_judge_card_status(&last_card_type);
+        rt_inspect_monitor_strategy(RT_RUN_CHECK);
 
+        rt_read_strategy(0, tmp_buffer, RT_STRATEGY_LIST_LEN);
         if (tmp_buffer != NULL) {
             network_detect = cJSON_Parse(tmp_buffer);
             if (network_detect != NULL) {

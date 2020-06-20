@@ -23,6 +23,12 @@ typedef enum REDTEA_READY_NETWORK_DETECT_CMD {
     NETWORK_DETECT_DISABLE,
 } redtea_ready_network_detect_cmd_e;
 
+
+typedef enum INSPECT_STRATEGY {
+    RT_BOOT_CHECK           = 0,
+    RT_RUN_CHECK            = 1,
+} inspect_strategy_e;
+
 #if (CFG_OPEN_MODULE)
 #define RT_DATA_PATH                        "/data/redtea/"
 #elif (CFG_STANDARD_MODULE)
@@ -72,5 +78,7 @@ int32_t rt_read_strategy(int32_t offset, uint8_t *strategy, int32_t len);
 int32_t rt_write_apnlist(int32_t offset, uint8_t *apnlist, int32_t len);
 int32_t rt_read_apnlist(int32_t offset, uint8_t *apnlist, int32_t len);
 int32_t rt_truncate_apnlist(int32_t offset);
+
+void rt_inspect_monitor_strategy(inspect_strategy_e type);
 
 #endif
