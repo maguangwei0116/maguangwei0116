@@ -622,7 +622,7 @@ static int32_t card_change_profile(const uint8_t *buf)
     int32_t len = 0;
     int32_t used_seq = 0;
     uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
-    static int32_t circle_len = 0;
+    static int32_t circle_len = 1;                  // 切换时本身是第一张卡
     byte recv_buf = buf[0];
 
     if (recv_buf == PROVISONING_NO_INTERNET) {
@@ -632,32 +632,16 @@ static int32_t card_change_profile(const uint8_t *buf)
         g_p_info.type = PROFILE_TYPE_SIM;
 
     } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
-        MSG_PRINTF(LOG_INFO, "circle_len is %d\n", circle_len);
-
-        if (circle_len == g_p_info.num - 2) {         // 循环了一遍，所有的业务卡都不能用，再切到种子卡
-            circle_len = 0;
-            card_force_enable_provisoning_profile();
+        if (g_p_info.num - circle_len == 1) {         // 循环了一遍, 所有的业务卡都不能用, 切到种子卡
+            MSG_PRINTF(LOG_INFO, "Operational ====> Provisioning\n");
+            circle_len = 1;
+            uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
             g_p_info.type = PROFILE_TYPE_PROVISONING;
         } else {
-            circle_len ++;
-
-            for (ii = 0; ii < g_p_info.num; ii++) {
-                if (g_p_info.info[ii].state == 1) {
-                    used_seq = ii;                      //找到当前再用的卡
-                }
-            }
-
-            if (used_seq == g_p_info.num - 1) {                                 // 如果是最后一张业务卡，则切到第一张业务卡
-                len = rt_os_strlen(g_p_info.info[1].iccid);
-                rt_os_memcpy(iccid, g_p_info.info[1].iccid, len);
-            } else {                                                            // 如果不是最后一张，则切到下一张
-                len = rt_os_strlen(g_p_info.info[used_seq + 1].iccid);
-                rt_os_memcpy(iccid, g_p_info.info[used_seq + 1].iccid, len);
-            }
-
+            MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
+            circle_len++;
+            uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
-            msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, iccid, rt_os_strlen(iccid));
         }
 
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
@@ -665,7 +649,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         ipc_start_vuicc(1);
         rt_os_sleep(3);
 
-        g_p_info.type = PROFILE_TYPE_PROVISONING;           // 第一次 SIM --> vUICC
+        g_p_info.type = PROFILE_TYPE_PROVISONING;           // 第一次 SIM --> vUICC 需要type
         card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);   // type会在这里更新
 
     } else {

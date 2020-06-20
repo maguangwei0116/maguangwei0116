@@ -60,7 +60,7 @@ handle function name: xxx_at_cmd_handle
 
 static public_value_list_t *g_p_value_list  = NULL;
 
-static int32_t uicc_switch_card(profile_type_e type, uint8_t *iccid)
+int32_t uicc_switch_card(profile_type_e type, uint8_t *iccid)
 {
     int32_t ii = 0;
     int32_t len = 0;
