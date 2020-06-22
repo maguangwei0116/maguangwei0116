@@ -249,7 +249,7 @@ int local_ping(int argc, char *argv[], double *avg_delay, int *lost, double *mde
     ping_host_ip(argv[3], avg_delay, lost, mdev);
 }
 
-int rt_local_ping(char *ip, double *delay, int *lost, double *shake)
+int rt_local_ping(char *ip, double *delay, int *lost, double *mdev)
 {
-    ping_host_ip(ip, delay, lost, shake);
+    ping_host_ip(ip, delay, lost, mdev);
 }

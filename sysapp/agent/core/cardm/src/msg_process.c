@@ -42,7 +42,7 @@ int32_t init_msg_process(void *arg, void *proxy_addr)
 
 static rt_bool msg_check_iccid_state(const char *iccid, profile_type_e *type)
 {
-    MSG_PRINTF(LOG_INFO, "g_iccid:%s,iccid:%s\n", g_card_info->iccid, iccid);
+    MSG_PRINTF(LOG_INFO, "g_iccid : %s, iccid : %s\n", g_card_info->iccid, iccid);
     if (rt_os_strncmp(g_card_info->iccid, iccid, THE_ICCID_LENGTH) == 0){
         if (type) {
             *type = g_card_info->type;

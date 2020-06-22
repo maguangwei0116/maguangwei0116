@@ -408,7 +408,7 @@ int32_t init_card_manager(void *arg)
     int32_t ret = RT_ERROR;
     init_profile_type_e init_profile_type;
     int32_t sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
-    uint8_t sim_iccid[21] = {0};
+    uint8_t sim_iccid[THE_ICCID_LENGTH + 1] = {0};
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
 
@@ -419,7 +419,8 @@ int32_t init_card_manager(void *arg)
 
     if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
         g_p_info.type = PROFILE_TYPE_SIM;
-        qmi_get_elementary_iccid_file(sim_iccid);
+        // qmi_get_elementary_iccid_file(sim_iccid);
+        rt_qmi_get_current_iccid(sim_iccid, sizeof(sim_iccid));
 
         if (rt_os_strlen(sim_iccid) == 0) {
             MSG_PRINTF(LOG_DBG, "SIM not exist !");
@@ -427,8 +428,8 @@ int32_t init_card_manager(void *arg)
         } else {
             MSG_PRINTF(LOG_DBG, "SIM exist, iccid : %s\n", sim_iccid);
             g_p_info.sim_info.state = SIM_CPIN_READY;
-            rt_os_strncpy(g_p_info.sim_info.iccid, sim_iccid, 20);
-            rt_os_strncpy(g_p_info.iccid, sim_iccid, 20);           // 为了 card_detection_task 的打印
+            rt_os_strncpy(g_p_info.sim_info.iccid, sim_iccid, THE_ICCID_LENGTH);
+            rt_os_strncpy(g_p_info.iccid, sim_iccid, THE_ICCID_LENGTH);           // 为了 card_detection_task 的打印
         }
     }
 
@@ -649,10 +650,9 @@ static int32_t card_change_profile(const uint8_t *buf)
         ipc_start_vuicc(1);
         rt_os_sleep(3);
 
-        g_p_info.type = PROFILE_TYPE_PROVISONING;               // 第一次 SIM --> vUICC 需要切换type
-        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);   // 更新type
-
-        if (g_p_info.type = PROFILE_TYPE_PROVISONING) {         // 防止两次Bootstrap
+        g_p_info.type = PROFILE_TYPE_PROVISONING;                   // 第一次 SIM --> vUICC 需要切换type
+        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);       // 更新type
+        if (g_p_info.type == PROFILE_TYPE_PROVISONING) {            // 防止两次Bootstrap
             card_force_enable_provisoning_profile();
         }
 
