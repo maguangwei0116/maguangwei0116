@@ -35,7 +35,9 @@ const card_info_t *g_upload_card_info           = NULL;
 const target_versions_t *g_upload_ver_info      = NULL;
 static rt_bool g_upload_network                 = RT_FALSE;
 static rt_bool g_upload_mqtt                    = RT_FALSE;
-static profile_type_e *g_upload_sim_type        = NULL;
+static profile_type_e *g_upload_card_type       = NULL;
+
+
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
     MSG_PRINTF(LOG_DBG, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
@@ -273,7 +275,7 @@ rt_bool upload_check_eid_empty(void)
 
 static const char *upload_get_topic_name(upload_topic_e upload_topic)
 {
-    if (*g_upload_sim_type == 3) {
+    if (*g_upload_card_type == PROFILE_TYPE_SIM) {
         return g_upload_deviceid;
     } else {
         if (TOPIC_DEVICEID == upload_topic) {
@@ -442,7 +444,8 @@ int32_t init_upload(void *arg)
     g_upload_port           = public_value_list->config_info->oti_port;
     g_upload_ver_info       = (const target_versions_t *)public_value_list->version_info;
     g_last_card_type        = (const profile_type_e *)&(public_value_list->card_info->last_type);
-    g_upload_sim_type       = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
+    g_upload_card_type      = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
+
     //MSG_PRINTF(LOG_INFO, "imei: %p, %s\n", g_upload_device_info->imei, g_upload_device_info->imei);
     //MSG_PRINTF(LOG_INFO, "eid : %p, %s\n", g_upload_eid, g_upload_eid);
 

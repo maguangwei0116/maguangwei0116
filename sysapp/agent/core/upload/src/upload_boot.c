@@ -16,6 +16,7 @@
 extern const devicde_info_t *g_upload_device_info;
 extern const card_info_t *g_upload_card_info;
 extern const target_versions_t *g_upload_ver_info;
+extern profile_sim_info_t *g_upload_sim_info;
 
 static rt_bool device_key_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -114,10 +115,8 @@ static cJSON *upload_event_boot_profiles_info(void)
             goto exit_entry;
         }
 
-        qmi_get_elementary_iccid_file(g_upload_card_info->sim_info.iccid);
-
-        iccid = g_upload_card_info->sim_info.iccid;
         type = PROFILE_TYPE_SIM;
+        iccid = g_upload_card_info->sim_info.iccid;
         CJSON_ADD_NEW_STR_OBJ(profile, iccid);
         CJSON_ADD_NEW_INT_OBJ(profile, type);
         cJSON_AddItemToArray(profiles, profile);
