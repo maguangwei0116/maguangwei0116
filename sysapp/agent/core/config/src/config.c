@@ -457,13 +457,7 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
 
 #ifdef CFG_REDTEA_READY_ON
     infos->lpa_channel_type  = LPA_CHANNEL_BY_IPC;
-    infos->sim_mode = atoi(local_config_get_data("UICC_MODE"));
-    if (infos->sim_mode >= 0 && infos->sim_mode <= 2) {
-        ;
-    } else {
-        infos->sim_mode = SIM_MODE_TYPE_SIM_FIRST;
-    }
-    MSG_PRINTF(LOG_DBG, "infos->sim_mode is %d\r\n", infos->sim_mode);
+    infos->sim_mode = msg_string_to_int(local_config_get_data("UICC_MODE"));
 #else
     infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
                                                     LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
@@ -475,9 +469,7 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     }
 
     infos->mbn_enable = msg_string_to_int(local_config_get_data("MBN_CONFIGURATION"));
-
     infos->init_profile_type = msg_string_to_int(local_config_get_data("INIT_PROFILE_TYPE"));
-    MSG_PRINTF(LOG_DBG, "infos->init_profile_type is %d\r\n", infos->init_profile_type);
 
     log_level = log_get_level(local_config_get_data("MONITOR_LOG_LEVEL"));
     infos->monitor_log_level = (LOG_UNKNOW == log_level) ? LOG_INFO : log_level;

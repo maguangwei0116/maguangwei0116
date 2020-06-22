@@ -419,7 +419,6 @@ int32_t init_card_manager(void *arg)
 
     if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
         g_p_info.type = PROFILE_TYPE_SIM;
-        // qmi_get_elementary_iccid_file(sim_iccid);
         rt_qmi_get_current_iccid(sim_iccid, sizeof(sim_iccid));
 
         if (rt_os_strlen(sim_iccid) == 0) {
@@ -641,6 +640,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         } else {
             MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
             circle_len++;
+            rt_external_cut_card();                 // 极端情况: 在未同步卡状态, 且外部进行了切卡, 没有时间进行拨号
             uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
         }

@@ -201,8 +201,8 @@ int ping_host_ip(const char * domain, double *avg_delay, int *lost, double *mdev
                     time_sum += tmp_time;
                     time_interval[i] = tmp_time;
 
-                    MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
-                    MSG_PRINTF(LOG_INFO, "time_interval[%d] is %lf\n", i, time_interval[i]);
+                    // MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
+                    // MSG_PRINTF(LOG_INFO, "time_interval[%d] is %lf\n", i, time_interval[i]);
                 }
 
                 break;

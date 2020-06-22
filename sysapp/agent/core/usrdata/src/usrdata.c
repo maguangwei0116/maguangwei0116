@@ -32,8 +32,7 @@ static rt_bool network_strategy_check_memory(const void *buf, int32_t len, int32
 
 int32_t rt_write_default_strategy()
 {
-    int32_t ret = rt_write_strategy(0, DEFAULT_STRATEGY, sizeof(DEFAULT_STRATEGY));
-    return  ret;
+    return rt_write_strategy(0, DEFAULT_STRATEGY, sizeof(DEFAULT_STRATEGY));
 }
 
 void rt_inspect_monitor_strategy(inspect_strategy_e type)
@@ -46,6 +45,7 @@ void rt_inspect_monitor_strategy(inspect_strategy_e type)
             MSG_PRINTF(LOG_ERR, "Read data is empty, Use default monitor strategy !\n");
             rt_write_default_strategy();
         }
+
     } else if(type == RT_RUN_CHECK) {
         if(rt_os_strncmp(network_strategy_buff, DEFAULT_STRATEGY, CHECK_STRATEGY_HEAD) != RT_SUCCESS) {
             MSG_PRINTF(LOG_ERR, "Read data is error, Use default monitor strategy !\n");

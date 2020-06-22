@@ -108,7 +108,7 @@ static cJSON *upload_event_boot_profiles_info(void)
     }
 
 #ifdef CFG_REDTEA_READY_ON
-    if (g_upload_card_info->sim_info.state == 1) {
+    if (g_upload_card_info->sim_info.state == SIM_CPIN_READY) {
         profile = cJSON_CreateObject();
         if (!profile) {
             MSG_PRINTF(LOG_WARN, "The profile is error\n");

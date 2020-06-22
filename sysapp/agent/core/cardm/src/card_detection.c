@@ -125,7 +125,7 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
 
 #ifdef CFG_REDTEA_READY_ON
     if (PROFILE_TYPE_SIM == *g_cur_profile_type) {
-        if ((rt_os_strcmp(iccid, g_sim_iccid)) || *type != *g_cur_profile_type) {         // vUICC -> SIM
+        if (*type != *g_cur_profile_type) {         // vUICC -> SIM
             MSG_PRINTF(LOG_INFO, "SIM detected (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_sim_iccid, *g_cur_profile_type);
             snprintf(iccid, size, "%s", g_sim_iccid);
             *type = *g_cur_profile_type;
