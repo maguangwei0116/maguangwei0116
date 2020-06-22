@@ -204,6 +204,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
 #else
     {
         if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+            rt_external_cut_card();         // 极端情况: 在未同步卡状态, 且外部进行了切卡, 没有时间进行拨号
             card_force_enable_provisoning_profile();
         }
         rt_os_sleep(3);
