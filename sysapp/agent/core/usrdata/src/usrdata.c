@@ -17,7 +17,6 @@
 
 #define DEFAULT_STRATEGY "{\"enabled\":true,\"interval\":2,\"type\":1,\"strategies\":[{\"domain\":\"18.136.190.97\",\"level\":1}]}"
 
-
 static rt_bool network_strategy_check_memory(const void *buf, int32_t len, int32_t value)
 {
     int32_t i = 0;

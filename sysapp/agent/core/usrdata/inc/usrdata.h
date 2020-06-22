@@ -23,7 +23,6 @@ typedef enum REDTEA_READY_NETWORK_DETECT_CMD {
     NETWORK_DETECT_DISABLE,
 } redtea_ready_network_detect_cmd_e;
 
-
 typedef enum INSPECT_STRATEGY {
     RT_BOOT_CHECK           = 0,
     RT_RUN_CHECK            = 1,
