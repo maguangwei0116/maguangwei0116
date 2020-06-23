@@ -549,13 +549,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
         upload_event_report("REGISTERED", NULL, 0, NULL);
     }
 
-#ifdef CFG_REDTEA_READY_ON
-    if (*(g_mqtt_info.type) != PROFILE_TYPE_SIM) {      // SIM不上报NO CERT
-        mqtt_eid_check_upload();
-    }
-#else
     mqtt_eid_check_upload();
-#endif
 
     return RT_TRUE;
 }
