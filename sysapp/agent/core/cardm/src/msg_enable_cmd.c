@@ -120,10 +120,6 @@ static int32_t enable_handler(const void *in, const char *event, void **out)
     rt_os_sleep(3);
     if (state == RT_SUCCESS) {
         card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
-
-#ifdef CFG_REDTEA_READY_ON
-        rt_external_cut_card();         // 极端情况: 在未同步卡状态, 且外部进行了切卡, 没有时间进行拨号
-#endif
     }
     *out = content;
 end:

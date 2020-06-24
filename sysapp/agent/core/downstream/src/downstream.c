@@ -105,8 +105,11 @@ int32_t downstream_msg_handle(const void *data, uint32_t len)
     }
 
     for (obj = g_downstream_method_START; obj <= g_downstream_method_END; obj++) {
-        //MSG_PRINTF(LOG_WARN, "downstream %p, %s, %d, %s ...\r\n", obj, obj->method, obj->msg_id, obj->event);
+        // MSG_PRINTF(LOG_WARN, "downstream %p, %s, %d, %s ...\r\n", obj, obj->method, obj->msg_id, obj->event);
         if (!rt_os_strcmp(obj->method, method)) {
+#ifdef CFG_REDTEA_READY_ON
+            rt_downstream_event();
+#endif
             downstream_msg_t downstream_msg = {0};
 
             downstream_msg.msg_len = rt_os_strlen(msg);
