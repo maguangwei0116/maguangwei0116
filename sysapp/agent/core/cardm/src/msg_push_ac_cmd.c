@@ -21,6 +21,7 @@
 #include "card_manager.h"
 
 static uint8_t g_iccid[THE_ICCID_LENGTH + 1] = {0};
+extern const card_info_t *g_upload_card_info;
 
 static cJSON *upload_push_ac_packer(void *arg)
 {
@@ -275,9 +276,15 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
     }
     *out = (void *)up_content;
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-    if (to_enable && (to_enable->valueint == RT_TRUE) && (state != -1)) {
+
+    if (to_enable && (to_enable->valueint == RT_TRUE) && (state != -1)
+#ifdef CFG_REDTEA_READY_ON
+        && g_upload_card_info->type != PROFILE_TYPE_SIM
+#endif
+    ) {
         register_timer(15, 0, &push_ac_timer);
     }
+
 end:
     if (payload != NULL) {
         cJSON_Delete(payload);
