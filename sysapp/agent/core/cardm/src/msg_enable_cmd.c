@@ -17,6 +17,8 @@
 #include "cJSON.h"
 #include "md5.h"
 
+extern const card_info_t *g_upload_card_info;
+
 static cJSON *upload_on_enable_packer(void *arg)
 {
     MSG_PRINTF(LOG_INFO, "Upload on enable\n");
@@ -113,7 +115,13 @@ static int32_t enable_handler(const void *in, const char *event, void **out)
         if (msg_analyse_apn(content_d, iccid->valuestring) == RT_SUCCESS) {
             // return 0;
         }
+
+#ifdef CFG_REDTEA_READY_ON
+    if (g_upload_card_info->type != PROFILE_TYPE_SIM)
+#endif
+    {
         state = msg_enable_profile(iccid->valuestring);
+    }
         cJSON_AddItemToObject(content, "iccid", cJSON_CreateString(iccid->valuestring));
     } while(0);
 

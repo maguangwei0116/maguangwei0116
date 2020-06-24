@@ -42,7 +42,7 @@
 #define RT_AND                      1
 
 #define RT_DEVICE_INSPECT           60
-#define RT_INIT_TIME                60
+#define RT_INIT_TIME                40
 #define RT_DIAL_UP_TIME             80
 #define RT_PROVISONING_IP           "23.91.101.68"
 

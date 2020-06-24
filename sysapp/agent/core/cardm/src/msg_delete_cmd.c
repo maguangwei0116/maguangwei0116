@@ -201,7 +201,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
     */
 #ifdef CFG_REDTEA_READY_ON
     if (g_upload_card_info->type != PROFILE_TYPE_SIM)
-#else
+#endif
     {
         if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
             card_force_enable_provisoning_profile();
@@ -209,7 +209,6 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         rt_os_sleep(3);
         card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
     }
-#endif
 
 #endif
     *out = content;
