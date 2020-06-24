@@ -139,14 +139,27 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 ret = RT_SUCCESS;
             } else if (cmd[3] == AT_GET_UICC_TYPE) {  // get uicc type
                 /* rsp: ,cmd,"uicc-type" */
+#ifdef CFG_REDTEA_READY_ON
+                if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM");
+                } else {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
+                }
+#else
                 snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, \
                     (g_p_value_list->config_info->lpa_channel_type == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
+#endif
                 ret = RT_SUCCESS;
             }
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
                 uint8_t iccid[THE_ICCID_LENGTH+1] = {0};
-
+                MSG_PRINTF(LOG_INFO, "using card type : %d\n", g_p_value_list->card_info->type);
+#ifdef CFG_REDTEA_READY_ON
+                if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
+                    return RT_ERROR;
+                }
+#endif
                 rt_os_memcpy(iccid, &cmd[5], THE_ICCID_LENGTH);
                 MSG_PRINTF(LOG_INFO, "iccid: %s\n", iccid);
                 if (cmd[3] == AT_SWITCH_TO_PROVISIONING) {
@@ -158,7 +171,8 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     /* rsp: ,para,<iccid> */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, (char *)iccid);
                 }
-             } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) { // config "vuicc" or "euicc"
+             } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config "vuicc" or "euicc"
+#ifndef CFG_REDTEA_READY_ON
                 MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_VUICC, AT_CFG_UICC_LEN)) {
                     ret = config_update_uicc_mode(LPA_CHANNEL_BY_IPC);
@@ -169,6 +183,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     /* rsp: ,para,"uicc-type" */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
+#endif
             } else if (cmd[3] == AT_UPGRADE_UBI_FILE) { // upgrade ubi file
                 char ubi_abs_file[128] = {0};
                 char real_file_name[32] = {0};
