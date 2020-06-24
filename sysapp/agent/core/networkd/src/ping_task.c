@@ -26,7 +26,7 @@
 #define RT_EXCELLENT_LOST           0
 #define RT_GOOD_LOST                2
 #define RT_COMMON_LOST              5
-#define RT_PROVISONING_LOST         100
+#define RT_PROVISONING_LOST         10
 
 // 抖动
 #define RT_EXCELLENT_MDEV           20
