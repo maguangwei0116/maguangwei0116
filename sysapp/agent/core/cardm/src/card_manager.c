@@ -31,7 +31,13 @@
 
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
-static rt_bool                      g_frist_bootstrap_ok = RT_FALSE;
+static rt_bool                      g_frist_bootstrap_ok        = RT_FALSE;
+static rt_bool                      frist_bootstrap             = RT_TRUE;
+
+void rt_forbid_bootstrap()
+{
+    frist_bootstrap = RT_FALSE;
+}
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -590,7 +596,6 @@ int32_t card_switch_type(cJSON *switchparams)
         if (card_type->valueint == 1) {
             if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_CPIN_READY) {
                 MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
-                rt_external_cut_card();         // 极端情况: 在未同步卡状态, 且外部进行了切卡, 没有时间进行拨号
                 ipc_remove_vuicc(1);
                 rt_os_sleep(3);
 
@@ -640,7 +645,6 @@ static int32_t card_change_profile(const uint8_t *buf)
         } else {
             MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
             circle_len++;
-            rt_external_cut_card();                 // 极端情况: 在未同步卡状态, 且外部进行了切卡, 没有时间进行拨号
             uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
         }
@@ -651,9 +655,14 @@ static int32_t card_change_profile(const uint8_t *buf)
         rt_os_sleep(3);
 
         g_p_info.type = PROFILE_TYPE_PROVISONING;                   // 第一次 SIM --> vUICC 需要切换type
-        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);       // 更新type
-        if (g_p_info.type == PROFILE_TYPE_PROVISONING) {            // 防止两次Bootstrap
-            card_force_enable_provisoning_profile();
+        if (frist_bootstrap == RT_TRUE) {
+            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+            frist_bootstrap = RT_FALSE;
+        } else {
+            card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);       // 更新type
+            if (g_p_info.type == PROFILE_TYPE_PROVISONING) {            // 防止两次Bootstrap
+                card_force_enable_provisoning_profile();
+            }
         }
 
     } else {

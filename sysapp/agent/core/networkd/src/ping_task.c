@@ -326,6 +326,7 @@ int32_t ping_task_event(const uint8_t *buf, int32_t len, int32_t mode)
         g_network_state = MSG_NETWORK_CONNECTED;
         if (*g_card_type == PROFILE_TYPE_SIM) {
             sim_switch_enable();
+            rt_forbid_bootstrap();
         }
     } else if (mode == MSG_NETWORK_DISCONNECTED) {
         g_network_state = MSG_NETWORK_DISCONNECTED;
