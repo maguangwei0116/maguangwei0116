@@ -97,11 +97,11 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
         return RT_EXCELLENT;        // 外部切卡事件导致ping结果不准确, 等待下次网络监控
     }
 
-    if ((delay <= RT_EXCELLENT_DELAY) && (lost == RT_EXCELLENT_LOST) && (mdev <= RT_EXCELLENT_MDEV)) {      // 丢包=0;  延时<=100; 抖动<=20;
+    if ( (delay <= RT_EXCELLENT_DELAY) && (lost == RT_EXCELLENT_LOST) && (mdev <= RT_EXCELLENT_MDEV)) {     // 延时<=100; 丢包=0;  抖动<=20;
         network_level = RT_EXCELLENT;
-    } else if ( (delay <= RT_GOOD_DELAY) && ( (lost <= RT_GOOD_LOST) || (mdev <= RT_GOOD_MDEV))) {          // 丢包<=2%; 延时<=200; 抖动<=50;
+    } else if ( (delay <= RT_GOOD_DELAY) && (lost <= RT_GOOD_LOST) && (mdev <= RT_GOOD_MDEV)) {             // 延时<=200; 丢包<=2; 抖动<=50;
         network_level = RT_GOOD;
-    } else if ( (delay <= RT_COMMON_DELAY) && ( (lost <= RT_COMMON_LOST) || (mdev <= RT_COMMON_MDEV))) {    // 丢包<=5%; 延时<=500; 抖动<=10;
+    } else if ( (delay <= RT_COMMON_DELAY) && (lost <= RT_COMMON_LOST)) {                                   // 延时<=500; 丢包<=5;
         network_level = RT_COMMON;
     }
 

@@ -165,9 +165,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
             sizeof(dest_socket_addr));
 
         if(result == RT_ERROR) {
-            time_sum += 9999.99;
-            time_interval[i] = 9999.99;
-            MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
+            // MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
             MSG_PRINTF(LOG_ERR, "PING: sendto: Network is unreachable\n");
             continue;
         }
@@ -206,14 +204,12 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
                     time_interval[i] = tmp_time;
 
                     // MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
-                    // MSG_PRINTF(LOG_INFO, "time_interval[%d] is %lf\n", i, time_interval[i]);
+                    MSG_PRINTF(LOG_INFO, "time_interval[%d] is %lf\n", i, time_interval[i]);
                 }
 
                 break;
             } else {
                 MSG_PRINTF(LOG_ERR, "receive data error !\n");
-                time_sum += 9999.99;
-                time_interval[i] = 9999.99;
                 break;
             }
         }
@@ -229,21 +225,21 @@ PING_EXIT:
         close(client_fd);
     }
 
-    for (i = 0; i < RT_PING_TIMES; ++i) {
-        if (time_sum/RT_PING_TIMES > time_interval[i]) {
-            time_mdev += time_sum/RT_PING_TIMES - time_interval[i];
+    for (i = 0; i < recv_count; i++) {
+        if (time_sum/recv_count > time_interval[i]) {
+            time_mdev += time_sum/recv_count - time_interval[i];
         } else {
-            time_mdev += time_interval[i] - time_sum/RT_PING_TIMES;
+            time_mdev += time_interval[i] - time_sum/recv_count;
         }
     }
 
     // MSG_PRINTF(LOG_INFO, "lost  : %d\n", (RT_PING_TIMES - recv_count)*10);
-    // MSG_PRINTF(LOG_INFO, "dekay : %lf\n", time_sum/RT_PING_TIMES);
-    // MSG_PRINTF(LOG_INFO, "mdev  : %lf\n", time_mdev/RT_PING_TIMES);
+    // MSG_PRINTF(LOG_INFO, "dekay : %lf\n", time_sum/recv_count);
+    // MSG_PRINTF(LOG_INFO, "mdev  : %lf\n", time_mdev/recv_count);
 
     *lost = RT_PING_TIMES - recv_count;
-    *avg_delay = time_sum/RT_PING_TIMES;
-    *mdev = time_mdev/RT_PING_TIMES;
+    *avg_delay = time_sum/recv_count;
+    *mdev = time_mdev/recv_count;
 
     return ret;
 }
