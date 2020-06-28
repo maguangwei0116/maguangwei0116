@@ -666,7 +666,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         }
 
     } else {
-        MSG_PRINTF(LOG_INFO, "recv buff unknow ! buff : %s \n", buf);
+        MSG_PRINTF(LOG_ERR, "recv buff unknow ! buff : %s \n", buf);
     }
 
     return RT_SUCCESS;

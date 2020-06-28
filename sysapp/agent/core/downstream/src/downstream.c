@@ -108,7 +108,7 @@ int32_t downstream_msg_handle(const void *data, uint32_t len)
         // MSG_PRINTF(LOG_WARN, "downstream %p, %s, %d, %s ...\r\n", obj, obj->method, obj->msg_id, obj->event);
         if (!rt_os_strcmp(obj->method, method)) {
 #ifdef CFG_REDTEA_READY_ON
-            rt_downstream_event();
+            msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_SYNC_DOWNSTREAM, NULL, 0);
 #endif
             downstream_msg_t downstream_msg = {0};
 

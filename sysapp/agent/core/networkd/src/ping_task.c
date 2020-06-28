@@ -317,7 +317,7 @@ exit_entry:
     rt_exit_task(NULL);
 }
 
-int32_t ping_task_event(const uint8_t *buf, int32_t len, int32_t mode)
+int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     (void)buf;
     (void)len;
@@ -330,6 +330,18 @@ int32_t ping_task_event(const uint8_t *buf, int32_t len, int32_t mode)
         }
     } else if (mode == MSG_NETWORK_DISCONNECTED) {
         g_network_state = MSG_NETWORK_DISCONNECTED;
+    }
+
+    return RT_SUCCESS;
+}
+
+int32_t sync_downstream_event(const uint8_t *buf, int32_t len, int32_t mode)
+{
+    (void)buf;
+    (void)len;
+
+    if (mode == MSG_SYNC_DOWNSTREAM) {
+        g_downstream_event = RT_TRUE;
     }
 
     return RT_SUCCESS;
