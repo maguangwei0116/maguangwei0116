@@ -176,7 +176,7 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
                 sleep(RT_DIAL_UP_TIME);     // 经验值, 后续是否需要修改
             }
         }
-        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == RT_TRUE) {       // 当种子卡ping通后, 后续不在进行ping
+        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == RT_TRUE) {                   // 当种子卡ping通后, 后续不在进行ping
             sleep(10);                      // 后续是否需要修改
             continue;
         }
