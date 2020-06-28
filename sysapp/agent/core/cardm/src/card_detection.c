@@ -141,18 +141,19 @@ static int32_t card_changed_handle(const char *iccid, profile_type_e type)
 {
     int32_t ret = RT_ERROR;
 
-    MSG_PRINTF(LOG_INFO, "card changed iccid: %s, type: %d\r\n", iccid, type);
-
     if (PROFILE_TYPE_OPERATIONAL == type) {
+        MSG_PRINTF(LOG_INFO, "card changed iccid: %s, type: %d\r\n", iccid, type);
         card_set_opr_profile_apn();
     } else if (PROFILE_TYPE_PROVISONING == type || PROFILE_TYPE_TEST == type) {
+        MSG_PRINTF(LOG_INFO, "BootStrap....");
         msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
         card_detection_disable();
         card_check_provisoning_conflict(RT_TRUE);
     }
 #ifdef CFG_REDTEA_READY_ON
-    else if (PROFILE_TYPE_SIM == type) {
-        // 二期SIM设置apn
+    else if (PROFILE_TYPE_SIM == type) {    // 二期设置apn
+        MSG_PRINTF(LOG_INFO, "card changed iccid: %s, type: %d\r\n", iccid, type);
+        card_detection_disable();
     }
 #endif
 
