@@ -18,6 +18,7 @@
 #include "lpa.h"
 #include "msg_process.h"
 
+#define THE_CPIN_LENGTH             16
 #define THE_MAX_CARD_NUM            20
 #define THE_ICCID_LENGTH            20
 #define MAX_EID_LEN                 32
@@ -28,6 +29,17 @@ typedef enum PROFILE_STATE {
     PROFILE_DISABLED                = 0,
     PROFILE_ENABLED                 = 1,
 } profile_state_e;
+
+typedef enum PROFILE_CPIN_STATE {
+    CPIN_ABSENT                     = 0,
+    CPIN_PRESENT                    = 1,
+    CPIN_ERROR                      = 2,
+} profile_cpin_state_e;
+
+typedef enum PROFILE_SIM_CPIN {
+    SIM_ERROR                       = 0,
+    SIM_READY                       = 1,
+} profile_sim_cpin_e;
 
 typedef enum PROFILE_TYPE {
     PROFILE_TYPE_TEST               = 0,
@@ -48,11 +60,6 @@ typedef enum INIT_PROFILE_TYPE {
     INIT_PROFILE_TYPE_OPERATIONAL   = 1,
     INIT_PROFILE_TYPE_LAST_USED     = 2,
 } init_profile_type_e;
-
-typedef enum PROFILE_SIM_CPIN {
-    SIM_CPIN_ERROR                  = 0,
-    SIM_CPIN_READY                  = 1,
-} profile_sim_cpin_e;
 
 typedef struct PROFILE_SIM_INFO {
     uint8_t             iccid[THE_ICCID_LENGTH + 1];

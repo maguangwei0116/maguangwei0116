@@ -90,6 +90,8 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     icmp_header * icmp_head;
     struct sockaddr_in dest_socket_addr;
 
+    MSG_PRINTF(LOG_INFO, "start ping...\n");
+
     if(domain == NULL) {
         MSG_PRINTF(LOG_ERR, "ping_host_ip domain is NULL !\n");
         return ret;
@@ -137,7 +139,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     icmp_head->code = 0;
     icmp_head->id = 1;
 
-    // MSG_PRINTF(LOG_DBG, "PING %s (%s)\n", domain, inet_ntoa(*((struct in_addr*)&dest_ip)));
+    MSG_PRINTF(LOG_DBG, "PING %s (%s)\n", domain, inet_ntoa(*((struct in_addr*)&dest_ip)));
 
     for(i = 0; i < RT_PING_TIMES; i++) {
         struct timeval start;

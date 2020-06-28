@@ -64,6 +64,30 @@ out:
     return err;
 }
 
+int qmi_get_elementary_card_state(uint8_t *card_status)
+{
+    qmi_client_error_type err;
+    uim_get_card_status_req_msg_v01 req = { 0 };
+    uim_get_card_status_resp_msg_v01 resp = { 0 };
+
+    QMI_CLIENT_SEND_SYNC(err, g_uim_client, QMI_UIM_GET_CARD_STATUS_REQ_V01, req, resp);
+    if(err == QMI_NO_ERR) {
+        if(resp.resp.result != QMI_RESULT_SUCCESS_V01) {
+            MSG_PRINTF(LOG_WARN, "Failed to get cpin\n");
+            err = resp.resp.result;
+            goto out;
+        }
+    }
+    /*
+        - 0 -- Absent
+        - 1 -- Present
+        - 2 -- Error
+    */
+    *card_status = resp.card_status.card_info[0].card_state;
+out:
+    return err;
+}
+
 int qmi_get_elementary_imsi_file(uint8_t *imsi)
 {
     qmi_client_error_type err;

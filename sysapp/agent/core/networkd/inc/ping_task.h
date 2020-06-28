@@ -26,8 +26,6 @@ typedef enum REDTEA_READY_PING_STATUS_CMD {
     SIM_CARD_NO_INTERNET,
 } redtea_ready_ping_status_cmd_e;
 
-
-void    rt_downstream_event();
 int32_t init_ping_task(void *arg);
 int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode);
 int32_t sync_downstream_event(const uint8_t *buf, int32_t len, int32_t mode);

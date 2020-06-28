@@ -58,7 +58,6 @@ int open_channel(uint8_t *channel)
 {
     int ret = RT_SUCCESS;
 
-    MSG_DBG("now channel mode is %d\n", g_channel_mode);
 #ifdef CFG_REDTEA_READY_ON
     g_channel_mode = LPA_CHANNEL_BY_IPC;
 #endif
@@ -92,7 +91,7 @@ int open_channel(uint8_t *channel)
     } else {
         ret = rt_qmi_open_channel(euicc_aid, sizeof(euicc_aid), channel);
     }
-    MSG_DBG("open channel %d, ret:%d\n", *channel, ret);
+    // MSG_DBG("open channel %d, ret:%d\n", *channel, ret);
     return ret;
 }
 
@@ -134,7 +133,7 @@ int close_channel(uint8_t channel)
     } else {
         ret = rt_qmi_close_channel(channel);
     }
-    MSG_DBG("close channel %d, ret:%d\n", channel, ret);
+    // MSG_DBG("close channel %d, ret:%d\n", channel, ret);
     return ret;
 }
 

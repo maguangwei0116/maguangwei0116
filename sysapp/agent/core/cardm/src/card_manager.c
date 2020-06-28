@@ -412,9 +412,10 @@ static int32_t card_key_data_init(void)
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
+    uint8_t cpin_status[THE_CPIN_LENGTH + 1]= {0};
+    uint8_t sim_iccid[THE_ICCID_LENGTH + 1] = {0};
     init_profile_type_e init_profile_type;
     int32_t sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
-    uint8_t sim_iccid[THE_ICCID_LENGTH + 1] = {0};
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
 
@@ -425,16 +426,21 @@ int32_t init_card_manager(void *arg)
 
     if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
         g_p_info.type = PROFILE_TYPE_SIM;
-        rt_qmi_get_current_iccid(sim_iccid, sizeof(sim_iccid));
+        rt_qmi_get_current_cpin_state(cpin_status);
 
-        if (rt_os_strlen(sim_iccid) == 0) {
-            MSG_PRINTF(LOG_DBG, "SIM not exist !");
-            g_p_info.sim_info.state = SIM_CPIN_ERROR;
+        if (*cpin_status == CPIN_PRESENT) {
+            rt_qmi_get_current_iccid(sim_iccid, sizeof(sim_iccid));
+            if (rt_os_strlen(sim_iccid) == 0) {
+                MSG_PRINTF(LOG_DBG, "SIM get iccid fail !\n");
+                g_p_info.sim_info.state = SIM_ERROR;
+            } else {
+                MSG_PRINTF(LOG_DBG, "SIM iccid : %s\n", sim_iccid);
+                g_p_info.sim_info.state = SIM_READY;
+                rt_os_strncpy(g_p_info.sim_info.iccid, sim_iccid, THE_ICCID_LENGTH);
+                rt_os_strncpy(g_p_info.iccid, sim_iccid, THE_ICCID_LENGTH);
+            }
         } else {
-            MSG_PRINTF(LOG_DBG, "SIM exist, iccid : %s\n", sim_iccid);
-            g_p_info.sim_info.state = SIM_CPIN_READY;
-            rt_os_strncpy(g_p_info.sim_info.iccid, sim_iccid, THE_ICCID_LENGTH);
-            rt_os_strncpy(g_p_info.iccid, sim_iccid, THE_ICCID_LENGTH);           // 为了 card_detection_task 的打印
+            MSG_PRINTF(LOG_DBG, "SIM cpin fail !\n");
         }
     }
 
@@ -594,7 +600,7 @@ int32_t card_switch_type(cJSON *switchparams)
     card_type = cJSON_GetObjectItem(switchparams, "type");
     if (card_type != NULL) {
         if (card_type->valueint == 1) {
-            if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_CPIN_READY) {
+            if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_READY) {
                 MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
                 ipc_remove_vuicc(1);
                 rt_os_sleep(3);
@@ -613,7 +619,7 @@ int32_t card_switch_type(cJSON *switchparams)
         MSG_PRINTF(LOG_WARN, "card_type content NULL!!\n");
     }
 
-    if (g_p_info.sim_info.state == SIM_CPIN_ERROR) {
+    if (g_p_info.sim_info.state == SIM_ERROR) {
         return -2;
     }
 

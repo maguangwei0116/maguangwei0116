@@ -79,6 +79,15 @@ int32_t rt_qmi_get_current_iccid(char *iccid, int32_t size)
     return ret;
 }
 
+int32_t rt_qmi_get_current_cpin_state(char *cpin)
+{
+    int32_t ret = RT_ERROR;
+
+    ret = qmi_get_elementary_card_state(cpin);
+
+    return ret;
+}
+
 int32_t rt_qmi_get_current_imsi(char *imsi, int32_t size)
 {
     int32_t ret = RT_ERROR;

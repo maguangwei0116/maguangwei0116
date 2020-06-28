@@ -12,10 +12,10 @@
  *******************************************************************************/
 
 #include "rt_os.h"
-#include "network_detection.h"
-#include "agent_queue.h"
 #include "usrdata.h"
 #include "ping_task.h"
+#include "agent_queue.h"
+#include "network_detection.h"
 
 // 延迟
 #define RT_EXCELLENT_DELAY          100
@@ -50,13 +50,8 @@ static rt_bool                      g_sim_switch            = RT_TRUE;
 static profile_type_e *             g_card_type             = NULL;
 static profile_sim_cpin_e *         g_sim_cpin              = NULL;
 static sim_mode_type_e *            g_sim_mode              = NULL;
-static msg_mode_e                   g_network_state         = MSG_NETWORK_DISCONNECTED;
+static rt_bool                      g_network_state         = RT_FALSE;
 extern rt_bool                      g_downstream_event;
-
-extern void rt_downstream_event()
-{
-    g_downstream_event = RT_TRUE;
-}
 
 static void sim_switch_enable()
 {
@@ -175,13 +170,13 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
             MSG_PRINTF(LOG_DBG, "card type switch [%d] ====> [%d]\n", *last_card_type, *g_card_type);
             *last_card_type = *g_card_type;
 
-            if (g_network_state == MSG_NETWORK_DISCONNECTED) {
+            if (g_network_state == RT_FALSE) {
                 MSG_PRINTF(LOG_DBG, "reset dial up !\n");
                 network_force_down();
                 sleep(RT_DIAL_UP_TIME);     // 经验值, 后续是否需要修改
             }
         }
-        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == MSG_NETWORK_CONNECTED) {       // 当种子卡ping通后, 后续不在进行ping
+        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == RT_TRUE) {       // 当种子卡ping通后, 后续不在进行ping
             sleep(10);                      // 后续是否需要修改
             continue;
         }
@@ -216,11 +211,8 @@ static void network_ping_task(void *arg)
     profile_type_e last_card_type = *g_card_type;
 
     if (*g_sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
-        if (*g_sim_cpin == SIM_CPIN_ERROR) {
-            MSG_PRINTF(LOG_ERR, "cpin error!\n");
+        if (*g_sim_cpin == SIM_ERROR) {
             rt_send_msg_card_status(RT_ERROR);          // 开机没有检测到实体卡, 切换至vUICC
-        } else if (*g_sim_cpin == SIM_CPIN_READY) {
-            MSG_PRINTF(LOG_INFO, "cpin ready\n");
         }
     }
 
@@ -303,7 +295,6 @@ static void network_ping_task(void *arg)
         wait_times = times_tmp;
         while (--wait_times) {
             sleep(1);
-
             if (g_downstream_event == RT_TRUE) {           // 能收到平台下发的消息, 说明当前网络通畅, 等待下次监控
                 MSG_PRINTF(LOG_INFO, "reset timing!\n");
                 g_downstream_event = RT_FALSE;
@@ -319,17 +310,21 @@ exit_entry:
 
 int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
-    (void)buf;
-    (void)len;
+    switch (mode) {
+        case MSG_NETWORK_CONNECTED:
+            g_network_state = RT_TRUE;
+            if (*g_card_type == PROFILE_TYPE_SIM) {
+                sim_switch_enable();
+                rt_forbid_bootstrap();
+            }
+            break;
 
-    if (mode == MSG_NETWORK_CONNECTED) {
-        g_network_state = MSG_NETWORK_CONNECTED;
-        if (*g_card_type == PROFILE_TYPE_SIM) {
-            sim_switch_enable();
-            rt_forbid_bootstrap();
-        }
-    } else if (mode == MSG_NETWORK_DISCONNECTED) {
-        g_network_state = MSG_NETWORK_DISCONNECTED;
+        case MSG_NETWORK_DISCONNECTED:
+            g_network_state = RT_FALSE;
+            break;
+
+        default:
+            break;
     }
 
     return RT_SUCCESS;
@@ -337,11 +332,13 @@ int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode)
 
 int32_t sync_downstream_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
-    (void)buf;
-    (void)len;
+    switch (mode) {
+        case MSG_SYNC_DOWNSTREAM:
+            g_downstream_event = RT_TRUE;
+            break;
 
-    if (mode == MSG_SYNC_DOWNSTREAM) {
-        g_downstream_event = RT_TRUE;
+        default:
+            break;
     }
 
     return RT_SUCCESS;

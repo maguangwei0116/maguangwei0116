@@ -38,6 +38,7 @@ int32_t rt_qmi_open_channel_vuicc(const uint8_t *aid, uint16_t aid_len, uint8_t 
 int32_t rt_qmi_get_register_state(int32_t *register_state);
 int32_t rt_qmi_get_mcc_mnc(uint16_t *mcc, uint16_t *mnc);
 int32_t rt_qmi_get_current_iccid(char *iccid, int32_t size);
+int32_t rt_qmi_get_current_cpin_state(char *cpin);
 int32_t rt_qmi_get_current_imsi(char *imsi, int32_t size);
 int32_t rt_qmi_get_signal(int32_t *strength);
 int32_t rt_qmi_get_signal_level(int32_t *level);
