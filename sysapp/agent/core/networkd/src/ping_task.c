@@ -96,7 +96,7 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
         network_level = RT_EXCELLENT;
     } else if ( (delay <= RT_GOOD_DELAY) && (lost <= RT_GOOD_LOST) && (mdev <= RT_GOOD_MDEV)) {             // 延时<=200; 丢包<=2; 抖动<=50;
         network_level = RT_GOOD;
-    } else if ( (delay <= RT_COMMON_DELAY) && (lost <= RT_COMMON_LOST)) {                                   // 延时<=500; 丢包<=5;
+    } else if ( (delay <= RT_COMMON_DELAY) && (lost <= RT_COMMON_LOST) && (mdev <= RT_COMMON_MDEV)) {       // 延时<=500; 丢包<=5; 抖动<=100;
         network_level = RT_COMMON;
     }
 
