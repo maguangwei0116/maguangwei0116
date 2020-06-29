@@ -461,8 +461,12 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     }
 
     if (rt_os_memcmp(bootstrap_request->tbhRequest.imsi.buf, jt, 4) == 0){
+        MSG_PRINTF(LOG_INFO, "JT Resources\n");
+
         for (i = 0; i < ARRAY_SIZE(g_rt_plmn); ++i) {
             if (mcc == g_rt_plmn[i].mcc) {
+                MSG_PRINTF(LOG_INFO, "config rplmn\n");
+
                 hexstring2bytes(g_rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
                 bootstrap_request->tbhRequest.rplmn = OCTET_STRING_new_fromBuf(
                     &asn_DEF_TBHRequest, bytes, length);

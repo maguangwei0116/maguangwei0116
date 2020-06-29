@@ -41,8 +41,8 @@
 #define RT_OR                       0
 #define RT_AND                      1
 
-#define RT_DEVICE_INSPECT           60
-#define RT_INIT_TIME                40
+#define RT_DEVICE_TIME              60
+#define RT_INIT_TIME                70
 #define RT_DIAL_UP_TIME             80
 #define RT_PROVISONING_IP           "23.91.101.68"
 
@@ -116,7 +116,7 @@ static int32_t rt_send_msg_card_status(int32_t ret)
             MSG_PRINTF(LOG_INFO, "====> Hold Provisioning\r\n");
             return RT_SUCCESS;
         } else {
-            if (*g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY) {
+            if (*g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY || *g_sim_cpin == SIM_ERROR) {
                 return RT_SUCCESS;
             }
             sim_switch_disable();
@@ -159,7 +159,7 @@ static rt_bool rt_get_devicekey_status()
 
 /*
     三种情况需要等待:
-    1. 程序有切卡且当前网络断开;
+    1. 程序切卡且当前网络断开;
     2. 当种子卡ping通后, 后续不在进行ping;
     3. 网络故障, 从Provisioning-->SIM, 后续不再进行网络检测;
 */
@@ -173,7 +173,7 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
             if (g_network_state == RT_FALSE) {
                 MSG_PRINTF(LOG_DBG, "reset dial up !\n");
                 network_force_down();
-                sleep(RT_DIAL_UP_TIME);     // 经验值, 后续是否需要修改
+                sleep(RT_DIAL_UP_TIME);     // 80s, 经验值, 后续是否需要修改
             }
         }
         if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == RT_TRUE) {                   // 当种子卡ping通后, 后续不在进行ping
@@ -199,7 +199,6 @@ static void network_ping_task(void *arg)
     int32_t strategy_num = NULL;
     uint8_t tmp_buffer[RT_STRATEGY_LIST_LEN + 1] = {0};
     rt_bool devicekey_status = RT_FALSE;
-    rt_bool ping_start = RT_FALSE;
     cJSON *enabled = NULL;
     cJSON *interval = NULL;
     cJSON *network_detect = NULL;
@@ -207,21 +206,21 @@ static void network_ping_task(void *arg)
     cJSON *strategy_item = NULL;
     cJSON *domain = NULL;
     cJSON *level = NULL;
-    cJSON *rt_type = NULL;
+    cJSON *type = NULL;
     profile_type_e last_card_type = *g_card_type;
 
     if (*g_sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
-        if (*g_sim_cpin == SIM_ERROR) {
-            rt_send_msg_card_status(RT_ERROR);          // 开机没有检测到实体卡, 切换至vUICC
+        if (*g_sim_cpin != SIM_READY) {
+            rt_send_msg_card_status(RT_ERROR);          // 开机检测无实体卡, 切换至vUICC
         }
     }
 
-    sleep(RT_INIT_TIME);    // 驻网拨号等初始化完成后再开始网络监测
+    sleep(RT_INIT_TIME);    // 70s, 驻网拨号等初始化完成后再开始网络监测
 
     while (1) {
         devicekey_status = rt_get_devicekey_status();
         if (devicekey_status == RT_FALSE) {
-            sleep(RT_DEVICE_INSPECT);       // 后续是否需要修改; device key校验失败60s后再检测
+            sleep(RT_DEVICE_TIME);          // 后续是否需要修改; device key校验失败60s后再检测
             continue;
         }
 
@@ -242,18 +241,12 @@ static void network_ping_task(void *arg)
             }
         }
 
-        if (devicekey_status == RT_TRUE && enabled->valueint == RT_TRUE) {
-            ping_start = RT_TRUE;
-        } else {
-            ping_start = RT_FALSE;
-        }
-
-        if (ping_start == RT_TRUE) {
+        if (enabled->valueint == RT_TRUE) {
             if (*g_card_type == PROFILE_TYPE_PROVISONING) {
                 ret = rt_ping_provisoning_get_status();
 
             } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL || *g_card_type == PROFILE_TYPE_SIM) {
-                rt_type = cJSON_GetObjectItem(network_detect, "type");
+                type = cJSON_GetObjectItem(network_detect, "type");
                 strategy_list = cJSON_GetObjectItem(network_detect, "strategies");
 
                 if (strategy_list != NULL) {
@@ -262,16 +255,16 @@ static void network_ping_task(void *arg)
                         strategy_item = cJSON_GetArrayItem(strategy_list, ii);
                         domain = cJSON_GetObjectItem(strategy_item, "domain");
                         level = cJSON_GetObjectItem(strategy_item, "level");
-                        network_level = rt_ping_get_level(domain->valuestring, level->valueint, rt_type->valueint);
+                        network_level = rt_ping_get_level(domain->valuestring, level->valueint, type->valueint);
 
-                        if (rt_type->valueint == RT_AND) {
+                        if (type->valueint == RT_AND) {
                             if (network_level >= level->valueint) {
                                 ret = RT_SUCCESS;
                                 break;
                             } else {
                                 ret = RT_ERROR;
                             }
-                        } else if (rt_type->valueint == RT_OR) {
+                        } else if (type->valueint == RT_OR) {
                             if (network_level < level->valueint) {
                                 ret = RT_ERROR;
                                 break;

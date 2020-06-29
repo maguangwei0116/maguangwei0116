@@ -32,11 +32,11 @@
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
 static rt_bool                      g_frist_bootstrap_ok        = RT_FALSE;
-static rt_bool                      frist_bootstrap             = RT_TRUE;
+static rt_bool                      g_bootstrap_enable          = RT_TRUE;
 
 void rt_forbid_bootstrap()
 {
-    frist_bootstrap = RT_FALSE;
+    g_bootstrap_enable = RT_FALSE;
 }
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
@@ -645,14 +645,14 @@ static int32_t card_change_profile(const uint8_t *buf)
     } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
         if (g_p_info.num - circle_len == 1) {         // 循环了一遍, 所有的业务卡都不能用, 切到种子卡
             MSG_PRINTF(LOG_INFO, "Operational ====> Provisioning\n");
-            circle_len = 1;
-            uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
             g_p_info.type = PROFILE_TYPE_PROVISONING;
+            uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
+            circle_len = 1;
         } else {
             MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
-            circle_len++;
-            uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
+            uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
+            circle_len++;
         }
 
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
@@ -660,13 +660,13 @@ static int32_t card_change_profile(const uint8_t *buf)
         ipc_start_vuicc(1);
         rt_os_sleep(3);
 
-        g_p_info.type = PROFILE_TYPE_PROVISONING;                   // 第一次 SIM --> vUICC 需要切换type
-        if (frist_bootstrap == RT_TRUE) {
+        g_p_info.type = PROFILE_TYPE_PROVISONING;                       // 第一次 SIM --> vUICC 需要切换type
+        if (g_bootstrap_enable == RT_TRUE) {                            // 防止多次Bootstrap
             card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
-            frist_bootstrap = RT_FALSE;
+            g_bootstrap_enable = RT_FALSE;
         } else {
             card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);       // 更新type
-            if (g_p_info.type == PROFILE_TYPE_PROVISONING) {            // 防止两次Bootstrap
+            if (g_p_info.type == PROFILE_TYPE_PROVISONING) {
                 card_force_enable_provisoning_profile();
             }
         }
