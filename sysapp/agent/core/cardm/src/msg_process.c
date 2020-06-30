@@ -401,16 +401,15 @@ int32_t mqtt_msg_event(const uint8_t *buf, int32_t len)
 
 int32_t msg_apnlist_handler(cJSON *apnparams_list)
 {
-    // apnparams
     cJSON *new_command_content = NULL;
     cJSON *apnparams_item = NULL;
     cJSON *apn_list = NULL;
     cJSON *iccid = NULL;
+    int32_t state = RT_ERROR;
     int32_t apnparams_num = 0;
     uint8_t *apn_list_c;
     int16_t count_index = 0;
     int16_t ii = 0;
-    int32_t state = RT_ERROR;
 
     apnparams_num = cJSON_GetArraySize(apnparams_list);
     count_index = apnparams_num - 1;
@@ -419,6 +418,7 @@ int32_t msg_apnlist_handler(cJSON *apnparams_list)
         if (apnparams_item != NULL) {
             iccid = cJSON_GetObjectItem(apnparams_item, "iccid");
             apn_list = cJSON_GetObjectItem(apnparams_item, "apnInfos");
+
             if (apn_list != NULL) {
                 // write file
                 new_command_content = cJSON_CreateObject();
@@ -448,6 +448,7 @@ int32_t msg_apnlist_handler(cJSON *apnparams_list)
             }
         }
     }
+
     return state;
 }
 

@@ -54,13 +54,11 @@ static cJSON *upload_event_boot_device_info(void)
 
 #ifdef CFG_REDTEA_READY_ON
     rt_read_devicekey(0, deviceKey, DEVICE_KEY_SIZE);
-    if (device_key_check_memory(deviceKey, DEVICE_KEY_SIZE, 'F')) {
-        MSG_PRINTF(LOG_WARN, "upload device key : %s\n", deviceKey);
-    } else {
+    if (!device_key_check_memory(deviceKey, DEVICE_KEY_SIZE, 'F')) {
         deviceKey[DEVICE_KEY_SIZE] = '\0';
         CJSON_ADD_NEW_STR_OBJ(deviceInfo, deviceKey);
     }
-    
+
 #endif
 
     ret = RT_SUCCESS;

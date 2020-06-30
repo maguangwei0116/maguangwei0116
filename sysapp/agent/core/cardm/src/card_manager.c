@@ -599,28 +599,25 @@ int32_t card_switch_type(cJSON *switchparams)
 
     card_type = cJSON_GetObjectItem(switchparams, "type");
     if (card_type != NULL) {
-        if (card_type->valueint == 1) {
+        if (card_type->valueint == SWITCH_TO_SIM) {
             if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_READY) {
                 MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
                 ipc_remove_vuicc(1);
                 rt_os_sleep(3);
-
                 g_p_info.type = PROFILE_TYPE_SIM;
                 return RT_SUCCESS;
             }
-        } else if (card_type->valueint == 2) {
-            // 保留
+        } else if (card_type->valueint == SWITCH_TO_ESIM) {
             MSG_PRINTF(LOG_INFO, "eSIM\n");
         } else {
-            // 不处理
-            MSG_PRINTF(LOG_INFO, "No identify\n");
+            MSG_PRINTF(LOG_WARN, "Invalid parameter !\n");
         }
     } else {
-        MSG_PRINTF(LOG_WARN, "card_type content NULL!!\n");
+        MSG_PRINTF(LOG_WARN, "Switch card type content is NULL !\n");
     }
 
     if (g_p_info.sim_info.state == SIM_ERROR) {
-        return -2;
+        return RT_NO_SIM;
     }
 
     return state;
@@ -632,8 +629,8 @@ static int32_t card_change_profile(const uint8_t *buf)
     int32_t jj = 0;
     int32_t len = 0;
     int32_t used_seq = 0;
+    static int32_t circle_len = 1;
     uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
-    static int32_t circle_len = 1;                  // 切换时本身是第一张卡
     byte recv_buf = buf[0];
 
     if (recv_buf == PROVISONING_NO_INTERNET) {
@@ -672,7 +669,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         }
 
     } else {
-        MSG_PRINTF(LOG_ERR, "recv buff unknow ! buff : %s \n", buf);
+        MSG_PRINTF(LOG_ERR, "Invalid parameter! buff : %s \n", buf);
     }
 
     return RT_SUCCESS;

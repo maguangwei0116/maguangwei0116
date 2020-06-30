@@ -31,15 +31,15 @@ exit_entry:
 static int32_t update_parser(const void *in, char *tranid, void **out)
 {
     int32_t ret = RT_ERROR;
+    int32_t len = 0;
+    static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];
+    int8_t md5_out_now[MD5_STRING_LENGTH + 1];
+    uint8_t *buf = NULL;
     cJSON *agent_msg = NULL;
     cJSON *tran_id = NULL;
     cJSON *payload = NULL;
     cJSON *payload_info = NULL;
     cJSON *content = NULL;
-    static int8_t md5_out_pro[MD5_STRING_LENGTH + 1];
-    int8_t md5_out_now[MD5_STRING_LENGTH + 1];
-    uint8_t *buf = NULL;
-    int32_t len = 0;
 
     get_md5_string((int8_t *)in, md5_out_now);
     md5_out_now[MD5_STRING_LENGTH] = '\0';
@@ -90,13 +90,10 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     cJSON *content = NULL;
     cJSON *content_d = NULL;
     cJSON *properties = NULL;
-
-    // switchparams
     cJSON *switchparams= NULL;
     cJSON *card_type = NULL;
     cJSON *apnparams_list = NULL;
     cJSON *monitorstrategyparams = NULL;
-
     uint8_t *content_s;
     int32_t state = RT_ERROR;
 
@@ -122,7 +119,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     if (switchparams != NULL) {
         state = card_switch_type(switchparams);
     } else {
-        MSG_PRINTF(LOG_WARN, "switchparams content NULL!\n");
+        MSG_PRINTF(LOG_WARN, "switchparams is NULL!\n");
     }
 
     // apnparams
@@ -130,7 +127,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     if (apnparams_list != NULL) {
         state = msg_apnlist_handler(apnparams_list);
     } else {
-        MSG_PRINTF(LOG_WARN, "apnparams content NULL!\n");
+        MSG_PRINTF(LOG_WARN, "apnparams is NULL!\n");
     }
 
     // monitorstrategyparams
@@ -138,7 +135,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     if (monitorstrategyparams != NULL) {
         state = msg_analyse_strategy(monitorstrategyparams);
     } else {
-        MSG_PRINTF(LOG_WARN, "monitorstrategyparams content NULL!!\n");
+        MSG_PRINTF(LOG_WARN, "monitor strategyparams is NULL!!\n");
     }
 
     // upload

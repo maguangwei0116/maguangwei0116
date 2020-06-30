@@ -18,6 +18,7 @@
 #include "lpa.h"
 #include "msg_process.h"
 
+#define RT_NO_SIM                   -2
 #define THE_CPIN_LENGTH             16
 #define THE_MAX_CARD_NUM            20
 #define THE_ICCID_LENGTH            20
@@ -66,6 +67,11 @@ typedef struct PROFILE_SIM_INFO {
     profile_sim_cpin_e  state;
 } profile_sim_info_t;
 
+typedef enum SWITCH_CARD_TYPE {
+    SWITCH_TO_SIM                   = 1,
+    SWITCH_TO_ESIM                  = 2,
+} switch_card_type_e;
+
 typedef struct CARD_INFO {
     profile_info_t                  info[THE_MAX_CARD_NUM];
     profile_sim_info_t              sim_info;
@@ -86,6 +92,6 @@ int32_t card_force_enable_provisoning_profile_update(void);
 int32_t card_manager_install_profile_ok(void);
 int32_t card_get_avariable_profile_num(int32_t *avariable_num);
 int32_t card_switch_type(cJSON *switchparams);
-void rt_forbid_bootstrap();
+void    rt_forbid_bootstrap();
 
 #endif // __CARD_MANAGER_H__
