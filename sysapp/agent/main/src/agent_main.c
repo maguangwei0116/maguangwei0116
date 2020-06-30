@@ -32,9 +32,11 @@
 #include "libcomm.h"
 #include "agent_main.h"
 #include "rt_timer.h"
+
 #ifdef CFG_REDTEA_READY_ON
 #include "ping_task.h"
 #endif
+
 #include "usrdata.h"
 #ifdef CFG_STANDARD_MODULE
 #include "customer_at.h"

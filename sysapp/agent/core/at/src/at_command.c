@@ -230,7 +230,6 @@ static int32_t apdu_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     if (*cmd == AT_CONTENT_DELIMITER) {
 
     }
-
 }
 
 #ifdef CFG_REDTEA_READY_ON
@@ -262,8 +261,10 @@ int32_t init_at_command(void *arg)
     /* install "APDU" at command */
     AT_CMD_INSTALL(apdu);
 
+#ifdef CFG_REDTEA_READY_ON
     /* install "deviceKey" at command */
     AT_CMD_INSTALL(dkey);
+#endif
 
     return RT_SUCCESS;
 }

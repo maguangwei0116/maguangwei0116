@@ -19,8 +19,9 @@
 #include "card_detection.h"
 #include "rt_type.h"
 #include "rt_os.h"
+
 #ifdef CFG_REDTEA_READY_ON
-#include "ping_task.h"
+    #include "ping_task.h"
 #endif
 
 /*
@@ -131,8 +132,8 @@ const char * g_msg_mode_e[] =
     "MSG_CARD_DISABLE_EXIST_CARD",
     "MSG_CARD_UPDATE_SEED",
 #ifdef CFG_REDTEA_READY_ON
-    "MSG_SYNC_DOWNSTREAM",
-    "MSG_PING_RES",
+    "MSG_SYNC_DOWNSTREAM_INFO",
+    "MSG_SWITCH_CARD",
 #endif
 };
 #endif
