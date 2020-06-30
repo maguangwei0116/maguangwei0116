@@ -14,6 +14,8 @@
 #ifndef __PING_TASK_H__
 #define __PING_TASK_H__
 
+#ifdef CFG_REDTEA_READY_ON
+
 #include "rt_type.h"
 #include "dial_up.h"
 
@@ -31,7 +33,7 @@
 // 抖动
 #define RT_EXCELLENT_MDEV           20
 #define RT_GOOD_MDEV                50
-#define RT_COMMON_MDEV              100
+#define RT_COMMON_MDEV              150
 
 // 等级
 #define RT_COMMON                   1
@@ -41,9 +43,9 @@
 #define RT_OR                       0
 #define RT_AND                      1
 
+#define RT_DIAL_UP_TIME             50
 #define RT_DEVICE_TIME              60
 #define RT_INIT_TIME                70
-#define RT_DIAL_UP_TIME             80
 #define RT_PROVISONING_IP           "23.91.101.68"
 
 typedef enum REDTEA_READY_PING_STATUS_CMD {
@@ -58,6 +60,8 @@ typedef enum REDTEA_READY_PING_STATUS_CMD {
 int32_t init_ping_task(void *arg);
 int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode);
 int32_t sync_downstream_event(const uint8_t *buf, int32_t len, int32_t mode);
+
+#endif
 
 #endif // __NETWORK_DETECTION_H__
 
