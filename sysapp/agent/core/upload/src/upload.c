@@ -275,21 +275,17 @@ rt_bool upload_check_eid_empty(void)
 
 static const char *upload_get_topic_name(upload_topic_e upload_topic)
 {
-    if (*g_upload_card_type == PROFILE_TYPE_SIM) {
+    if (TOPIC_DEVICEID == upload_topic) {
         return g_upload_deviceid;
     } else {
-        if (TOPIC_DEVICEID == upload_topic) {
-            return g_upload_deviceid;
-        } else {
-            if (g_upload_eid) {
-                if (upload_check_eid_empty()) {
-                    return g_upload_deviceid;
-                } else {
-                    return g_upload_eid;
-                }
-            } else {
+        if (g_upload_eid) {
+            if (upload_check_eid_empty()) {
                 return g_upload_deviceid;
+            } else {
+                return g_upload_eid;
             }
+        } else {
+            return g_upload_deviceid;
         }
     }
 }
