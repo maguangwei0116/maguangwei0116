@@ -90,9 +90,6 @@ static MQTTClient_SSLOptions g_mqtts_opts = MQTTClient_SSLOptions_initializer;
 #endif
 static mqtt_info_t g_mqtt_info;
 
-#ifdef CFG_REDTEA_READY_ON
-static int g_sim_mode;
-#endif
 static rt_bool mqtt_eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
     int32_t i = 0;
@@ -893,12 +890,8 @@ int32_t init_mqtt(void *arg)
     g_mqtt_info.oti_addr            = (const char *)public_value_list->config_info->oti_addr;
     g_mqtt_info.oti_port            = public_value_list->config_info->oti_port;
     g_mqtt_info.type                = (const profile_type_e *)&(public_value_list->card_info->type);
-#ifdef CFG_REDTEA_READY_ON
-    g_sim_mode                      = public_value_list->config_info->sim_mode;
-#endif
 
     mqtt_init_param();
-
     ret = mqtt_create_task();
 
     return ret;
