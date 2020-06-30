@@ -647,15 +647,15 @@ static int32_t card_change_profile(const uint8_t *buf)
 
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
+        g_p_info.type = PROFILE_TYPE_PROVISONING;                           // 第一次 SIM --> vUICC 需要切换type
         ipc_start_vuicc(1);
         rt_os_sleep(3);
 
-        g_p_info.type = PROFILE_TYPE_PROVISONING;                       // 第一次 SIM --> vUICC 需要切换type
-        if (g_bootstrap_enable == RT_TRUE) {                            // 防止多次Bootstrap
+        if (g_bootstrap_enable == RT_TRUE) {                                // 防止多次Bootstrap
             card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
             g_bootstrap_enable = RT_FALSE;
         } else {
-            card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);       // 更新type
+            card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
             if (g_p_info.type == PROFILE_TYPE_PROVISONING) {
                 card_force_enable_provisoning_profile();
             }
