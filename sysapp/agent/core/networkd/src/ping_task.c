@@ -11,40 +11,13 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
+#ifdef CFG_REDTEA_READY_ON
+
 #include "rt_os.h"
 #include "usrdata.h"
 #include "ping_task.h"
 #include "agent_queue.h"
 #include "network_detection.h"
-
-// 延迟
-#define RT_EXCELLENT_DELAY          100
-#define RT_GOOD_DELAY               200
-#define RT_COMMON_DELAY             500
-
-// 丢包
-#define RT_EXCELLENT_LOST           0
-#define RT_GOOD_LOST                2
-#define RT_COMMON_LOST              5
-#define RT_PROVISONING_LOST         10
-
-// 抖动
-#define RT_EXCELLENT_MDEV           20
-#define RT_GOOD_MDEV                50
-#define RT_COMMON_MDEV              100
-
-// 等级
-#define RT_COMMON                   1
-#define RT_GOOD                     2
-#define RT_EXCELLENT                3
-
-#define RT_OR                       0
-#define RT_AND                      1
-
-#define RT_DEVICE_TIME              60
-#define RT_INIT_TIME                70
-#define RT_DIAL_UP_TIME             80
-#define RT_PROVISONING_IP           "23.91.101.68"
 
 static rt_bool                      g_sim_switch            = RT_TRUE;
 static profile_type_e *             g_card_type             = NULL;
@@ -65,8 +38,8 @@ static void sim_switch_disable()
 
 static int32_t rt_ping_provisoning_get_status()
 {
-    int32_t lost;
     int32_t ret = RT_ERROR;
+    int32_t lost;
     double delay, mdev;
 
     ret = rt_local_ping(RT_PROVISONING_IP, &delay, &lost, &mdev);
@@ -83,8 +56,9 @@ static int32_t rt_ping_provisoning_get_status()
 
 static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
 {
-    int32_t lost, ret;
+    int32_t ret = RT_ERROR;
     int32_t network_level = 0;
+    int32_t lost;
     double delay, mdev;
 
     ret = rt_local_ping(ip, &delay, &lost, &mdev);
@@ -106,42 +80,22 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
     return network_level;
 }
 
-static int32_t rt_send_msg_card_status(int32_t ret)
+static int32_t rt_send_msg_card_status()
 {
     char send_buf[1] = {0};
 
     if (*g_card_type == PROFILE_TYPE_PROVISONING) {
-        if (ret == RT_SUCCESS) {
-            send_buf[0] = PROVISONING_HAVE_INTERNET;
-            MSG_PRINTF(LOG_INFO, "====> Hold Provisioning\r\n");
+        if (*g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY || *g_sim_cpin == SIM_ERROR) {
             return RT_SUCCESS;
-        } else {
-            if (*g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY || *g_sim_cpin == SIM_ERROR) {
-                return RT_SUCCESS;
-            }
-            sim_switch_disable();
-            send_buf[0] = PROVISONING_NO_INTERNET;
         }
+        sim_switch_disable();
+        send_buf[0] = PROVISONING_NO_INTERNET;
 
     } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL) {
-        if (ret == RT_SUCCESS) {
-            send_buf[0] = OPERATIONAL_HAVE_INTERNET;
-            MSG_PRINTF(LOG_INFO, "====> Hold Opeational\r\n");
-            return RT_SUCCESS;
-        } else {
-            send_buf[0] = OPERATIONAL_NO_INTERNET;
-        }
+        send_buf[0] = OPERATIONAL_NO_INTERNET;
 
     } else if (*g_card_type == PROFILE_TYPE_SIM) {
-        if (ret == RT_SUCCESS) {
-            send_buf[0] = SIM_CARD_HAVE_INTERNET;
-            MSG_PRINTF(LOG_INFO, "====> Hold SIM\n");
-            return RT_SUCCESS;
-        } else {
-            send_buf[0] = SIM_CARD_NO_INTERNET;
-        }
-    } else {
-        MSG_PRINTF(LOG_ERR, "unkown card type : %d\n", *g_card_type);
+        send_buf[0] = SIM_CARD_NO_INTERNET;
     }
 
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_PING_RES, send_buf, sizeof(send_buf));
@@ -211,7 +165,7 @@ static void network_ping_task(void *arg)
 
     if (*g_sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
         if (*g_sim_cpin != SIM_READY) {
-            rt_send_msg_card_status(RT_ERROR);          // 开机检测无实体卡, 切换至vUICC
+            rt_send_msg_card_status();          // 开机检测无实体卡, 切换至vUICC
         }
     }
 
@@ -235,7 +189,7 @@ static void network_ping_task(void *arg)
                 interval = cJSON_GetObjectItem(network_detect, "interval");
                 times_tmp = interval->valueint * 60;
             } else {
-                MSG_PRINTF(LOG_ERR, "cJSON_Parse error, Use default monitor strategy !\n");
+                MSG_PRINTF(LOG_ERR, "Json parse error, Use default monitor strategy !\n");
                 rt_write_default_strategy();
                 continue;
             }
@@ -274,11 +228,13 @@ static void network_ping_task(void *arg)
                         }
                     }
                 } else {
-                    MSG_PRINTF(LOG_ERR, "strategies list is error !\n");
+                    MSG_PRINTF(LOG_ERR, "Strategies parse error !\n");
                 }
             }
 
-            rt_send_msg_card_status(ret);
+            if (ret == RT_ERROR) {
+                rt_send_msg_card_status();
+            }
         }
 
         if (network_detect != NULL) {
@@ -358,3 +314,5 @@ int32_t init_ping_task(void *arg)
 
     return RT_SUCCESS;
 }
+
+#endif
