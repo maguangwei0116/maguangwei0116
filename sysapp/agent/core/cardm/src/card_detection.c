@@ -170,7 +170,7 @@ static void card_detection_task(void)
     while (1) {
         if (g_card_detecting_flg) {
             msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_UPDATE, NULL, 0);
-            rt_os_sleep(2);
+            rt_os_sleep(3);
             if (RT_SUCCESS == card_load_using_card(iccid, sizeof(iccid), &type)) {
                 card_changed_handle((const char *)iccid, type);
             }
