@@ -55,9 +55,6 @@ static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 static int32_t card_check_init_upload(const uint8_t *eid)
 {
     rt_bool update_last_eid = RT_FALSE;
-    if (g_p_info.type == PROFILE_TYPE_SIM) {
-        return RT_SUCCESS;
-    }
 
     if (eid_check_memory(eid, MAX_EID_LEN, 'F') || eid_check_memory(eid, MAX_EID_LEN, '0')) {
         update_last_eid = RT_TRUE;
@@ -282,10 +279,6 @@ static int32_t card_load_profile(const uint8_t *buf, int32_t len)
 {
     int32_t ret = RT_SUCCESS;
     char iccid[THE_ICCID_LENGTH + 1] = {0};
-
-    if (g_p_info.type == PROFILE_TYPE_SIM) {        // vUICC-->SIM, Bootstrap会触发card load profile
-        return RT_SUCCESS;
-    }
 
     ret = card_get_provisioning_profile_iccid(iccid);
     if (ret) {
@@ -728,7 +721,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             break;
 
 #ifdef CFG_REDTEA_READY_ON
-        case MSG_PING_RES:
+        case MSG_SWITCH_CARD:
             ret = card_change_profile(buf);
             break;
 #endif
