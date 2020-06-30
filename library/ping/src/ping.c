@@ -139,7 +139,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     icmp_head->code = 0;
     icmp_head->id = 1;
 
-    MSG_PRINTF(LOG_DBG, "PING %s (%s)\n", domain, inet_ntoa(*((struct in_addr*)&dest_ip)));
+    MSG_PRINTF(LOG_DBG, "Ping %s, IP : %s\n", domain, inet_ntoa(*((struct in_addr*)&dest_ip)));
 
     for(i = 0; i < RT_PING_TIMES; i++) {
         struct timeval start;

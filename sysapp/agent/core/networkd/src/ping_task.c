@@ -68,9 +68,9 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
 
     if ( (delay <= RT_EXCELLENT_DELAY) && (lost == RT_EXCELLENT_LOST) && (mdev <= RT_EXCELLENT_MDEV)) {     // 延时<=100; 丢包=0;  抖动<=20;
         network_level = RT_EXCELLENT;
-    } else if ( (delay <= RT_GOOD_DELAY) && (lost <= RT_GOOD_LOST) && (mdev <= RT_GOOD_MDEV)) {             // 延时<=200; 丢包<=2; 抖动<=50;
+    } else if ( (delay <= RT_GOOD_DELAY) && (lost <= RT_GOOD_LOST) && (mdev <= RT_GOOD_MDEV)) {             // 延时<=200; 丢包<=2%; 抖动<=50;
         network_level = RT_GOOD;
-    } else if ( (delay <= RT_COMMON_DELAY) && (lost <= RT_COMMON_LOST) && (mdev <= RT_COMMON_MDEV)) {       // 延时<=500; 丢包<=5; 抖动<=100;
+    } else if ( (delay <= RT_COMMON_DELAY) && (lost <= RT_COMMON_LOST) && (mdev <= RT_COMMON_MDEV)) {       // 延时<=500; 丢包<=5%; 抖动<=150;
         network_level = RT_COMMON;
     }
 
@@ -98,7 +98,7 @@ static int32_t rt_send_msg_card_status()
         send_buf[0] = SIM_CARD_NO_INTERNET;
     }
 
-    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_PING_RES, send_buf, sizeof(send_buf));
+    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
 
     return RT_SUCCESS;
 }
@@ -125,8 +125,7 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
             *last_card_type = *g_card_type;
 
             if (g_network_state == RT_FALSE) {
-                MSG_PRINTF(LOG_DBG, "reset dial up !\n");
-                network_force_down();
+                MSG_PRINTF(LOG_DBG, "Wait dial up !\n");
                 sleep(RT_DIAL_UP_TIME);     // 80s, 经验值, 后续是否需要修改
             }
         }
@@ -169,7 +168,7 @@ static void network_ping_task(void *arg)
         }
     }
 
-    sleep(RT_INIT_TIME);    // 70s, 驻网拨号等初始化完成后再开始网络监测
+    sleep(RT_INIT_TIME);    // 70s初始化, 实体卡15s左右能完成, 种子卡需要60s左右
 
     while (1) {
         devicekey_status = rt_get_devicekey_status();
@@ -282,7 +281,7 @@ int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode)
 int32_t sync_downstream_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     switch (mode) {
-        case MSG_SYNC_DOWNSTREAM:
+        case MSG_SYNC_DOWNSTREAM_INFO:
             g_downstream_event = RT_TRUE;
             break;
 
