@@ -185,20 +185,6 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         cJSON_AddItemToObject(content, "results", delete_result);
     } while(0);
 
-#if 0
-    rt_os_sleep(1);
-    card_update_profile_info(bootstrap_flag);
-    if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
-        rt_os_sleep(5);  // wait some time for provisioning network disconnected, or it may report ON_DELETE twice !!!
-    }
-#else
-    /* 
-    when delete all oprtional profiles ok, it will changed to provisoning profile.
-    So it will accur network disconnected from oprtional profiles to provisoning profile.
-    Need to enable provisoning profile frist.
-    It will call network_set_apn_handler, and start bootstrap.
-    It will avoid repporting ON_DELETE twice.
-    */
 #ifdef CFG_REDTEA_READY_ON
     if (g_upload_card_info->type != PROFILE_TYPE_SIM)
 #endif
@@ -210,7 +196,6 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
     }
 
-#endif
     *out = content;
 end:
     rt_os_free((void *)in);
