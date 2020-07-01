@@ -145,9 +145,11 @@ static int32_t update_handler(const void *in, const char *event, void **out)
         goto end;
     }
     content_s = cJSON_PrintUnformatted(properties);
-    MSG_PRINTF(LOG_WARN, "content_s : %s\n", content_s);
-    cJSON_AddItemToObject(content, "properties", cJSON_CreateString(content_s));
-    cJSON_free(content_s);
+    if (content_s != NULL) {
+        MSG_PRINTF(LOG_WARN, "content_s : %s\n", content_s);
+        cJSON_AddItemToObject(content, "properties", cJSON_CreateString(content_s));
+        cJSON_free(content_s);
+    }
 
     *out = content;
 end:

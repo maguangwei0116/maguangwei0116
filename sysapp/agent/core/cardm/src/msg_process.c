@@ -362,16 +362,19 @@ int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid)
     }
 
     out = cJSON_PrintUnformatted(command_content);
-    rt_os_memset(buffer, 'F', MSG_ONE_BLOCK_SIZE);
-    rt_os_memcpy(buffer, out, rt_os_strlen(out));
-    buffer[sizeof(buffer) - 1] = '\0';
-    MSG_PRINTF(LOG_TRACE, "iccid=%s, buffer=%s, rt_os_strlen(out)=%d\r\n", iccid, buffer, rt_os_strlen(out));
-    ret = msg_insert(iccid, buffer);
-    if (ret != RT_SUCCESS) {
-        MSG_PRINTF(LOG_WARN, "insert error\n");
+    if (out != NULL) {
+        rt_os_memset(buffer, 'F', MSG_ONE_BLOCK_SIZE);
+        rt_os_memcpy(buffer, out, rt_os_strlen(out));
+        buffer[sizeof(buffer) - 1] = '\0';
+        MSG_PRINTF(LOG_TRACE, "iccid=%s, buffer=%s, rt_os_strlen(out)=%d\r\n", iccid, buffer, rt_os_strlen(out));
+        ret = msg_insert(iccid, buffer);
+        if (ret != RT_SUCCESS) {
+            MSG_PRINTF(LOG_WARN, "insert error\n");
+        }
+
+        rt_os_free(out);
     }
 
-    rt_os_free(out);
     return ret;
 }
 
@@ -511,13 +514,15 @@ int32_t msg_analyse_strategy(cJSON *command_content)
     int ret = RT_ERROR;
 
     out = cJSON_PrintUnformatted(command_content);
-    rt_os_memset(buffer, 'F', RT_STRATEGY_LIST_LEN);
-    rt_os_memcpy(buffer, out, rt_os_strlen(out));
-    buffer[sizeof(buffer) - 1] = '\0';
-    // MSG_PRINTF(LOG_INFO, "buffer=%s, rt_os_strlen(out)=%d\r\n", buffer, rt_os_strlen(out));
+    if (out != NULL) {
+        rt_os_memset(buffer, 'F', RT_STRATEGY_LIST_LEN);
+        rt_os_memcpy(buffer, out, rt_os_strlen(out));
+        buffer[sizeof(buffer) - 1] = '\0';
+        // MSG_PRINTF(LOG_INFO, "buffer=%s, rt_os_strlen(out)=%d\r\n", buffer, rt_os_strlen(out));
 
-    ret = rt_write_strategy(0, buffer, RT_STRATEGY_LIST_LEN);
-    rt_os_free(out);
+        ret = rt_write_strategy(0, buffer, RT_STRATEGY_LIST_LEN);
+        rt_os_free(out);
+    }
 
     return ret;
 }
