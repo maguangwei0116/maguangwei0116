@@ -180,12 +180,11 @@ static int process_ind_reset(qmi_client_type user_handle, unsigned int msg_id,
         if (rc == RT_SUCCESS) {
             break;
         }
+        rt_os_msleep(100);
     }
 
     MSG_PRINTF(LOG_WARN,"qmi_client_message_decode failed rc = %d\n", rc);
-
     if(rc != RT_SUCCESS) {
-        MSG_PRINTF(LOG_WARN,"qmi_client_message_decode failed rc = %d\n", rc);
         return rc;
     }
 
