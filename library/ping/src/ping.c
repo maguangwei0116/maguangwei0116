@@ -14,8 +14,6 @@
 #define RT_DATA_SIZE        32
 #define RT_PING_TIMES       10
 
-rt_bool  g_downstream_event = RT_FALSE;
-
 typedef struct tag_icmp_header
 {
     uint8_t         type;
@@ -150,12 +148,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
         long read_length;
         uint8_t recv_buf[1024];
 
-        if (g_downstream_event == RT_TRUE) {
-            MSG_PRINTF(LOG_INFO, "External events interrupt ping ! Hold using card...\n");
-            g_downstream_event = RT_FALSE;
-            return RT_SUCCESS;
-        }
-        sleep(1);
+        rt_os_sleep(1);
 
         icmp_head->seq = htons(i);
         icmp_head->check_sum = 0;

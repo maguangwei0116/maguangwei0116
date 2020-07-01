@@ -24,31 +24,51 @@ static profile_type_e *             g_card_type             = NULL;
 static profile_sim_cpin_e *         g_sim_cpin              = NULL;
 static sim_mode_type_e *            g_sim_mode              = NULL;
 static rt_bool                      g_network_state         = RT_FALSE;
-extern rt_bool                      g_downstream_event;
+static rt_bool                      g_downstream_event      = RT_FALSE;
 
-static void sim_switch_enable()
+static void sim_switch_enable(void)
 {
     g_sim_switch = RT_TRUE;
 }
 
-static void sim_switch_disable()
+static void sim_switch_disable(void)
 {
     g_sim_switch = RT_FALSE;
 }
 
-static int32_t rt_ping_provisoning_get_status()
+static int32_t rt_judge_external_event(void)
+{
+    if (g_downstream_event == RT_TRUE) {
+        MSG_PRINTF(LOG_WARN, "External events interrupt ping ! Hold using card...\n");
+        g_downstream_event = RT_FALSE;
+
+        if (*g_card_type == PROFILE_TYPE_PROVISONING) {
+            return RT_SUCCESS;
+        } else {
+            return RT_EXCELLENT;
+        }
+    } else {
+        return RT_ERROR;
+    }
+}
+
+
+static int32_t rt_ping_provisoning_get_status(void)
 {
     int32_t ret = RT_ERROR;
     int32_t lost;
     double delay, mdev;
 
-    ret = rt_local_ping(RT_PROVISONING_IP, &delay, &lost, &mdev);
+    rt_local_ping(RT_PROVISONING_IP, &delay, &lost, &mdev);
+    ret = rt_judge_external_event();
     if (ret == RT_SUCCESS) {
-        return RT_SUCCESS;
+        return ret;
     }
 
     if (lost < RT_PROVISONING_LOST) {
         ret = RT_SUCCESS;
+    } else {
+        ret = RT_ERROR;
     }
 
     return ret;
@@ -56,21 +76,21 @@ static int32_t rt_ping_provisoning_get_status()
 
 static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
 {
-    int32_t ret = RT_ERROR;
     int32_t network_level = 0;
     int32_t lost;
     double delay, mdev;
 
-    ret = rt_local_ping(ip, &delay, &lost, &mdev);
-    if (ret == RT_SUCCESS) {
-        return RT_EXCELLENT;        // 外部切卡事件导致ping结果不准确, 等待下次网络监控
+    rt_local_ping(ip, &delay, &lost, &mdev);
+    network_level = rt_judge_external_event();
+    if (network_level ==  RT_EXCELLENT) {
+        return network_level;
     }
 
-    if ( (delay <= RT_EXCELLENT_DELAY) && (lost == RT_EXCELLENT_LOST) && (mdev <= RT_EXCELLENT_MDEV)) {     // 延时<=100; 丢包=0;  抖动<=20;
+    if ( (delay <= RT_EXCELLENT_DELAY) && (lost == RT_EXCELLENT_LOST) && (mdev <= RT_EXCELLENT_MDEV)) {     // delay<=100; lost=0;   mdev<=20;
         network_level = RT_EXCELLENT;
-    } else if ( (delay <= RT_GOOD_DELAY) && (lost <= RT_GOOD_LOST) && (mdev <= RT_GOOD_MDEV)) {             // 延时<=200; 丢包<=2%; 抖动<=50;
+    } else if ( (delay <= RT_GOOD_DELAY) && (lost <= RT_GOOD_LOST) && (mdev <= RT_GOOD_MDEV)) {             // delay<=200; lost<=2%; mdev<=50;
         network_level = RT_GOOD;
-    } else if ( (delay <= RT_COMMON_DELAY) && (lost <= RT_COMMON_LOST) && (mdev <= RT_COMMON_MDEV)) {       // 延时<=500; 丢包<=5%; 抖动<=150;
+    } else if ( (delay <= RT_COMMON_DELAY) && (lost <= RT_COMMON_LOST) && (mdev <= RT_COMMON_MDEV)) {       // delay<=500; lost<=5%; mdev<=150;
         network_level = RT_COMMON;
     }
 
@@ -80,9 +100,9 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
     return network_level;
 }
 
-static int32_t rt_send_msg_card_status()
+static int32_t rt_send_msg_card_status(void)
 {
-    char send_buf[1] = {0};
+    uint8_t send_buf[1] = {0};
 
     if (*g_card_type == PROFILE_TYPE_PROVISONING) {
         if (*g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY || *g_sim_cpin == SIM_ERROR) {
@@ -103,7 +123,7 @@ static int32_t rt_send_msg_card_status()
     return RT_SUCCESS;
 }
 
-static rt_bool rt_get_devicekey_status()
+static rt_bool rt_get_devicekey_status(void)
 {
     uint8_t  inspect_file[128] = {0};
     snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
@@ -111,11 +131,12 @@ static rt_bool rt_get_devicekey_status()
     return inspect_device_key(inspect_file);
 }
 
+
 /*
-    三种情况需要等待:
-    1. 程序切卡且当前网络断开;
-    2. 当种子卡ping通后, 后续不在进行ping;
-    3. 网络故障, 从Provisioning-->SIM, 后续不再进行网络检测;
+    There are three situations to wait:
+    1. The program cuts the card and the current network is disconnected;
+    2. Provisioning ping is unblocked, no more ping;
+    3. Provisioning switch to SIM, no more monitor.
 */
 static void rt_judge_card_status(profile_type_e *last_card_type)
 {
@@ -126,15 +147,15 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
 
             if (g_network_state == RT_FALSE) {
                 MSG_PRINTF(LOG_DBG, "Wait dial up !\n");
-                sleep(RT_DIAL_UP_TIME);     // 80s, 经验值, 后续是否需要修改
+                rt_os_sleep(RT_CARD_CHANGE_WAIT_TIME);
             }
         }
-        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == RT_TRUE) {                   // 当种子卡ping通后, 后续不在进行ping
-            sleep(10);                      // 后续是否需要修改
+        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == RT_TRUE) {
+            rt_os_sleep(RT_WAIT_TIME);
             continue;
         }
-        if (*g_card_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {                              // Provisioning-->SIM, 不再进行网络检测
-            sleep(10);                      // 后续是否需要修改
+        if (*g_card_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {
+            rt_os_sleep(RT_WAIT_TIME);
             continue;
         }
 
@@ -162,26 +183,20 @@ static void network_ping_task(void *arg)
     cJSON *type = NULL;
     profile_type_e last_card_type = *g_card_type;
 
-    if (*g_sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
-        if (*g_sim_cpin != SIM_READY) {
-            rt_send_msg_card_status();          // 开机检测无实体卡, 切换至vUICC
-        }
-    }
-
-    sleep(RT_INIT_TIME);    // 70s初始化, 实体卡15s左右能完成, 种子卡需要60s左右
+    rt_os_sleep(RT_INIT_TIME);
 
     while (1) {
         devicekey_status = rt_get_devicekey_status();
         if (devicekey_status == RT_FALSE) {
-            sleep(RT_DEVICE_TIME);          // 后续是否需要修改; device key校验失败60s后再检测
+            rt_os_sleep(RT_DEVICE_TIME);
             continue;
         }
 
         rt_judge_card_status(&last_card_type);
-        rt_inspect_monitor_strategy(RT_RUN_CHECK);
+        rt_check_strategy_data(RT_RUN_CHECK);
 
-        rt_read_strategy(0, tmp_buffer, RT_STRATEGY_LIST_LEN);
-        if (tmp_buffer != NULL) {
+        ret = rt_read_strategy(0, tmp_buffer, RT_STRATEGY_LIST_LEN);
+        if (ret == RT_SUCCESS) {
             network_detect = cJSON_Parse(tmp_buffer);
             if (network_detect != NULL) {
                 enabled = cJSON_GetObjectItem(network_detect, "enabled");
@@ -242,8 +257,8 @@ static void network_ping_task(void *arg)
 
         wait_times = times_tmp;
         while (--wait_times) {
-            sleep(1);
-            if (g_downstream_event == RT_TRUE) {           // 能收到平台下发的消息, 说明当前网络通畅, 等待下次监控
+            rt_os_sleep(1);
+            if (g_downstream_event == RT_TRUE) {           // Detect messages sent by the platform
                 MSG_PRINTF(LOG_INFO, "reset timing!\n");
                 g_downstream_event = RT_FALSE;
                 wait_times = times_tmp;
@@ -263,7 +278,6 @@ int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode)
             g_network_state = RT_TRUE;
             if (*g_card_type == PROFILE_TYPE_SIM) {
                 sim_switch_enable();
-                rt_forbid_bootstrap();
             }
             break;
 
