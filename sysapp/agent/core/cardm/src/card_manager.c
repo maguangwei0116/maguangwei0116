@@ -124,9 +124,14 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
         ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
         if (ret == RT_SUCCESS) {
             /* get current profile type */
+            g_p_info.operational_num = 0;
             for (i = 0; i < g_p_info.num; i++) {
                 MSG_PRINTF(LOG_INFO, "iccid   #%2d: %s state:%d type:%d\n", i + 1, g_p_info.info[i].iccid,
                     g_p_info.info[i].state, g_p_info.info[i].class);
+
+                if (g_p_info.info[i].class == PROFILE_TYPE_OPERATIONAL) {
+                    g_p_info.operational_num ++;
+                }
             }
             for (i = 0; i < g_p_info.num; i++) {
                 if (g_p_info.info[i].state == PROFILE_ENABLED) {
@@ -142,8 +147,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
             MSG_PRINTF(LOG_INFO, "using iccid: %s, type: %d, profile num: %d\n",
                     g_p_info.iccid, g_p_info.type, g_p_info.num);
 
-            if ((g_p_info.type == PROFILE_TYPE_TEST) ||
-                (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
+            if ((g_p_info.type == PROFILE_TYPE_TEST) || (g_p_info.type == PROFILE_TYPE_PROVISONING)) {
                 if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
                     rt_os_sleep(1);  // dealy some time after get profile info
                     msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_BOOTSTRAP_SELECT_CARD, NULL, 0);
@@ -396,7 +400,6 @@ static int32_t card_key_data_init(void)
 }
 
 #ifdef CFG_REDTEA_READY_ON
-
 int32_t card_switch_type(cJSON *switchparams)
 {
     cJSON *card_type = NULL;
@@ -445,7 +448,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         rt_os_sleep(3);
 
     } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
-        if ((g_p_info.num - operational_cycles) == 1) {         // All operational are unavailable
+        if (operational_cycles >= g_p_info.operational_num) {         // All operational are unavailable
             MSG_PRINTF(LOG_INFO, "Operational ====> Provisioning\n");
             g_p_info.type = PROFILE_TYPE_PROVISONING;
             uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
@@ -469,16 +472,17 @@ static int32_t card_change_profile(const uint8_t *buf)
 
     return RT_SUCCESS;
 }
+#endif
 
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
+    int32_t sim_mode;
     uint8_t cpin_status[THE_CPIN_LENGTH + 1]= {0};
     uint8_t sim_iccid[THE_ICCID_LENGTH + 1] = {0};
     uint8_t send_buf[1] = {0};
 
     init_profile_type_e init_profile_type;
-    int32_t sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
 
@@ -487,7 +491,10 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
 
+#ifdef CFG_REDTEA_READY_ON
+    sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
     if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
+        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         g_p_info.type = PROFILE_TYPE_SIM;
         rt_qmi_get_current_cpin_state(cpin_status);
 
@@ -508,7 +515,9 @@ int32_t init_card_manager(void *arg)
         }
     }
 
-    if (sim_mode != SIM_MODE_TYPE_SIM_ONLY) {
+    if (sim_mode != SIM_MODE_TYPE_SIM_ONLY)
+#endif
+    {
         if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
             if (*(((public_value_list_t *)arg)->profile_damaged) == RT_SUCCESS) {
                 ret = card_key_data_init();
@@ -518,71 +527,6 @@ int32_t init_card_manager(void *arg)
             } else {
                 MSG_PRINTF(LOG_ERR, "share profile damaged !");
             }
-        }
-    }
-
-    ret = card_last_type_init();
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "card update last card type fail, ret=%d\r\n", ret);
-    }
-
-    ret = card_update_eid(RT_TRUE);
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "card update eid fail, ret=%d\r\n", ret);
-    } else {
-        rt_os_sleep(1);
-    }
-
-    ret = card_init_profile_type(init_profile_type);
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
-    }
-
-    if (sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
-        if (g_p_info.sim_info.state != SIM_READY) {
-            send_buf[0] = SIM_CARD_NO_INTERNET;
-            card_change_profile(send_buf);
-            rt_os_sleep(5);
-            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
-        }
-    } else {
-        ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
-        if (ret) {
-            MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
-        }
-    }
-
-    ret = card_last_eid_init();
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "card update last eid fail, ret=%d\r\n", ret);
-    }
-
-    card_set_opr_profile_apn();
-
-    return ret;
-}
-#else
-int32_t init_card_manager(void *arg)
-{
-    int32_t ret = RT_ERROR;
-    init_profile_type_e init_profile_type;
-
-    init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
-    ((public_value_list_t *)arg)->card_info = &g_p_info;
-    init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr);
-    rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
-    rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
-    rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
-
-    if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
-        MSG_PRINTF(LOG_DBG, "((public_value_list_t *)arg)->profile_damaged is %d\r\n", *(((public_value_list_t *)arg)->profile_damaged));
-        if (*(((public_value_list_t *)arg)->profile_damaged) == 0) {
-            ret = card_key_data_init();
-            if (ret) {
-                MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
-            }
-        } else {
-            ;
         }
     }
 
@@ -620,9 +564,21 @@ int32_t init_card_manager(void *arg)
         MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
     }
 
-    ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
+#ifdef CFG_REDTEA_READY_ON
+    if (sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
+        if (g_p_info.sim_info.state != SIM_READY) {
+            send_buf[0] = SIM_CARD_NO_INTERNET;
+            card_change_profile(send_buf);
+            rt_os_sleep(5);
+            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+        }
+    } else
+#endif
+    {
+        ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
+        }
     }
 
     ret = card_last_eid_init();
@@ -646,7 +602,6 @@ int32_t init_card_manager(void *arg)
 
     return ret;
 }
-#endif
 
 int32_t card_manager_install_profile_ok(void)
 {
