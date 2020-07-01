@@ -52,7 +52,6 @@ static int32_t rt_judge_external_event(void)
     }
 }
 
-
 static int32_t rt_ping_provisoning_get_status(void)
 {
     int32_t ret = RT_ERROR;
@@ -130,7 +129,6 @@ static rt_bool rt_get_devicekey_status(void)
 
     return inspect_device_key(inspect_file);
 }
-
 
 /*
     There are three situations to wait:
