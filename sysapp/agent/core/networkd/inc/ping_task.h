@@ -43,7 +43,7 @@
 #define RT_OR                       0
 #define RT_AND                      1
 
-#define RT_CARD_CHANGE_WAIT_TIME    50
+#define RT_CARD_CHANGE_WAIT_TIME    60
 #define RT_WAIT_TIME                60
 #define RT_DEVICE_TIME              60
 #define RT_INIT_TIME                70
