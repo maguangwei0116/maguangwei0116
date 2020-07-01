@@ -12,7 +12,7 @@
 #define MAX_PROVISONING_KEEP_NUM            3   // one provisoning iccid max keep for 3 times
 
 static int32_t g_card_detect_interval       = CARD_DETECT_INTERVAL;
-static rt_bool g_card_detecting_flg         = RT_FALSE;
+static rt_bool g_card_detecting_flg         = RT_TRUE;
 static const char *g_cur_iccid              = NULL;
 static const char *g_sim_iccid              = NULL;
 static profile_type_e *g_cur_profile_type   = NULL;
