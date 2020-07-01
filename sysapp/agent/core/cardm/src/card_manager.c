@@ -32,12 +32,6 @@
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
 static rt_bool                      g_frist_bootstrap_ok        = RT_FALSE;
-static rt_bool                      g_bootstrap_enable          = RT_TRUE;
-
-void rt_forbid_bootstrap()
-{
-    g_bootstrap_enable = RT_FALSE;
-}
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -402,11 +396,87 @@ static int32_t card_key_data_init(void)
 }
 
 #ifdef CFG_REDTEA_READY_ON
+
+int32_t card_switch_type(cJSON *switchparams)
+{
+    cJSON *card_type = NULL;
+    int32_t state = RT_ERROR;
+
+    card_type = cJSON_GetObjectItem(switchparams, "type");
+    if (card_type != NULL) {
+        if (card_type->valueint == SWITCH_TO_SIM) {
+            if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_READY) {
+                MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
+                ipc_remove_vuicc(1);
+                rt_os_sleep(3);
+                g_p_info.type = PROFILE_TYPE_SIM;
+                return RT_SUCCESS;
+            }
+        } else if (card_type->valueint == SWITCH_TO_ESIM) {
+            MSG_PRINTF(LOG_INFO, "eSIM\n");
+        } else {
+            MSG_PRINTF(LOG_WARN, "Invalid parameter !\n");
+        }
+    } else {
+        MSG_PRINTF(LOG_WARN, "Switch card type content is NULL !\n");
+    }
+
+    if (g_p_info.sim_info.state == SIM_ERROR) {
+        return RT_NO_SIM;
+    }
+
+    return state;
+}
+
+static int32_t card_change_profile(const uint8_t *buf)
+{
+    int32_t ii = 0;
+    int32_t jj = 0;
+    int32_t len = 0;
+    int32_t used_seq = 0;
+    static int32_t operational_cycles = 1;                      // 1: Have tried the first operational
+    uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
+    uint8_t recv_buf = buf[0];
+
+    if (recv_buf == PROVISONING_NO_INTERNET) {
+        MSG_PRINTF(LOG_INFO, "Provisioning ====> SIM\n");
+        g_p_info.type = PROFILE_TYPE_SIM;
+        ipc_remove_vuicc(1);
+        rt_os_sleep(3);
+
+    } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
+        if ((g_p_info.num - operational_cycles) == 1) {         // All operational are unavailable
+            MSG_PRINTF(LOG_INFO, "Operational ====> Provisioning\n");
+            g_p_info.type = PROFILE_TYPE_PROVISONING;
+            uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
+            operational_cycles = 1;
+        } else {
+            MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
+            g_p_info.type = PROFILE_TYPE_OPERATIONAL;
+            uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
+            operational_cycles ++;
+        }
+
+    } else if (recv_buf == SIM_CARD_NO_INTERNET) {
+        MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
+        g_p_info.type = PROFILE_TYPE_PROVISONING;
+        ipc_start_vuicc(1);
+        rt_os_sleep(3);
+
+    } else {
+        MSG_PRINTF(LOG_ERR, "Invalid parameter! buff : %s \n", buf);
+    }
+
+    return RT_SUCCESS;
+}
+
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
     uint8_t cpin_status[THE_CPIN_LENGTH + 1]= {0};
     uint8_t sim_iccid[THE_ICCID_LENGTH + 1] = {0};
+    uint8_t send_buf[1] = {0};
+
     init_profile_type_e init_profile_type;
     int32_t sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
@@ -427,17 +497,18 @@ int32_t init_card_manager(void *arg)
                 MSG_PRINTF(LOG_DBG, "SIM get iccid fail !\n");
                 g_p_info.sim_info.state = SIM_ERROR;
             } else {
-                MSG_PRINTF(LOG_DBG, "SIM iccid : %s\n", sim_iccid);
+                MSG_PRINTF(LOG_INFO, "SIM iccid : %s\n", sim_iccid);
                 g_p_info.sim_info.state = SIM_READY;
                 rt_os_strncpy(g_p_info.sim_info.iccid, sim_iccid, THE_ICCID_LENGTH);
                 rt_os_strncpy(g_p_info.iccid, sim_iccid, THE_ICCID_LENGTH);
             }
         } else {
+            g_p_info.sim_info.state = SIM_ERROR;
             MSG_PRINTF(LOG_DBG, "SIM cpin fail !\n");
         }
     }
 
-    if ((sim_mode != SIM_MODE_TYPE_SIM_ONLY)) {
+    if (sim_mode != SIM_MODE_TYPE_SIM_ONLY) {
         if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
             if (*(((public_value_list_t *)arg)->profile_damaged) == RT_SUCCESS) {
                 ret = card_key_data_init();
@@ -467,9 +538,18 @@ int32_t init_card_manager(void *arg)
         MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
     }
 
-    ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
+    if (sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
+        if (g_p_info.sim_info.state != SIM_READY) {
+            send_buf[0] = SIM_CARD_NO_INTERNET;
+            card_change_profile(send_buf);
+            rt_os_sleep(5);
+            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+        }
+    } else {
+        ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+        if (ret) {
+            MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
+        }
     }
 
     ret = card_last_eid_init();
@@ -584,91 +664,6 @@ int32_t card_get_avariable_profile_num(int32_t *avariable_num)
     return RT_ERROR;
 }
 
-#ifdef CFG_REDTEA_READY_ON
-int32_t card_switch_type(cJSON *switchparams)
-{
-    cJSON *card_type = NULL;
-    int32_t state = RT_ERROR;
-
-    card_type = cJSON_GetObjectItem(switchparams, "type");
-    if (card_type != NULL) {
-        if (card_type->valueint == SWITCH_TO_SIM) {
-            if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_READY) {
-                MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
-                ipc_remove_vuicc(1);
-                rt_os_sleep(3);
-                g_p_info.type = PROFILE_TYPE_SIM;
-                return RT_SUCCESS;
-            }
-        } else if (card_type->valueint == SWITCH_TO_ESIM) {
-            MSG_PRINTF(LOG_INFO, "eSIM\n");
-        } else {
-            MSG_PRINTF(LOG_WARN, "Invalid parameter !\n");
-        }
-    } else {
-        MSG_PRINTF(LOG_WARN, "Switch card type content is NULL !\n");
-    }
-
-    if (g_p_info.sim_info.state == SIM_ERROR) {
-        return RT_NO_SIM;
-    }
-
-    return state;
-}
-
-static int32_t card_change_profile(const uint8_t *buf)
-{
-    int32_t ii = 0;
-    int32_t jj = 0;
-    int32_t len = 0;
-    int32_t used_seq = 0;
-    static int32_t circle_len = 1;
-    uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
-    byte recv_buf = buf[0];
-
-    if (recv_buf == PROVISONING_NO_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "Provisioning ====> SIM\n");
-        ipc_remove_vuicc(1);
-        rt_os_sleep(3);
-        g_p_info.type = PROFILE_TYPE_SIM;
-
-    } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
-        if (g_p_info.num - circle_len == 1) {         // 循环了一遍, 所有的业务卡都不能用, 切到种子卡
-            MSG_PRINTF(LOG_INFO, "Operational ====> Provisioning\n");
-            g_p_info.type = PROFILE_TYPE_PROVISONING;
-            uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
-            circle_len = 1;
-        } else {
-            MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
-            g_p_info.type = PROFILE_TYPE_OPERATIONAL;
-            uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
-            circle_len++;
-        }
-
-    } else if (recv_buf == SIM_CARD_NO_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
-        g_p_info.type = PROFILE_TYPE_PROVISONING;                           // 第一次 SIM --> vUICC 需要切换type
-        ipc_start_vuicc(1);
-        rt_os_sleep(3);
-
-        if (g_bootstrap_enable == RT_TRUE) {                                // 防止多次Bootstrap
-            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
-            g_bootstrap_enable = RT_FALSE;
-        } else {
-            card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-            if (g_p_info.type == PROFILE_TYPE_PROVISONING) {
-                card_force_enable_provisoning_profile();
-            }
-        }
-
-    } else {
-        MSG_PRINTF(LOG_ERR, "Invalid parameter! buff : %s \n", buf);
-    }
-
-    return RT_SUCCESS;
-}
-#endif
-
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     int32_t ret = RT_ERROR;
@@ -677,7 +672,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
     for ( i = 0; i <= RT_RETRY_COUNT; i++) {
        switch (mode) {
         case MSG_CARD_SETTING_KEY:
-            ret = lpa_load_customized_data(buf, len, NULL, NULL);       // RT_SUCCESS
+            ret = lpa_load_customized_data(buf, len, NULL, NULL);
             break;
 
         case MSG_CARD_SETTING_PROFILE:
