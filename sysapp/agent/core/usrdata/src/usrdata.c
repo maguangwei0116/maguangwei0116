@@ -35,7 +35,7 @@ int32_t rt_write_default_strategy()
     return rt_write_strategy(0, DEFAULT_STRATEGY, sizeof(DEFAULT_STRATEGY));
 }
 
-void rt_inspect_monitor_strategy(inspect_strategy_e type)
+void rt_check_strategy_data(inspect_strategy_e type)
 {
     uint8_t network_strategy_buff[CHECK_STRATEGY_HEAD + 1] = {0};
 
@@ -65,7 +65,7 @@ int32_t init_run_config()
         rt_write_data(RUN_CONFIG_FILE, 0, init_buff, RT_APN_LIST_OFFSET);
     }
 
-    rt_inspect_monitor_strategy(RT_BOOT_CHECK);
+    rt_check_strategy_data(RT_BOOT_CHECK);
 
     return RT_SUCCESS;
 }
@@ -78,6 +78,9 @@ int32_t rt_write_card_type(int32_t offset, uint8_t *card_type, int32_t len)
     rt_os_memset(init_buf, 'F', RT_CARD_TYPE_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_CARD_TYPE_OFFSET, init_buf, RT_CARD_TYPE_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_CARD_TYPE_OFFSET + offset, card_type, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Write card type fail !\n");
+    }
 
     return ret;
 }
@@ -85,6 +88,10 @@ int32_t rt_write_card_type(int32_t offset, uint8_t *card_type, int32_t len)
 int32_t rt_read_card_type(int32_t offset, uint8_t *card_type, int32_t len)
 {
     int32_t ret = rt_read_data(RUN_CONFIG_FILE, RT_CARD_TYPE_OFFSET + offset, card_type, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Read card type fail !\n");
+    }
+
     return ret;
 }
 
@@ -96,6 +103,9 @@ int32_t rt_write_eid(int32_t offset, uint8_t *eid, int32_t len)
     rt_os_memset(init_buf, 'F', RT_LAST_EID_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_LAST_EID_OFFSET, init_buf, RT_LAST_EID_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_LAST_EID_OFFSET + offset, eid, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Write eid fail !\n");
+    }
     
     return ret;
 }
@@ -103,6 +113,10 @@ int32_t rt_write_eid(int32_t offset, uint8_t *eid, int32_t len)
 int32_t rt_read_eid(int32_t offset, uint8_t *eid, int32_t len)
 {
     int32_t ret = rt_read_data(RUN_CONFIG_FILE, RT_LAST_EID_OFFSET + offset, eid, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Read eid fail !\n");
+    }
+
     return ret;
 }
 
@@ -114,12 +128,20 @@ int32_t rt_write_devicekey(int32_t offset, const uint8_t *devicekey, int32_t len
     rt_os_memset(init_buf, 'F', RT_DEVICE_KEY_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_DEVICE_KEY_OFFSET, init_buf, RT_DEVICE_KEY_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_DEVICE_KEY_OFFSET + offset, devicekey, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Write device key fail !\n");
+    }
+
     return ret;
 }
 
 int32_t rt_read_devicekey(int32_t offset, uint8_t *devicekey, int32_t len)
 {
     int32_t ret = rt_read_data(RUN_CONFIG_FILE, RT_DEVICE_KEY_OFFSET + offset, devicekey, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Read device key fail !\n");
+    }
+
     return ret;
 }
 
@@ -131,12 +153,20 @@ int32_t rt_write_ticket(int32_t offset, uint8_t *ticket, int32_t len)
     rt_os_memset(init_buf, 'F', RT_TICKET_SERVER_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_TICKET_SERVER_OFFSET, init_buf, RT_TICKET_SERVER_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_TICKET_SERVER_OFFSET + offset, ticket, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Write ticket server fail !\n");
+    }
+
     return ret;
 }
 
 int32_t rt_read_ticket(int32_t offset, uint8_t *ticket, int32_t len)
 {
     int32_t ret = rt_read_data(RUN_CONFIG_FILE, RT_DEVICE_KEY_OFFSET + offset, ticket, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Read ticket server fail !\n");
+    }
+
     return ret;
 }
 
@@ -148,6 +178,9 @@ int32_t rt_write_strategy(int32_t offset, uint8_t *strategy, int32_t len)
     rt_os_memset(init_buf, 'F', RT_STRATEGY_LIST_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_STRATEGY_LIST_OFFSET, init_buf, RT_STRATEGY_LIST_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_STRATEGY_LIST_OFFSET + offset, strategy, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Write strategy fail !\n");
+    }
 
     return ret;
 }
@@ -155,18 +188,29 @@ int32_t rt_write_strategy(int32_t offset, uint8_t *strategy, int32_t len)
 int32_t rt_read_strategy(int32_t offset, uint8_t *strategy, int32_t len)
 {
     int32_t ret = rt_read_data(RUN_CONFIG_FILE, RT_STRATEGY_LIST_OFFSET + offset, strategy, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Read strategy fail !\n");
+    }
+
     return ret;
 }
 
 int32_t rt_write_apnlist(int32_t offset, uint8_t *apnlist, int32_t len)
 {
     int32_t ret = rt_write_data(RUN_CONFIG_FILE, RT_APN_LIST_OFFSET + offset, apnlist, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Write apn fail !\n");
+    }
+
     return ret;
 }
 
 int32_t rt_read_apnlist(int32_t offset, uint8_t *apnlist, int32_t len)
 {
     int32_t ret = rt_read_data(RUN_CONFIG_FILE, RT_APN_LIST_OFFSET + offset, apnlist, len);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Read apn fail !\n");
+    }
     return ret;
 }
 

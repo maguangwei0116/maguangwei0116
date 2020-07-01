@@ -78,6 +78,6 @@ int32_t rt_write_apnlist(int32_t offset, uint8_t *apnlist, int32_t len);
 int32_t rt_read_apnlist(int32_t offset, uint8_t *apnlist, int32_t len);
 int32_t rt_truncate_apnlist(int32_t offset);
 
-void rt_inspect_monitor_strategy(inspect_strategy_e type);
+void rt_check_strategy_data(inspect_strategy_e type);
 
 #endif
