@@ -515,41 +515,7 @@ int32_t main(int32_t argc, const char *argv[])
     cos_get_ver(cos_ver, &cos_ver_len);
     bytes2hexstring(cos_ver, cos_ver_len, cos_hexstring);
 
-    MSG_PRINTF(LOG_INFO, "cos version major is %c%c minor is %c%c\r\n", cos_hexstring[0], cos_hexstring[1], cos_hexstring[2], cos_hexstring[3]);
-
-    for (ii = 8; ii < cos_ver_len * 2; ii = ii + 2) {
-        bytes_sum = 0;
-        if (cos_hexstring[ii] == 'A') {
-            bytes_sum = 10;
-        } else if (cos_hexstring[ii] == 'B') {
-            bytes_sum = 11;
-        } else if (cos_hexstring[ii] == 'C') {
-            bytes_sum = 12;
-        } else if (cos_hexstring[ii] == 'D') {
-            bytes_sum = 13;
-        } else if (cos_hexstring[ii] == 'E') {
-            bytes_sum = 14;
-        } else {
-            bytes_sum = cos_hexstring[ii] - '0';
-        }
-
-        if (cos_hexstring[ii + 1] == 'A') {
-            bytes_sum = bytes_sum * 16 + 10;
-        } else if (cos_hexstring[ii + 1] == 'B') {
-            bytes_sum = bytes_sum * 16 + 11;
-        } else if (cos_hexstring[ii + 1] == 'C') {
-            bytes_sum = bytes_sum * 16 + 12;
-        } else if (cos_hexstring[ii + 1] == 'D') {
-            bytes_sum = bytes_sum * 16 + 13;
-        } else if (cos_hexstring[ii + 1] == 'E') {
-            bytes_sum = bytes_sum * 16 + 14;
-        } else {
-            bytes_sum = bytes_sum * 16 + cos_hexstring[ii + 1] - '0';
-        }
-        cos_res[jj] = bytes_sum;
-        jj++;
-    }
-    MSG_PRINTF(LOG_INFO, "cos compile date is %s\r\n", cos_res);
+    MSG_PRINTF(LOG_INFO, "cos version is %x\n", cos_ver);
 
     /* inspect monitor */
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
