@@ -117,7 +117,9 @@ static int32_t enable_handler(const void *in, const char *event, void **out)
         }
 
 #ifdef CFG_REDTEA_READY_ON
-    if (g_upload_card_info->type != PROFILE_TYPE_SIM)
+    if (g_upload_card_info->type == PROFILE_TYPE_SIM) {
+        state = 2;      // SIM card in use, forced return 2.
+    } else
 #endif
     {
         state = msg_enable_profile(iccid->valuestring);
