@@ -130,12 +130,21 @@ static rt_bool rt_get_devicekey_status(void)
     return inspect_device_key(inspect_file);
 }
 
-/*
+
+
+/***********************************************************************************************
+ * FUNCTION
+   static void rt_judge_card_status(profile_type_e *last_card_type)
+ * DESCRIPTION
     There are three situations to wait:
     1. The program cuts the card and the current network is disconnected;
     2. Provisioning ping is unblocked, no more ping;
     3. Provisioning switch to SIM, no more monitor.
-*/
+ * PARAMETERS
+    [in]  last_card_type: Last card type
+ * RETURNS
+    void
+ ***********************************************************************************************/
 static void rt_judge_card_status(profile_type_e *last_card_type)
 {
     while (1) {
