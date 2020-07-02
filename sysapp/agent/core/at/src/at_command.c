@@ -44,6 +44,12 @@
 #define AT_CFG_EUICC                    "\"eUICC\""
 #define AT_CFG_UICC_LEN                 7 // 5+2
 
+#define AT_CFG_PROD_ENV                 "\"prod\""
+#define AT_CFG_STAG_ENV                 "\"stag\""
+#define AT_CFG_ENV_LEN                  6 // 4+2
+#define PROD_ENV_MODE                   0
+#define STAG_ENV_MODE                   1
+
 #define OTA_UPGRADE_OEMAPP_UBI          "oemapp.ubi"
 #define OTA_UPGRADE_USR_AGENT           "/usrdata/redtea/rt_agent"
 
@@ -150,6 +156,15 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     (g_p_value_list->config_info->lpa_channel_type == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
 #endif
                 ret = RT_SUCCESS;
+            } else if (cmd[3] == AT_GET_ENV_TYPE) {   // get environment
+                if(!strcmp(g_p_value_list->config_info->proxy_addr, "smdp.redtea.io")) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "pro");
+                } else if (!strcmp(g_p_value_list->config_info->proxy_addr, "smdp-test.redtea.io")) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "stag");
+                } else {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Unknow Environment");
+                }
+                ret = RT_SUCCESS;
             }
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
@@ -213,6 +228,17 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     }
                 } else {
                     ret = RT_ERROR;
+                }
+            } else if (cmd[3] == AT_UPDATE_ENV) {
+                MSG_PRINTF(LOG_INFO, "config env : %s\n", &cmd[5]);
+                if (!rt_os_strncasecmp(&cmd[5], AT_CFG_PROD_ENV, AT_CFG_ENV_LEN)) {
+                    ret = config_update_env_mode(PROD_ENV_MODE);
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_STAG_ENV, AT_CFG_ENV_LEN)) {
+                    ret = config_update_env_mode(STAG_ENV_MODE);
+                }
+                if (ret == RT_SUCCESS) {
+                    /* rsp: ,para,"env-type" */
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
             }
         }

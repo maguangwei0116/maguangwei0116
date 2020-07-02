@@ -51,6 +51,8 @@
 #define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // �ж��Ƿ�Ϊ�հ׷�
 #define UICC_MODE_vUICC                     "0"
 #define UICC_MODE_eUICC                     "1"
+#define PROD_ENV_MODE                       0
+#define STAG_ENV_MODE                       1
 
 #if 0 // @ref cJSON.h
 /* cJSON Types: */
@@ -551,6 +553,46 @@ int32_t config_update_uicc_mode(int32_t mode)
         config_write_file(CONFIG_FILE_PATH, pair_num, items);
         rt_os_sync();
     }
+
+    return RT_SUCCESS;
+}
+
+int32_t config_update_env_mode(int32_t mode)
+{
+    const char *oti_key = "OTI_ENVIRONMENT_ADDR";
+    const char *emq_key = "EMQ_SERVER_ADDR";
+    const char *proxy_key = "PROXY_SERVER_ADDR";
+    int32_t pair_num = ARRAY_SIZE(g_config_items);
+    config_item_t *items = g_config_items;
+
+    char oti_value[64];
+    char emq_value[64];
+    char proxy_value[64];
+    memset(oti_value, 0, sizeof(oti_value));
+    memset(emq_value, 0, sizeof(emq_value));
+    memset(proxy_value, 0, sizeof(proxy_value));
+
+    if(mode == PROD_ENV_MODE) {
+        strcpy(oti_value, "52.220.34.227");
+        strcpy(emq_value, "18.136.190.97");
+        strcpy(proxy_value, "smdp.redtea.io");
+        MSG_PRINTF(LOG_INFO, "switch product env\n");
+    }
+    else if (mode == STAG_ENV_MODE) {
+        strcpy(oti_value, "54.222.248.186");
+        strcpy(emq_value, "13.229.31.234");
+        strcpy(proxy_value, "smdp-test.redtea.io");
+        MSG_PRINTF(LOG_INFO, "switch staging env\n");
+    } else {
+        MSG_PRINTF(LOG_INFO, "switch fail!\n");
+        return RT_ERROR;
+    }
+
+    config_set_data(oti_key, oti_value, pair_num, items);
+    config_set_data(emq_key, emq_value, pair_num, items);
+    config_set_data(proxy_key, proxy_value, pair_num, items);
+    config_write_file(CONFIG_FILE_PATH, pair_num, items);
+    rt_os_sync();
 
     return RT_SUCCESS;
 }
