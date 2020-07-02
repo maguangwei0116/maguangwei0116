@@ -168,7 +168,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             }
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
-                uint8_t iccid[THE_ICCID_LENGTH+1] = {0};
+                uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
                 MSG_PRINTF(LOG_INFO, "using card type : %d\n", g_p_value_list->card_info->type);
 #ifdef CFG_REDTEA_READY_ON
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
