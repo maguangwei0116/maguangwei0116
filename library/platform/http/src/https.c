@@ -210,8 +210,6 @@ void https_free(https_ctx_t *https_ctx)
 
 #if (CFG_UPLOAD_HTTPS_ENABLE)
 
-    #define PING_ADDR                              "ping -c 1 -W 3 18.136.190.97"
-
     static int new_system(char *cmd)
     {
         return 0;
