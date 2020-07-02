@@ -115,9 +115,11 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.http_header.record_size = 0;
     
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
-    rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
-    dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
-    cJSON_free(out);
+    if (out != NULL) {
+        rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
+        dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
+        cJSON_free(out);
+    }
 
     snprintf((char *)buf, sizeof(buf), "%s:%d", g_upgrade_addr, g_upgrade_port);
     http_set_header_record(&dw_struct, "HOST", buf);

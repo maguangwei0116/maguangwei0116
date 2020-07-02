@@ -331,8 +331,9 @@ static int32_t upload_packet_payload(cJSON *upload, const char *event, int32_t s
     CJSON_ADD_STR_OBJ(payload_json, content);
 
     payload = (char *)cJSON_PrintUnformatted(payload_json);
-
-    CJSON_ADD_NEW_STR_OBJ(upload, payload);
+    if (payload != NULL) {
+        CJSON_ADD_NEW_STR_OBJ(upload, payload);
+    }
 
     ret = RT_SUCCESS;
 
@@ -408,8 +409,10 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             upload = upload_packet_all(tran_id, event, status, obj->topic, content);
             //MSG_PRINTF(LOG_WARN, "upload [%p] !!!\r\n", upload);
             upload_json_pag = (char *)cJSON_PrintUnformatted(upload);
-            //MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
-            ret = upload_send_request((const void *)upload_json_pag, rt_os_strlen(upload_json_pag));
+            if (upload_json_pag != NULL) {
+                //MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
+                ret = upload_send_request((const void *)upload_json_pag, rt_os_strlen(upload_json_pag));
+            }
 
             if (upload) {
                 cJSON_Delete(upload);

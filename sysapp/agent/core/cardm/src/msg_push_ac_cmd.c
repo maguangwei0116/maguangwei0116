@@ -169,12 +169,14 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
             cJSON_AddItemToObject(new_command_content, "iccid", cJSON_CreateString((const char *)iccid));
             /* add apn list information */
             apn_list_c = cJSON_PrintUnformatted(apn_list);
-            /* create a new apn list json object */
-            cJSON_AddItemToObject(new_command_content, "apnInfos", cJSON_Parse((const char *)apn_list_c));
-            //debug_json_data(new_command_content, new_command_content);
-            msg_analyse_apn(new_command_content, iccid);
+            if (apn_list_c != NULL) {
+                /* create a new apn list json object */
+                cJSON_AddItemToObject(new_command_content, "apnInfos", cJSON_Parse((const char *)apn_list_c));
+                //debug_json_data(new_command_content, new_command_content);
+                msg_analyse_apn(new_command_content, iccid);
+                cJSON_free(apn_list_c);
+            }
             cJSON_Delete(new_command_content);
-            cJSON_free(apn_list_c);
         }
     }
     return state;

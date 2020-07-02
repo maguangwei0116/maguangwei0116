@@ -432,11 +432,13 @@ int32_t msg_apnlist_handler(cJSON *apnparams_list)
                     cJSON_AddItemToObject(new_command_content, "iccid", cJSON_CreateString((const char *)iccid->valuestring));
                     /* add apn list information */
                     apn_list_c = cJSON_PrintUnformatted(apn_list);
-                    /* create a new apn list json object */
-                    cJSON_AddItemToObject(new_command_content, "apnInfos", cJSON_Parse((const char *)apn_list_c));
-                    state = msg_analyse_apn(new_command_content, iccid->valuestring);
+                    if (apn_list_c != NULL) {
+                        /* create a new apn list json object */
+                        cJSON_AddItemToObject(new_command_content, "apnInfos", cJSON_Parse((const char *)apn_list_c));
+                        state = msg_analyse_apn(new_command_content, iccid->valuestring);
+                        cJSON_free(apn_list_c);
+                    }
                     cJSON_Delete(new_command_content);
-                    cJSON_free(apn_list_c);
 
                     if (state == RT_ERROR) {
                         MSG_PRINTF(LOG_WARN, "start delete apn list\n");

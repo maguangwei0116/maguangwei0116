@@ -418,8 +418,10 @@ int initiate_authentication(const char *smdp_addr, char *auth_data, int *size, u
     cJSON_AddStringToObject(content, "smdpAddress", smdp_addr);
 
     data = cJSON_PrintUnformatted(content);
+    if (data != NULL) {
+        ret = lpa_https_post(smdp_addr, API_INITIATE_AUTHENTICATION, data, auth_data, size);
+    }
 
-    ret = lpa_https_post(smdp_addr, API_INITIATE_AUTHENTICATION, data, auth_data, size);
     // RT_CHECK_GO(ret == 200, RT_ERR_HTTPS_POST_FAIL, end);
     if (ret == 200) {
         ret = RT_SUCCESS;
@@ -731,8 +733,10 @@ int authenticate_client(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     cJSON_AddStringToObject(content, "authenticateServerResponse", b64_in);
 
     data = cJSON_PrintUnformatted(content);
+    if (data != NULL) {
+        ret = lpa_https_post(smdp_addr, API_AUTHENTICATE_CLIENT, data, out, out_size);
+    }
 
-    ret = lpa_https_post(smdp_addr, API_AUTHENTICATE_CLIENT, data, out, out_size);
     RT_CHECK_GO(ret == 200, RT_ERR_HTTPS_POST_FAIL, end);
 
     ret = get_status_codes(out, (char *)b64_in, (char *)g_buf);
@@ -839,8 +843,10 @@ int get_bound_profile_package(const char *smdp_addr, const uint8_t *in, uint16_t
     cJSON_AddStringToObject(content, "prepareDownloadResponse", b64_in);
 
     data = cJSON_PrintUnformatted(content);
+    if (data != NULL) {
+        ret = lpa_https_post(smdp_addr, API_GET_BOUND_PROFILE_PACKAGE, data, out, out_size);
+    }
 
-    ret = lpa_https_post(smdp_addr, API_GET_BOUND_PROFILE_PACKAGE, data, out, out_size);
     RT_CHECK_GO(ret == 200, RT_ERR_HTTPS_POST_FAIL, end);
 
     ret = get_status_codes(out, (char *)b64_in, (char *)g_buf);
@@ -1120,8 +1126,10 @@ int handle_notification(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     cJSON_AddStringToObject(content, "pendingNotification", b64_in);
 
     data = cJSON_PrintUnformatted(content);
+    if (data != NULL) {
+        ret = lpa_https_post(smdp_addr, API_HANDLE_NOTIFICATION, data, out, out_size);
+    }
 
-    ret = lpa_https_post(smdp_addr, API_HANDLE_NOTIFICATION, data, out, out_size);
     if (ret == 204) {
         ret = RT_SUCCESS;
     } else {
@@ -1164,8 +1172,10 @@ int es9p_cancel_session(const char *smdp_addr, const uint8_t *in, uint16_t in_si
     cJSON_AddStringToObject(content, "cancelSessionResponse", b64_in);
 
     data = cJSON_PrintUnformatted(content);
+    if (data != NULL) {
+        ret = lpa_https_post(smdp_addr, API_CANCEL_SESSION, data, out, out_size);
+    }
 
-    ret = lpa_https_post(smdp_addr, API_CANCEL_SESSION, data, out, out_size);
     if (ret == 200) {
         ret = RT_SUCCESS;
     } else {

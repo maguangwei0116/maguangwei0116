@@ -71,10 +71,13 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
     rt_qmi_get_imei(imei, sizeof(imei));
     cJSON_AddItemToObject(post_info, "swType", cJSON_CreateNumber(0)); // 0 for agent
     cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(imei));  // must have a empty "imei"
+
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
-    rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
-    dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
-    cJSON_free(out);
+    if (out != NULL) {
+        rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
+        dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
+        cJSON_free(out);
+    }
 
     snprintf((char *)buf, sizeof(buf), "%s:%d", DOWNLOAD_OTA_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
     http_set_header_record(&dw_struct, "HOST", buf);
