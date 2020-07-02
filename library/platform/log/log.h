@@ -69,7 +69,7 @@ extern log_level_e log_get_level(const char *level_string);
 static inline void ARRAY_PRINTF(const char *tag, const uint8_t *array, uint16_t len)
 {    
     extern uint32_t rt_os_strlen(const char *string);
-    uint8_t *_p_ = (uint8_t *)array;                                        
+    uint8_t *_p_ = (uint8_t *)array;
     uint16_t i;
     char msg[8192] = {0};
     char *_msg;
@@ -79,12 +79,12 @@ static inline void ARRAY_PRINTF(const char *tag, const uint8_t *array, uint16_t 
     snprintf(msg, _len, "(%d bytes) %s", len, tag);
     _msg = &msg[rt_os_strlen(msg)];
     _len = _len - tag_len;
-    for (i = 0; i < len; i++) {                                             
-        snprintf(_msg, _len, "%02X", _p_[i]);            
+    for (i = 0; i < len; i++) {
+        snprintf(_msg, _len, "%02X", _p_[i]);
         _msg += 2;
         _len -= 2;
-    }                                                                       
-    snprintf(_msg, _len, "\r\n");                          
+    }
+    snprintf(_msg, _len, "\r\n");
     log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF, "%s", msg);
 } 
 #endif
