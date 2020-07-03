@@ -177,21 +177,17 @@ static config_item_t g_config_items[] =
 {
 /*     item_name                config_func                 data_type       default_value                   annotation          */
 #if (CFG_ENV_TYPE_PROD)
-    #if (CFG_UPLOAD_HTTPS_ENABLE)
-        ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,         "oti.redtea.io",                "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
-    #else
-        ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,         "52.220.34.227",                "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-    #endif
-ITEM(EMQ_SERVER_ADDR,               NULL,                   STRING,         "18.136.190.97",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,             NULL,                   STRING,         "smdp.redtea.io",               "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
-#elif (CFG_ENV_TYPE_STAG) || (CFG_ENV_TYPE_QA)
-    #if (CFG_UPLOAD_HTTPS_ENABLE)
-        ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,         "oti-staging.redtea.io",        "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
-    #else
-        ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,         "54.222.248.186",               "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-    #endif
-ITEM(EMQ_SERVER_ADDR,               NULL,                   STRING,         "13.229.31.234",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,             NULL,                   STRING,         "smdp-test.redtea.io",          "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
+ITEM(OTI_ENVIRONMENT_ADDR,          NULL,                   STRING,         "oti.redtea.io",                "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
+ITEM(EMQ_SERVER_ADDR,               NULL,                   STRING,         "cthulhu.easyiot.ai",           "EMQ server addr: stage(13.229.31.234) prod(cthulhu.easyiot.ai)"),
+ITEM(PROXY_SERVER_ADDR,             NULL,                   STRING,         "smdp.redtea.io",               "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io)"),
+#elif (CFG_ENV_TYPE_STAG)
+ITEM(OTI_ENVIRONMENT_ADDR,          NULL,                   STRING,         "oti-staging.redtea.io",        "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
+ITEM(EMQ_SERVER_ADDR,               NULL,                   STRING,         "13.229.31.234",                "EMQ server addr: stage(13.229.31.234) prod(cthulhu.easyiot.ai)"),
+ITEM(PROXY_SERVER_ADDR,             NULL,                   STRING,         "smdp-test.redtea.io",          "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io)"),
+#elif (CFG_ENV_TYPE_QA)
+ITEM(OTI_ENVIRONMENT_ADDR,          NULL,                   STRING,         "oti-qa.redtea.io",             "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
+ITEM(EMQ_SERVER_ADDR,               NULL,                   STRING,         "13.229.31.234",                "EMQ server addr: stage(13.229.31.234) prod(cthulhu.easyiot.ai)"),
+ITEM(PROXY_SERVER_ADDR,             NULL,                   STRING,         "smdp-test.redtea.io",          "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io)"),
 #endif
 ITEM(MBN_CONFIGURATION,         config_switch_value,        INTEGER,        "1",                            "Whether config MBN (0:disable  1:enable)"),
 ITEM(INIT_PROFILE_TYPE,         config_init_pro_type,       INTEGER,        "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
@@ -206,8 +202,8 @@ ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "0",
 ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 #else
-ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_TRACE",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
-ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG_TRACE",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_TRACE",                    "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG_TRACE",                    "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 #endif
 ITEM(USAGE_ENABLE,              config_switch_value,        INTEGER,        "0",                            "Whether enable upload user traffic (0:disable  1:enable)"),
 ITEM(USAGE_FREQ,                config_usage_freq,          INTEGER,        "60",                           "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
@@ -573,13 +569,13 @@ int32_t config_update_env_mode(int32_t mode)
     memset(proxy_value, 0, sizeof(proxy_value));
 
     if(mode == PROD_ENV_MODE) {
-        strcpy(oti_value, "52.220.34.227");
-        strcpy(emq_value, "18.136.190.97");
+        strcpy(oti_value, "oti.redtea.io");
+        strcpy(emq_value, "cthulhu.easyiot.ai");
         strcpy(proxy_value, "smdp.redtea.io");
         MSG_PRINTF(LOG_INFO, "switch product env\n");
     }
     else if (mode == STAG_ENV_MODE) {
-        strcpy(oti_value, "54.222.248.186");
+        strcpy(oti_value, "oti-staging.redtea.io");
         strcpy(emq_value, "13.229.31.234");
         strcpy(proxy_value, "smdp-test.redtea.io");
         MSG_PRINTF(LOG_INFO, "switch staging env\n");
