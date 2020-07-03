@@ -44,6 +44,10 @@
 #define AT_CFG_EUICC                    "\"eUICC\""
 #define AT_CFG_UICC_LEN                 7 // 5+2
 
+#define RT_PROD_OTI_ADDR                "oti.redtea.io"
+#define RT_STAG_OTI_ADDR                "oti-staging.redtea.io"
+#define RT_QA_OTI_ADDR                  "oti-qa.redtea.io"
+
 #define AT_CFG_PROD_ENV                 "\"prod\""
 #define AT_CFG_STAG_ENV                 "\"stag\""
 #define AT_CFG_ENV_LEN                  6 // 4+2
@@ -159,10 +163,12 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 #endif
                 ret = RT_SUCCESS;
             } else if (cmd[3] == AT_GET_ENV_TYPE) {   // get environment
-                if(!strcmp(g_p_value_list->config_info->proxy_addr, "smdp.redtea.io")) {
+                if(!strcmp(g_p_value_list->config_info->oti_addr, RT_PROD_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "pro");
-                } else if (!strcmp(g_p_value_list->config_info->proxy_addr, "smdp-test.redtea.io")) {
+                } else if (!strcmp(g_p_value_list->config_info->oti_addr, RT_STAG_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "stag");
+                } else if (!strcmp(g_p_value_list->config_info->oti_addr, RT_QA_OTI_ADDR)) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "qa");
                 } else {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Unknow Environment");
                 }
