@@ -479,7 +479,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_info.device_id);
     } else {
-        MSG_PRINTF(LOG_INFO, "platform send yunba mqtt, but we will return ...\n");
+        MSG_PRINTF(LOG_WARN, "The channel sent by the platform is not EMQ ..\n");
         return RT_FALSE;
     }
 
