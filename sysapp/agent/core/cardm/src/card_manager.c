@@ -511,7 +511,7 @@ int32_t init_card_manager(void *arg)
             }
         } else {
             g_p_info.sim_info.state = SIM_ERROR;
-            MSG_PRINTF(LOG_DBG, "SIM cpin fail !\n");
+            MSG_PRINTF(LOG_DBG, "SIM cpin error !\n");
         }
     }
 
