@@ -399,6 +399,49 @@ static int32_t card_key_data_init(void)
     return bootstrap_get_key();
 }
 
+int32_t uicc_switch_card(profile_type_e type, uint8_t *iccid)
+{
+    int32_t ii = 0;
+    int32_t len = 0;
+    int32_t used_seq = 0;
+
+    for (ii = 0; ii < g_p_info.num; ii++) {
+        len = rt_os_strlen(g_p_info.info[ii].iccid);
+        if (PROFILE_TYPE_PROVISONING == type) {
+            if (type == g_p_info.info[ii].class) {
+                rt_os_memcpy(iccid, g_p_info.info[ii].iccid, len);
+                iccid[len] = '\0';
+                break;
+            }
+        } else if ((PROFILE_TYPE_OPERATIONAL == type) \
+            && (g_p_info.info[ii].class == PROFILE_TYPE_OPERATIONAL)){
+            if (!rt_os_strncmp(iccid, g_p_info.info[ii].iccid, len)) {
+                break;
+            }
+            if (g_p_info.info[ii].state == 1) {
+                used_seq = ii;
+            }
+        }
+    }
+
+    if (g_p_info.num == 1) { // only one card, return error
+        MSG_PRINTF(LOG_WARN, "only one card detected !\n");
+        return RT_ERROR;
+    }
+
+    if (ii == g_p_info.num) {
+        if (used_seq < g_p_info.num - 1) {
+            len = rt_os_strlen(g_p_info.info[used_seq + 1].iccid);
+            rt_os_memcpy(iccid, g_p_info.info[used_seq + 1].iccid, len);
+        } else {
+            len = rt_os_strlen(g_p_info.info[1].iccid);
+            rt_os_memcpy(iccid, g_p_info.info[1].iccid, len);
+        }
+    }
+    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, iccid, rt_os_strlen(iccid));
+    return RT_SUCCESS;
+}
+
 #ifdef CFG_REDTEA_READY_ON
 int32_t card_switch_type(cJSON *switchparams)
 {
