@@ -459,9 +459,9 @@ int32_t main(int32_t argc, const char *argv[])
     int32_t cos_oid = 0;
     uint8_t atr[32] = {0};
     uint16_t atr_size = 32;
-    uint8_t cos_ver[64] = {0};
+    uint8_t cos_ver[64];
     uint16_t cos_ver_len = 64;
-    char cos_hexstring[64] = {0};
+    uint16_t i = 0;
 
     /* check input param to debug in terminal */
     if (argc > 1 && !rt_os_strcmp(argv[1], RT_DEBUG_IN_TERMINAL)) {
@@ -508,8 +508,12 @@ int32_t main(int32_t argc, const char *argv[])
     } while(cos_oid == -1);
     cos_client_reset(atr, &atr_size);
     cos_get_ver(cos_ver, &cos_ver_len);
-    bytes2hexstring(cos_ver, cos_ver_len, cos_hexstring);
-    MSG_PRINTF(LOG_INFO, "Cos version: %s\n", cos_hexstring);
+
+    MSG_PRINTF(LOG_INFO, "Cos version: ");
+    for (i = 0; i < cos_ver_len; i ++) {
+        MSG_ORG_PRINTF(LOG_INFO, "%02X", cos_ver[i]);
+    }
+    MSG_ORG_PRINTF(LOG_INFO, "\n");
 
     /* inspect monitor */
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
