@@ -50,6 +50,7 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
     int8_t *out;
     int8_t  buf[100];
     char  imei[16];
+    char convert_ip[128] = {0};
     int32_t cnt = -1;  // used to count the number of download
 
     dw_struct.if_continue = 1;
@@ -61,7 +62,9 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
     dw_struct.file_path = (const char *)d_info->file_name;
     dw_struct.manager_type = 1;
     dw_struct.http_header.method = 0;  // POST
-    STRUCTURE_OTI_URL(buf, sizeof(buf), DOWNLOAD_OTA_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT, "/default/agent/download");  // Build the OTI address
+
+    http_get_ip_addr(DOWNLOAD_OTA_ADDR, convert_ip);
+    STRUCTURE_OTI_URL(buf, sizeof(buf), convert_ip, DEFAULT_OTI_ENVIRONMENT_PORT, "/default/agent/download");  // Build the OTI address
     rt_os_memcpy(dw_struct.http_header.url, buf, rt_os_strlen(buf));
     dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
     dw_struct.http_header.version = 0;
@@ -79,7 +82,7 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
         cJSON_free(out);
     }
 
-    snprintf((char *)buf, sizeof(buf), "%s:%d", DOWNLOAD_OTA_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
+    snprintf((char *)buf, sizeof(buf), "%s:%d", convert_ip, DEFAULT_OTI_ENVIRONMENT_PORT);
     http_set_header_record(&dw_struct, "HOST", buf);
 
     http_set_header_record(&dw_struct, "Content-Type", "application/json");

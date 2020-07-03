@@ -49,6 +49,7 @@ extern int32_t       http_tcpclient_recv(int32_t socket, uint8_t *lpbuff, int32_
 extern int32_t       http_tcpclient_close(int32_t socket);
 extern int32_t       http_parse_result(const char *lpbuf);
 extern int32_t       http_parse_url(const char *url, char *host, char *file, int32_t *port);
+extern void          http_get_ip_addr(const char *domain, char *ip_addr);
 
 #ifdef __cplusplus
 }

@@ -84,6 +84,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     int8_t *out;
     int8_t  buf[MAX_BUF_LEN];
     uint8_t down_try = 0;
+    char convert_ip[128] = {0};
     int32_t cnt = -1;  // used to count the number of download
 
     dw_struct.if_continue = 1;
@@ -95,17 +96,19 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     /* build http body */
     post_info = cJSON_CreateObject();
     
+    http_get_ip_addr(g_upgrade_addr, convert_ip);
+
     /* check target type frsit */
     if (d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
-        snprintf(buf, sizeof(buf), "http://%s:%d%s", g_upgrade_addr, g_upgrade_port, g_upgrade_def_agent_api);
+        snprintf(buf, sizeof(buf), "http://%s:%d%s", convert_ip, g_upgrade_port, g_upgrade_def_agent_api);
         cJSON_AddItemToObject(post_info, "swType", cJSON_CreateNumber(DEF_TARGET_TYPE_DEF_SHARE_PROFILE));
         cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(g_upgrade_imei));  // must have a real "imei"
     } else {
-        snprintf(buf, sizeof(buf), "http://%s:%d%s", g_upgrade_addr, g_upgrade_port, g_upgrade_api);  // Build the OTI address
+        snprintf(buf, sizeof(buf), "http://%s:%d%s", convert_ip, g_upgrade_port, g_upgrade_api);  // Build the OTI address
         cJSON_AddItemToObject(post_info, "ticket", cJSON_CreateString((char *)d_info->ticket));
         cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(""));  // must have a empty "imei"
     }
-    
+
     dw_struct.file_path = (const char *)d_info->tmpFileName;
     dw_struct.manager_type = 1;
     dw_struct.http_header.method = 0;  // POST
@@ -121,7 +124,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         cJSON_free(out);
     }
 
-    snprintf((char *)buf, sizeof(buf), "%s:%d", g_upgrade_addr, g_upgrade_port);
+    snprintf((char *)buf, sizeof(buf), "%s:%d", convert_ip, g_upgrade_port);
     http_set_header_record(&dw_struct, "HOST", buf);
 
     http_set_header_record(&dw_struct, "Content-Type", "application/json");

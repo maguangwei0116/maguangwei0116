@@ -83,8 +83,9 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
     char upload_url[MAX_URL_LEN];
     char file[MAX_FILE_NAME_LEN] = {0};
     char host_addr[HOST_ADDRESS_LEN];
-    int32_t port = 0;
+    char convert_ip[128] = {0};
     uint8_t lpbuf[BUFFER_SIZE * 4] = {0};
+    int32_t port = 0;
     int32_t send_len;
 
     if (!data) {
@@ -95,11 +96,13 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
 
     //MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", rt_os_strlen((const char *)out), (const char *)out);
 
+
     get_md5_string((int8_t *) data, md5_out);
     md5_out[MD5_STRING_LENGTH] = '\0';
 
     //send report by http
-    snprintf(upload_url, sizeof(upload_url), "http://%s:%d%s", g_upload_addr, g_upload_port, g_upload_api);
+    http_get_ip_addr(g_upload_addr, convert_ip);
+    snprintf(upload_url, sizeof(upload_url), "http://%s:%d%s", convert_ip, g_upload_port, g_upload_api);
     MSG_PRINTF(LOG_TRACE, "upload_url: %s\r\n", upload_url);
     if (http_parse_url(upload_url, host_addr, file, &port)) {
         MSG_PRINTF(LOG_WARN, "http_parse_url failed!\n");
