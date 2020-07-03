@@ -53,6 +53,8 @@
 #define OTA_UPGRADE_OEMAPP_UBI          "oemapp.ubi"
 #define OTA_UPGRADE_USR_AGENT           "/usrdata/redtea/rt_agent"
 
+#define RT_DEFAULT_ICCID                "FFFFFFFFFFFFFFFFFFFF"
+
 /*
 handle function name: xxx_at_cmd_handle
 */
@@ -169,14 +171,18 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
                 uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
-                MSG_PRINTF(LOG_INFO, "using card type : %d\n", g_p_value_list->card_info->type);
 #ifdef CFG_REDTEA_READY_ON
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                     return RT_ERROR;
                 }
 #endif
-                rt_os_memcpy(iccid, &cmd[5], THE_ICCID_LENGTH);
+                if(rt_os_strlen(&cmd[5]) == 0) {
+                    rt_os_memcpy(iccid, RT_DEFAULT_ICCID, THE_ICCID_LENGTH);
+                } else {
+                    rt_os_memcpy(iccid, &cmd[5], THE_ICCID_LENGTH);
+                }
                 MSG_PRINTF(LOG_INFO, "iccid: %s\n", iccid);
+
                 if (cmd[3] == AT_SWITCH_TO_PROVISIONING) {
                     ret = uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
                 } else if (cmd[3] == AT_SWITCH_TO_OPERATION) {
