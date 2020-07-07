@@ -13,6 +13,9 @@
 #include "usrdata.h"
 #include "cJSON.h"
 
+#define RT_MCCMNC_LEN   5
+#define RT_ERR_MCCMNC   "00000"
+
 extern const devicde_info_t *g_upload_device_info;
 extern const card_info_t *g_upload_card_info;
 extern const target_versions_t *g_upload_ver_info;
@@ -200,9 +203,17 @@ static void rt_get_network_info(char *mcc_mnc, int32_t mcc_mnc_size,
     if (g_upload_card_info && profileType) {
         *profileType = (int32_t)g_upload_card_info->type;
     }
-    
-    rt_qmi_get_mcc_mnc(&mcc_int, &mnc_int);
-    snprintf(mcc_mnc, mcc_mnc_size, "%03d%02d", mcc_int, mnc_int);
+
+    for (j = 0; j < 3; j++) {
+        rt_qmi_get_mcc_mnc(&mcc_int, &mnc_int);
+        snprintf(mcc_mnc, mcc_mnc_size, "%03d%02d", mcc_int, mnc_int);
+        if (!rt_os_strncmp(mcc_mnc, RT_ERR_MCCMNC, RT_MCCMNC_LEN)) {
+            MSG_PRINTF(LOG_ERR, "get mcc mnc fail, mcc_mnc : %s", mcc_mnc);
+            rt_os_msleep(100);
+            continue;
+        }
+        break;
+    }
 
     /* signal level: [1,5] */
     rt_get_cur_signal(dbm);
