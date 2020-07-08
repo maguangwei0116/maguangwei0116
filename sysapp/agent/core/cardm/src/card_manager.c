@@ -550,7 +550,6 @@ int32_t init_card_manager(void *arg)
                 MSG_PRINTF(LOG_INFO, "SIM iccid : %s\n", sim_iccid);
                 g_p_info.sim_info.state = SIM_READY;
                 rt_os_strncpy(g_p_info.sim_info.iccid, sim_iccid, THE_ICCID_LENGTH);
-                rt_os_strncpy(g_p_info.iccid, sim_iccid, THE_ICCID_LENGTH);
             }
         } else {
             g_p_info.sim_info.state = SIM_ERROR;
@@ -726,6 +725,7 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
         if (ret == RT_SUCCESS) {
             break;
         }
+        rt_os_msleep(100);
     }
 
     return ret;

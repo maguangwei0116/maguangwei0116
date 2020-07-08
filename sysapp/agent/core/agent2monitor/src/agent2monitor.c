@@ -94,7 +94,7 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
     info.log_size = config_info->log_max_size;
 
     rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
-    c_data.cmd = 0x00;
+    c_data.cmd = CMD_SET_PARAM;
     c_data.data_len = (uint8_t)len;
     c_data.data = (uint8_t *)&info;
     len = sizeof(atom_data_t) - sizeof(uint8_t *);

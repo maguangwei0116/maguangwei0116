@@ -142,7 +142,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 MSG_PRINTF(LOG_ERR, "Parse iccid failed!!\n");
                 continue;
             }
-            
+
             code_info = cJSON_CreateObject();
             if (!code_info) {
                 MSG_PRINTF(LOG_ERR, "Code info create error\n");
