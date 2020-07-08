@@ -41,12 +41,7 @@ static int32_t rt_judge_external_event(void)
     if (g_downstream_event == RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "External events interrupt ping ! Hold using card...\n");
         g_downstream_event = RT_FALSE;
-
-        if (*g_card_type == PROFILE_TYPE_PROVISONING) {
-            return RT_SUCCESS;
-        } else {
-            return RT_EXCELLENT;
-        }
+        return RT_SUCCESS;
     } else {
         return RT_ERROR;
     }
@@ -66,8 +61,6 @@ static int32_t rt_ping_provisoning_get_status(void)
 
     if (lost < RT_PROVISONING_LOST) {
         ret = RT_SUCCESS;
-    } else {
-        ret = RT_ERROR;
     }
 
     return ret;
@@ -80,10 +73,6 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
     double delay, mdev;
 
     rt_local_ping(ip, &delay, &lost, &mdev);
-    network_level = rt_judge_external_event();
-    if (network_level ==  RT_EXCELLENT) {
-        return network_level;
-    }
 
     if ( (delay <= RT_EXCELLENT_DELAY) && (lost == RT_EXCELLENT_LOST) && (mdev <= RT_EXCELLENT_MDEV)) {     // delay<=100; lost=0;   mdev<=20;
         network_level = RT_EXCELLENT;
@@ -230,7 +219,12 @@ static void network_ping_task(void *arg)
                         strategy_item = cJSON_GetArrayItem(strategy_list, ii);
                         domain = cJSON_GetObjectItem(strategy_item, "domain");
                         level = cJSON_GetObjectItem(strategy_item, "level");
+
                         network_level = rt_ping_get_level(domain->valuestring, level->valueint, type->valueint);
+                        ret = rt_judge_external_event();
+                        if (ret == RT_SUCCESS) {
+                            break;
+                        }
 
                         if (type->valueint == RT_AND) {
                             if (network_level >= level->valueint) {
