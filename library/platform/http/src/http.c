@@ -287,7 +287,7 @@ http_result_e http_post_raw(const char *host_ip, int32_t port, void *buffer, int
 {
     int32_t socket_fd = -1;
     int8_t  *lpbuf = NULL;
-    char convert_ip[128] = {0};
+    char convert_ip[HOST_ADDRESS_LEN] = {0};
     int32_t offset = 0;
     http_result_e ret = HTTP_SUCCESS;
 

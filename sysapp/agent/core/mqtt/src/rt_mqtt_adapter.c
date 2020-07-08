@@ -88,7 +88,7 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
 #if (CFG_UPLOAD_HTTPS_ENABLE)
     ret = mqtt_https_post_json((const char *)json_data, reg_url->url, reg_url->port, \
                             "/api/v1/ticket", mqtt_redtea_ticket_server_cb);
-    #else
+#else
     ret = mqtt_http_post_json((const char *)json_data, reg_url->url, reg_url->port, \
                             "/api/v1/ticket", mqtt_redtea_ticket_server_cb);
 #endif
@@ -119,7 +119,7 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
 rt_bool mqtt_connect_adapter(mqtt_param_t *param, const char *oti_addr, int32_t oti_port, const char *eid)
 {
     uint8_t num = 0;
-    char convert_ip[128] = {0};
+    char convert_ip[HOST_ADDRESS_LEN] = {0};
     MQTTClient *c = &param->client;
     mqtt_opts_t *opts = &param->opts;
     const char *alias = param->alias;

@@ -137,7 +137,7 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
     char md5_out[MD5_STRING_LENGTH+1];
     char *p = NULL;
     char temp[128];
-    char convert_ip[128] = {0};
+    char convert_ip[HOST_ADDRESS_LEN] = {0};
 
     do{
         if(!json_data || !host_ip || !path) {

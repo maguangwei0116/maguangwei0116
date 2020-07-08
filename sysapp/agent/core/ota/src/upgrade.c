@@ -84,7 +84,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     int8_t *out;
     int8_t  buf[MAX_BUF_LEN];
     uint8_t down_try = 0;
-    char convert_ip[128] = {0};
+    char convert_ip[HOST_ADDRESS_LEN] = {0};
     int32_t cnt = -1;  // used to count the number of download
 
     dw_struct.if_continue = 1;

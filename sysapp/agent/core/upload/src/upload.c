@@ -41,11 +41,11 @@ static profile_type_e *g_upload_card_type       = NULL;
 static int32_t upload_http_post_single(const char *host_addr, int32_t port, socket_call_back cb, void *buffer, int32_t len)
 {
     MSG_PRINTF(LOG_DBG, "http post send (%d bytes, buf: %p): %s\r\n", len, buffer, (const char *)buffer);
-    #if (CFG_UPLOAD_HTTPS_ENABLE)
-        return https_post_raw(g_upload_addr, g_upload_api, buffer, NULL, NULL, cb);
-    #else
-        return http_post_raw(host_addr, port, buffer, len, cb);
-    #endif
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    return https_post_raw(g_upload_addr, g_upload_api, buffer, NULL, NULL, cb);
+#else
+    return http_post_raw(host_addr, port, buffer, len, cb);
+#endif
 }
 
 static int32_t upload_deal_rsp_msg(const char *msg)
@@ -82,11 +82,10 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
     char md5_out[MD5_STRING_LENGTH + 1];
     char upload_url[MAX_URL_LEN];
     char file[MAX_FILE_NAME_LEN] = {0};
-    char host_addr[HOST_ADDRESS_LEN];
-    char convert_ip[128] = {0};
+    char convert_ip[HOST_ADDRESS_LEN] = {0};
     uint8_t lpbuf[BUFFER_SIZE * 4] = {0};
-    int32_t port = 0;
     int32_t send_len;
+    int32_t port = 0;
 
     if (!data) {
         // MSG_PRINTF(LOG_WARN, "out buffer error\n");
@@ -96,29 +95,31 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
 
     //MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", rt_os_strlen((const char *)out), (const char *)out);
 
-
     get_md5_string((int8_t *) data, md5_out);
     md5_out[MD5_STRING_LENGTH] = '\0';
 
     //send report by http
     http_get_ip_addr(g_upload_addr, convert_ip);
+    MSG_PRINTF(LOG_TRACE, "convert_ip: %s\r\n", convert_ip);
+
     snprintf(upload_url, sizeof(upload_url), "http://%s:%d%s", convert_ip, g_upload_port, g_upload_api);
     MSG_PRINTF(LOG_TRACE, "upload_url: %s\r\n", upload_url);
-    if (http_parse_url(upload_url, host_addr, file, &port)) {
+
+    if (http_parse_url(upload_url, convert_ip, file, &port)) {
         MSG_PRINTF(LOG_WARN, "http_parse_url failed!\n");
         ret = HTTP_PARAMETER_ERROR;
         goto exit_entry;
     }
 
-    snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, md5_out, data_len, data);
+    snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, convert_ip, port, md5_out, data_len, data);
     send_len = rt_os_strlen(lpbuf);
 
-    #if (CFG_UPLOAD_HTTPS_ENABLE)
-        ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, data, rt_os_strlen(data));
-    #else
-        ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
-        // MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
-    #endif
+#if (CFG_UPLOAD_HTTPS_ENABLE)
+    ret = upload_http_post_single(convert_ip, port, upload_deal_rsp_msg, data, rt_os_strlen(data));
+#else
+    ret = upload_http_post_single(convert_ip, port, upload_deal_rsp_msg, lpbuf, send_len);
+    // MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
+#endif
 
 exit_entry:
 
