@@ -346,8 +346,6 @@ static int32_t agent_task_check_start(rt_bool frist_start)
         rt_os_sleep(1);
     } while(1);
 
-    linux_delete_file(RT_AGENT_FILE);       // debug
-
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE, RT_AGENT_NAME) != RT_TRUE) {
         MSG_PRINTF(LOG_WARN, "verify agent error\r\n");
