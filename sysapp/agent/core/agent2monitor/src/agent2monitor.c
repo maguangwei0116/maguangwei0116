@@ -10,6 +10,9 @@
 #include "rt_qmi.h"
 #endif
 
+#define VUICC_DISABLE   0
+#define VUICC_ENABLE    1
+
 #if 0 // For agent using trigger
 static pthread_mutex_t g_mutex;
 
@@ -88,7 +91,11 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
 
     info.vuicc_switch = config_info->lpa_channel_type;
 #ifdef CFG_REDTEA_READY_ON
-    info.sim_mode = config_info->sim_mode;
+    if (config_info->sim_mode == SIM_MODE_TYPE_VUICC_ONLY) {
+        info.sim_mode = VUICC_ENABLE;
+    } else {
+        info.sim_mode = VUICC_DISABLE;
+    }
 #endif
     info.log_level = config_info->monitor_log_level;
     info.log_size = config_info->log_max_size;
