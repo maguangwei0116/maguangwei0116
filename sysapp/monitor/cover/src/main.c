@@ -165,12 +165,11 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         type = info->vuicc_switch;
         if (info->vuicc_switch == LPA_CHANNEL_BY_IPC) {
 #ifdef CFG_REDTEA_READY_ON
-            if (info->sim_mode == SIM_MODE_TYPE_VUICC_ONLY) {
+            if (info->sim_mode == SIM_MODE_TYPE_VUICC_ONLY)
+#endif
+            {
                 init_trigger(info->vuicc_switch);
             }
-#else
-            init_trigger(info->vuicc_switch);
-#endif
             *rsp_len = 0;
         }
         MSG_PRINTF(LOG_INFO, "set log_level=%d, log_max_size=%d\n", info->log_level, info->log_size);
