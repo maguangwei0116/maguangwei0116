@@ -20,7 +20,7 @@
 #include "rt_os.h"
 #include "rt_type.h"
 
-int32_t init_vuicc(void *arg);
+int32_t init_vuicc(void *arg, int32_t *vuicc_mode);
 void init_trigger(uint8_t uicc_switch);
 int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
 

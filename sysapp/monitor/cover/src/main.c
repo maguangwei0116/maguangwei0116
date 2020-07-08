@@ -66,10 +66,14 @@
 #define RT_LASTEST_INPUT_PARAM      NULL
 #endif
 
+#define VUICC_DISABLE   0
+#define VUICC_ENABLE    1
+
 extern int init_file_ops(void);
 
 static log_mode_e g_def_mode = LOG_PRINTF_FILE;
 static rt_bool g_agent_debug_terminal = RT_FALSE;
+static int32_t g_vuicc_mode = VUICC_DISABLE;
 
 typedef struct SIGNATURE_DATA {
     uint8_t             hash[64+4];                 // hash, end with "\0"
@@ -168,6 +172,7 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
             if (info->sim_mode == SIM_MODE_TYPE_VUICC_ONLY)
 #endif
             {
+                g_vuicc_mode = VUICC_ENABLE;
                 init_trigger(info->vuicc_switch);
             }
             *rsp_len = 0;
@@ -213,10 +218,12 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         rsp[0] = RT_TRUE;
         *rsp_len = 1;
     } else if (cmd == CMD_START_VUICC) {
+        g_vuicc_mode = VUICC_ENABLE;
         init_trigger(LPA_CHANNEL_BY_IPC);
         rsp[0] = RT_TRUE;
         *rsp_len = 1;
     } else if (cmd == CMD_REMOVE_VUICC) {
+        g_vuicc_mode = VUICC_DISABLE;
         trigger_remove_card(1);
         rsp[0] = RT_TRUE;
         *rsp_len = 1;
@@ -488,7 +495,7 @@ int32_t main(int32_t argc, const char *argv[])
     init_app_version(NULL);
 
     /* init vuicc and ops callbacks*/
-    init_vuicc(RT_DATA_PATH);
+    init_vuicc(RT_DATA_PATH, &g_vuicc_mode);
 
     /* install system signal handle */
     init_system_signal(NULL);
