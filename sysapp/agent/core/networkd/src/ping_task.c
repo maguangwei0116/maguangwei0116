@@ -63,6 +63,8 @@ static int32_t rt_ping_provisoning_get_status(void)
         ret = RT_SUCCESS;
     }
 
+    MSG_PRINTF(LOG_INFO, "ping %s, lost:%d\n", RT_PROVISONING_IP, lost);
+
     return ret;
 }
 
