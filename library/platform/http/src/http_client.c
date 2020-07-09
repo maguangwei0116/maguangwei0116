@@ -73,6 +73,7 @@ static int http_client_upload_init(http_client_struct_t *obj)
     struct sockaddr_in server_addr;
     struct in_addr ipAddr;
     struct timeval timeout = {30,0};
+    char convert_ip[128] = {0};
 
     RT_CHECK_ERR(obj, NULL);
 
@@ -93,9 +94,10 @@ static int http_client_upload_init(http_client_struct_t *obj)
                                 obj->http_header.url_interface,
                                 &obj->http_header.port), 0);
 
-    MSG_PRINTF(LOG_INFO, "addr:%s,port:%d\n", obj->http_header.addr, obj->http_header.port);
+    http_get_ip_addr(obj->http_header.addr, convert_ip);
+    MSG_PRINTF(LOG_INFO, "addr:%s,port:%d\n", convert_ip, obj->http_header.port);
 
-    ipAddr.s_addr = inet_addr((char *)obj->http_header.addr);
+    ipAddr.s_addr = inet_addr((char *)convert_ip);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port   = htons(obj->http_header.port);
     server_addr.sin_addr   = ipAddr;
@@ -156,6 +158,7 @@ static int http_client_download_init(http_client_struct_t *obj)
     struct sockaddr_in server_addr;
     struct in_addr ipAddr;
     struct timeval timeout={30,0};
+    char convert_ip[128] = {0};
 
     RT_CHECK_ERR(obj, NULL);
 
@@ -171,9 +174,10 @@ static int http_client_download_init(http_client_struct_t *obj)
                                 obj->http_header.url_interface,
                                 &obj->http_header.port), 0);
 
-    MSG_PRINTF(LOG_INFO, "addr:%s,port:%d\n", obj->http_header.addr, obj->http_header.port);
+    http_get_ip_addr(obj->http_header.addr, convert_ip);
+    MSG_PRINTF(LOG_INFO, "addr:%s,port:%d\n", convert_ip, obj->http_header.port);
 
-    ipAddr.s_addr           = inet_addr((char *)obj->http_header.addr);
+    ipAddr.s_addr           = inet_addr((char *)convert_ip);
     server_addr.sin_family  = AF_INET;
     server_addr.sin_port    = htons(obj->http_header.port);
     server_addr.sin_addr    = ipAddr;
