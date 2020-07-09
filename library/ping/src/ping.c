@@ -98,8 +98,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     dest_ip = inet_addr(domain);
     if(dest_ip == INADDR_NONE) {
         struct hostent* p_hostent = gethostbyname(domain);
-        if(p_hostent)
-        {
+        if(p_hostent) {
             dest_ip = (*(in_addr_t*)p_hostent->h_addr);
         }
     }
