@@ -169,6 +169,10 @@ config BR2_CFG_SOFTWARE_TYPE
 	default "debug"				if BR2_CFG_SOFTWARE_TYPE_DEBUG
 	default "release"			if BR2_CFG_SOFTWARE_TYPE_RELEASE
 
+config BR2_CFG_REDTEA_READY
+	string
+	default "redteaready"		if BR2_CFG_REDTEA_READY_ON
+
 config BR2_CFG_ENV_TYPE
 	string
 	default "prod"	        	if BR2_CFG_ENV_TYPE_PROD
