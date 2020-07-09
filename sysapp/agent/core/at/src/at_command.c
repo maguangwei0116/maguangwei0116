@@ -15,14 +15,16 @@
 
 #ifdef   CFG_STANDARD_MODULE
 
-#include "agent_queue.h"
+
 #include "rt_os.h"
-#include "at_command.h"
-#include "customer_at.h"
 #include "ubi.h"
-#include "agent2monitor.h"
 #include "lpa.h"
 #include "log.h"
+#include "ping_task.h"
+#include "agent_queue.h"
+#include "at_command.h"
+#include "customer_at.h"
+#include "agent2monitor.h"
 
 #define AT_TYPE_GET_INFO                '0'
 #define AT_TYPE_CONFIG_UICC             '1'
@@ -37,6 +39,7 @@
 #define AT_CONFIG_LPA_CHANNEL           '2'
 #define AT_UPGRADE_UBI_FILE             '3'
 #define AT_UPDATE_ENV                   '4'
+#define AT_SWITCH_TO_VUICC              '5'
 
 #define AT_CONTENT_DELIMITER            ','
 
@@ -210,6 +213,18 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
             }
+#ifdef CFG_REDTEA_READY_ON
+            else if (cmd[3] == AT_SWITCH_TO_VUICC) {
+                if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
+                    uint8_t send_buf[1] = {0};
+                    send_buf[0] = SIM_CARD_NO_INTERNET;
+
+                    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Switch to vUICC");
+                    ret = RT_SUCCESS;
+                }
+            }
+#endif
         }
     }
     return ret;
