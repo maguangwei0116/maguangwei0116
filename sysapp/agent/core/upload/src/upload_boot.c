@@ -204,12 +204,16 @@ static void rt_get_network_info(char *mcc_mnc, int32_t mcc_mnc_size,
         *profileType = (int32_t)g_upload_card_info->type;
     }
 
-    for (j = 0; j < 3; j++) {
+    while(1) {
         rt_qmi_get_mcc_mnc(&mcc_int, &mnc_int);
         snprintf(mcc_mnc, mcc_mnc_size, "%03d%02d", mcc_int, mnc_int);
         if (!rt_os_strncmp(mcc_mnc, RT_ERR_MCCMNC, RT_MCCMNC_LEN)) {
-            MSG_PRINTF(LOG_ERR, "get mcc mnc fail, mcc_mnc : %s\n", mcc_mnc);
+            MSG_PRINTF(LOG_WARN, "get mcc mnc fail, mcc_mnc : %s\n", mcc_mnc);
             rt_os_sleep(1);
+            if (++j >= 3) {
+                MSG_PRINTF(LOG_ERR, "get mcc mnc fail, will reboot !\n");
+                rt_os_reboot();
+            }
             continue;
         }
         break;
