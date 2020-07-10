@@ -175,15 +175,13 @@ static int process_ind_reset(qmi_client_type user_handle, unsigned int msg_id,
     for (i = 0; i < 3; i++) {
         rc = qmi_client_message_decode(user_handle, QMI_IDL_INDICATION, msg_id, ind_buf,
                 ind_buf_len, &ind_msg, sizeof(uim_remote_card_power_up_ind_msg_v01));
-        MSG_PRINTF(LOG_ERR,"qmi_client_message_decode failed rc = %d\n", rc);
-
         if (rc == RT_SUCCESS) {
             break;
         }
+        MSG_PRINTF(LOG_ERR,"qmi_client_message_decode failed rc = %d\n", rc);
         rt_os_msleep(100);
     }
 
-    MSG_PRINTF(LOG_WARN,"qmi_client_message_decode failed rc = %d\n", rc);
     if(rc != RT_SUCCESS) {
         return rc;
     }
@@ -280,14 +278,18 @@ int t9x07_insert_card(uim_remote_slot_type_enum_v01 slot)
 
     for (i = 0; i < 3; i++) {
         rc = qmi_client_init(&info[0], remote_uim_service_object, remote_uim_ind_cb, NULL, NULL, &rm_uim_client);
-        MSG_PRINTF(LOG_ERR,"qmi_client_init rc: %d\n", rc);
         if (rc == RT_SUCCESS) {
             break;
+        }
+        MSG_PRINTF(LOG_ERR,"qmi_client_init rc: %d\n", rc);
+
+        if (rm_uim_client != NULL) {
+            qmi_client_release(rm_uim_client);
+            rm_uim_client = NULL;
         }
         rt_os_msleep(100);
     }
 
-    MSG_PRINTF(LOG_DBG,"qmi_client_init rc: %d\n", rc);
     if(rc != RT_SUCCESS) {
         return RT_ERROR;
     }
