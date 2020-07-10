@@ -58,7 +58,7 @@ static void dsi_net_cb_fcn(dsi_hndl_t hndl, void * user_data, dsi_net_evt_t evt,
     /* Pass on the EVENT to upper application */
     write(g_dsi_event_fd[0], &signo, sizeof(signo));
 
-    MSG_PRINTF(LOG_INFO, "create a dsi event (%d) ...\r\n", signo);
+    MSG_PRINTF(LOG_DBG, "create a dsi event (%d) ...\r\n", signo);
 }
 
 static int32_t get_ipv4_net_conf(dsi_call_info_t *phndl)
@@ -365,7 +365,7 @@ static int32_t dial_up_start(dsi_call_info_t *dsi_net_hndl, int32_t interval, in
 
     if (g_dsi_event_fd[0] < 0 && g_dsi_event_fd[1] < 0) {
         socketpair(AF_LOCAL, SOCK_STREAM, 0, g_dsi_event_fd);
-        MSG_PRINTF(LOG_INFO, "< create two new sockets g_dsi_event_fd(%d,%d) >\n", g_dsi_event_fd[0], g_dsi_event_fd[1]);
+        MSG_PRINTF(LOG_DBG, "< create two new sockets g_dsi_event_fd(%d,%d) >\n", g_dsi_event_fd[0], g_dsi_event_fd[1]);
     }
 
     while (1) {
@@ -433,7 +433,7 @@ static int32_t dial_up_signo_check(int32_t cur_signo)
         goto too_many_bad_dsi_call_entry; 
     }
 
-    MSG_PRINTF(LOG_INFO, "cur_signo: %d, last_signo: %d, counter: %d\r\n", cur_signo, last_signo, chk_counter);
+    MSG_PRINTF(LOG_DBG, "cur_signo: %d, last_signo: %d, counter: %d\r\n", cur_signo, last_signo, chk_counter);
 
     last_signo = cur_signo;
 

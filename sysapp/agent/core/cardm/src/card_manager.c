@@ -85,7 +85,7 @@ static int32_t card_last_type_init(void)
         g_p_info.last_type = 0;
     }
 
-    MSG_PRINTF(LOG_INFO, "g_p_info.last_type = %d\r\n", g_p_info.last_type);
+    MSG_PRINTF(LOG_DBG, "g_p_info.last_type = %d\r\n", g_p_info.last_type);
 
     return RT_SUCCESS;
 }

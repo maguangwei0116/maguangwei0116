@@ -51,7 +51,7 @@ void network_update_state(int32_t state)
         return;
     }
 
-    MSG_PRINTF(LOG_INFO, "network state changed: %d -> %d, g_update_network_state:%d\r\n", g_network_state, state, sizeof(g_update_network_state));
+    MSG_PRINTF(LOG_INFO, "network state changed: %d -> %d\n", g_network_state, state);
     g_network_state = state;
 
     if (g_network_state == RT_DSI_STATE_CALL_CONNECTED) {  // network connected

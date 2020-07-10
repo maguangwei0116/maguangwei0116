@@ -418,7 +418,7 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
         g_mqtt_param.mqtt_conn_state    = RT_TRUE;
         g_mqtt_param.mqtt_flag          = RT_TRUE;
         g_mqtt_param.lost_flag          = RT_FALSE;
-        MSG_PRINTF(LOG_INFO, "Connect mqtt ok !\r\n");
+        MSG_PRINTF(LOG_DBG, "Connect mqtt ok !\r\n");
         return RT_TRUE;
     } else {
         if (!rt_os_strncmp(g_mqtt_param.opts.channel, "EMQ", 3)) {
@@ -503,13 +503,13 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     pconn_opts->username = (const char *)opts->username;
     pconn_opts->password = (const char *)opts->password;
     if (!rt_os_strncmp(opts->channel, "YUNBA", 5)) {
-        MSG_PRINTF(LOG_INFO, "connecting yunba mqtt server ...\n");
+        MSG_PRINTF(LOG_DBG, "connecting yunba mqtt server ...\n");
         pconn_opts->MQTTVersion = MQTTVERSION_YUNBA_3_1;
     } else if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
-        MSG_PRINTF(LOG_INFO, "connecting emq mqtt server ...\n");
+        MSG_PRINTF(LOG_DBG, "connecting emq mqtt server ...\n");
         pconn_opts->MQTTVersion = MQTTVERSION_3_1;
     }
-    MSG_PRINTF(LOG_INFO, "g_mqtt_info.type:%d\n", *(g_mqtt_info.type));
+    MSG_PRINTF(LOG_DBG, "g_mqtt_info.type:%d\n", *(g_mqtt_info.type));
     if (*(g_mqtt_info.type) == PROFILE_TYPE_OPERATIONAL) {
         pconn_opts->keepAliveInterval   = MQTT_KEEP_ALIVE_INTERVAL;
     } else {
@@ -538,10 +538,10 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     opts->try_connect_timer = 0;
     param->alias_rc = 1;
 
-    MSG_PRINTF(LOG_INFO, "Connect mqtt server ok !\r\n");
+    MSG_PRINTF(LOG_DBG, "Connect mqtt server ok !\r\n");
 
     if (rt_os_strcmp(last_channel, opts->channel)) {
-        MSG_PRINTF(LOG_DBG, "last mqtt channel changed: [%s] ==> [%s]\r\n", last_channel, opts->channel);
+        MSG_PRINTF(LOG_INFO, "last mqtt channel changed: [%s] ==> [%s]\r\n", last_channel, opts->channel);
         snprintf(last_channel, sizeof(last_channel), "%s", opts->channel);
         upload_event_report("REGISTERED", NULL, 0, NULL);
     }

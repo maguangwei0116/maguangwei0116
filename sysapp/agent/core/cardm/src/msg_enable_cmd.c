@@ -21,7 +21,7 @@ extern const card_info_t *g_upload_card_info;
 
 static cJSON *upload_on_enable_packer(void *arg)
 {
-    MSG_PRINTF(LOG_INFO, "Upload on enable\n");
+    MSG_PRINTF(LOG_DBG, "Upload on enable\n");
 exit_entry:
     return (cJSON *)arg;
 }

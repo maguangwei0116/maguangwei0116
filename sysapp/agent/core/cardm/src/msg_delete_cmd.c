@@ -22,7 +22,7 @@ extern const card_info_t *g_upload_card_info;
 
 static cJSON *upload_on_delete_packer(void *arg)
 {
-    MSG_PRINTF(LOG_INFO, "Upload on delete\n");
+    MSG_PRINTF(LOG_DBG, "Upload on delete\n");
 exit_entry:
     return (cJSON *)arg;
 }

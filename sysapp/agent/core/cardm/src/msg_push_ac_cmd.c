@@ -25,7 +25,7 @@ extern const card_info_t *g_upload_card_info;
 
 static cJSON *upload_push_ac_packer(void *arg)
 {
-    MSG_PRINTF(LOG_INFO, "Upload push ac\n");
+    MSG_PRINTF(LOG_DBG, "Upload push ac\n");
 exit_entry:
     return (cJSON *)arg;
 }

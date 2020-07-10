@@ -61,7 +61,7 @@ static rt_bool upgrade_check_sys_memory(upgrade_struct_t *d_info)
     rt_bool ret = RT_FALSE;
 
     if (get_system_tf_free(&free_byte) == RT_SUCCESS) {
-        MSG_PRINTF(LOG_INFO, "system freebyte: %d B (%d KB), file size: %d B\r\n", free_byte, free_byte/1024, d_info->size);
+        MSG_PRINTF(LOG_DBG, "system freebyte: %d B (%d KB), file size: %d B\r\n", free_byte, free_byte/1024, d_info->size);
         if (d_info->size < free_byte) {
             ret = RT_TRUE;
         }

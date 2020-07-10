@@ -39,7 +39,7 @@ static void sim_switch_disable(void)
 static int32_t rt_judge_external_event(void)
 {
     if (g_downstream_event == RT_TRUE) {
-        MSG_PRINTF(LOG_WARN, "External events interrupt ping ! Hold using card...\n");
+        MSG_PRINTF(LOG_INFO, "External events interrupt ping ! Hold using card...\n");
         g_downstream_event = RT_FALSE;
         return RT_SUCCESS;
     } else {
@@ -63,7 +63,7 @@ static int32_t rt_ping_provisoning_get_status(void)
         ret = RT_SUCCESS;
     }
 
-    MSG_PRINTF(LOG_INFO, "ping %s, lost:%d\n", RT_PROVISONING_IP, lost);
+    MSG_PRINTF(LOG_DBG, "ping %s, lost:%d\n", RT_PROVISONING_IP, lost);
 
     return ret;
 }
@@ -84,8 +84,8 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
         network_level = RT_COMMON;
     }
 
-    MSG_PRINTF(LOG_INFO, "ping %s, delay:%lf, lost:%d, mdev:%lf\n", ip, delay, lost, mdev);
-    MSG_PRINTF(LOG_INFO, "expected level : %d, result : %d\n", level, network_level);
+    MSG_PRINTF(LOG_INFO, "ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", ip, delay, lost, mdev, network_level);
+    // MSG_PRINTF(LOG_INFO, "ping %s, expected level : %d, result : %d\n", ip, level, network_level);
 
     return network_level;
 }

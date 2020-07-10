@@ -88,7 +88,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     icmp_header * icmp_head;
     struct sockaddr_in dest_socket_addr;
 
-    MSG_PRINTF(LOG_INFO, "start ping...\n");
+    MSG_PRINTF(LOG_DBG, "start ping...\n");
 
     if(domain == NULL) {
         MSG_PRINTF(LOG_ERR, "ping_host_ip domain is NULL !\n");
@@ -198,7 +198,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
                     time_interval[i] = tmp_time;
 
                     // MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
-                    MSG_PRINTF(LOG_INFO, "time_interval[%d] is %lf\n", i, time_interval[i]);
+                    MSG_PRINTF(LOG_DBG, "time_interval[%d] is %lf\n", i, time_interval[i]);
                 }
 
                 break;

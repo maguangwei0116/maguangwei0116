@@ -23,7 +23,7 @@
 
 static cJSON *upload_on_update_packer(void *arg)
 {
-    MSG_PRINTF(LOG_WARN, "Upload on update\n");
+    MSG_PRINTF(LOG_DBG, "Upload on update\n");
 exit_entry:
     return (cJSON *)arg;
 }
@@ -44,7 +44,7 @@ static int32_t update_parser(const void *in, char *tranid, void **out)
     get_md5_string((int8_t *)in, md5_out_now);
     md5_out_now[MD5_STRING_LENGTH] = '\0';
     if (rt_os_strcmp(md5_out_pro, md5_out_now) == 0) {
-        MSG_PRINTF(LOG_WARN, "The data are the same!!\n");
+        MSG_PRINTF(LOG_DBG, "The data are the same!!\n");
         return ret;
     }
     rt_os_strcpy(md5_out_pro, md5_out_now);
@@ -74,9 +74,10 @@ static int32_t update_parser(const void *in, char *tranid, void **out)
         }
         rt_os_memcpy(buf, payload->valuestring, len);
         buf[len] = '\0';
-        MSG_PRINTF(LOG_INFO, "payload:%s,len:%d\n", buf, len);
+        MSG_PRINTF(LOG_TRACE, "payload:%s,len:%d\n", buf, len);
         ret = RT_SUCCESS;
     } while(0);
+
     *out = (void *)buf;
     if (agent_msg != NULL) {
         cJSON_Delete(agent_msg);
@@ -119,7 +120,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     if (switchparams != NULL) {
         state = card_switch_type(switchparams);
     } else {
-        MSG_PRINTF(LOG_WARN, "switchparams is NULL!\n");
+        MSG_PRINTF(LOG_DBG, "switchparams is NULL!\n");
     }
 
     // apnparams
@@ -127,7 +128,7 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     if (apnparams_list != NULL) {
         state = msg_apnlist_handler(apnparams_list);
     } else {
-        MSG_PRINTF(LOG_WARN, "apnparams is NULL!\n");
+        MSG_PRINTF(LOG_DBG, "apnparams is NULL!\n");
     }
 
     // monitorstrategyparams
@@ -135,18 +136,18 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     if (monitorstrategyparams != NULL) {
         state = msg_analyse_strategy(monitorstrategyparams);
     } else {
-        MSG_PRINTF(LOG_WARN, "monitor strategyparams is NULL!!\n");
+        MSG_PRINTF(LOG_DBG, "monitor strategyparams is NULL!!\n");
     }
 
     // upload
     content = cJSON_CreateObject();
     if (!content) {
-        MSG_PRINTF(LOG_WARN, "content buffer is empty\n");
+        MSG_PRINTF(LOG_ERR, "content buffer is empty\n");
         goto end;
     }
     content_s = cJSON_PrintUnformatted(properties);
     if (content_s != NULL) {
-        MSG_PRINTF(LOG_WARN, "content_s : %s\n", content_s);
+        MSG_PRINTF(LOG_TRACE, "content_s : %s\n", content_s);
         cJSON_AddItemToObject(content, "properties", cJSON_CreateString(content_s));
         cJSON_free(content_s);
     }

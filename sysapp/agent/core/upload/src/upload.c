@@ -169,7 +169,7 @@ int32_t upload_event_final_report(void *buffer, int32_t len)
 
     for (i = 0; i < MAX_UPLOAD_TIMES; i++) {
         upload_wait_network_connected();
-        MSG_PRINTF(LOG_INFO, "begin to send final report ...\r\n");
+        MSG_PRINTF(LOG_DBG, "begin to send final report ...\r\n");
         ret = upload_send_final_request(buffer, len);
         if (HTTP_SOCKET_CONNECT_ERROR == ret || \
                         HTTP_SOCKET_SEND_ERROR == ret || \
@@ -178,7 +178,7 @@ int32_t upload_event_final_report(void *buffer, int32_t len)
             rt_os_sleep(3);
             continue;
         }
-        MSG_PRINTF(LOG_INFO, "end to send final report ...\r\n");
+        MSG_PRINTF(LOG_DBG, "end to send final report ...\r\n");
         break;
     }
     return ret;
