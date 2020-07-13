@@ -147,7 +147,6 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 } else {
                     rt_os_memcpy(iccid, &cmd[5], THE_ICCID_LENGTH);
                 }
-                MSG_PRINTF(LOG_INFO, "iccid: %s\n", iccid);
 
                 if (cmd[3] == AT_SWITCH_TO_PROVISIONING) {
                     ret = uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);

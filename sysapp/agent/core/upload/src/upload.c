@@ -482,18 +482,18 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
     (void)len;
 
     if (MSG_NETWORK_CONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "upload module recv network connected\r\n");
+        MSG_PRINTF(LOG_DBG, "upload module recv network connected\r\n");
         g_upload_network = RT_TRUE;
         upload_boot_info_event();
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "upload module recv network disconnected\r\n");
+        MSG_PRINTF(LOG_DBG, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;
         g_upload_mqtt = RT_FALSE;
     } else if (MSG_MQTT_CONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "upload module recv mqtt connected\r\n");
+        MSG_PRINTF(LOG_DBG, "upload module recv mqtt connected\r\n");
         g_upload_mqtt = RT_TRUE;
     } else if (MSG_MQTT_DISCONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "upload module recv mqtt disconnected\r\n");
+        MSG_PRINTF(LOG_DBG, "upload module recv mqtt disconnected\r\n");
         g_upload_mqtt = RT_FALSE;
     }
 

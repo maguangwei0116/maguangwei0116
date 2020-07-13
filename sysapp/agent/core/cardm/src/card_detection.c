@@ -165,7 +165,7 @@ static void card_detection_task(void)
 
     rt_os_sleep(5);
     card_load_using_card(iccid, sizeof(iccid), &type);
-    MSG_PRINTF(LOG_INFO, "g_cur_iccid: %s, g_cur_profile_type: %d\r\n", g_cur_iccid, *g_cur_profile_type);
+    MSG_PRINTF(LOG_DBG, "g_cur_iccid: %s, g_cur_profile_type: %d\r\n", g_cur_iccid, *g_cur_profile_type);
 
     while (1) {
         if (g_card_detecting_flg) {

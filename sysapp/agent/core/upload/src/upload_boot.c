@@ -208,7 +208,7 @@ static void rt_get_network_info(char *mcc_mnc, int32_t mcc_mnc_size,
         rt_qmi_get_mcc_mnc(&mcc_int, &mnc_int);
         snprintf(mcc_mnc, mcc_mnc_size, "%03d%02d", mcc_int, mnc_int);
         if (!rt_os_strncmp(mcc_mnc, RT_ERR_MCCMNC, RT_MCCMNC_LEN)) {
-            MSG_PRINTF(LOG_WARN, "get mcc mnc fail, mcc_mnc : %s\n", mcc_mnc);
+            MSG_PRINTF(LOG_INFO, "get mcc mnc fail, mcc_mnc : %s\n", mcc_mnc);
             rt_os_sleep(1);
             if (++j >= 3) {
                 MSG_PRINTF(LOG_ERR, "get mcc mnc fail, will reboot !\n");
@@ -251,7 +251,7 @@ static void rt_get_network_info(char *mcc_mnc, int32_t mcc_mnc_size,
         iccid[j] = 'F';
     }
     iccid[j] = '\0';
-    MSG_PRINTF(LOG_INFO, "*level:%c\n", *level);
+    MSG_PRINTF(LOG_DBG, "*level:%c\n", *level);
 }
 
 static cJSON *upload_event_boot_network_info(void)

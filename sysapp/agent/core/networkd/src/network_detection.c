@@ -51,7 +51,7 @@ void network_update_state(int32_t state)
         return;
     }
 
-    MSG_PRINTF(LOG_INFO, "network state changed: %d -> %d\n", g_network_state, state);
+    MSG_PRINTF(LOG_DBG, "network state changed: %d -> %d\n", g_network_state, state);
     g_network_state = state;
 
     if (g_network_state == RT_DSI_STATE_CALL_CONNECTED) {  // network connected
@@ -92,7 +92,7 @@ static void network_detection_task(void *arg)
     profile_type_e *type = ((task_param_t *)arg)->type;
     int32_t *profile_damaged = ((task_param_t *)arg)->profile_damaged;
 
-    MSG_PRINTF(LOG_INFO, "start with profile (%d,%d) ...\r\n", *type, *profile_damaged);
+    MSG_PRINTF(LOG_DBG, "start with profile (%d,%d) ...\r\n", *type, *profile_damaged);
 
 #ifdef CFG_REDTEA_READY_ON
     /* non-operational profile && share profile ok */

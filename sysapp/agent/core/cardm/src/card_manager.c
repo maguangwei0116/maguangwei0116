@@ -73,7 +73,7 @@ static int32_t card_check_init_upload(const uint8_t *eid)
 static int32_t card_last_eid_init(void)
 {
     rt_read_eid(0, g_last_eid, sizeof(g_last_eid));
-    MSG_PRINTF(LOG_INFO, "g_last_eid=%s\r\n", g_last_eid);
+    MSG_PRINTF(LOG_DBG, "g_last_eid=%s\r\n", g_last_eid);
 
     return RT_SUCCESS;
 }
@@ -99,7 +99,7 @@ static int32_t card_update_eid(rt_bool init)
     ret = lpa_get_eid(eid);
     if (!ret) {
         bytes2hexstring(eid, sizeof(eid), g_p_info.eid);
-        MSG_PRINTF(LOG_WARN, "g_p_info.eid=%s\r\n", g_p_info.eid);
+        MSG_PRINTF(LOG_INFO, "g_p_info.eid=%s\r\n", g_p_info.eid);
     }
 
     if (!ret && !init) {
@@ -506,6 +506,7 @@ static int32_t card_change_profile(const uint8_t *buf)
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
         g_p_info.type = PROFILE_TYPE_PROVISONING;
+        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         ipc_start_vuicc(1);
         rt_os_sleep(3);
 
@@ -537,7 +538,6 @@ int32_t init_card_manager(void *arg)
 #ifdef CFG_REDTEA_READY_ON
     sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
     if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
-        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         g_p_info.type = PROFILE_TYPE_SIM;
         rt_qmi_get_current_cpin_state(cpin_status);
 

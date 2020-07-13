@@ -123,7 +123,7 @@ int32_t init_flow_control(void *arg)
 
     g_p_info = ((public_value_list_t *)arg)->card_info;
     g_flow_switch = (card_flow_switch_e *)&(((public_value_list_t *)arg)->config_info->flow_control_switch);
-    MSG_PRINTF(LOG_INFO, "Flow control switch:%d\n", *g_flow_switch);
+    MSG_PRINTF(LOG_DBG, "Flow control switch:%d\n", *g_flow_switch);
     if (*g_flow_switch == CARD_FLOW_ENABLE) {
         ret = flow_control_create_task();
     }

@@ -351,7 +351,7 @@ static int32_t dial_up_check_register_state(int32_t interval, int32_t max_cnt)
     static int32_t index = 0; \
     __ret = func((handle)); \
     index++; \
-    MSG_PRINTF(LOG_INFO, "------> %25s ---> %5d, ret=%d\n", #func, index, __ret); \
+    MSG_PRINTF(LOG_DBG, "------> %25s ---> %5d, ret=%d\n", #func, index, __ret); \
     __ret; \
 })
 #else
@@ -523,11 +523,11 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                         /* WDS connected */
                         case DSI_EVT_WDS_CONNECTED:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
-                                MSG_PRINTF(LOG_INFO, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V4\n");
+                                MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V4\n");
                             } else if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V6){
-                                MSG_PRINTF(LOG_INFO, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V6\n");
+                                MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_V6\n");
                             } else {
-                                MSG_PRINTF(LOG_INFO, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
+                                MSG_PRINTF(LOG_DBG, "DSI_EVT_WDS_CONNECTED DSI_IP_FAMILY_UNKNOW\n");
                             }
                         break;
 
@@ -535,13 +535,13 @@ static int32_t dial_up_check_connect_state(dsi_call_info_t *dsi_net_hndl, local_
                         case DSI_EVT_NET_IS_CONN:
                             if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V4) {
                                 if (RT_SUCCESS == get_ipv4_net_conf(dsi_net_hndl)) {
-                                    MSG_PRINTF(LOG_INFO, "DSI_EVT_NET_IS_CONN\n");
+                                    MSG_PRINTF(LOG_DBG, "DSI_EVT_NET_IS_CONN\n");
                                     count = 0;
                                     exit_flag = RT_TRUE;
                                     *state = LOCAL_DIAL_UP_IS_CONN;                                    
                                 }
                             } else if (dsi_net_hndl->ip_type == DSI_IP_FAMILY_V6) {
-                                MSG_PRINTF(LOG_INFO, "donot support DSI_IP_FAMILY_V6 by now!!!!\n");
+                                MSG_PRINTF(LOG_DBG, "donot support DSI_IP_FAMILY_V6 by now!!!!\n");
                             }
                         break;
                         
@@ -585,7 +585,7 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
     while (1) {
         switch (dsi_net_hndl->call_state) {
             case DSI_STATE_CALL_IDLE:
-                MSG_PRINTF(LOG_INFO, "Start dial up\r\n");
+                MSG_PRINTF(LOG_INFO, "Start dial up ...\r\n");
                 if (dial_up_check_register_state(CHK_REG_STATE_INTERVAL, MAX_CHK_REG_STATE_CNT) == RT_SUCCESS) {
                     dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTING);
                 } else {
@@ -621,7 +621,7 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
                     dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_DISCONNECTING);
                 } else if (state == LOCAL_DIAL_UP_IS_CONN) {
                     dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTED);
-                } 
+                }
                 break;
 
             case DSI_STATE_CALL_DISCONNECTING:

@@ -445,7 +445,7 @@ static rt_bool mqtt_disconnect(MQTTClient* client, int32_t *wait_cnt)
         *wait_cnt               = 0;  // reset wait counter
     }
     msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_DISCONNECTED, NULL, 0);
-    MSG_PRINTF(LOG_INFO, "MQTTClient disconnect msg throw out !\n");
+    MSG_PRINTF(LOG_DBG, "MQTTClient disconnect msg throw out !\n");
 
     return RT_TRUE;
 }
@@ -859,10 +859,10 @@ int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     //MSG_PRINTF(LOG_INFO, "mqtt connect event, mode: %d\r\n", mode);
     if (MSG_NETWORK_CONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "mqtt module recv network connected\r\n");
+        MSG_PRINTF(LOG_DBG, "mqtt module recv network connected\r\n");
         g_mqtt_param.network_state = NETWORK_CONNECTED;
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
-        MSG_PRINTF(LOG_INFO, "mqtt module recv network disconnected\r\n");
+        MSG_PRINTF(LOG_DBG, "mqtt module recv network disconnected\r\n");
         g_mqtt_param.network_state = NETWORK_DISCONNECTED;
     } else if (MSG_MQTT_SUBSCRIBE_EID == mode) {
         MSG_PRINTF(LOG_INFO, "mqtt module recv subcsribe eid request\r\n");

@@ -139,7 +139,7 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
 {
     while (1) {
         if (*last_card_type != *g_card_type) {
-            MSG_PRINTF(LOG_INFO, "card type switch [%d] ====> [%d]\n", *last_card_type, *g_card_type);
+            MSG_PRINTF(LOG_DBG, "card type switch [%d] ====> [%d]\n", *last_card_type, *g_card_type);
             *last_card_type = *g_card_type;
 
             if (g_network_state == RT_FALSE) {

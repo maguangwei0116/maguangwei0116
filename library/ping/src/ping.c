@@ -160,7 +160,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
 
         if(result == RT_ERROR) {
             // MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
-            MSG_PRINTF(LOG_ERR, "PING: sendto: Network is unreachable\n");
+            MSG_PRINTF(LOG_DBG, "PING: sendto: Network is unreachable\n");
             continue;
         }
 
@@ -203,7 +203,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
 
                 break;
             } else {
-                MSG_PRINTF(LOG_ERR, "receive data error !\n");
+                MSG_PRINTF(LOG_DBG, "receive data error !\n");
                 break;
             }
         }
@@ -226,10 +226,6 @@ PING_EXIT:
             time_mdev += time_interval[i] - time_sum/recv_count;
         }
     }
-
-    // MSG_PRINTF(LOG_INFO, "lost  : %d\n", (RT_PING_TIMES - recv_count)*10);
-    // MSG_PRINTF(LOG_INFO, "dekay : %lf\n", time_sum/recv_count);
-    // MSG_PRINTF(LOG_INFO, "mdev  : %lf\n", time_mdev/recv_count);
 
     *lost = RT_PING_TIMES - recv_count;
     *avg_delay = time_sum/recv_count;

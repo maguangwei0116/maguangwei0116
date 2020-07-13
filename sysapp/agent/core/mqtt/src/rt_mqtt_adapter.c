@@ -126,7 +126,7 @@ rt_bool mqtt_connect_adapter(mqtt_param_t *param, const char *oti_addr, int32_t 
 
     http_get_ip_addr(oti_addr, convert_ip);
     mqtt_set_reg_url(convert_ip, oti_port);
-    MSG_PRINTF(LOG_INFO, "OTI server addr:%s, port:%d\r\n", convert_ip, oti_port);
+    MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", convert_ip, oti_port);
 
     /* connect redtea adpater server with max 3 times to get ticket server addr and port */
     do {
