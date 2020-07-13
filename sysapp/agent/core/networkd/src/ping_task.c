@@ -63,7 +63,7 @@ static int32_t rt_ping_provisoning_get_status(void)
         ret = RT_SUCCESS;
     }
 
-    MSG_PRINTF(LOG_DBG, "ping %s, lost:%d\n", RT_PROVISONING_IP, lost);
+    MSG_PRINTF(LOG_INFO, "ping %s, lost:%d\n", RT_PROVISONING_IP, lost);
 
     return ret;
 }
@@ -85,7 +85,6 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
     }
 
     MSG_PRINTF(LOG_INFO, "ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", ip, delay, lost, mdev, network_level);
-    // MSG_PRINTF(LOG_INFO, "ping %s, expected level : %d, result : %d\n", ip, level, network_level);
 
     return network_level;
 }
@@ -140,11 +139,11 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
 {
     while (1) {
         if (*last_card_type != *g_card_type) {
-            MSG_PRINTF(LOG_DBG, "card type switch [%d] ====> [%d]\n", *last_card_type, *g_card_type);
+            MSG_PRINTF(LOG_INFO, "card type switch [%d] ====> [%d]\n", *last_card_type, *g_card_type);
             *last_card_type = *g_card_type;
 
             if (g_network_state == RT_FALSE) {
-                MSG_PRINTF(LOG_DBG, "Wait dial up !\n");
+                MSG_PRINTF(LOG_INFO, "Wait dial up !\n");
                 rt_os_sleep(RT_CARD_CHANGE_WAIT_TIME);
             }
         }
