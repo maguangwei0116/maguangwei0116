@@ -545,7 +545,7 @@ int32_t init_card_manager(void *arg)
         if (*cpin_status == CPIN_PRESENT) {
             rt_qmi_get_current_iccid(sim_iccid, sizeof(sim_iccid));
             if (rt_os_strlen(sim_iccid) == 0) {
-                MSG_PRINTF(LOG_DBG, "SIM get iccid fail !\n");
+                MSG_PRINTF(LOG_INFO, "SIM get iccid fail !\n");
                 g_p_info.sim_info.state = SIM_ERROR;
             } else {
                 MSG_PRINTF(LOG_INFO, "SIM iccid : %s\n", sim_iccid);
@@ -554,7 +554,7 @@ int32_t init_card_manager(void *arg)
             }
         } else {
             g_p_info.sim_info.state = SIM_ERROR;
-            MSG_PRINTF(LOG_DBG, "SIM cpin error !\n");
+            MSG_PRINTF(LOG_INFO, "SIM cpin error !\n");
         }
     }
 
