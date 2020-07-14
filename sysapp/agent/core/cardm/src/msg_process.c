@@ -42,7 +42,7 @@ int32_t init_msg_process(void *arg, void *proxy_addr)
 
 static rt_bool msg_check_iccid_state(const char *iccid, profile_type_e *type)
 {
-    MSG_PRINTF(LOG_INFO, "g_iccid : %s, iccid : %s\n", g_card_info->iccid, iccid);
+    MSG_PRINTF(LOG_DBG, "g_iccid : %s, iccid : %s\n", g_card_info->iccid, iccid);
     if (rt_os_strncmp(g_card_info->iccid, iccid, THE_ICCID_LENGTH) == 0){
         if (type) {
             *type = g_card_info->type;
@@ -91,7 +91,7 @@ static int32_t msg_select(const char *iccid, uint8_t *buffer)
         }
         ii++;
     }
-    MSG_PRINTF(LOG_WARN, "can't find apn for iccid: %s \r\n", iccid);
+    MSG_PRINTF(LOG_DBG, "can't find apn for iccid: %s \r\n", iccid);
     return RT_ERROR;
 }
 

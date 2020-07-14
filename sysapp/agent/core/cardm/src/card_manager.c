@@ -126,7 +126,7 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
             /* get current profile type */
             g_p_info.operational_num = 0;
             for (i = 0; i < g_p_info.num; i++) {
-                MSG_PRINTF(LOG_INFO, "iccid   #%2d: %s state:%d type:%d\n", i + 1, g_p_info.info[i].iccid,
+                MSG_PRINTF(LOG_DBG, "iccid   #%2d: %s state:%d type:%d\n", i + 1, g_p_info.info[i].iccid,
                     g_p_info.info[i].state, g_p_info.info[i].class);
 
                 if (g_p_info.info[i].class == PROFILE_TYPE_OPERATIONAL) {
@@ -168,7 +168,7 @@ static int32_t card_enable_profile(const uint8_t *iccid)
     int32_t ret = RT_ERROR;
     int32_t ii = 0;
 
-    MSG_PRINTF(LOG_INFO, "enable iccid:%s, len:%d\n", iccid, rt_os_strlen(iccid));
+    MSG_PRINTF(LOG_DBG, "enable iccid:%s, len:%d\n", iccid, rt_os_strlen(iccid));
 
     for (ii = 0; ii < g_p_info.num; ii++) {
         if (rt_os_strncmp(g_p_info.info[ii].iccid, iccid, THE_ICCID_LENGTH) == 0) {
@@ -538,6 +538,7 @@ int32_t init_card_manager(void *arg)
 #ifdef CFG_REDTEA_READY_ON
     sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
     if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
+        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         g_p_info.type = PROFILE_TYPE_SIM;
         rt_qmi_get_current_cpin_state(cpin_status);
 

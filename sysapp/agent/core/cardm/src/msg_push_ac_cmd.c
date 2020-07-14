@@ -32,7 +32,7 @@ exit_entry:
 
 static void push_ac_timer(void)
 {
-    MSG_PRINTF(LOG_INFO, "g_iccid:%s\n", g_iccid);
+    MSG_PRINTF(LOG_DBG, "g_iccid:%s\n", g_iccid);
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, g_iccid, rt_os_strlen(g_iccid));
 }
 
