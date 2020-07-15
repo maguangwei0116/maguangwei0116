@@ -112,16 +112,6 @@ static int32_t rt_send_msg_card_status(void)
     return RT_SUCCESS;
 }
 
-static rt_bool rt_get_devicekey_status(void)
-{
-    uint8_t  inspect_file[128] = {0};
-    snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
-
-    return inspect_device_key(inspect_file);
-}
-
-
-
 /***********************************************************************************************
  * FUNCTION
    static void rt_judge_card_status(profile_type_e *last_card_type)

@@ -500,15 +500,21 @@ end:
     return ret;
 }
 
+rt_bool rt_get_devicekey_status(void)
+{
+    uint8_t  inspect_file[128] = {0};
+    snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
+
+    return inspect_device_key(inspect_file);
+}
+
 int32_t config_update_device_key(const char *devicekey)
 {
-    char inspect_file[128] = {0};
     char send_buff[1];
     rt_bool ret = RT_FALSE;
 
     rt_write_devicekey(0, devicekey, DEVICE_KEY_SIZE);
-    snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
-    ret = inspect_device_key(inspect_file);
+    ret = rt_get_devicekey_status();
 
     return ret;
 }

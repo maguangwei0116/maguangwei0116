@@ -522,9 +522,10 @@ int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
     int32_t sim_mode;
+    uint8_t send_buf[1] = {0};
     uint8_t cpin_status[THE_CPIN_LENGTH + 1]= {0};
     uint8_t sim_iccid[THE_ICCID_LENGTH + 1] = {0};
-    uint8_t send_buf[1] = {0};
+    rt_bool devicekey_status = RT_FALSE;
 
     init_profile_type_e init_profile_type;
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
@@ -610,10 +611,13 @@ int32_t init_card_manager(void *arg)
 #ifdef CFG_REDTEA_READY_ON
     if (sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
         if (g_p_info.sim_info.state != SIM_READY) {
-            send_buf[0] = SIM_CARD_NO_INTERNET;
-            card_change_profile(send_buf);
-            rt_os_sleep(5);
-            card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+            devicekey_status = rt_get_devicekey_status();
+            if (devicekey_status == RT_TRUE) {
+                send_buf[0] = SIM_CARD_NO_INTERNET;
+                card_change_profile(send_buf);
+                rt_os_sleep(5);
+                card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
+            }
         }
     } else
 #endif
