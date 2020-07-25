@@ -49,7 +49,6 @@ static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 static int32_t card_check_init_upload(const uint8_t *eid)
 {
     rt_bool update_last_eid = RT_FALSE;
-    rt_bool report_all_info = RT_TRUE;
 
     if (eid_check_memory(eid, MAX_EID_LEN, 'F') || eid_check_memory(eid, MAX_EID_LEN, '0')) {
         update_last_eid = RT_TRUE;
@@ -60,7 +59,7 @@ static int32_t card_check_init_upload(const uint8_t *eid)
         MSG_PRINTF(LOG_WARN, "EID changed, upload INIT event\n");
         update_last_eid = RT_TRUE;
         upload_event_report("INIT", NULL, 0, NULL);
-        upload_event_report("INFO", NULL, 0, &report_all_info);
+        upload_event_report("BOOT", NULL, 0, NULL);     // Request update and push ac events
         msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
     }
 
