@@ -124,7 +124,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 ret = RT_SUCCESS;
             } else if (cmd[3] == AT_GET_ENV_TYPE) {   // get environment
                 if(!strcmp(g_p_value_list->config_info->oti_addr, RT_PROD_OTI_ADDR)) {
-                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "pro");
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "prod");
                 } else if (!strcmp(g_p_value_list->config_info->oti_addr, RT_STAG_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "stag");
                 } else if (!strcmp(g_p_value_list->config_info->oti_addr, RT_QA_OTI_ADDR)) {
