@@ -84,7 +84,9 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
         network_level = RT_COMMON;
     }
 
-    MSG_PRINTF(LOG_DBG, "ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", ip, delay, lost, mdev, network_level);
+    if (!network_level) {
+        MSG_PRINTF(LOG_INFO, "ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", ip, delay, lost, mdev, network_level);
+    }
 
     return network_level;
 }
