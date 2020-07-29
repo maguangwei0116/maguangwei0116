@@ -68,7 +68,7 @@ static int32_t rt_ping_provisoning_get_status(void)
     return ret;
 }
 
-static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
+static int32_t rt_ping_get_level(int8_t *ip, int32_t level)
 {
     int32_t network_level = 0;
     int32_t lost;
@@ -84,7 +84,7 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type)
         network_level = RT_COMMON;
     }
 
-    if (!network_level) {
+    if (network_level < level) {
         MSG_PRINTF(LOG_INFO, "ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", ip, delay, lost, mdev, network_level);
     }
 
@@ -213,7 +213,7 @@ static void network_ping_task(void *arg)
                         domain = cJSON_GetObjectItem(strategy_item, "domain");
                         level = cJSON_GetObjectItem(strategy_item, "level");
 
-                        network_level = rt_ping_get_level(domain->valuestring, level->valueint, type->valueint);
+                        network_level = rt_ping_get_level(domain->valuestring, level->valueint);
                         ret = rt_judge_external_event();
                         if (ret == RT_SUCCESS) {
                             break;
