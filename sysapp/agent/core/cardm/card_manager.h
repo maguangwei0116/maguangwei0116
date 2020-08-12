@@ -26,6 +26,8 @@
 #define MAX_EID_HEX_LEN             16
 #define MAX_APN_LEN                 32
 
+#define RT_MAX_INTERVAL             180
+
 typedef enum PROFILE_STATE {
     PROFILE_DISABLED                = 0,
     PROFILE_ENABLED                 = 1,

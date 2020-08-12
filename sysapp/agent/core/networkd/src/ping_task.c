@@ -63,7 +63,7 @@ static int32_t rt_ping_provisoning_get_status(void)
         ret = RT_SUCCESS;
     }
 
-    MSG_PRINTF(LOG_INFO, "ping %s, lost:%d\n", RT_PROVISONING_IP, lost);
+    MSG_PRINTF(LOG_INFO, "provisoning ping %s, lost:%d\n", RT_PROVISONING_IP, lost);
 
     return ret;
 }
@@ -84,9 +84,15 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level)
         network_level = RT_COMMON;
     }
 
+#if (CFG_SOFTWARE_TYPE_RELEASE)
     if (network_level < level) {
-        MSG_PRINTF(LOG_INFO, "ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", ip, delay, lost, mdev, network_level);
+        MSG_PRINTF(LOG_INFO, "%s ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", *g_card_type == PROFILE_TYPE_SIM ? "SIM" : "vUICC", \
+                    ip, delay, lost, mdev, network_level);
     }
+#else
+        MSG_PRINTF(LOG_DBG, "%s ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", *g_card_type == PROFILE_TYPE_SIM ? "SIM" : "vUICC", \
+                    ip, delay, lost, mdev, network_level);
+#endif
 
     return network_level;
 }
@@ -139,7 +145,7 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
                 rt_os_sleep(RT_CARD_CHANGE_WAIT_TIME);
             }
         }
-        if (*g_card_type == PROFILE_TYPE_PROVISONING && g_network_state == RT_TRUE) {
+        if ((*g_card_type == PROFILE_TYPE_PROVISONING || *g_card_type == PROFILE_TYPE_TEST) && g_network_state == RT_TRUE) {
             rt_os_sleep(RT_WAIT_TIME);
             continue;
         }

@@ -443,6 +443,18 @@ int32_t uicc_switch_card(profile_type_e type, uint8_t *iccid)
     return RT_SUCCESS;
 }
 
+static uint32_t get_random_interval(uint32_t total_num)
+{
+    uint32_t random, second;
+
+    random = (uint32_t)rt_get_random_num();
+    second = random % total_num;
+
+    MSG_PRINTF(LOG_DBG, "The waiting time/total = [%d/%d], random = %u\n", second, total_num, random);
+
+    return second;
+}
+
 #ifdef CFG_REDTEA_READY_ON
 int32_t card_switch_type(cJSON *switchparams)
 {
@@ -481,6 +493,7 @@ static int32_t card_change_profile(const uint8_t *buf)
     int32_t jj = 0;
     int32_t len = 0;
     int32_t used_seq = 0;
+    uint32_t interval = 0;
     static int32_t operational_cycles = 1;                      // 1: Have tried the first operational
     uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
     uint8_t recv_buf = buf[0];
@@ -505,9 +518,28 @@ static int32_t card_change_profile(const uint8_t *buf)
         }
 
     } else if (recv_buf == SIM_CARD_NO_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
+        // If there is a operational, enable it;
+        // If there is only a provisoning, it will sleep randomly for 0 ~ 180s;
+
         g_p_info.type = PROFILE_TYPE_PROVISONING;
         card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+        MSG_PRINTF(LOG_INFO, "operation number : %d\n", g_p_info.operational_num);
+
+        if (g_p_info.operational_num > 0) {
+            if (g_p_info.type != PROFILE_TYPE_OPERATIONAL) {
+                g_p_info.type = PROFILE_TYPE_OPERATIONAL;
+                uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
+                rt_os_sleep(1);
+            }
+        } else {
+            interval = get_random_interval(RT_MAX_INTERVAL);
+            MSG_PRINTF(LOG_INFO, "Wait for SIM switch, random sleep %d s\n", interval);
+            rt_os_sleep(interval);
+            msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_SYNC_DOWNSTREAM_INFO, NULL, 0);
+        }
+
+        MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
+
         ipc_start_vuicc(1);
         rt_os_sleep(3);
 

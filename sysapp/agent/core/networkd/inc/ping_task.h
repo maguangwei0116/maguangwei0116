@@ -46,7 +46,7 @@
 #define RT_CARD_CHANGE_WAIT_TIME    60
 #define RT_WAIT_TIME                60
 #define RT_DEVICE_TIME              60
-#define RT_INIT_TIME                70
+#define RT_INIT_TIME                90
 #define RT_PROVISONING_IP           "23.91.101.68"
 
 typedef enum REDTEA_READY_PING_STATUS_CMD {
