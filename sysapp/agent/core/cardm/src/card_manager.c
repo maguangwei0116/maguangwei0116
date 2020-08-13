@@ -506,10 +506,17 @@ static int32_t card_change_profile(const uint8_t *buf)
 
     } else if (recv_buf == OPERATIONAL_NO_INTERNET) {
         if (operational_cycles >= g_p_info.operational_num) {         // All operational are unavailable
-            MSG_PRINTF(LOG_INFO, "Operational ====> Provisioning\n");
-            g_p_info.type = PROFILE_TYPE_PROVISONING;
-            uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
+            // MSG_PRINTF(LOG_INFO, "Operational ====> Provisioning\n");
+            // g_p_info.type = PROFILE_TYPE_PROVISONING;
+            // uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
+            // operational_cycles = 1;
+
+            MSG_PRINTF(LOG_INFO, "Operational ====> SIM\n");
+            g_p_info.type = PROFILE_TYPE_SIM;
             operational_cycles = 1;
+            ipc_remove_vuicc(1);
+            rt_os_sleep(3);
+
         } else {
             MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
@@ -529,7 +536,6 @@ static int32_t card_change_profile(const uint8_t *buf)
             if (g_p_info.type != PROFILE_TYPE_OPERATIONAL) {
                 g_p_info.type = PROFILE_TYPE_OPERATIONAL;
                 uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
-                rt_os_sleep(1);
             }
         } else {
             interval = get_random_interval(RT_MAX_INTERVAL);
@@ -539,7 +545,6 @@ static int32_t card_change_profile(const uint8_t *buf)
         }
 
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
-
         ipc_start_vuicc(1);
         rt_os_sleep(3);
 
