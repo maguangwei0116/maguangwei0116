@@ -40,6 +40,7 @@
 #define AT_UPGRADE_UBI_FILE             '3'
 #define AT_UPDATE_ENV                   '4'
 #define AT_SWITCH_TO_VUICC              '5'
+#define AT_VUICC_TO_SWITCH              '6'
 
 #define AT_CONTENT_DELIMITER            ','
 
@@ -221,6 +222,16 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Switch to vUICC");
                     ret = RT_SUCCESS;
+                }
+            } else if (cmd[3] == AT_VUICC_TO_SWITCH) {
+                if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM && g_p_value_list->card_info->sim_info.state == SIM_READY) {
+                    g_p_value_list->card_info->type = PROFILE_TYPE_SIM;
+                    MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
+                    ipc_remove_vuicc(1);
+                    rt_os_sleep(3);
+
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC to Switch");
+                    ret =  RT_SUCCESS;
                 }
             }
 #endif
