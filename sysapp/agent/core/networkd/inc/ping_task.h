@@ -19,23 +19,24 @@
 #include "rt_type.h"
 #include "dial_up.h"
 
-// 延迟
-#define RT_EXCELLENT_DELAY          100
-#define RT_GOOD_DELAY               200
-#define RT_COMMON_DELAY             500
+// most times
+#define RT_PING_MAX_TIMES           2
 
-// 丢包
-#define RT_EXCELLENT_LOST           0
-#define RT_GOOD_LOST                2
-#define RT_COMMON_LOST              5
+// delay
+#define RT_EXCELLENT_DELAY          500
+#define RT_GOOD_DELAY               1000
+
+// lost
+#define RT_EXCELLENT_LOST           2
+#define RT_GOOD_LOST                5
+#define RT_COMMON_LOST              10
 #define RT_PROVISONING_LOST         10
 
-// 抖动
-#define RT_EXCELLENT_MDEV           20
-#define RT_GOOD_MDEV                50
-#define RT_COMMON_MDEV              150
+// mdev
+#define RT_EXCELLENT_MDEV           200
+#define RT_GOOD_MDEV                500
 
-// 等级
+// level
 #define RT_COMMON                   1
 #define RT_GOOD                     2
 #define RT_EXCELLENT                3
