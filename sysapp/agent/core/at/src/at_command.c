@@ -81,9 +81,9 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     int32_t ii = 0, tmp_len = 0, size = 0;
     uint8_t buf[1024] = {0};
 
-    MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
     if (*cmd == AT_CONTENT_DELIMITER) {
         if ((cmd[1] == AT_TYPE_GET_INFO) && (cmd[2] == AT_CONTENT_DELIMITER)) {
+            MSG_PRINTF(LOG_DBG, "cmd=%s\n", cmd);
             if (cmd[3] == AT_GET_EID) {            // get eid
                 /* rsp: ,cmd,"eid" */
                 snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], \
@@ -135,6 +135,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 ret = RT_SUCCESS;
             }
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
+            MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
                 uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
 #ifdef CFG_REDTEA_READY_ON
