@@ -648,7 +648,6 @@ int32_t init_card_manager(void *arg)
             if (devicekey_status == RT_TRUE) {
                 send_buf[0] = SIM_CARD_NO_INTERNET;
                 card_change_profile(send_buf);
-                rt_os_sleep(5);
                 card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
             }
         }
