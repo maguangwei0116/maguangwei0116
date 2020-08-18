@@ -533,7 +533,7 @@ static int32_t card_change_profile(const uint8_t *buf)
             }
         } else {
             interval = get_random_interval(RT_MAX_INTERVAL);
-            MSG_PRINTF(LOG_INFO, "Wait for SIM switch, random sleep %d s\n", interval);
+            MSG_PRINTF(LOG_INFO, "Switch to provisioning, random sleep %d s\n", interval);
             rt_os_sleep(interval);
             msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_SYNC_DOWNSTREAM_INFO, NULL, 0);
         }
