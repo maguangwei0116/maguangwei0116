@@ -74,7 +74,7 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type, int32_
     int32_t lost, i;
     double delay, mdev;
 
-    for (i = 0; i <  RT_PING_MAX_TIMES; i++) {
+    // for (i = 0; i <  RT_PING_MAX_TIMES; i++) {
         rt_local_ping(ip, &delay, &lost, &mdev);
 
         if ( (delay <= RT_EXCELLENT_DELAY) && (lost <= RT_EXCELLENT_LOST) && (mdev <= RT_EXCELLENT_MDEV) ) {    // delay<=500;  lost<=20%; mdev<=200;
@@ -95,16 +95,16 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type, int32_
                         ip, delay, lost, mdev, network_level);
 #endif
 
-        // avoid ping 4 times
-        if ( (network_level > 0) || (type == RT_AND && strategy_num > 1) ) {
-            break;
-        } else {
-            if ( i <  (RT_PING_MAX_TIMES-1) ) {
-                MSG_PRINTF(LOG_INFO, "PING conditions are not met, do it again\n");
-                continue;
-            }
-        }
-    }
+        // // avoid ping 4 times
+        // if ( (network_level > 0) || (type == RT_AND && strategy_num > 1) ) {
+        //     break;
+        // } else {
+        //     if ( i <  (RT_PING_MAX_TIMES-1) ) {
+        //         MSG_PRINTF(LOG_INFO, "PING conditions are not met, do it again\n");
+        //         continue;
+        //     }
+        // }
+    // }
 
     return network_level;
 }
