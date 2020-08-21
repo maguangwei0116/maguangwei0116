@@ -81,7 +81,7 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type, int32_
             network_level = RT_EXCELLENT;
         } else if ( (delay <= RT_GOOD_DELAY) && (lost <= RT_GOOD_LOST) && (mdev <= RT_GOOD_MDEV) ) {            // delay<=1000; lost<=50%; mdev<=500;
             network_level = RT_GOOD;
-        } else if (lost < RT_COMMON_LOST) {                                                                     // lost < 90%
+        } else if (lost < RT_COMMON_LOST) {                                                                     // lost < 100%
             network_level = RT_COMMON;
         }
 
