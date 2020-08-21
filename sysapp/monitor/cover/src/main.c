@@ -28,6 +28,7 @@
 #include "network_detection.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
+#define RT_DATA_PATH                CFG_AGENT_RUN_PATH
 #define RT_MONITOR_RESTART          "monitor restart"
 #define RT_AGENT_RESTART            "agent restart"
 #define RT_PARAM_LINK_STRING        " # "
@@ -43,8 +44,7 @@
 #elif (CFG_STANDARD_MODULE)  // standard
 #define RT_OEMAPP_AGENT_FILE        "/oemapp/rt_agent"
 #define RT_MONITOR_FILE             "/oemapp/rt_monitor"
-#define RT_DATA_PATH                "/usrdata/redtea/"
-#define RT_AGENT_FILE               "/usrdata/redtea/rt_agent"
+#define RT_AGENT_FILE               CFG_AGENT_RUN_PATH"rt_agent"
 #endif
 
 #define RT_MONITOR_LOG              "rt_monitor_log"

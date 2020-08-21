@@ -12,6 +12,10 @@ config BR2_CFG_SOFTWARE_NAME
 	string "Software Name"
 	default "general"
 
+config BR2_CFG_AGENT_RUN_PATH
+	string "Running path"
+	default "/usrdata/redtea/"
+
 choice
 	prompt "Module Type"
 	default BR2_CFG_OPEN_MODULE

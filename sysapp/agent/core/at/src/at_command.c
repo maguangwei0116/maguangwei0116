@@ -58,7 +58,7 @@
 #define STAG_ENV_MODE                   1
 
 #define OTA_UPGRADE_OEMAPP_UBI          "oemapp.ubi"
-#define OTA_UPGRADE_USR_AGENT           "/usrdata/redtea/rt_agent"
+#define OTA_UPGRADE_USR_AGENT           CFG_AGENT_RUN_PATH"rt_agent"
 
 #define RT_DEFAULT_ICCID                "FFFFFFFFFFFFFFFFFFFF"
 

@@ -37,11 +37,7 @@ static int32_t get_system_tf_free(uint32_t *free_byte)
     rt_statfs_t diskInfo;
     unsigned long long totalBlocks;
     unsigned long long freeDisk;
-#ifdef CFG_STANDARD_MODULE
-    const char *disk_path = "/usrdata/";
-#else
-    const char *disk_path = "/data/";
-#endif
+    const char *disk_path = CFG_AGENT_RUN_PATH;
     
     if (linux_statfs(disk_path, &diskInfo) < 0) {
         MSG_PRINTF(LOG_ERR, "get free byte fail\r\n");
