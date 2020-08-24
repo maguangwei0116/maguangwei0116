@@ -52,21 +52,19 @@ static int32_t card_check_init_upload(const uint8_t *eid)
     rt_bool update_last_eid = RT_FALSE;
 
     if (eid_check_memory(eid, MAX_EID_LEN, 'F') || eid_check_memory(eid, MAX_EID_LEN, '0')) {
+        snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
+        rt_write_eid(0, g_last_eid, sizeof(g_last_eid));
         update_last_eid = RT_TRUE;
     }
 
     if (rt_os_strcmp((const char *)g_last_eid, (const char *)eid) && !update_last_eid) {
         MSG_PRINTF(LOG_INFO, "g_last_eid: %s, cur_eid: %s\r\n", g_last_eid, eid);
         MSG_PRINTF(LOG_WARN, "EID changed, upload INIT event\n");
-        update_last_eid = RT_TRUE;
+        snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
+
         upload_event_report("INIT", NULL, 0, NULL);
         upload_event_report("BOOT", NULL, 0, NULL);     // Request update and push ac events
         msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
-    }
-
-    if (update_last_eid) {
-        snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
-        rt_write_eid(0, g_last_eid, sizeof(g_last_eid));
     }
 
     return RT_SUCCESS;

@@ -23,6 +23,7 @@
     "md5sum:%s\r\n"\
     "Content-Length: %d\r\n\r\n%s"
 
+static const char  g_temp_eid[MAX_EID_LEN + 1]  = {0};
 static const char *g_upload_eid                 = NULL;
 static const char *g_upload_deviceid            = NULL;
 static const char *g_upload_addr                = NULL;
@@ -415,7 +416,16 @@ int32_t upload_event_report(const char *event, const char *tran_id, int32_t stat
             upload_json_pag = (char *)cJSON_PrintUnformatted(upload);
             if (upload_json_pag != NULL) {
                 //MSG_PRINTF(LOG_WARN, "upload_json_pag [%p] !!!\r\n", upload_json_pag);
-                ret = upload_send_request((const void *)upload_json_pag, rt_os_strlen(upload_json_pag));
+
+                if (!rt_os_strcmp(obj->event, "INIT")){
+                    ret = upload_send_http_request((const void *)upload_json_pag, rt_os_strlen(upload_json_pag));
+                    if (ret == RT_SUCCESS) {
+                        MSG_PRINTF(LOG_INFO, "EID updated : %s\n", g_upload_eid);
+                        rt_write_eid(0, g_upload_eid, sizeof(g_temp_eid));
+                    }
+                } else {
+                    ret = upload_send_request((const void *)upload_json_pag, rt_os_strlen(upload_json_pag));
+                }
             }
 
             if (upload) {
