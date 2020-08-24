@@ -100,7 +100,7 @@ static cJSON *upload_event_boot_profiles_info(void)
             MSG_PRINTF(LOG_WARN, "The profile is error\n");
             goto exit_entry;
         }
-    
+
         iccid = g_upload_card_info->info[i].iccid;
         type = g_upload_card_info->info[i].class;
         CJSON_ADD_NEW_STR_OBJ(profile, iccid);
@@ -125,7 +125,7 @@ static cJSON *upload_event_boot_profiles_info(void)
 #endif
 
     ret = RT_SUCCESS;
-    
+
 exit_entry:
 
     return !ret ? profiles : NULL;
@@ -279,9 +279,9 @@ static cJSON *upload_event_boot_network_info(void)
     CJSON_ADD_NEW_STR_OBJ(network, type);
     CJSON_ADD_NEW_INT_OBJ(network, dbm);
     CJSON_ADD_NEW_STR_OBJ(network, signalLevel);
-    
+
     ret = RT_SUCCESS;
-    
+
 exit_entry:
 
     return !ret ? network : NULL;
@@ -303,7 +303,7 @@ static cJSON *upload_event_software_version_info(void)
         MSG_PRINTF(LOG_WARN, "The software is error\n");
         goto exit_entry;
     }
-    
+
     for (i_type = 0; i_type < TARGET_TYPE_MAX; i_type++) {
         single_version = cJSON_CreateObject();
         if (!single_version) {
@@ -323,7 +323,7 @@ static cJSON *upload_event_software_version_info(void)
     }
 
     ret = RT_SUCCESS;
-    
+
 exit_entry:
 
     return !ret ? software : NULL;
@@ -385,7 +385,7 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
 
     network = upload_event_boot_network_info();
     CJSON_ADD_STR_OBJ(content, network);
-    
+
     if (!only_profile_network) {
         software = upload_event_software_version_info();
         CJSON_ADD_STR_OBJ(content, software);
