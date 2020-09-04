@@ -23,7 +23,7 @@
        "version": "v2.4.1",
        "chipModel": "9x07",
        "ticket": "3Ubf-Helb-FE5h-zfgB",
-       "fileHash": ¡°88363cdd81481d2f902b04b034ac3463aaf5ade2dd54ce226d41519ca5fe520e¡±
+       "fileHash": ï¿½ï¿½88363cdd81481d2f902b04b034ac3463aaf5ade2dd54ce226d41519ca5fe520eï¿½ï¿½
    },
    "policy":{
        "forced": 0,
@@ -119,7 +119,7 @@ typedef struct OTA_UPGRADE_PARAM {
 #ifdef CFG_STANDARD_MODULE
 #define OTA_UPGRADE_OEMAPP_NAME         "oemapp"
 #define OTA_UPGRADE_OEMAPP_UBI          "oemapp.ubi"
-#define OTA_UPGRADE_USR_AGENT           "/usrdata/redtea/rt_agent"
+#define OTA_UPGRADE_USR_AGENT           CFG_AGENT_RUN_PATH"rt_agent"
 #endif
 
 static const card_info_t *g_ota_card_info = NULL;

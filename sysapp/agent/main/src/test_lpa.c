@@ -8,11 +8,7 @@
 #include "apdu.h"
 #include "log.h"
 
-#if (CFG_OPEN_MODULE)
-#define RT_DATA_PATH            "/data/redtea/"
-#elif (CFG_STANDARD_MODULE)  // standard
-#define RT_DATA_PATH            "/usrdata/redtea/"
-#endif
+#define RT_DATA_PATH            CFG_AGENT_RUN_PATH
 
 // #define ACTIVATION_CODE         "1$QUARK-QA.REDTEA.IO$TK3J73RBQ3K91NUP$$1"
 // #define CONFIRMATION_CODE       "redtea_test"

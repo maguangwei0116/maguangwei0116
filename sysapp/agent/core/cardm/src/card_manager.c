@@ -32,6 +32,7 @@
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
 static rt_bool                      g_frist_bootstrap_ok        = RT_FALSE;
+static rt_bool                      g_frist_boot_up             = RT_FALSE;
 
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -532,10 +533,15 @@ static int32_t card_change_profile(const uint8_t *buf)
                 uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
             }
         } else {
-            interval = get_random_interval(RT_MAX_INTERVAL);
-            MSG_PRINTF(LOG_INFO, "Wait for SIM switch, random sleep %d s\n", interval);
-            rt_os_sleep(interval);
-            msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_SYNC_DOWNSTREAM_INFO, NULL, 0);
+            if (g_frist_boot_up == RT_TRUE) {
+                g_frist_boot_up = RT_FALSE;
+                MSG_PRINTF(LOG_INFO, "First boot, no waiting !\n");
+            } else {
+                interval = get_random_interval(RT_MAX_INTERVAL);
+                MSG_PRINTF(LOG_INFO, "Switch to provisioning, random sleep %d s\n", interval);
+                rt_os_sleep(interval);
+                msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_SYNC_DOWNSTREAM_INFO, NULL, 0);
+            }
         }
 
         MSG_PRINTF(LOG_INFO, "SIM ====> vUICC\n");
@@ -645,9 +651,9 @@ int32_t init_card_manager(void *arg)
         if (g_p_info.sim_info.state != SIM_READY) {
             devicekey_status = rt_get_devicekey_status();
             if (devicekey_status == RT_TRUE) {
+                g_frist_boot_up = RT_TRUE;
                 send_buf[0] = SIM_CARD_NO_INTERNET;
                 card_change_profile(send_buf);
-                rt_os_sleep(5);
                 card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
             }
         }

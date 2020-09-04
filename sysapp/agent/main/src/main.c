@@ -19,12 +19,7 @@
 #include "agent_main.h"
 #include "config.h"
 
-#if (CFG_OPEN_MODULE)
-#define RT_DATA_PATH            "/data/redtea/"
-#elif (CFG_STANDARD_MODULE)  // standard
-#define RT_DATA_PATH            "/usrdata/redtea/"
-#endif
-
+#define RT_DATA_PATH            CFG_AGENT_RUN_PATH
 #define RT_DEBUG_IN_TERMINAL    "terminal"
 #define RT_MALLOC_CHECK         "MALLOC_CHECK_="
 #define RT_ERR_LOG              "rt_err_log"
