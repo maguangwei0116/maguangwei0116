@@ -113,7 +113,7 @@ static int32_t rt_send_msg_card_status(void)
 
     }
     // else if (*g_card_type == PROFILE_TYPE_SIM) {
-    //     send_buf[0] = SIM_CARD_NO_INTERNET;
+    //     send_buf[0] = SIM_NO_INTERNET;
     // }
 
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));

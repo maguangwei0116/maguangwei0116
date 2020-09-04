@@ -519,7 +519,7 @@ static int32_t card_change_profile(const uint8_t *buf)
             operational_cycles ++;
         }
 
-    } else if (recv_buf == SIM_CARD_NO_INTERNET) {
+    } else if (recv_buf == SIM_NO_INTERNET) {
         // If there is a operational, enable it;
         // If there is only a provisoning, it will sleep randomly for 0 ~ 180s;
 
@@ -652,7 +652,7 @@ int32_t init_card_manager(void *arg)
             devicekey_status = rt_get_devicekey_status();
             if (devicekey_status == RT_TRUE) {
                 g_frist_boot_up = RT_TRUE;
-                send_buf[0] = SIM_CARD_NO_INTERNET;
+                send_buf[0] = SIM_NO_INTERNET;
                 card_change_profile(send_buf);
                 card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
             }

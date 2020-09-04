@@ -50,14 +50,11 @@
 #define RT_INIT_TIME                90
 #define RT_PROVISONING_IP           "23.91.101.68"
 
-typedef enum REDTEA_READY_PING_STATUS_CMD {
-    PROVISONING_HAVE_INTERNET       = 0,
+typedef enum REDTEAREADY_CARD_STATUS_CMD {
+    SIM_NO_INTERNET                 = 0,
     PROVISONING_NO_INTERNET,
-    OPERATIONAL_HAVE_INTERNET,
     OPERATIONAL_NO_INTERNET,
-    SIM_CARD_HAVE_INTERNET,
-    SIM_CARD_NO_INTERNET,
-} redtea_ready_ping_status_cmd_e;
+} redteaready_card_status_cmd_e;
 
 int32_t init_ping_task(void *arg);
 int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode);
