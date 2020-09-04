@@ -74,37 +74,25 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type, int32_
     int32_t lost, i;
     double delay, mdev;
 
-    // for (i = 0; i <  RT_PING_MAX_TIMES; i++) {
-        rt_local_ping(ip, &delay, &lost, &mdev);
+    rt_local_ping(ip, &delay, &lost, &mdev);
 
-        if ( (delay <= RT_EXCELLENT_DELAY) && (lost <= RT_EXCELLENT_LOST) && (mdev <= RT_EXCELLENT_MDEV) ) {    // delay<=500;  lost<=20%; mdev<=200;
-            network_level = RT_EXCELLENT;
-        } else if ( (delay <= RT_GOOD_DELAY) && (lost <= RT_GOOD_LOST) && (mdev <= RT_GOOD_MDEV) ) {            // delay<=1000; lost<=50%; mdev<=500;
-            network_level = RT_GOOD;
-        } else if (lost < RT_COMMON_LOST) {                                                                     // lost < 100%
-            network_level = RT_COMMON;
-        }
+    if ( (delay <= RT_EXCELLENT_DELAY) && (lost <= RT_EXCELLENT_LOST) && (mdev <= RT_EXCELLENT_MDEV) ) {    // delay<=500;  lost<=20%; mdev<=200;
+        network_level = RT_EXCELLENT;
+    } else if ( (delay <= RT_GOOD_DELAY) && (lost <= RT_GOOD_LOST) && (mdev <= RT_GOOD_MDEV) ) {            // delay<=1000; lost<=50%; mdev<=500;
+        network_level = RT_GOOD;
+    } else if (lost < RT_COMMON_LOST) {                                                                     // lost < 100%
+        network_level = RT_COMMON;
+    }
 
 #if (CFG_SOFTWARE_TYPE_RELEASE)
-        if (network_level < level) {
-            MSG_PRINTF(LOG_INFO, "%s ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", *g_card_type == PROFILE_TYPE_SIM ? "SIM" : "vUICC", \
-                        ip, delay, lost, mdev, network_level);
-        }
+    if (network_level < level) {
+        MSG_PRINTF(LOG_INFO, "%s ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", *g_card_type == PROFILE_TYPE_SIM ? "SIM" : "vUICC", \
+                    ip, delay, lost, mdev, network_level);
+    }
 #else
-            MSG_PRINTF(LOG_DBG, "%s ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", *g_card_type == PROFILE_TYPE_SIM ? "SIM" : "vUICC", \
-                        ip, delay, lost, mdev, network_level);
+        MSG_PRINTF(LOG_DBG, "%s ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", *g_card_type == PROFILE_TYPE_SIM ? "SIM" : "vUICC", \
+                    ip, delay, lost, mdev, network_level);
 #endif
-
-        // // avoid ping 4 times
-        // if ( (network_level > 0) || (type == RT_AND && strategy_num > 1) ) {
-        //     break;
-        // } else {
-        //     if ( i <  (RT_PING_MAX_TIMES-1) ) {
-        //         MSG_PRINTF(LOG_INFO, "PING conditions are not met, do it again\n");
-        //         continue;
-        //     }
-        // }
-    // }
 
     return network_level;
 }
