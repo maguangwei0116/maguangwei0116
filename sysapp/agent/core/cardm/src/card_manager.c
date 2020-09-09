@@ -578,6 +578,7 @@ int32_t init_card_manager(void *arg)
     sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
     if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
         card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+        g_p_info.type = PROFILE_TYPE_SIM;
         rt_qmi_get_current_cpin_state(cpin_status);
 
         if (*cpin_status == CPIN_PRESENT) {
@@ -587,7 +588,6 @@ int32_t init_card_manager(void *arg)
                 g_p_info.sim_info.state = SIM_ERROR;
             } else {
                 MSG_PRINTF(LOG_INFO, "SIM iccid : %s\n", sim_iccid);
-                g_p_info.type = PROFILE_TYPE_SIM;
                 g_p_info.sim_info.state = SIM_READY;
                 rt_os_strncpy(g_p_info.sim_info.iccid, sim_iccid, THE_ICCID_LENGTH);
             }
