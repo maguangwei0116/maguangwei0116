@@ -712,7 +712,6 @@ static void mqtt_client_state_mechine(void)
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
                         reconnect_cnt = 0;
                         if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
-                            network_force_down();
                             g_mqtt_param.network_state = NETWORK_DISCONNECTED;
                         }
                     }
@@ -743,7 +742,6 @@ static void mqtt_client_state_mechine(void)
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
                         reconnect_cnt = 0;
                         if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
-                            network_force_down();
                             g_mqtt_param.network_state = NETWORK_DISCONNECTED;
                         }
                     }
