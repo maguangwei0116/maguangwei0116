@@ -82,6 +82,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     int32_t ii = 0, tmp_len = 0, size = 0;
     uint8_t buf[1024] = {0};
     uint8_t send_buf[1] = {0};
+    rt_bool devicekey_status = RT_FALSE;
 
     if (*cmd == AT_CONTENT_DELIMITER) {
         if ((cmd[1] == AT_TYPE_GET_INFO) && (cmd[2] == AT_CONTENT_DELIMITER)) {
@@ -218,6 +219,12 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 #ifdef CFG_REDTEA_READY_ON
             else if (cmd[3] == AT_SWITCH_TO_VUICC) {
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
+
+                    devicekey_status = rt_get_devicekey_status();
+                    if (devicekey_status == RT_FALSE) {
+                        return RT_ERROR;
+                    }
+
                     send_buf[0] = SIM_NO_INTERNET;
                     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Switch to vUICC");
