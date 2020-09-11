@@ -75,6 +75,7 @@ double get_time_interval(struct timeval *start, struct timeval *end)
 int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, double *mdev)
 {
     int32_t i;
+    int32_t val = 1;
     int32_t ret = RT_ERROR;
     int32_t client_fd;
     int32_t size = 50 * 1024;
@@ -112,6 +113,7 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
     setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+    setsockopt(client_fd, IPPROTO_IP, IP_RECVERR, &val, sizeof(int32_t));       // icmp Port Unreachable
 
     if(setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval))) {
         MSG_PRINTF(LOG_ERR, "setsocketopt SO_RCVTIMEO error !\n");
