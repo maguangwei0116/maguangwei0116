@@ -219,7 +219,6 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 #ifdef CFG_REDTEA_READY_ON
             else if (cmd[3] == AT_SIM_TO_VUICC) {
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
-
                     devicekey_status = rt_get_devicekey_status();
                     if (devicekey_status == RT_FALSE) {
                         return RT_ERROR;
