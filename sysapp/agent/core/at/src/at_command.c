@@ -39,8 +39,8 @@
 #define AT_CONFIG_LPA_CHANNEL           '2'
 #define AT_UPGRADE_UBI_FILE             '3'
 #define AT_UPDATE_ENV                   '4'
-#define AT_SWITCH_TO_VUICC              '5'
-#define AT_VUICC_TO_SWITCH              '6'
+#define AT_SIM_TO_VUICC                 '5'
+#define AT_VUICC_TO_SIM                 '6'
 
 #define AT_CONTENT_DELIMITER            ','
 
@@ -217,7 +217,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 }
             }
 #ifdef CFG_REDTEA_READY_ON
-            else if (cmd[3] == AT_SWITCH_TO_VUICC) {
+            else if (cmd[3] == AT_SIM_TO_VUICC) {
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
 
                     devicekey_status = rt_get_devicekey_status();
@@ -227,14 +227,14 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
                     send_buf[0] = SIM_NO_INTERNET;
                     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
-                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Switch to vUICC");
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to vUICC");
                     ret = RT_SUCCESS;
                 }
-            } else if (cmd[3] == AT_VUICC_TO_SWITCH) {
+            } else if (cmd[3] == AT_VUICC_TO_SIM) {
                 if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM && g_p_value_list->card_info->sim_info.state == SIM_READY) {
                     send_buf[0] = PROVISONING_NO_INTERNET;
                     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
-                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC to Switch");
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC switch to SIM");
                     ret =  RT_SUCCESS;
                 }
             }

@@ -112,7 +112,11 @@ static int32_t rt_send_msg_card_status(void)
         send_buf[0] = OPERATIONAL_NO_INTERNET;
 
     } else if (*g_card_type == PROFILE_TYPE_SIM) {
+#ifdef CFG_SIM_DETECT_ON
         send_buf[0] = SIM_NO_INTERNET;
+#else
+        return RT_SUCCESS;
+#endif
     }
 
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
@@ -149,7 +153,11 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
             rt_os_sleep(RT_WAIT_TIME);
             continue;
         }
-        if (*g_card_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {
+        if (*g_card_type == PROFILE_TYPE_SIM
+#ifdef CFG_SIM_DETECT_ON
+        && g_sim_switch == RT_FALSE
+#endif
+        ) {
             rt_os_sleep(RT_WAIT_TIME);
             continue;
         }
@@ -208,7 +216,11 @@ static void network_ping_task(void *arg)
             if (*g_card_type == PROFILE_TYPE_PROVISONING) {
                 ret = rt_ping_provisoning_get_status();
 
-            } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL || *g_card_type == PROFILE_TYPE_SIM) {
+            } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL 
+#ifdef CFG_SIM_DETECT_ON
+            || *g_card_type == PROFILE_TYPE_SIM
+#endif
+            ) {
                 type = cJSON_GetObjectItem(network_detect, "type");
                 strategy_list = cJSON_GetObjectItem(network_detect, "strategies");
 
