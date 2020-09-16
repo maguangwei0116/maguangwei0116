@@ -19,22 +19,11 @@
 #include "agent_queue.h"
 #include "network_detection.h"
 
-static rt_bool                      g_sim_switch            = RT_TRUE;
 static profile_type_e *             g_card_type             = NULL;
 static profile_sim_cpin_e *         g_sim_cpin              = NULL;
 static sim_mode_type_e *            g_sim_mode              = NULL;
 static rt_bool                      g_network_state         = RT_FALSE;
 static rt_bool                      g_downstream_event      = RT_FALSE;
-
-static void sim_switch_enable(void)
-{
-    g_sim_switch = RT_TRUE;
-}
-
-static void sim_switch_disable(void)
-{
-    g_sim_switch = RT_FALSE;
-}
 
 static int32_t rt_judge_external_event(void)
 {
@@ -68,7 +57,7 @@ static int32_t rt_ping_provisoning_get_status(void)
     return ret;
 }
 
-static int32_t rt_ping_get_level(int8_t *ip, int32_t level, int32_t type, int32_t strategy_num)
+static int32_t rt_ping_get_level(int8_t *ip, int32_t level)
 {
     int32_t network_level = 0;
     int32_t lost, i;
@@ -105,14 +94,13 @@ static int32_t rt_send_msg_card_status(void)
         if (*g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY || *g_sim_cpin == SIM_ERROR) {
             return RT_SUCCESS;
         }
-        sim_switch_disable();
         send_buf[0] = PROVISONING_NO_INTERNET;
 
     } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL) {
         send_buf[0] = OPERATIONAL_NO_INTERNET;
 
     } else if (*g_card_type == PROFILE_TYPE_SIM) {
-        send_buf[0] = SIM_CARD_NO_INTERNET;
+        return RT_SUCCESS;
     }
 
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
@@ -149,7 +137,7 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
             rt_os_sleep(RT_WAIT_TIME);
             continue;
         }
-        if (*g_card_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {
+        if (*g_card_type == PROFILE_TYPE_SIM) {
             rt_os_sleep(RT_WAIT_TIME);
             continue;
         }
@@ -208,7 +196,7 @@ static void network_ping_task(void *arg)
             if (*g_card_type == PROFILE_TYPE_PROVISONING) {
                 ret = rt_ping_provisoning_get_status();
 
-            } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL || *g_card_type == PROFILE_TYPE_SIM) {
+            } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL) {
                 type = cJSON_GetObjectItem(network_detect, "type");
                 strategy_list = cJSON_GetObjectItem(network_detect, "strategies");
 
@@ -219,7 +207,7 @@ static void network_ping_task(void *arg)
                         domain = cJSON_GetObjectItem(strategy_item, "domain");
                         level = cJSON_GetObjectItem(strategy_item, "level");
 
-                        network_level = rt_ping_get_level(domain->valuestring, level->valueint, type->valueint, strategy_num);
+                        network_level = rt_ping_get_level(domain->valuestring, level->valueint);
                         ret = rt_judge_external_event();
                         if (ret == RT_SUCCESS) {
                             break;
@@ -276,9 +264,6 @@ int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode)
     switch (mode) {
         case MSG_NETWORK_CONNECTED:
             g_network_state = RT_TRUE;
-            if (*g_card_type == PROFILE_TYPE_SIM) {
-                sim_switch_enable();
-            }
             break;
 
         case MSG_NETWORK_DISCONNECTED:

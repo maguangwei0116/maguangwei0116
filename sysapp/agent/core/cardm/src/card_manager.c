@@ -462,37 +462,6 @@ static uint32_t get_random_interval(uint32_t total_num)
 }
 
 #ifdef CFG_REDTEA_READY_ON
-int32_t card_switch_type(cJSON *switchparams)
-{
-    cJSON *card_type = NULL;
-    int32_t state = RT_ERROR;
-
-    card_type = cJSON_GetObjectItem(switchparams, "type");
-    if (card_type != NULL) {
-        if (card_type->valueint == SWITCH_TO_SIM) {
-            if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_READY) {
-                MSG_PRINTF(LOG_INFO, "Switch to SIM\n");
-                ipc_remove_vuicc(1);
-                rt_os_sleep(3);
-                g_p_info.type = PROFILE_TYPE_SIM;
-                return RT_SUCCESS;
-            }
-        } else if (card_type->valueint == SWITCH_TO_ESIM) {
-            MSG_PRINTF(LOG_INFO, "eSIM\n");
-        } else {
-            MSG_PRINTF(LOG_WARN, "Invalid parameter !\n");
-        }
-    } else {
-        MSG_PRINTF(LOG_WARN, "Switch card type content is NULL !\n");
-    }
-
-    if (g_p_info.sim_info.state == SIM_ERROR) {
-        return RT_NO_SIM;
-    }
-
-    return state;
-}
-
 static int32_t card_change_profile(const uint8_t *buf)
 {
     int32_t ii = 0;
@@ -505,7 +474,7 @@ static int32_t card_change_profile(const uint8_t *buf)
     uint8_t recv_buf = buf[0];
 
     if (recv_buf == PROVISONING_NO_INTERNET) {
-        MSG_PRINTF(LOG_INFO, "Provisioning ====> SIM\n");
+        MSG_PRINTF(LOG_INFO, "%s ====> SIM\n", g_p_info.type == PROFILE_TYPE_OPERATIONAL ? "Operational" : "Provisioning");
         g_p_info.type = PROFILE_TYPE_SIM;
         ipc_remove_vuicc(1);
         rt_os_sleep(3);
@@ -516,6 +485,7 @@ static int32_t card_change_profile(const uint8_t *buf)
             g_p_info.type = PROFILE_TYPE_PROVISONING;
             uicc_switch_card(PROFILE_TYPE_PROVISONING, iccid);
             operational_cycles = 1;
+
         } else {
             MSG_PRINTF(LOG_INFO, "Operational ====> Operational\n");
             g_p_info.type = PROFILE_TYPE_OPERATIONAL;
@@ -523,7 +493,7 @@ static int32_t card_change_profile(const uint8_t *buf)
             operational_cycles ++;
         }
 
-    } else if (recv_buf == SIM_CARD_NO_INTERNET) {
+    } else if (recv_buf == SIM_NO_INTERNET) {
         // If there is a operational, enable it;
         // If there is only a provisoning, it will sleep randomly for 0 ~ 180s;
 
@@ -535,7 +505,6 @@ static int32_t card_change_profile(const uint8_t *buf)
             if (g_p_info.type != PROFILE_TYPE_OPERATIONAL) {
                 g_p_info.type = PROFILE_TYPE_OPERATIONAL;
                 uicc_switch_card(PROFILE_TYPE_OPERATIONAL, iccid);
-                rt_os_sleep(1);
             }
         } else {
             if (g_frist_boot_up == RT_TRUE) {
@@ -558,6 +527,37 @@ static int32_t card_change_profile(const uint8_t *buf)
     }
 
     return RT_SUCCESS;
+}
+
+int32_t card_switch_type(cJSON *switchparams)
+{
+    cJSON *card_type = NULL;
+    int32_t state = RT_ERROR;
+    uint8_t send_buf[1] = {0};
+
+    card_type = cJSON_GetObjectItem(switchparams, "type");
+    if (card_type != NULL) {
+        if (card_type->valueint == SWITCH_TO_SIM) {
+            if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_READY) {
+                MSG_PRINTF(LOG_INFO, "Update message received : Switch to SIM\n");
+                send_buf[0] = PROVISONING_NO_INTERNET;
+                card_change_profile(send_buf);
+                return RT_SUCCESS;
+            }
+        } else if (card_type->valueint == SWITCH_TO_ESIM) {
+            MSG_PRINTF(LOG_INFO, "eSIM\n");
+        } else {
+            MSG_PRINTF(LOG_WARN, "Invalid parameter !\n");
+        }
+    } else {
+        MSG_PRINTF(LOG_WARN, "Switch card type content is NULL !\n");
+    }
+
+    if (g_p_info.sim_info.state == SIM_ERROR) {
+        return RT_NO_SIM;
+    }
+
+    return state;
 }
 #endif
 
@@ -657,7 +657,7 @@ int32_t init_card_manager(void *arg)
             devicekey_status = rt_get_devicekey_status();
             if (devicekey_status == RT_TRUE) {
                 g_frist_boot_up = RT_TRUE;
-                send_buf[0] = SIM_CARD_NO_INTERNET;
+                send_buf[0] = SIM_NO_INTERNET;
                 card_change_profile(send_buf);
                 card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
             }
