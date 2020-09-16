@@ -23,6 +23,7 @@
     "md5sum:%s\r\n"\
     "Content-Length: %d\r\n\r\n%s"
 
+static const char  g_temp_eid[MAX_EID_LEN + 1]  = {0};
 static const char *g_upload_eid                 = NULL;
 static const char *g_upload_deviceid            = NULL;
 static const char *g_upload_addr                = NULL;
@@ -393,6 +394,43 @@ static int32_t init_upload_obj(void)
     return RT_SUCCESS;
 }
 #endif
+
+int32_t get_upload_event_result(const char *event, const char *tran_id, int32_t status, void *private_arg)
+{
+    const upload_event_t *obj = NULL;
+
+    for (obj = g_upload_event_START; obj <= g_upload_event_END; obj++) {
+        if (!rt_os_strcmp(obj->event, event)) {
+            char *upload_json_pag = NULL;
+            cJSON *upload = NULL;
+            cJSON *content = NULL;
+            int32_t ret = RT_ERROR;
+
+            MSG_PRINTF(LOG_INFO, "------->%s\n", event);
+
+            content = obj->packer(private_arg);
+            upload = upload_packet_all(tran_id, event, status, obj->topic, content);
+            upload_json_pag = (char *)cJSON_PrintUnformatted(upload);
+            if (upload_json_pag != NULL) {
+                ret = upload_send_http_request((const void *)upload_json_pag, rt_os_strlen(upload_json_pag));
+            }
+
+            if (upload) {
+                cJSON_Delete(upload);
+            }
+
+            if (upload_json_pag) {
+                cJSON_free(upload_json_pag);
+            }
+
+            return ret;
+        }
+    }
+
+    MSG_PRINTF(LOG_WARN, "Unknow upload event [%s] !!!\r\n", event);
+    return RT_ERROR;
+}
+
 
 int32_t upload_event_report(const char *event, const char *tran_id, int32_t status, void *private_arg)
 {
