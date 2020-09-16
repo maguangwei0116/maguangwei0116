@@ -19,11 +19,22 @@
 #include "agent_queue.h"
 #include "network_detection.h"
 
+static rt_bool                      g_sim_switch            = RT_TRUE;
 static profile_type_e *             g_card_type             = NULL;
 static profile_sim_cpin_e *         g_sim_cpin              = NULL;
 static sim_mode_type_e *            g_sim_mode              = NULL;
 static rt_bool                      g_network_state         = RT_FALSE;
 static rt_bool                      g_downstream_event      = RT_FALSE;
+
+static void sim_switch_enable(void)
+{
+    g_sim_switch = RT_TRUE;
+}
+
+static void sim_switch_disable(void)
+{
+    g_sim_switch = RT_FALSE;
+}
 
 static int32_t rt_judge_external_event(void)
 {
@@ -94,13 +105,14 @@ static int32_t rt_send_msg_card_status(void)
         if (*g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY || *g_sim_cpin == SIM_ERROR) {
             return RT_SUCCESS;
         }
+        sim_switch_disable();
         send_buf[0] = PROVISONING_NO_INTERNET;
 
     } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL) {
         send_buf[0] = OPERATIONAL_NO_INTERNET;
 
     } else if (*g_card_type == PROFILE_TYPE_SIM) {
-        return RT_SUCCESS;
+        send_buf[0] = SIM_NO_INTERNET;
     }
 
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
@@ -137,7 +149,7 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
             rt_os_sleep(RT_WAIT_TIME);
             continue;
         }
-        if (*g_card_type == PROFILE_TYPE_SIM) {
+        if (*g_card_type == PROFILE_TYPE_SIM && g_sim_switch == RT_FALSE) {
             rt_os_sleep(RT_WAIT_TIME);
             continue;
         }
@@ -196,7 +208,7 @@ static void network_ping_task(void *arg)
             if (*g_card_type == PROFILE_TYPE_PROVISONING) {
                 ret = rt_ping_provisoning_get_status();
 
-            } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL) {
+            } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL || *g_card_type == PROFILE_TYPE_SIM) {
                 type = cJSON_GetObjectItem(network_detect, "type");
                 strategy_list = cJSON_GetObjectItem(network_detect, "strategies");
 
@@ -263,6 +275,9 @@ int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     switch (mode) {
         case MSG_NETWORK_CONNECTED:
+            if (*g_card_type == PROFILE_TYPE_SIM) {
+                sim_switch_enable();
+            }
             g_network_state = RT_TRUE;
             break;
 
