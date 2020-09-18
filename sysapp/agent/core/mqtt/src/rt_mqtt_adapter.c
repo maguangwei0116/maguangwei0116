@@ -145,12 +145,12 @@ rt_bool mqtt_connect_adapter(mqtt_param_t *param, const char *oti_addr, int32_t 
     if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
         MSG_PRINTF(LOG_INFO, "mqtt alias: %s\r\n", alias);
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", alias);
+        /* save ticket server into cache file */
+        mqtt_save_ticket_server((const mqtt_opts_t *)opts);
+        return RT_TRUE;
     }
 
-    /* save ticket server into cache file */
-    mqtt_save_ticket_server((const mqtt_opts_t *)opts);
-
-    return RT_TRUE;
+    return RT_FALSE;
 }
 
 

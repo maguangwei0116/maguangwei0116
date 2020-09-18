@@ -50,8 +50,7 @@ MQTT_RECONNECT_MAX_CNT * ((30 seconds, connect timeout) * (retry 3 times) * (ser
 
 typedef enum MQTT_CONNECT_RESULT {
     MQTT_CONNECT_SUCCESS                = 0,
-    MQTT_CONNECT_YUNBA_ERROR            = -1,
-    MQTT_CONNECT_EMQ_ERROR              = 1,  
+    MQTT_CONNECT_EMQ_ERROR              = 1,
 } mqtt_connect_result_e;
 
 typedef enum MQTT_QOS {
@@ -86,7 +85,7 @@ typedef struct MQTT_INFO {
 
 static mqtt_param_t g_mqtt_param = {MQTTClient_connectOptions_initializer, 0};
 #if (CFG_DOWN_EMQ_MQTTS_ENABLE)
-static MQTTClient_SSLOptions g_mqtts_opts = MQTTClient_SSLOptions_initializer; 
+static MQTTClient_SSLOptions g_mqtts_opts = MQTTClient_SSLOptions_initializer;
 #endif
 static mqtt_info_t g_mqtt_info;
 
@@ -105,8 +104,7 @@ static rt_bool mqtt_eid_check_memory(const void *buf, int32_t len, int32_t value
 
 #if 1
 #define LABEL_FORCE_TO_ADAPTER          1
-#define LABEL_FORCE_TO_EMQ              0
-#define LABEL_FORCE_TO_YUNBA            0
+#define LABEL_FORCE_TO_EMQ              1
 
 #define MQTT_PASSAGEWAY_DEFINITION(x)\
 do {\
@@ -127,56 +125,35 @@ static rt_bool mqtt_get_server_addr(mqtt_param_t *param)
     if (!mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, 'F') && !mqtt_eid_check_memory(g_mqtt_info.eid, MAX_EID_LEN, '0')) {
         eid = g_mqtt_info.eid;
     }
-    
-    //attemp to connect adapter
-    do{
-        MQTT_PASSAGEWAY_DEFINITION(FORCE_TO_ADAPTER);
-        MQTT_PASSAGEWAY_DEFINITION(FORCE_TO_EMQ);
-        MQTT_PASSAGEWAY_DEFINITION(FORCE_TO_YUNBA);
 
-FORCE_TO_ADAPTER:
-        if (USE_ADAPTER_SERVER){
+    //attemp to connect adapter
+    do {
+
+        if (USE_ADAPTER_SERVER) {
             if (mqtt_connect_adapter(param, g_mqtt_info.oti_addr, g_mqtt_info.oti_port, eid) == RT_TRUE) {
-                MSG_PRINTF(LOG_INFO, "connect adapter server to get mqtt server address EMQ or YUNBA successfully\n");
+                MSG_PRINTF(LOG_INFO, "connect adapter server to get mqtt server address EMQ successfully\n");
                 goto ok_exit_entry;
             }
 
             if (mqtt_get_ticket_server(&param->opts) == RT_TRUE) {
-                /* If connect yunba ticket server before, and then try this */
-                if (!rt_os_strncmp(param->opts.channel, "YUNBA", 5) &&
-                      (mqtt_connect_yunba(param, param->opts.ticket_server) == RT_TRUE)) {
-                    MSG_PRINTF(LOG_INFO, "get YUNBA mqtt server connect param successfully\n");
-                    goto ok_exit_entry;
-                }
-
                 /* If connect EMQ ticket server before, and then try this */
-                if (!rt_os_strncmp(param->opts.channel, "EMQ", 3) &&
-                      (mqtt_connect_emq(param, g_mqtt_info.emq_addr, param->opts.ticket_server) == RT_TRUE)) {
+                if ((mqtt_connect_emq(param, g_mqtt_info.emq_addr, param->opts.ticket_server) == RT_TRUE)) {
                     MSG_PRINTF(LOG_INFO, "get EMQ mqtt server connect param successfully\n");
                     goto ok_exit_entry;
                 }
             }
         }
 
-        /* If connect adapter and ticket server all fail, and then try dead yunba server or EMQ server */
-        if (!rt_os_strncmp(param->opts.channel, "YUNBA", 5)) {
-FORCE_TO_EMQ:
-            if (mqtt_connect_emq(param, g_mqtt_info.emq_addr, NULL) == RT_TRUE) {
-                MSG_PRINTF(LOG_INFO, "get EMQ mqtt server connect param successfully\n");
-                goto ok_exit_entry;
-            }
-        } else if (!rt_os_strncmp(param->opts.channel, "EMQ", 3)) {
-FORCE_TO_YUNBA:
-            if (mqtt_connect_yunba(param, NULL) == RT_TRUE) {
-                MSG_PRINTF(LOG_INFO, "get yunba mqtt server connect param successfully\n");
-                goto ok_exit_entry;
-            }
+        /* If connect adapter and ticket server all fail, and then try dead EMQ server */
+        if (mqtt_connect_emq(param, g_mqtt_info.emq_addr, NULL) == RT_TRUE) {
+            MSG_PRINTF(LOG_INFO, "get EMQ mqtt server connect param successfully\n");
+            goto ok_exit_entry;
         }
-    }while(0);
+    } while(0);
 
 fail_exit_entry:
 
-    MSG_PRINTF(LOG_WARN, "connet adapter/EMQ server/YUNBA server all fail !\n");
+    MSG_PRINTF(LOG_WARN, "connet adapter/EMQ server all fail !\n");
     return RT_FALSE;
 
 ok_exit_entry:
@@ -241,11 +218,6 @@ exit_entry:
 static int32_t mqtt_pulish(const char* topic, const void* data, int32_t data_len)
 {
     int32_t ret;
-
-    /* never use yunba to publish message */
-    if (!rt_os_strncmp(g_mqtt_param.opts.channel, "YUNBA", 5)) {
-        return MQTT_PUBLISH_NO_YUNBA;
-    }
 
     /* check mqtt connected state */
     if (g_mqtt_param.mqtt_flag != RT_TRUE) {
@@ -418,14 +390,10 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
         g_mqtt_param.mqtt_conn_state    = RT_TRUE;
         g_mqtt_param.mqtt_flag          = RT_TRUE;
         g_mqtt_param.lost_flag          = RT_FALSE;
-        MSG_PRINTF(LOG_DBG, "Connect mqtt ok !\r\n");
+        MSG_PRINTF(LOG_INFO, "Connect mqtt ok !\r\n");
         return RT_TRUE;
     } else {
-        if (!rt_os_strncmp(g_mqtt_param.opts.channel, "EMQ", 3)) {
-            g_mqtt_param.opts.last_connect_status = MQTT_CONNECT_EMQ_ERROR;
-        } else {
-            g_mqtt_param.opts.last_connect_status = MQTT_CONNECT_YUNBA_ERROR;
-        }
+        g_mqtt_param.opts.last_connect_status = MQTT_CONNECT_EMQ_ERROR;
         g_mqtt_param.mqtt_conn_state    = RT_FALSE;
         MQTTClient_disconnect(*client, 0);  // release mqtt client
         MSG_PRINTF(LOG_WARN, "Connect mqtt fail, error:%d\r\n", c);
@@ -445,7 +413,7 @@ static rt_bool mqtt_disconnect(MQTTClient* client, int32_t *wait_cnt)
         *wait_cnt               = 0;  // reset wait counter
     }
     msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_DISCONNECTED, NULL, 0);
-    MSG_PRINTF(LOG_DBG, "MQTTClient disconnect msg throw out !\n");
+    MSG_PRINTF(LOG_INFO, "MQTTClient disconnect msg throw out !\n");
 
     return RT_TRUE;
 }
@@ -479,7 +447,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", g_mqtt_info.device_id);
     } else {
-        MSG_PRINTF(LOG_WARN, "The channel sent by the platform is not EMQ ..\n");
+        MSG_PRINTF(LOG_INFO, "platform return error...\n");
         return RT_FALSE;
     }
 
@@ -502,14 +470,9 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
 
     pconn_opts->username = (const char *)opts->username;
     pconn_opts->password = (const char *)opts->password;
-    if (!rt_os_strncmp(opts->channel, "YUNBA", 5)) {
-        MSG_PRINTF(LOG_DBG, "connecting yunba mqtt server ...\n");
-        pconn_opts->MQTTVersion = MQTTVERSION_YUNBA_3_1;
-    } else if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
-        MSG_PRINTF(LOG_DBG, "connecting emq mqtt server ...\n");
-        pconn_opts->MQTTVersion = MQTTVERSION_3_1;
-    }
-    MSG_PRINTF(LOG_DBG, "g_mqtt_info.type:%d\n", *(g_mqtt_info.type));
+    MSG_PRINTF(LOG_INFO, "connecting emq mqtt server ...\n");
+    pconn_opts->MQTTVersion = MQTTVERSION_3_1;
+    MSG_PRINTF(LOG_INFO, "g_mqtt_info.type:%d\n", *(g_mqtt_info.type));
     if (*(g_mqtt_info.type) == PROFILE_TYPE_OPERATIONAL) {
         pconn_opts->keepAliveInterval   = MQTT_KEEP_ALIVE_INTERVAL;
     } else {
@@ -522,11 +485,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     if (mqtt_connect(c, pconn_opts) == RT_FALSE) {
         MSG_PRINTF(LOG_WARN, "connecting %s mqtt server fail\r\n", opts->channel);
         if (++opts->try_connect_timer > MAX_TRY_CONNECT_TIME) {
-            if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
-                opts->last_connect_status = MQTT_CONNECT_EMQ_ERROR;
-            } else {
-                opts->last_connect_status = MQTT_CONNECT_YUNBA_ERROR;
-            }
+            opts->last_connect_status = MQTT_CONNECT_EMQ_ERROR;
         } else {
             /* connect same mqtt channel for MAX_TRY_CONNECT_TIME times */
             opts->last_connect_status = MQTT_CONNECT_SUCCESS;
@@ -538,7 +497,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     opts->try_connect_timer = 0;
     param->alias_rc = 1;
 
-    MSG_PRINTF(LOG_DBG, "Connect mqtt server ok !\r\n");
+    MSG_PRINTF(LOG_INFO, "Connect mqtt server ok !\r\n");
 
     if (rt_os_strcmp(last_channel, opts->channel)) {
         MSG_PRINTF(LOG_INFO, "last mqtt channel changed: [%s] ==> [%s]\r\n", last_channel, opts->channel);
@@ -614,7 +573,7 @@ static int32_t mqtt_state_set_alias(void)
 {
     int32_t ret = RT_SUCCESS;
 
-    //MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.channel);
+    MSG_PRINTF(LOG_DBG, "alias:%s, channel:%s\n", g_mqtt_param.alias, g_mqtt_param.opts.channel);
     if (!rt_os_strncmp(g_mqtt_param.opts.channel, "YUNBA", 5)) {
         if (rt_os_strlen(g_mqtt_param.alias) && (g_mqtt_param.alias_rc == RT_TRUE)) {
             g_mqtt_param.alias_rc = MQTTClient_set_alias(g_mqtt_param.client, (char *)g_mqtt_param.alias);
@@ -711,9 +670,12 @@ static void mqtt_client_state_mechine(void)
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
                         reconnect_cnt = 0;
+#ifndef CFG_PLATFORM_ANDROID
                         if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
+                            // network_force_down();
                             g_mqtt_param.network_state = NETWORK_DISCONNECTED;
                         }
+#endif
                     }
                     delay_s = 3;
                 }
@@ -741,9 +703,12 @@ static void mqtt_client_state_mechine(void)
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
                         reconnect_cnt = 0;
+#ifndef CFG_PLATFORM_ANDROID
                         if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
+                            // network_force_down();
                             g_mqtt_param.network_state = NETWORK_DISCONNECTED;
                         }
+#endif
                     }
                     delay_s = 3;
                 }
@@ -857,10 +822,10 @@ int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
 
     //MSG_PRINTF(LOG_INFO, "mqtt connect event, mode: %d\r\n", mode);
     if (MSG_NETWORK_CONNECTED == mode) {
-        MSG_PRINTF(LOG_DBG, "mqtt module recv network connected\r\n");
+        MSG_PRINTF(LOG_INFO, "mqtt module recv network connected\r\n");
         g_mqtt_param.network_state = NETWORK_CONNECTED;
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
-        MSG_PRINTF(LOG_DBG, "mqtt module recv network disconnected\r\n");
+        MSG_PRINTF(LOG_INFO, "mqtt module recv network disconnected\r\n");
         g_mqtt_param.network_state = NETWORK_DISCONNECTED;
     } else if (MSG_MQTT_SUBSCRIBE_EID == mode) {
         MSG_PRINTF(LOG_INFO, "mqtt module recv subcsribe eid request\r\n");
@@ -875,7 +840,6 @@ int32_t mqtt_connect_event(const uint8_t *buf, int32_t len, int32_t mode)
 
 int32_t init_mqtt(void *arg)
 {
-    // rt_os_sleep(1);
     int32_t ret = RT_ERROR;
     public_value_list_t *public_value_list = (public_value_list_t *)arg;
 
@@ -890,6 +854,7 @@ int32_t init_mqtt(void *arg)
     g_mqtt_info.type                = (const profile_type_e *)&(public_value_list->card_info->type);
 
     mqtt_init_param();
+
     ret = mqtt_create_task();
 
     return ret;
