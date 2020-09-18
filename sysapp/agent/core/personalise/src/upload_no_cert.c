@@ -34,14 +34,12 @@ static cJSON *upload_no_cert_packer(void *arg)
     uint8_t buf[256];
     uint8_t buf_temp[256];
 
+    const char *batchCode       = g_personalise_version_info->versions[1].name;
     const char *imei            = g_personalise_device_info->imei;
     const char *deviceId        = g_personalise_device_info->device_id;
     const char *model           = g_personalise_device_info->model;
     const char *signature       = buf_temp;
     char fileVersion[256]       = {0};
-#ifdef CFG_REDTEA_READY_ON
-    const char *batchCode       = g_personalise_version_info->versions[1].name;
-#endif
 
     content = cJSON_CreateObject();
     if (!content) {
@@ -70,9 +68,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     CJSON_ADD_NEW_STR_OBJ(content, model);
     CJSON_ADD_NEW_STR_OBJ(content, signature);
     CJSON_ADD_NEW_STR_OBJ(content, fileVersion);
-#ifdef CFG_REDTEA_READY_ON
     CJSON_ADD_NEW_STR_OBJ(content, batchCode);
-#endif
 
     ret = RT_SUCCESS;
 
