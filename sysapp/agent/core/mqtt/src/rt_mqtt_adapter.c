@@ -104,7 +104,7 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
     snprintf(opts->ticket_server, sizeof(opts->ticket_server), "%s", reg_info->ticket_server);
     snprintf(opts->url, sizeof(opts->url), "%s", reg_info->url);
 
-#if 0
+#if 1
     MSG_PRINTF(LOG_DBG, "client_id     : %s\r\n", reg_info->client_id);
     MSG_PRINTF(LOG_DBG, "username      : %s\r\n", reg_info->username);
     MSG_PRINTF(LOG_DBG, "password      : %s\r\n", reg_info->password);
