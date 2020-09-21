@@ -32,6 +32,7 @@
 #define AT_GET_EID                      '0'
 #define AT_GET_ICCIDS                   '1'
 #define AT_GET_UICC_TYPE                '2'
+#define AT_GET_SIM_STATUS               '3'
 #define AT_GET_ENV_TYPE                 '4'
 
 #define AT_SWITCH_TO_PROVISIONING       '0'
@@ -125,6 +126,11 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     (g_p_value_list->config_info->lpa_channel_type == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
 #endif
                 ret = RT_SUCCESS;
+            } else if (cmd[3] == AT_GET_SIM_STATUS) {
+                snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, \
+                    (g_p_value_list->card_info->sim_info.state == SIM_READY) ? "SIM Ready" : "SIM Not Exist");
+                ret = RT_SUCCESS;
+
             } else if (cmd[3] == AT_GET_ENV_TYPE) {   // get environment
                 if(!strcmp(g_p_value_list->config_info->oti_addr, RT_PROD_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "prod");
