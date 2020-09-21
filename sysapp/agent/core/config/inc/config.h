@@ -11,20 +11,13 @@
 
 #include "stdint.h"
 
-typedef enum SIM_MODE_TYPE {
-    SIM_MODE_TYPE_VUICC_ONLY = 0,     // vUICC mode
-    SIM_MODE_TYPE_SIM_FIRST,
-    SIM_MODE_TYPE_SIM_ONLY
-} sim_mode_type_e;
-
 typedef struct CONFIG_INFO {
     char *              oti_addr;           // OTI server addr
     char *              emq_addr;           // EMQ server addr
     char *              proxy_addr;         // proxy server addr
     uint8_t             lpa_channel_type;   // @ref lpa_channel_type_e
-#ifdef CFG_REDTEA_READY_ON
-    sim_mode_type_e     sim_mode;           // sim mode
-#endif
+    uint8_t             project_mode;       // project mode
+    uint8_t             sim_mode;           // sim mode
     uint32_t            log_max_size;       // unit: MB
     uint8_t             monitor_log_level;  // @ref log_level_e in log.h
     uint8_t             agent_log_level;    // @ref log_level_e in log.h

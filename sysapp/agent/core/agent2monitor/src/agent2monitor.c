@@ -6,6 +6,7 @@
 #include "hash.h"
 #include "file.h"
 #include "lpa.h"
+#include "card_manager.h"
 #ifdef CFG_PLATFORM_ANDROID
 #include "rt_qmi.h"
 #endif
@@ -90,13 +91,11 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
     //MSG_PRINTF(LOG_INFO, "atom len:%d\n", sizeof(atom_data_t));
 
     info.vuicc_switch = config_info->lpa_channel_type;
-#ifdef CFG_REDTEA_READY_ON
-    if (config_info->sim_mode == SIM_MODE_TYPE_VUICC_ONLY) {
+    if (config_info->sim_mode == MODE_TYPE_VUICC) {
         info.sim_mode = VUICC_ENABLE;
     } else {
         info.sim_mode = VUICC_DISABLE;
     }
-#endif
     info.log_level = config_info->monitor_log_level;
     info.log_size = config_info->log_max_size;
 

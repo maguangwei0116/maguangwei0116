@@ -49,8 +49,8 @@
 #define ANNOTATION_SYMBOL                   '#'                     // ע�ͱ�ʶ��
 #define CONFIG_FILE_PATH                    "rt_config.ini"
 #define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // �ж��Ƿ�Ϊ�հ׷�
-#define UICC_MODE_vUICC                     "0"
-#define UICC_MODE_eUICC                     "1"
+#define PROJECT_REDTEAREADY                 "0"
+#define PROJECT_SC                          "1"
 #define PROD_ENV_MODE                       0
 #define STAG_ENV_MODE                       1
 
@@ -151,14 +151,16 @@ static int32_t config_log_size(const void *in, char *out)
     return config_range_int_value(in, 0, 5, out);
 }
 
-/* value: [0,1] */
+/* value: [0,3] */
 static int32_t config_uicc_mode(const void *in, char *out)
 {
-#ifdef CFG_REDTEA_READY_ON
-    return config_range_int_value(in, 0, 2, out);
-#else
+    return config_range_int_value(in, 0, 3, out);
+}
+
+/* value: [0,1] */
+static int32_t config_project_mode(const void *in, char *out)
+{
     return config_range_int_value(in, 0, 1, out);
-#endif
 }
 
 /* value: [0,1] */
@@ -193,11 +195,8 @@ ITEM(MBN_CONFIGURATION,         config_switch_value,        INTEGER,        "1",
 ITEM(INIT_PROFILE_TYPE,         config_init_pro_type,       INTEGER,        "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
 ITEM(RPLMN_ENABLE,                  NULL,                   INTEGER,        "1",                            "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,             config_log_size,            INTEGER,        "1",                            "The max size of rt_log file (MB)"),
-#ifdef CFG_REDTEA_READY_ON
-ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "1",                            "The mode of SIM (0:vUICC only  1:SIM first 2:SIM only)"),
-#else
-ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "0",                            "The mode of UICC (0:vUICC  1:eUICC)"),
-#endif
+ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "0",                            "The mode of UICC (0:SIM first  1:eUICC  2:vUICC  3:SIM only)"),
+ITEM(PROJECT_MODE,              config_project_mode,        INTEGER,        "0",                            "The mode of Project (0:RedteaReady  1:SC)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
 ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
@@ -453,13 +452,18 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
         return RT_ERROR;
     }
 
-#ifdef CFG_REDTEA_READY_ON
-    infos->lpa_channel_type  = LPA_CHANNEL_BY_IPC;
+    infos->project_mode = msg_string_to_int(local_config_get_data("PROJECT_MODE"));
+    
     infos->sim_mode = msg_string_to_int(local_config_get_data("UICC_MODE"));
-#else
-    infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
-                                                    LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
-#endif
+
+
+    if (infos->sim_mode == MODE_TYPE_EUICC) {
+        infos->lpa_channel_type = LPA_CHANNEL_BY_QMI;
+    } else {
+        infos->lpa_channel_type = LPA_CHANNEL_BY_IPC;   // SIM only for download cert
+    }
+
+    MSG_PRINTF(LOG_WARN, "=============> channel : %d\n", infos->lpa_channel_type);
 
     size = msg_string_to_int(local_config_get_data("LOG_FILE_SIZE"));
     if (size > 0) {
@@ -487,23 +491,20 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
 #endif
     MSG_PRINTF(LOG_INFO, "Restart reason: %s\n", g_restart_reason);
     MSG_PRINTF(LOG_INFO, "Agent version : %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
-    MSG_PRINTF(LOG_INFO, "OTI_ENVIRONMENT_ADDR  : %s\n", local_config_get_data("OTI_ENVIRONMENT_ADDR"));
-    MSG_PRINTF(LOG_INFO, "EMQ_SERVER_ADDR       : %s\n", local_config_get_data("EMQ_SERVER_ADDR"));
-    MSG_PRINTF(LOG_INFO, "PROXY_SERVER_ADDR     : %s\n", local_config_get_data("PROXY_SERVER_ADDR"));
-    MSG_PRINTF(LOG_INFO, "MBN_CONFIGURATION     : %s\n", local_config_get_data("MBN_CONFIGURATION"));
-    MSG_PRINTF(LOG_INFO, "INIT_PROFILE_TYPE     : %s\n", local_config_get_data("INIT_PROFILE_TYPE"));
-    MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n", local_config_get_data("RPLMN_ENABLE"));
+    MSG_PRINTF(LOG_INFO, "OTI_ENVIRONMENT_ADDR  : %s\n",    local_config_get_data("OTI_ENVIRONMENT_ADDR"));
+    MSG_PRINTF(LOG_INFO, "EMQ_SERVER_ADDR       : %s\n",    local_config_get_data("EMQ_SERVER_ADDR"));
+    MSG_PRINTF(LOG_INFO, "PROXY_SERVER_ADDR     : %s\n",    local_config_get_data("PROXY_SERVER_ADDR"));
+    MSG_PRINTF(LOG_INFO, "MBN_CONFIGURATION     : %s\n",    local_config_get_data("MBN_CONFIGURATION"));
+    MSG_PRINTF(LOG_INFO, "INIT_PROFILE_TYPE     : %s\n",    local_config_get_data("INIT_PROFILE_TYPE"));
+    MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n",    local_config_get_data("RPLMN_ENABLE"));
     MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
-#ifdef CFG_REDTEA_READY_ON
-    MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n", local_config_get_data("UICC_MODE"));
-#else
-    MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n", !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? "vUICC" : "eUICC");
-#endif
-    MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n", local_config_get_data("MONITOR_LOG_LEVEL"));
-    MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n", local_config_get_data("AGENT_LOG_LEVEL"));
-    MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n", local_config_get_data("USAGE_ENABLE"));
+    MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n",    local_config_get_data("UICC_MODE"));
+    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJECT_MODE"), PROJECT_REDTEAREADY) ? "RedteaReady" : "SC");
+    MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n",    local_config_get_data("MONITOR_LOG_LEVEL"));
+    MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n",    local_config_get_data("AGENT_LOG_LEVEL"));
+    MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n",    local_config_get_data("USAGE_ENABLE"));
     MSG_PRINTF(LOG_INFO, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
-    MSG_PRINTF(LOG_INFO, "CARD_FLOW_SWITCH      : %s\n", local_config_get_data("CARD_FLOW_SWITCH"));
+    MSG_PRINTF(LOG_INFO, "CARD_FLOW_SWITCH      : %s\n",    local_config_get_data("CARD_FLOW_SWITCH"));
 }
 
 int32_t init_config(void *arg)
@@ -536,7 +537,7 @@ int32_t init_config(void *arg)
 int32_t config_update_uicc_mode(int32_t mode)
 {
     const char *key = "UICC_MODE";
-    const char *value = (mode == LPA_CHANNEL_BY_IPC) ? UICC_MODE_vUICC : UICC_MODE_eUICC;
+    const char *value = (char *)mode;
     const char *old_value = NULL;
     int32_t pair_num = ARRAY_SIZE(g_config_items);
     config_item_t *items = g_config_items;

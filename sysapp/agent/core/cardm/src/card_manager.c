@@ -121,13 +121,10 @@ int32_t card_update_profile_info(judge_term_e bootstrap_flag)
     int32_t ret = RT_ERROR;
     int32_t i;
 
-#ifdef CFG_REDTEA_READY_ON
     if (g_p_info.type == PROFILE_TYPE_SIM) {
         MSG_PRINTF(LOG_INFO, "SIM using, iccid: %s\n", g_p_info.sim_info.iccid);
         ret = RT_SUCCESS;
-    } else
-#endif
-    {
+    } else {
         ret = lpa_get_profile_info(g_p_info.info, &g_p_info.num, THE_MAX_CARD_NUM);
         if (ret == RT_SUCCESS) {
             /* get current profile type */
@@ -461,7 +458,6 @@ static uint32_t get_random_interval(uint32_t total_num)
     return second;
 }
 
-#ifdef CFG_REDTEA_READY_ON
 static int32_t card_change_profile(const uint8_t *buf)
 {
     int32_t ii = 0;
@@ -559,7 +555,6 @@ int32_t card_switch_type(cJSON *switchparams)
 
     return state;
 }
-#endif
 
 int32_t init_card_manager(void *arg)
 {
@@ -579,9 +574,8 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
 
-#ifdef CFG_REDTEA_READY_ON
     sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
-    if (sim_mode != SIM_MODE_TYPE_VUICC_ONLY) {
+    if (sim_mode == MODE_TYPE_SIM_FIRST || sim_mode == MODE_TYPE_SIM_ONLY) {
         card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         g_p_info.type = PROFILE_TYPE_SIM;
         rt_qmi_get_current_cpin_state(cpin_status);
@@ -602,18 +596,14 @@ int32_t init_card_manager(void *arg)
         }
     }
 
-    if (sim_mode != SIM_MODE_TYPE_SIM_ONLY)
-#endif
-    {
-        if (((public_value_list_t *)arg)->config_info->lpa_channel_type != LPA_CHANNEL_BY_QMI) {
-            if (*(((public_value_list_t *)arg)->profile_damaged) == RT_SUCCESS) {
-                ret = card_key_data_init();
-                if (ret) {
-                    MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
-                }
-            } else {
-                MSG_PRINTF(LOG_ERR, "share profile damaged !");
+    if (((public_value_list_t *)arg)->config_info->lpa_channel_type == LPA_CHANNEL_BY_IPC) {
+        if (*(((public_value_list_t *)arg)->profile_damaged) == RT_SUCCESS) {
+            ret = card_key_data_init();
+            if (ret) {
+                MSG_PRINTF(LOG_WARN, "card init key failed, ret=%d\r\n", ret);
             }
+        } else {
+            MSG_PRINTF(LOG_ERR, "share profile damaged !");
         }
     }
 
@@ -651,8 +641,7 @@ int32_t init_card_manager(void *arg)
         MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
     }
 
-#ifdef CFG_REDTEA_READY_ON
-    if (sim_mode == SIM_MODE_TYPE_SIM_FIRST) {
+    if (sim_mode == MODE_TYPE_SIM_FIRST) {
         if (g_p_info.sim_info.state != SIM_READY) {
             devicekey_status = rt_get_devicekey_status();
             if (devicekey_status == RT_TRUE) {
@@ -662,9 +651,7 @@ int32_t init_card_manager(void *arg)
                 card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
             }
         }
-    } else
-#endif
-    {
+    } else {
         ret = card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
         if (ret) {
             MSG_PRINTF(LOG_WARN, "card update profile info fail, ret=%d\r\n", ret);
@@ -760,11 +747,9 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             ret = card_disable_profile(buf);
             break;
 
-#ifdef CFG_REDTEA_READY_ON
         case MSG_SWITCH_CARD:
             ret = card_change_profile(buf);
             break;
-#endif
         default:
             //MSG_PRINTF(LOG_WARN, "unknow command\n");
             break;

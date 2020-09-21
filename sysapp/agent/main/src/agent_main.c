@@ -32,10 +32,7 @@
 #include "libcomm.h"
 #include "agent_main.h"
 #include "rt_timer.h"
-
-#ifdef CFG_REDTEA_READY_ON
 #include "ping_task.h"
-#endif
 
 #include "usrdata.h"
 #ifdef CFG_STANDARD_MODULE
@@ -269,9 +266,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_upgrade,              (void *)&g_value_list),
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
     INIT_OBJ(init_logm,                 (void *)&g_value_list),
-#ifdef CFG_REDTEA_READY_ON
     INIT_OBJ(init_ping_task,            (void *)&g_value_list),
-#endif
 };
 
 static int32_t agent_init_call(void)

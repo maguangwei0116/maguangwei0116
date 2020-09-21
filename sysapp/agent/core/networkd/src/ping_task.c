@@ -11,8 +11,6 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifdef CFG_REDTEA_READY_ON
-
 #include "rt_os.h"
 #include "usrdata.h"
 #include "ping_task.h"
@@ -20,9 +18,10 @@
 #include "network_detection.h"
 
 static rt_bool                      g_sim_switch            = RT_TRUE;
+static project_mode_e *             g_project_mode          = NULL;
+static mode_type_e *                g_sim_mode              = NULL;
 static profile_type_e *             g_card_type             = NULL;
 static profile_sim_cpin_e *         g_sim_cpin              = NULL;
-static sim_mode_type_e *            g_sim_mode              = NULL;
 static rt_bool                      g_network_state         = RT_FALSE;
 static rt_bool                      g_downstream_event      = RT_FALSE;
 
@@ -102,7 +101,8 @@ static int32_t rt_send_msg_card_status(void)
     uint8_t send_buf[1] = {0};
 
     if (*g_card_type == PROFILE_TYPE_PROVISONING) {
-        if (*g_sim_mode == SIM_MODE_TYPE_VUICC_ONLY || *g_sim_cpin == SIM_ERROR) {
+        if (*g_sim_mode == MODE_TYPE_VUICC || *g_sim_cpin == SIM_ERROR) {
+            MSG_PRINTF(LOG_DBG, "SIM mode : %d, SIM cpin : %d\n", *g_sim_mode, *g_sim_cpin);
             return RT_SUCCESS;
         }
         sim_switch_disable();
@@ -322,12 +322,19 @@ int32_t init_ping_task(void *arg)
 {
     rt_task task_id = 0;
     int32_t ret = RT_ERROR;
-    g_sim_mode  = (sim_mode_type_e *)&((public_value_list_t *)arg)->config_info->sim_mode;
-    g_card_type = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
-    g_sim_cpin  = (profile_sim_cpin_e *)&(((public_value_list_t *)arg)->card_info->sim_info.state);
 
-    if (*g_sim_mode == SIM_MODE_TYPE_SIM_ONLY) {
-        MSG_PRINTF(LOG_ERR, "SIM Only, Not open ping task ...\n");
+    g_project_mode  = (project_mode_e *)&((public_value_list_t *)arg)->config_info->project_mode;
+    g_sim_mode      = (mode_type_e *)&((public_value_list_t *)arg)->config_info->sim_mode;
+    g_card_type     = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
+    g_sim_cpin      = (profile_sim_cpin_e *)&(((public_value_list_t *)arg)->card_info->sim_info.state);
+
+    if (*g_project_mode != PROJECT_REDTEAREADY) {
+        MSG_PRINTF(LOG_INFO, "SC Project, Not open ping task ...\n");
+        return RT_ERROR;
+    }
+
+    if (*g_sim_mode == MODE_TYPE_SIM_ONLY) {
+        MSG_PRINTF(LOG_INFO, "SIM Only, Not open ping task ...\n");
         return RT_ERROR;
     }
 
@@ -339,5 +346,3 @@ int32_t init_ping_task(void *arg)
 
     return RT_SUCCESS;
 }
-
-#endif

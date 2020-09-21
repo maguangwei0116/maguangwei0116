@@ -296,11 +296,7 @@ int32_t msg_delete_profile(const char *iccid, rt_bool *opr_iccid_using)
     profile_type_e type;
 
     if (msg_check_iccid_state(iccid, &type) == RT_TRUE) {
-        if (PROFILE_TYPE_OPERATIONAL == type
-#ifdef CFG_REDTEA_READY_ON
-            || PROFILE_TYPE_SIM == type
-#endif
-        ) {
+        if (PROFILE_TYPE_OPERATIONAL == type || PROFILE_TYPE_SIM == type) {
             /* delete using operational profile */
             *opr_iccid_using = RT_TRUE;
 

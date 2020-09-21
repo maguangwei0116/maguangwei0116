@@ -55,14 +55,11 @@ static cJSON *upload_event_boot_device_info(void)
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, sn);
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, model);
 
-#ifdef CFG_REDTEA_READY_ON
     rt_read_devicekey(0, deviceKey, DEVICE_KEY_SIZE);
     if (!device_key_check_memory(deviceKey, DEVICE_KEY_SIZE, 'F')) {
         deviceKey[DEVICE_KEY_SIZE] = '\0';
         CJSON_ADD_NEW_STR_OBJ(deviceInfo, deviceKey);
     }
-
-#endif
 
     ret = RT_SUCCESS;
     
@@ -108,7 +105,6 @@ static cJSON *upload_event_boot_profiles_info(void)
         cJSON_AddItemToArray(profiles, profile);
     }
 
-#ifdef CFG_REDTEA_READY_ON
     if (g_upload_card_info->sim_info.state == SIM_READY) {
         profile = cJSON_CreateObject();
         if (!profile) {
@@ -122,7 +118,6 @@ static cJSON *upload_event_boot_profiles_info(void)
         CJSON_ADD_NEW_INT_OBJ(profile, type);
         cJSON_AddItemToArray(profiles, profile);
     }
-#endif
 
     ret = RT_SUCCESS;
 

@@ -19,10 +19,7 @@
 #include "card_detection.h"
 #include "rt_type.h"
 #include "rt_os.h"
-
-#ifdef CFG_REDTEA_READY_ON
-    #include "ping_task.h"
-#endif
+#include "ping_task.h"
 
 /*
 queue msg type must large than 0, it's a nonpositive mtype value !
@@ -131,10 +128,8 @@ const char * g_msg_mode_e[] =
     "MSG_CARD_UPDATE",
     "MSG_CARD_DISABLE_EXIST_CARD",
     "MSG_CARD_UPDATE_SEED",
-#ifdef CFG_REDTEA_READY_ON
     "MSG_SYNC_DOWNSTREAM_INFO",
     "MSG_SWITCH_CARD",
-#endif
 };
 #endif
 
@@ -177,9 +172,7 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_NETWORK_DECTION:
-#ifdef CFG_REDTEA_READY_ON
                     sync_downstream_event(que_t.data_buf, que_t.data_len, que_t.mode);
-#endif
                     break;
 
                 case MSG_ID_BROAD_CAST_NETWORK:
@@ -190,9 +183,7 @@ static void agent_queue_task(void)
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode); // It will waste a few time
-#ifdef CFG_REDTEA_READY_ON
                     ping_task_network_event(que_t.data_buf, que_t.data_len, que_t.mode);
-#endif
                     break;
 
                 case MSG_ID_MQTT:

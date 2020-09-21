@@ -11,8 +11,6 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifdef CFG_REDTEA_READY_ON
-
 #include "agent_queue.h"
 #include "msg_process.h"
 #include "downstream.h"
@@ -164,5 +162,3 @@ end:
 
 DOWNSTREAM_METHOD_OBJ_INIT(UPDATE, MSG_ID_CARD_MANAGER, ON_UPDATE, update_parser, update_handler);
 UPLOAD_EVENT_OBJ_INIT(ON_UPDATE, TOPIC_DEVICEID_OR_EID, upload_on_update_packer);
-
-#endif

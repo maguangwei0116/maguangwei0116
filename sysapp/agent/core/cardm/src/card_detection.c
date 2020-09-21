@@ -123,7 +123,6 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
         }
     }
 
-#ifdef CFG_REDTEA_READY_ON
     if (PROFILE_TYPE_SIM == *g_cur_profile_type) {
         if (*type != *g_cur_profile_type) {         // vUICC -> SIM
             MSG_PRINTF(LOG_INFO, "SIM detected (%s)[%d] ==> (%s)[%d]\r\n", iccid, *type, g_sim_iccid, *g_cur_profile_type);
@@ -132,7 +131,6 @@ static int32_t card_load_using_card(char *iccid, int32_t size, profile_type_e *t
             return RT_SUCCESS;
         }
     }
-#endif
 
     return RT_ERROR;
 }
@@ -149,11 +147,9 @@ static int32_t card_changed_handle(const char *iccid, profile_type_e type)
         card_detection_disable();
         card_check_provisoning_conflict(RT_TRUE);
     }
-#ifdef CFG_REDTEA_READY_ON
     else if (PROFILE_TYPE_SIM == type) {    // 二期设置apn
         card_detection_disable();
     }
-#endif
 
     return ret;
 }

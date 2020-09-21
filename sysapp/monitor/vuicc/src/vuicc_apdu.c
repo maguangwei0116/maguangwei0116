@@ -76,10 +76,7 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
             sleep(20); // need wait reset
             sleep_flag = 0;
         }
-#ifdef CFG_REDTEA_READY_ON
-        if (*g_vuicc_mode == VUICC_ENABLE)
-#endif
-        {
+        if (*g_vuicc_mode == VUICC_ENABLE) {
             trigger_swap_card(1);
         }
     }

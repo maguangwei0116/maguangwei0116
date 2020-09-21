@@ -32,6 +32,7 @@
 #define AT_GET_EID                      '0'
 #define AT_GET_ICCIDS                   '1'
 #define AT_GET_UICC_TYPE                '2'
+#define AT_GET_CUR_TYPE                 '3'
 #define AT_GET_ENV_TYPE                 '4'
 
 #define AT_SWITCH_TO_PROVISIONING       '0'
@@ -46,6 +47,9 @@
 
 #define AT_CFG_VUICC                    "\"vUICC\""
 #define AT_CFG_EUICC                    "\"eUICC\""
+#define AT_CFG_SIMF                     "\"SIMF\""      // SIM First
+#define AT_CFG_SIMO                     "\"SIMO\""      // SIM Only
+#define AT_CFG_SIM_LEN                  6 // 4+2
 #define AT_CFG_UICC_LEN                 7 // 5+2
 
 #define RT_PROD_OTI_ADDR                "oti.redtea.io"
@@ -92,13 +96,14 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], \
                         AT_CONTENT_DELIMITER, (char *)g_p_value_list->card_info->eid);
                 ret = RT_SUCCESS;
+
             } else if (cmd[3] == AT_GET_ICCIDS) {  // get iccids
                 char num_string[8];
-
                 snprintf(num_string, sizeof(num_string), "%d", g_p_value_list->card_info->num);
                 tmp_len = rt_os_strlen(num_string);
                 rt_os_memcpy(&buf[size], num_string, tmp_len);
                 size += tmp_len;
+                
                 for (ii = 0; ii < g_p_value_list->card_info->num; ii++) {
                     buf[size++] = AT_CONTENT_DELIMITER;
                     tmp_len = rt_os_strlen(g_p_value_list->card_info->info[ii].iccid);
@@ -112,19 +117,28 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 /* rsp: ,cmd,nums,<iccid, class, state>,<iccid, class, state> */
                 snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, buf);
                 ret = RT_SUCCESS;
+
             } else if (cmd[3] == AT_GET_UICC_TYPE) {  // get uicc type
                 /* rsp: ,cmd,"uicc-type" */
-#ifdef CFG_REDTEA_READY_ON
+                if (g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_FIRST) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM First");
+                } else if (g_p_value_list->config_info->sim_mode == MODE_TYPE_EUICC) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "eUICC");
+                } else if (g_p_value_list->config_info->sim_mode == MODE_TYPE_VUICC) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
+                } else if (g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_ONLY) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM Only");
+                }
+                ret = RT_SUCCESS;
+
+            } else if (cmd[3] == AT_GET_CUR_TYPE) {   // Get type in using
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM");
                 } else {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
                 }
-#else
-                snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, \
-                    (g_p_value_list->config_info->lpa_channel_type == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
-#endif
                 ret = RT_SUCCESS;
+
             } else if (cmd[3] == AT_GET_ENV_TYPE) {   // get environment
                 if(!strcmp(g_p_value_list->config_info->oti_addr, RT_PROD_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "prod");
@@ -137,15 +151,15 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 }
                 ret = RT_SUCCESS;
             }
+
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
                 uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
-#ifdef CFG_REDTEA_READY_ON
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                     return RT_ERROR;
                 }
-#endif
+
                 if(rt_os_strlen(&cmd[5]) == 0) {
                     rt_os_memcpy(iccid, RT_DEFAULT_ICCID, THE_ICCID_LENGTH);
                 } else {
@@ -161,19 +175,23 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     /* rsp: ,para,<iccid> */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, (char *)iccid);
                 }
+
              } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config "vuicc" or "euicc"
-#ifndef CFG_REDTEA_READY_ON
                 MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
-                if (!rt_os_strncasecmp(&cmd[5], AT_CFG_VUICC, AT_CFG_UICC_LEN)) {
-                    ret = config_update_uicc_mode(LPA_CHANNEL_BY_IPC);
+                if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMF, AT_CFG_SIM_LEN)) {
+                    ret = config_update_uicc_mode(MODE_TYPE_SIM_FIRST);
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_EUICC, AT_CFG_UICC_LEN)) {
-                    ret = config_update_uicc_mode(LPA_CHANNEL_BY_QMI);
+                    ret = config_update_uicc_mode(MODE_TYPE_EUICC);
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_VUICC, AT_CFG_UICC_LEN)) {
+                    ret = config_update_uicc_mode(MODE_TYPE_VUICC);
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMO, AT_CFG_SIM_LEN)) {
+                    ret = config_update_uicc_mode(MODE_TYPE_SIM_ONLY);
                 }
                 if (ret == RT_SUCCESS) {
                     /* rsp: ,para,"uicc-type" */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
-#endif
+
             } else if (cmd[3] == AT_UPGRADE_UBI_FILE) { // upgrade ubi file
                 char ubi_abs_file[128] = {0};
                 char real_file_name[32] = {0};
@@ -204,7 +222,8 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 } else {
                     ret = RT_ERROR;
                 }
-            } else if (cmd[3] == AT_UPDATE_ENV) {
+
+            } else if (cmd[3] == AT_UPDATE_ENV) {  // update environment
                 MSG_PRINTF(LOG_INFO, "config env : %s\n", &cmd[5]);
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_PROD_ENV, AT_CFG_ENV_LEN)) {
                     ret = config_update_env_mode(PROD_ENV_MODE);
@@ -215,9 +234,8 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     /* rsp: ,para,"env-type" */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
-            }
-#ifdef CFG_REDTEA_READY_ON
-            else if (cmd[3] == AT_SIM_TO_VUICC) {
+
+            } else if (cmd[3] == AT_SIM_TO_VUICC) {  // SIM ==> vUICC
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                     devicekey_status = rt_get_devicekey_status();
                     if (devicekey_status == RT_FALSE) {
@@ -229,7 +247,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to vUICC");
                     ret = RT_SUCCESS;
                 }
-            } else if (cmd[3] == AT_VUICC_TO_SIM) {
+            } else if (cmd[3] == AT_VUICC_TO_SIM) {  // vUICC ==> SIM
                 if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM && g_p_value_list->card_info->sim_info.state == SIM_READY) {
                     send_buf[0] = PROVISONING_NO_INTERNET;
                     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
@@ -237,7 +255,6 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     ret =  RT_SUCCESS;
                 }
             }
-#endif
         }
     }
     return ret;
@@ -255,7 +272,6 @@ static int32_t apdu_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     }
 }
 
-#ifdef CFG_REDTEA_READY_ON
 static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 {
     int32_t ret = RT_ERROR;
@@ -272,7 +288,6 @@ static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
     return RT_SUCCESS;
 }
-#endif
 
 int32_t init_at_command(void *arg)
 {
@@ -284,10 +299,8 @@ int32_t init_at_command(void *arg)
     /* install "APDU" at command */
     AT_CMD_INSTALL(apdu);
 
-#ifdef CFG_REDTEA_READY_ON
     /* install "deviceKey" at command */
     AT_CMD_INSTALL(dkey);
-#endif
 
     return RT_SUCCESS;
 }

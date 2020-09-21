@@ -37,9 +37,7 @@ typedef struct ATOM_DATA {
 
 typedef struct INFO_VUICC_DATA {
     uint8_t         vuicc_switch;           // lpa_channel_type_e, IPC used for vuicc
-#ifdef CFG_REDTEA_READY_ON
     uint8_t         sim_mode;               // sim mode
-#endif
     uint8_t         log_level;              // log_level_e
     uint8_t         reserve[2];             // reserve for keep 4 bytes aligned
     uint32_t        log_size;               // unit: bytes, little endian

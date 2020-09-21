@@ -14,8 +14,6 @@
 #ifndef __PING_TASK_H__
 #define __PING_TASK_H__
 
-#ifdef CFG_REDTEA_READY_ON
-
 #include "rt_type.h"
 #include "dial_up.h"
 
@@ -60,7 +58,4 @@ int32_t init_ping_task(void *arg);
 int32_t ping_task_network_event(const uint8_t *buf, int32_t len, int32_t mode);
 int32_t sync_downstream_event(const uint8_t *buf, int32_t len, int32_t mode);
 
-#endif
-
 #endif // __NETWORK_DETECTION_H__
-

@@ -185,10 +185,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         cJSON_AddItemToObject(content, "results", delete_result);
     } while(0);
 
-#ifdef CFG_REDTEA_READY_ON
-    if (g_upload_card_info->type != PROFILE_TYPE_SIM)
-#endif
-    {
+    if (g_upload_card_info->type != PROFILE_TYPE_SIM) {
         if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
             card_force_enable_provisoning_profile();
         }
