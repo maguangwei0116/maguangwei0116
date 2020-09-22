@@ -44,18 +44,6 @@ typedef enum PROFILE_SIM_CPIN {
     SIM_READY                       = 1,
 } profile_sim_cpin_e;
 
-typedef enum MODE_TYPE {
-    MODE_TYPE_SIM_FIRST             = 0,
-    MODE_TYPE_EUICC                 = 1,
-    MODE_TYPE_VUICC                 = 2,
-    MODE_TYPE_SIM_ONLY              = 3,
-} mode_type_e;
-
-typedef enum PROJECT_MODE {
-    PROJECT_REDTEAREADY             = 0,
-    PROJECT_SC                      = 1,
-} project_mode_e;
-
 typedef enum PROFILE_TYPE {
     PROFILE_TYPE_TEST               = 0,
     PROFILE_TYPE_PROVISONING        = 1,
