@@ -28,6 +28,8 @@ static int32_t local_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8
 
 void init_apdu_channel(lpa_channel_type_e channel_mode)
 {
+    MSG_DBG("========> channel : %d\n", channel_mode);
+
     g_channel_mode = channel_mode;
 }
 

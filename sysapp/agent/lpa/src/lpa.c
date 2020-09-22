@@ -21,6 +21,9 @@ extern void init_apdu_channel(lpa_channel_type_e channel_mode);
 
 int init_lpa(void *arg)
 {
+
+    MSG_INFO("==========> init channel : %d\n\n", *(lpa_channel_type_e *)arg);
+
     init_apdu_channel(*(lpa_channel_type_e *)arg);
 
     g_lpa_mutex = linux_mutex_init();
