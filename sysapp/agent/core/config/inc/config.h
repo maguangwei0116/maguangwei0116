@@ -15,9 +15,9 @@ typedef struct CONFIG_INFO {
     char *              oti_addr;           // OTI server addr
     char *              emq_addr;           // EMQ server addr
     char *              proxy_addr;         // proxy server addr
-    uint8_t             lpa_channel_type;   // @ref lpa_channel_type_e
-    uint8_t             project_mode;       // project mode
+    uint16_t            project_mode;       // project mode
     uint8_t             sim_mode;           // sim mode
+    uint8_t             lpa_channel_type;   // @ref lpa_channel_type_e
     uint32_t            log_max_size;       // unit: MB
     uint8_t             monitor_log_level;  // @ref log_level_e in log.h
     uint8_t             agent_log_level;    // @ref log_level_e in log.h

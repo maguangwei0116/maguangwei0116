@@ -453,17 +453,13 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     }
 
     infos->project_mode = msg_string_to_int(local_config_get_data("PROJECT_MODE"));
-    
     infos->sim_mode = msg_string_to_int(local_config_get_data("UICC_MODE"));
-
 
     if (infos->sim_mode == MODE_TYPE_EUICC) {
         infos->lpa_channel_type = LPA_CHANNEL_BY_QMI;
     } else {
         infos->lpa_channel_type = LPA_CHANNEL_BY_IPC;   // SIM only for download cert
     }
-
-    MSG_PRINTF(LOG_WARN, "=============> channel : %d\n", infos->lpa_channel_type);
 
     size = msg_string_to_int(local_config_get_data("LOG_FILE_SIZE"));
     if (size > 0) {
