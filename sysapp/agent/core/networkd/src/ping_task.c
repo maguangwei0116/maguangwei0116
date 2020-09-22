@@ -22,6 +22,7 @@ static project_mode_e *             g_project_mode          = NULL;
 static mode_type_e *                g_sim_mode              = NULL;
 static profile_type_e *             g_card_type             = NULL;
 static profile_sim_cpin_e *         g_sim_cpin              = NULL;
+static uint8_t                      g_operation_num         = 0;
 static rt_bool                      g_network_state         = RT_FALSE;
 static rt_bool                      g_downstream_event      = RT_FALSE;
 
@@ -96,6 +97,30 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level)
     return network_level;
 }
 
+static uint32_t get_random_interval(uint32_t total_num)
+{
+    uint32_t random, second;
+
+    random = (uint32_t)rt_get_random_num();
+    second = random % total_num;
+    MSG_PRINTF(LOG_DBG, "The waiting time/total = [%d/%d], random = %u\n", second, total_num, random);
+
+    return second;
+}
+
+static void provisoning_random_sleep()
+{
+    uint32_t interval = 0;
+
+    MSG_PRINTF(LOG_INFO, "operation number : %d\n", g_operation_num);
+
+    if (g_operation_num <= 0) {
+        interval = get_random_interval(RT_MAX_INTERVAL);
+        MSG_PRINTF(LOG_INFO, "Switch to provisioning, random sleep %d s\n", interval);
+        rt_os_sleep(interval);
+    }
+}
+
 static int32_t rt_send_msg_card_status(void)
 {
     uint8_t send_buf[1] = {0};
@@ -113,6 +138,7 @@ static int32_t rt_send_msg_card_status(void)
 
     } else if (*g_card_type == PROFILE_TYPE_SIM) {
 #ifdef CFG_SIM_DETECT_ON
+        provisoning_random_sleep();
         send_buf[0] = SIM_NO_INTERNET;
 #else
         return RT_SUCCESS;
@@ -327,14 +353,10 @@ int32_t init_ping_task(void *arg)
     g_sim_mode      = (mode_type_e *)&((public_value_list_t *)arg)->config_info->sim_mode;
     g_card_type     = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
     g_sim_cpin      = (profile_sim_cpin_e *)&(((public_value_list_t *)arg)->card_info->sim_info.state);
+    g_operation_num = (((public_value_list_t *)arg)->card_info->operational_num);
 
-    if (*g_project_mode != PROJECT_REDTEAREADY) {
-        MSG_PRINTF(LOG_INFO, "SC Project, Not open ping task ...\n");
-        return RT_ERROR;
-    }
-
-    if (*g_sim_mode == MODE_TYPE_SIM_ONLY) {
-        MSG_PRINTF(LOG_INFO, "SIM Only, Not open ping task ...\n");
+    if (*g_project_mode != PROJECT_REDTEAREADY || *g_sim_mode == MODE_TYPE_SIM_ONLY) {
+        MSG_PRINTF(LOG_INFO, "Not open ping task ....\nproject : %d, mode : %d\n", *g_project_mode, *g_sim_mode);
         return RT_ERROR;
     }
 
