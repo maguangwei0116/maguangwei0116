@@ -29,19 +29,22 @@ int32_t init_device_info(void *arg)
         MSG_PRINTF(LOG_ERR, "Get imei failed\n");
     }
 
+    info.imei[MAX_DEVICE_IMEI_LEN] = '\0';    
+    
+    MD5Init(&ctx);
+    MD5Update(&ctx, (uint8_t *)info.model, MAX_DEVICE_MODEL_LEN);
+    MD5Update(&ctx, (uint8_t *)info.imei, MAX_DEVICE_IMEI_LEN);
+    MD5Update(&ctx, (uint8_t *)info.sn, MAX_DEVICE_SN_LEN);
+    MD5Final(&ctx, device_id);
+    get_ascii_string((uint8_t *)device_id, MAX_DEVICE_ID_LEN/2, (uint8_t *)info.device_id);
+    
+
     ret = rt_qmi_get_model(info.model, sizeof(info.model));
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Get model failed\n");
     }
+    info.model[MAX_DEVICE_MODEL_LEN - 1] = '\0';
 
-    info.model[MAX_DEVICE_MODEL_LEN - 1] = '\0';  // max (MAX_DEVICE_MODEL_LEN-1) bytes on valid model string value !!!
-    info.imei[MAX_DEVICE_IMEI_LEN] = '\0';    
-    
-    MD5Init(&ctx);
-    MD5Update(&ctx, (uint8_t *)info.imei, MAX_DEVICE_IMEI_LEN);
-    MD5Final(&ctx, device_id);
-    get_ascii_string((uint8_t *)device_id, MAX_DEVICE_ID_LEN/2, (uint8_t *)info.device_id);
-    
     MSG_PRINTF(LOG_INFO, "device_id:[%s] imei:[%s] model:[%s] sn:[%s]\n", info.device_id, info.imei, info.model, info.sn);
     
     ((public_value_list_t *)arg)->device_info = &info;
