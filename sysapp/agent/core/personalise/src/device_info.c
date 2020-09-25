@@ -37,7 +37,6 @@ int32_t init_device_info(void *arg)
     MD5Update(&ctx, (uint8_t *)info.sn, MAX_DEVICE_SN_LEN);
     MD5Final(&ctx, device_id);
     get_ascii_string((uint8_t *)device_id, MAX_DEVICE_ID_LEN/2, (uint8_t *)info.device_id);
-    
 
     ret = rt_qmi_get_model(info.model, sizeof(info.model));
     if (ret != RT_SUCCESS) {
