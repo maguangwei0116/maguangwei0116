@@ -85,7 +85,7 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 				ubi_version_4=; \
 			fi; \
 		done; \
-		ubi_version=v$$ubi_version_1.$$ubi_version_2.$$ubi_version_3; \
+		ubi_version=$$ubi_version_1.$$ubi_version_2.$$ubi_version_3; \
 		release_version=`printf "%03d" $$ubi_version_3`; \
 		if [ -n "$$ubi_version_4" ] ; \
 		then \
@@ -95,7 +95,7 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 		ubi_share_profile_version="$$ubi_version""#""$$share_profile_batch_code"; \
 		if [ "$(RELEASE_OEMAPP_SOFTWARE_TYPE)" = "debug" ] ; \
 		then \
-			version_string+="_$$ubi_share_profile_version"; \
+			version_string+="#""$$share_profile_batch_code"; \
 			echo "$$version_string" > $(REDTEA_OEMAPP_VERSION_FILE); \
 			echo "Oemapp Ubi $$version_string"; \
 		elif [ "$(RELEASE_OEMAPP_SOFTWARE_TYPE)" = "release" ] ; \
