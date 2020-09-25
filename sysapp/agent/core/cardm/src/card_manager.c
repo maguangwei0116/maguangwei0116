@@ -537,6 +537,7 @@ int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
     int32_t sim_mode;
+    int32_t project_mode;
     uint8_t send_buf[1] = {0};
     uint8_t cpin_status[THE_CPIN_LENGTH + 1]= {0};
     uint8_t sim_iccid[THE_ICCID_LENGTH + 1] = {0};
@@ -545,8 +546,9 @@ int32_t init_card_manager(void *arg)
     init_profile_type_e init_profile_type;
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
+    project_mode = ((public_value_list_t *)arg)->config_info->project_mode;
 
-    init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr);
+    init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr, project_mode);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));
     rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);

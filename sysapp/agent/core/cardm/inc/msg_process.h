@@ -54,7 +54,7 @@ int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21], int
 int32_t msg_enable_profile(const char *iccid);
 int32_t msg_delete_profile(const char *iccid, rt_bool *opr_iccid_using);
 int32_t card_update_profile_info(judge_term_e bootstrap_flag);
-int32_t init_msg_process(void *arg, void *proxy_addr);
+int32_t init_msg_process(void *arg, void *proxy_addr, int32_t project);
 int32_t msg_set_apn(const char *iccid);
 int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid);
 int32_t msg_apnlist_handler(cJSON *apnparams_list);

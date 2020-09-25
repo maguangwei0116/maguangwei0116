@@ -25,13 +25,15 @@
 #define DEVICE_PUBLIC_KEY                   "e30211481a3ead603da4fbb06c62ed4c46aaac3394c31f20fbca686ba2efb043"
 #define RT_CHECK_ERR(process, result)       if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
+static project_mode_e project_mode;
 static const card_info_t *g_card_info;
 static const char *g_smdp_proxy_addr = NULL;
 
-int32_t init_msg_process(void *arg, void *proxy_addr)
+int32_t init_msg_process(void *arg, void *proxy_addr, int32_t project)
 {
     g_card_info = (card_info_t *)arg;
     g_smdp_proxy_addr = (const char *)proxy_addr;
+    project_mode = project;
 
     if (!linux_rt_file_exist(RUN_CONFIG_FILE)) {
         rt_create_file(RUN_CONFIG_FILE);
@@ -500,6 +502,11 @@ rt_bool rt_get_devicekey_status(void)
 {
     uint8_t  inspect_file[128] = {0};
     snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
+
+    if (project_mode == PROJECT_SC) {
+        MSG_PRINTF(LOG_DBG, "SC project, do not verify DeviceKey, mode : %d\n", project_mode);
+        return RT_TRUE;
+    }
 
     return inspect_device_key(inspect_file);
 }
