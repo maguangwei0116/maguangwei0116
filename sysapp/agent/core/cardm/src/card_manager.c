@@ -546,7 +546,7 @@ int32_t init_card_manager(void *arg)
     init_profile_type_e init_profile_type;
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
     ((public_value_list_t *)arg)->card_info = &g_p_info;
-    project_mode = ((public_value_list_t *)arg)->config_info->project_mode;
+    project_mode = ((public_value_list_t *)arg)->config_info->proj_mode;
 
     init_msg_process(&g_p_info, ((public_value_list_t *)arg)->config_info->proxy_addr, project_mode);
     rt_os_memset(&g_p_info, 0x00, sizeof(g_p_info));

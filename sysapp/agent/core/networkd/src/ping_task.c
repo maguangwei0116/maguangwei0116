@@ -18,7 +18,7 @@
 #include "network_detection.h"
 
 static rt_bool                      g_sim_switch            = RT_TRUE;
-static project_mode_e *             g_project_mode          = NULL;
+static proj_mode_e *                g_project_mode          = NULL;
 static mode_type_e *                g_sim_mode              = NULL;
 static profile_type_e *             g_card_type             = NULL;
 static profile_sim_cpin_e *         g_sim_cpin              = NULL;
@@ -349,14 +349,14 @@ int32_t init_ping_task(void *arg)
     rt_task task_id = 0;
     int32_t ret = RT_ERROR;
 
-    g_project_mode  = (project_mode_e *)&((public_value_list_t *)arg)->config_info->project_mode;
+    g_project_mode  = (proj_mode_e *)&((public_value_list_t *)arg)->config_info->proj_mode;
     g_sim_mode      = (mode_type_e *)&((public_value_list_t *)arg)->config_info->sim_mode;
     g_card_type     = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
     g_sim_cpin      = (profile_sim_cpin_e *)&(((public_value_list_t *)arg)->card_info->sim_info.state);
     g_operation_num = (((public_value_list_t *)arg)->card_info->operational_num);
 
     if (*g_project_mode != PROJECT_REDTEAREADY || *g_sim_mode == MODE_TYPE_SIM_ONLY) {
-        MSG_PRINTF(LOG_INFO, "Not open ping task ....\nproject : %d, mode : %d\n", *g_project_mode, *g_sim_mode);
+        MSG_PRINTF(LOG_INFO, "Not open ping task ....project : %d, mode : %d\n", *g_project_mode, *g_sim_mode);
         return RT_ERROR;
     }
 

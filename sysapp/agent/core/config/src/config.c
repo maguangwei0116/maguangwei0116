@@ -49,8 +49,12 @@
 #define ANNOTATION_SYMBOL                   '#'                     // ע�ͱ�ʶ��
 #define CONFIG_FILE_PATH                    "rt_config.ini"
 #define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // �ж��Ƿ�Ϊ�հ׷�
-#define PROJECT_REDTEAREADY                 "0"
-#define PROJECT_SC                          "1"
+#define PROJ_MODE_REDTEAREADY               "0"
+#define PROJ_MODE_SC                        "1"
+#define UICC_MODE_SIMF                      "0"
+#define UICC_MODE_eUICC                     "1"
+#define UICC_MODE_vUICC                     "2"
+#define UICC_MODE_SIMO                      "3"
 #define PROD_ENV_MODE                       0
 #define STAG_ENV_MODE                       1
 
@@ -158,7 +162,7 @@ static int32_t config_uicc_mode(const void *in, char *out)
 }
 
 /* value: [0,1] */
-static int32_t config_project_mode(const void *in, char *out)
+static int32_t config_proj_mode(const void *in, char *out)
 {
     return config_range_int_value(in, 0, 1, out);
 }
@@ -196,7 +200,7 @@ ITEM(INIT_PROFILE_TYPE,         config_init_pro_type,       INTEGER,        "2",
 ITEM(RPLMN_ENABLE,                  NULL,                   INTEGER,        "1",                            "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,             config_log_size,            INTEGER,        "1",                            "The max size of rt_log file (MB)"),
 ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "0",                            "The mode of UICC (0:SIM first  1:eUICC  2:vUICC  3:SIM only)"),
-ITEM(PROJECT_MODE,              config_project_mode,        INTEGER,        "0",                            "The mode of Project (0:RedteaReady  1:SC)"),
+ITEM(PROJ_MODE,                 config_proj_mode,           INTEGER,        "0",                            "The mode of Project (0:RedteaReady  1:SC)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
 ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
@@ -452,7 +456,7 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
         return RT_ERROR;
     }
 
-    infos->project_mode = msg_string_to_int(local_config_get_data("PROJECT_MODE"));
+    infos->proj_mode = msg_string_to_int(local_config_get_data("PROJ_MODE"));
     infos->sim_mode = msg_string_to_int(local_config_get_data("UICC_MODE"));
 
     if (infos->sim_mode == MODE_TYPE_EUICC) {
@@ -495,7 +499,7 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n",    local_config_get_data("RPLMN_ENABLE"));
     MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
     MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n",    local_config_get_data("UICC_MODE"));
-    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJECT_MODE"), PROJECT_REDTEAREADY) ? "RedteaReady" : "SC");
+    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_REDTEAREADY) ? "RedteaReady" : "SC");
     MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n",    local_config_get_data("MONITOR_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n",    local_config_get_data("AGENT_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n",    local_config_get_data("USAGE_ENABLE"));
@@ -532,16 +536,57 @@ int32_t init_config(void *arg)
 
 int32_t config_update_uicc_mode(int32_t mode)
 {
+    char value[1];
     const char *key = "UICC_MODE";
-    const char *value = (char *)mode;
     const char *old_value = NULL;
     int32_t pair_num = ARRAY_SIZE(g_config_items);
     config_item_t *items = g_config_items;
+
+    MSG_PRINTF(LOG_INFO, "==========> <=========\n");
+
+    
+
+    if (mode == MODE_TYPE_SIM_FIRST) {
+        rt_os_strcpy(value, UICC_MODE_SIMF);
+    } else if (mode == MODE_TYPE_EUICC) {
+        // rt_os_strcpy(value, UICC_MODE_eUICC);
+
+        rt_os_memset(value, UICC_MODE_eUICC, sizeof(UICC_MODE_eUICC));
+
+    } else if (mode == MODE_TYPE_VUICC) {
+        rt_os_strcpy(value, UICC_MODE_vUICC);
+    } else if (mode == MODE_TYPE_SIM_ONLY) {
+        rt_os_strcpy(value, UICC_MODE_SIMO);
+    }
+
+    MSG_PRINTF(LOG_INFO, "==========> uicc mode value : %s\n", value);
 
     old_value = local_config_get_data(key);
     if (rt_os_strcmp(old_value, value)) {
         /* only update when value changed */
         MSG_PRINTF(LOG_DBG, "UICC mode changed: %s => %s\n", old_value, value);
+        config_set_data(key, value, pair_num, items);
+        config_write_file(CONFIG_FILE_PATH, pair_num, items);
+        rt_os_sync();
+    }
+
+    return RT_SUCCESS;
+}
+
+int32_t config_update_proj_mode(int32_t mode)
+{
+    const char *key = "PROJ_MODE";
+    const char *value = (mode == PROJECT_REDTEAREADY) ? PROJ_MODE_REDTEAREADY : PROJ_MODE_SC;
+    const char *old_value = NULL;
+    int32_t pair_num = ARRAY_SIZE(g_config_items);
+    config_item_t *items = g_config_items;
+
+    MSG_PRINTF(LOG_INFO, "==========> value : %s\n", value);
+
+    old_value = local_config_get_data(key);
+    if (rt_os_strcmp(old_value, value)) {
+        /* only update when value changed */
+        MSG_PRINTF(LOG_DBG, "Project mode changed: %s => %s\n", old_value, value);
         config_set_data(key, value, pair_num, items);
         config_write_file(CONFIG_FILE_PATH, pair_num, items);
         rt_os_sync();
