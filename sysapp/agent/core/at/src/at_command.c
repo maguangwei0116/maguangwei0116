@@ -34,6 +34,7 @@
 #define AT_GET_UICC_TYPE                '2'
 #define AT_GET_CUR_TYPE                 '3'
 #define AT_GET_ENV_TYPE                 '4'
+#define AT_GET_DEVICE_ID                '5'
 
 #define AT_SWITCH_TO_PROVISIONING       '0'
 #define AT_SWITCH_TO_OPERATION          '1'
@@ -149,6 +150,9 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 } else {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Unknow Environment");
                 }
+                ret = RT_SUCCESS;
+            } else if (cmd[3] == AT_GET_DEVICE_ID) {
+                snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, g_p_value_list->device_info->device_id);
                 ret = RT_SUCCESS;
             }
 
