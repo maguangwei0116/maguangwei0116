@@ -40,30 +40,35 @@
 #define AT_CONFIG_LPA_CHANNEL           '2'
 #define AT_CONFIG_PROJ_MODE             '3'
 #define AT_UPDATE_ENV                   '4'
-#define AT_SIM_TO_VUICC                 '5'
-#define AT_VUICC_TO_SIM                 '6'
-#define AT_UPGRADE_UBI_FILE             '7'
+#define AT_SWITCH_CARD                  '5'
+#define AT_UPGRADE_UBI_FILE             '6'
 
 #define AT_CONTENT_DELIMITER            ','
+
+#define AT_PROD_OTI_ADDR                "oti.redtea.io"
+#define AT_STAG_OTI_ADDR                "oti-staging.redtea.io"
+#define AT_QA_OTI_ADDR                  "oti-qa.redtea.io"
 
 #define AT_CFG_VUICC                    "vUICC"
 #define AT_CFG_EUICC                    "eUICC"
 #define AT_CFG_SIMF                     "SIMF"      // SIM First
 #define AT_CFG_SIMO                     "SIMO"      // SIM Only
-#define AT_CFG_SIM_LEN                  4
-#define AT_CFG_UICC_LEN                 5
+#define AT_CFG_PROD_ENV                 "prod"
+#define AT_CFG_STAG_ENV                 "stag"
+#define AT_SWITCH_SIM                   "SIM"
+#define AT_SWITCH_VSIM                  "VSIM"
 
 #define AT_CFG_REDTEAREADY              "RR"
 #define AT_CFG_SC                       "SC"
+
 #define AT_CFG_PROJ_LEN                 2
-
-#define RT_PROD_OTI_ADDR                "oti.redtea.io"
-#define RT_STAG_OTI_ADDR                "oti-staging.redtea.io"
-#define RT_QA_OTI_ADDR                  "oti-qa.redtea.io"
-
-#define AT_CFG_PROD_ENV                 "prod"
-#define AT_CFG_STAG_ENV                 "stag"
+#define AT_CFG_SIM_LEN                  3
+#define AT_CFG_VSIM_LEN                 4
 #define AT_CFG_ENV_LEN                  4
+#define AT_CFG_SIMF_LEN                 4
+#define AT_CFG_UICC_LEN                 5
+
+
 #define PROD_ENV_MODE                   0
 #define STAG_ENV_MODE                   1
 
@@ -141,11 +146,11 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) ? "ReateaReady" : "SC");
                 ret = RT_SUCCESS;
             } else if (cmd[3] == AT_GET_ENV_TYPE) {   // get Environment
-                if(!strcmp(g_p_value_list->config_info->oti_addr, RT_PROD_OTI_ADDR)) {
+                if(!strcmp(g_p_value_list->config_info->oti_addr, AT_PROD_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "prod");
-                } else if (!strcmp(g_p_value_list->config_info->oti_addr, RT_STAG_OTI_ADDR)) {
+                } else if (!strcmp(g_p_value_list->config_info->oti_addr, AT_STAG_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "stag");
-                } else if (!strcmp(g_p_value_list->config_info->oti_addr, RT_QA_OTI_ADDR)) {
+                } else if (!strcmp(g_p_value_list->config_info->oti_addr, AT_QA_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "qa");
                 } else {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Unknow Environment");
@@ -180,15 +185,15 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, (char *)iccid);
                 }
 
-             } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config "vUICC" or "eUICC"
+             } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config SIM First/eUICC/vUICC/SIM Only
                 MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
-                if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMF, AT_CFG_SIM_LEN)) {
+                if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMF, AT_CFG_SIMF_LEN)) {
                     ret = config_update_uicc_mode(MODE_TYPE_SIM_FIRST);
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_EUICC, AT_CFG_UICC_LEN)) {
                     ret = config_update_uicc_mode(MODE_TYPE_EUICC);
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_VUICC, AT_CFG_UICC_LEN)) {
                     ret = config_update_uicc_mode(MODE_TYPE_VUICC);
-                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMO, AT_CFG_SIM_LEN)) {
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMO, AT_CFG_SIMF_LEN)) {
                     ret = config_update_uicc_mode(MODE_TYPE_SIM_ONLY);
                 }
                 if (ret == RT_SUCCESS) {
@@ -207,7 +212,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     /* rsp: ,para,"uicc-type" */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
-            } else if (cmd[3] == AT_UPDATE_ENV) {  // update Environment
+            } else if (cmd[3] == AT_UPDATE_ENV) {  // config Environment
                 MSG_PRINTF(LOG_INFO, "config env : %s\n", &cmd[5]);
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_PROD_ENV, AT_CFG_ENV_LEN)) {
                     ret = config_update_env_mode(PROD_ENV_MODE);
@@ -219,25 +224,27 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
 
-            } else if (cmd[3] == AT_SIM_TO_VUICC) {  // SIM ==> vUICC
-                if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
-                    devicekey_status = rt_get_devicekey_status();
-                    if (devicekey_status == RT_FALSE) {
-                        return RT_ERROR;
-                    }
+            } else if (cmd[3] == AT_SWITCH_CARD) { // Switch card
+                MSG_PRINTF(LOG_INFO, "Switch to %s\n", &cmd[5]);
+                devicekey_status = rt_get_devicekey_status();
+                if (devicekey_status == RT_FALSE) {
+                    return RT_ERROR;
+                }
 
-                    send_buf[0] = SIM_NO_INTERNET;
-                    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
-                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to vUICC");
-                    ret = RT_SUCCESS;
+                if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_SIM, AT_CFG_SIM_LEN)) {           // Switch to SIM
+                    if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM && g_p_value_list->card_info->sim_info.state == SIM_READY) {
+                        send_buf[0] = PROVISONING_NO_INTERNET;
+                        snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC switch to SIM");
+                    }
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_VSIM, AT_CFG_VSIM_LEN)) {   // Switch to vUICC
+                    if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
+                        send_buf[0] = SIM_NO_INTERNET;
+                        snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to vUICC");
+                    }
                 }
-            } else if (cmd[3] == AT_VUICC_TO_SIM) {  // vUICC ==> SIM
-                if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM && g_p_value_list->card_info->sim_info.state == SIM_READY) {
-                    send_buf[0] = PROVISONING_NO_INTERNET;
-                    msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
-                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC switch to SIM");
-                    ret =  RT_SUCCESS;
-                }
+                msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
+                ret = RT_SUCCESS;
+
             } else if (cmd[3] == AT_UPGRADE_UBI_FILE) { // upgrade ubi file
                 char ubi_abs_file[128] = {0};
                 char real_file_name[32] = {0};
