@@ -32,6 +32,43 @@ typedef struct TASK_PARAM {
 static task_param_t             g_task_param;
 static network_update_switch_e  g_update_network_state = NETWORK_UPDATE_ENABLE;
 
+static void rt_iptables_allow()
+{
+    system("iptables -D FORWARD -i bridge0 -j DROP");
+	system("iptables -D FORWARD -i bridge0 ! -o ecm0 -j DROP");
+	system("iptables -A FORWARD -i bridge0 ! -o ecm0 -j DROP");
+	system("iptables -D FORWARD -i ppp0 -j DROP");
+	system("iptables -D FORWARD -i ppp0 ! -o ecm0 -j DROP");
+	system("iptables -A FORWARD -i ppp0 ! -o ecm0 -j DROP");
+	system("iptables -D FORWARD -i bridge0 -p tcp -m state --state INVALID -j DROP");
+	system("iptables -A FORWARD -i bridge0 -p tcp -m state --state INVALID -j DROP");
+}
+
+static void rt_iptables_forbid()
+{
+    system("iptables -D FORWARD -i bridge0 -p tcp -m state --state INVALID -j DROP");
+	system("iptables -D FORWARD -i bridge0 -o bridge0 -j ACCEPT");
+	system("iptables -D FORWARD -i bridge0 -o ppp0 -j ACCEPT");
+	system("iptables -D FORWARD -i ppp0 -o bridge0 -j ACCEPT");
+	system("iptables -D FORWARD -i bridge0 ! -o ecm0 -j DROP");
+	system("iptables -D FORWARD -i bridge0 ! -o bridge0 -j DROP");
+	system("iptables -D FORWARD -i bridge0 -j DROP");
+	system("iptables -D FORWARD -i ppp0 ! -o ecm0 -j DROP");
+	system("iptables -D FORWARD -i ppp0 ! -o bridge0 -j DROP");
+	system("iptables -D FORWARD -i ppp0 -j DROP");
+
+	system("iptables -D FORWARD -i bridge0 -o bridge0 -j ACCEPT");
+	system("iptables -A FORWARD -i bridge0 -o bridge0 -j ACCEPT");
+	system("iptables -D FORWARD -i bridge0 -o ppp0 -j ACCEPT");
+	system("iptables -A FORWARD -i bridge0 -o ppp0 -j ACCEPT");
+	system("iptables -D FORWARD -i ppp0 -o bridge0 -j ACCEPT");
+	system("iptables -A FORWARD -i ppp0 -o bridge0 -j ACCEPT");
+	system("iptables -D FORWARD -i bridge0 -j DROP");
+	system("iptables -A FORWARD -i bridge0 -j DROP");
+	system("iptables -D FORWARD -i ppp0 -j DROP");
+	system("iptables -A FORWARD -i ppp0 -j DROP");
+}
+
 void network_update_switch(network_update_switch_e state)
 {
     g_update_network_state = state;
@@ -56,9 +93,11 @@ void network_update_state(int32_t state)
 
     if (g_network_state == RT_DSI_STATE_CALL_CONNECTED) {  // network connected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
+        rt_iptables_allow();
         card_detection_disable();
     } else if (g_network_state == RT_DSI_STATE_CALL_IDLE) {  // network disconnected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
+        rt_iptables_forbid();
         card_detection_enable();
         g_network_state = NETWORK_STATE_NOT_READY;
     }
