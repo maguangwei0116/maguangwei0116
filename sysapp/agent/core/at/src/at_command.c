@@ -32,7 +32,6 @@
 #define AT_GET_ICCIDS                   '1'
 #define AT_GET_UICC_TYPE                '2'
 #define AT_GET_PROJ_MODE                '3'
-// #define AT_GET_CUR_TYPE                 '3'
 #define AT_GET_ENV_TYPE                 '4'
 #define AT_GET_DEVICE_ID                '5'
 
@@ -40,10 +39,10 @@
 #define AT_SWITCH_TO_OPERATION          '1'
 #define AT_CONFIG_LPA_CHANNEL           '2'
 #define AT_CONFIG_PROJ_MODE             '3'
-// #define AT_UPGRADE_UBI_FILE             '3'
 #define AT_UPDATE_ENV                   '4'
 #define AT_SIM_TO_VUICC                 '5'
 #define AT_VUICC_TO_SIM                 '6'
+#define AT_UPGRADE_UBI_FILE             '7'
 
 #define AT_CONTENT_DELIMITER            ','
 
@@ -97,13 +96,13 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     if (*cmd == AT_CONTENT_DELIMITER) {
         if ((cmd[1] == AT_TYPE_GET_INFO) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             MSG_PRINTF(LOG_DBG, "cmd=%s\n", cmd);
-            if (cmd[3] == AT_GET_EID) {            // get eid
+            if (cmd[3] == AT_GET_EID) {            // get EID
                 /* rsp: ,cmd,"eid" */
                 snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], \
                         AT_CONTENT_DELIMITER, (char *)g_p_value_list->card_info->eid);
                 ret = RT_SUCCESS;
 
-            } else if (cmd[3] == AT_GET_ICCIDS) {  // get iccids
+            } else if (cmd[3] == AT_GET_ICCIDS) {  // get ICCIDs
                 char num_string[8];
                 snprintf(num_string, sizeof(num_string), "%d", g_p_value_list->card_info->num);
                 tmp_len = rt_os_strlen(num_string);
@@ -124,7 +123,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, buf);
                 ret = RT_SUCCESS;
 
-            } else if (cmd[3] == AT_GET_UICC_TYPE) {  // get uicc type
+            } else if (cmd[3] == AT_GET_UICC_TYPE) {  // get UICC type
                 /* rsp: ,cmd,"uicc-type" */
                 if (g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_FIRST) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM First");
@@ -137,24 +136,11 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 }
                 ret = RT_SUCCESS;
 
-            } else if (cmd[3] == AT_GET_PROJ_MODE) {
+            } else if (cmd[3] == AT_GET_PROJ_MODE) {  // get Project mode
                 snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, \
                     (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) ? "ReateaReady" : "SC");
                 ret = RT_SUCCESS;
-            }
-
-            // else if (cmd[3] == AT_GET_CUR_TYPE) {   // Get type in using
-            //     if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
-            //         snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM");
-            //     } else {
-            //         snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
-            //     }
-            //     ret = RT_SUCCESS;
-
-            // }
-
-
-             else if (cmd[3] == AT_GET_ENV_TYPE) {   // get environment
+            } else if (cmd[3] == AT_GET_ENV_TYPE) {   // get Environment
                 if(!strcmp(g_p_value_list->config_info->oti_addr, RT_PROD_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "prod");
                 } else if (!strcmp(g_p_value_list->config_info->oti_addr, RT_STAG_OTI_ADDR)) {
@@ -165,7 +151,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Unknow Environment");
                 }
                 ret = RT_SUCCESS;
-            } else if (cmd[3] == AT_GET_DEVICE_ID) {
+            } else if (cmd[3] == AT_GET_DEVICE_ID) {  // get Device id
                 snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, g_p_value_list->device_info->device_id);
                 ret = RT_SUCCESS;
             }
@@ -194,7 +180,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, (char *)iccid);
                 }
 
-             } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config "vuicc" or "euicc"
+             } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config "vUICC" or "eUICC"
                 MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMF, AT_CFG_SIM_LEN)) {
                     ret = config_update_uicc_mode(MODE_TYPE_SIM_FIRST);
@@ -210,7 +196,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
 
-            } else if (cmd[3] == AT_CONFIG_PROJ_MODE) {
+            } else if (cmd[3] == AT_CONFIG_PROJ_MODE) {  // config RedteaReady or SC
                 MSG_PRINTF(LOG_INFO, "config project mode: %s\n", &cmd[5]);
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_REDTEAREADY, AT_CFG_PROJ_LEN)) {
                     ret = config_update_proj_mode(PROJECT_REDTEAREADY);
@@ -221,43 +207,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     /* rsp: ,para,"uicc-type" */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
-            }
-
-
-            // else if (cmd[3] == AT_UPGRADE_UBI_FILE) { // upgrade ubi file
-            //     char ubi_abs_file[128] = {0};
-            //     char real_file_name[32] = {0};
-            //     char *p0 = NULL;
-            //     char *p1 = NULL;
-
-            //     MSG_PRINTF(LOG_INFO, "ubi file input: %s\n", &cmd[5]);
-            //     p0 = rt_os_strchr(&cmd[5], '"');
-            //     if (p0) {
-            //         p1 = rt_os_strchr(p0 + 1, '"');
-            //         if (p1) {
-            //             rt_os_memcpy(ubi_abs_file, p0 + 1, p1 - p0 - 1);
-            //             MSG_PRINTF(LOG_INFO, "ubi_abs_file: %s\n", ubi_abs_file);
-            //         }
-            //     }
-            //     if (rt_os_strlen(ubi_abs_file)) {
-            //         ret = ipc_file_verify_by_monitor(ubi_abs_file, real_file_name);
-            //         if (!ret && !rt_os_strcmp(OTA_UPGRADE_OEMAPP_UBI, real_file_name)) {
-            //             linux_delete_file(OTA_UPGRADE_USR_AGENT);  // must delete agent to create a new one !!!
-            //             ret = ubi_update((const char *)ubi_abs_file);
-            //             if (ret == RT_SUCCESS) {
-            //                 /* rsp: ,para,"ubi_file" */
-            //                 snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
-            //             }
-            //         } else {
-            //             MSG_PRINTF(LOG_ERR, "ubi file verify fail\n");
-            //         }
-            //     } else {
-            //         ret = RT_ERROR;
-            //     }
-
-            // } 
-            
-            else if (cmd[3] == AT_UPDATE_ENV) {  // update environment
+            } else if (cmd[3] == AT_UPDATE_ENV) {  // update Environment
                 MSG_PRINTF(LOG_INFO, "config env : %s\n", &cmd[5]);
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_PROD_ENV, AT_CFG_ENV_LEN)) {
                     ret = config_update_env_mode(PROD_ENV_MODE);
@@ -288,22 +238,41 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC switch to SIM");
                     ret =  RT_SUCCESS;
                 }
+            } else if (cmd[3] == AT_UPGRADE_UBI_FILE) { // upgrade ubi file
+                char ubi_abs_file[128] = {0};
+                char real_file_name[32] = {0};
+                char *p0 = NULL;
+                char *p1 = NULL;
+
+                MSG_PRINTF(LOG_INFO, "ubi file input: %s\n", &cmd[5]);
+                p0 = rt_os_strchr(&cmd[5], '"');
+                if (p0) {
+                    p1 = rt_os_strchr(p0 + 1, '"');
+                    if (p1) {
+                        rt_os_memcpy(ubi_abs_file, p0 + 1, p1 - p0 - 1);
+                        MSG_PRINTF(LOG_INFO, "ubi_abs_file: %s\n", ubi_abs_file);
+                    }
+                }
+                if (rt_os_strlen(ubi_abs_file)) {
+                    ret = ipc_file_verify_by_monitor(ubi_abs_file, real_file_name);
+                    if (!ret && !rt_os_strcmp(OTA_UPGRADE_OEMAPP_UBI, real_file_name)) {
+                        linux_delete_file(OTA_UPGRADE_USR_AGENT);  // must delete agent to create a new one !!!
+                        ret = ubi_update((const char *)ubi_abs_file);
+                        if (ret == RT_SUCCESS) {
+                            /* rsp: ,para,"ubi_file" */
+                            snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
+                        }
+                    } else {
+                        MSG_PRINTF(LOG_ERR, "ubi file verify fail\n");
+                    }
+                } else {
+                    ret = RT_ERROR;
+                }
+
             }
         }
     }
     return ret;
-}
-
-static int32_t apdu_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
-{
-    int32_t ret = RT_ERROR;
-    int32_t ii = 0, tmp_len = 0, size = 0;
-    uint8_t buf[1024] = {0};
-
-    MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
-    if (*cmd == AT_CONTENT_DELIMITER) {
-
-    }
 }
 
 static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
@@ -330,9 +299,6 @@ int32_t init_at_command(void *arg)
     /* install "UICC" at command */
     AT_CMD_INSTALL(uicc);
 
-    /* install "APDU" at command */
-    AT_CMD_INSTALL(apdu);
-
     /* install "deviceKey" at command */
     AT_CMD_INSTALL(dkey);
 
@@ -350,3 +316,12 @@ int32_t init_at_command(void *arg)
 
 #endif
 
+// else if (cmd[3] == AT_GET_CUR_TYPE) {   // Get type in using
+//     if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
+//         snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM");
+//     } else {
+//         snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
+//     }
+//     ret = RT_SUCCESS;
+
+// }
