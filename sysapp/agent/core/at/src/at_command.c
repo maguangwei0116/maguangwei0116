@@ -46,24 +46,24 @@
 
 #define AT_CONTENT_DELIMITER            ','
 
-#define AT_CFG_VUICC                    "\"vUICC\""
-#define AT_CFG_EUICC                    "\"eUICC\""
-#define AT_CFG_SIMF                     "\"SIMF\""      // SIM First
-#define AT_CFG_SIMO                     "\"SIMO\""      // SIM Only
-#define AT_CFG_SIM_LEN                  6 // 4+2
-#define AT_CFG_UICC_LEN                 7 // 5+2
+#define AT_CFG_VUICC                    "vUICC"
+#define AT_CFG_EUICC                    "eUICC"
+#define AT_CFG_SIMF                     "SIMF"      // SIM First
+#define AT_CFG_SIMO                     "SIMO"      // SIM Only
+#define AT_CFG_SIM_LEN                  4
+#define AT_CFG_UICC_LEN                 5
 
-#define AT_CFG_REDTEAREADY              "\"RR\""
-#define AT_CFG_SC                       "\"SC\""
-#define AT_CFG_PROJ_LEN                 4 // 2+2
+#define AT_CFG_REDTEAREADY              "RR"
+#define AT_CFG_SC                       "SC"
+#define AT_CFG_PROJ_LEN                 2
 
 #define RT_PROD_OTI_ADDR                "oti.redtea.io"
 #define RT_STAG_OTI_ADDR                "oti-staging.redtea.io"
 #define RT_QA_OTI_ADDR                  "oti-qa.redtea.io"
 
-#define AT_CFG_PROD_ENV                 "\"prod\""
-#define AT_CFG_STAG_ENV                 "\"stag\""
-#define AT_CFG_ENV_LEN                  6 // 4+2
+#define AT_CFG_PROD_ENV                 "prod"
+#define AT_CFG_STAG_ENV                 "stag"
+#define AT_CFG_ENV_LEN                  4
 #define PROD_ENV_MODE                   0
 #define STAG_ENV_MODE                   1
 
@@ -268,7 +268,6 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 } else {
                     ret = RT_ERROR;
                 }
-
             }
         }
     }
