@@ -41,6 +41,7 @@
 #define AT_CONFIG_PROJ_MODE             '3'
 #define AT_UPDATE_ENV                   '4'
 #define AT_SWITCH_CARD                  '5'
+
 #define AT_UPGRADE_UBI_FILE             '6'
 
 #define AT_CONTENT_DELIMITER            ','
@@ -67,7 +68,6 @@
 #define AT_CFG_ENV_LEN                  4
 #define AT_CFG_SIMF_LEN                 4
 #define AT_CFG_UICC_LEN                 5
-
 
 #define PROD_ENV_MODE                   0
 #define STAG_ENV_MODE                   1
@@ -113,7 +113,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 tmp_len = rt_os_strlen(num_string);
                 rt_os_memcpy(&buf[size], num_string, tmp_len);
                 size += tmp_len;
-                
+
                 for (ii = 0; ii < g_p_value_list->card_info->num; ii++) {
                     buf[size++] = AT_CONTENT_DELIMITER;
                     tmp_len = rt_os_strlen(g_p_value_list->card_info->info[ii].iccid);
@@ -212,6 +212,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     /* rsp: ,para,"uicc-type" */
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
+
             } else if (cmd[3] == AT_UPDATE_ENV) {  // config Environment
                 MSG_PRINTF(LOG_INFO, "config env : %s\n", &cmd[5]);
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_PROD_ENV, AT_CFG_ENV_LEN)) {

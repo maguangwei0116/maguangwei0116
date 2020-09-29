@@ -326,17 +326,6 @@ exit_entry:
 }
 #endif
 
-#define RT_WIWIDE_FILE      "rt_wiwide_log"
-
-static void rt_verifica_version_for_wiwide()
-{
-    if (!linux_rt_file_exist(RT_WIWIDE_FILE)) {
-        rt_create_file(RT_WIWIDE_FILE);
-        linux_delete_file(RT_AGENT_FILE);
-        MSG_PRINTF(LOG_WARN, "Delete agent for wiwide...\n");
-    }
-}
-
 static int32_t agent_task_check_start(rt_bool frist_start)
 {
     int32_t ret;
@@ -351,8 +340,6 @@ static int32_t agent_task_check_start(rt_bool frist_start)
         }
         rt_os_sleep(1);
     } while(1);
-
-    rt_verifica_version_for_wiwide();
 
     /* inspect agent, if inspect failed, go to backup process */
     if (monitor_inspect_file(RT_AGENT_FILE, RT_AGENT_NAME) != RT_TRUE) {
