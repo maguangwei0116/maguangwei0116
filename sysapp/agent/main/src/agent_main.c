@@ -47,7 +47,12 @@
 #define ARRAY_SIZE(a)           (sizeof((a)) / sizeof((a)[0]))
 #endif
 
+#define RT_OEMAPP_VERSION_LEN   27
 #define RT_AGENT_LOG            "rt_log"
+#define RT_OEMAPP_VERSION       "/oemapp/oemapp_version"
+#define RT_AGENT_FILE           CFG_AGENT_RUN_PATH"rt_agent"
+
+#define RT_CHECK_ERR(process, result)       if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
 typedef int32_t (*init_func)(void *arg);
 
@@ -120,6 +125,40 @@ static int32_t version_format(const char *version, int32_t ver_int[4])
     return RT_SUCCESS;
 }
 
+static void rt_compare_oemapp_version(int32_t *old_ver)
+{
+    int32_t i = 0;
+    int32_t new_version, old_version;
+
+    rt_fshandle_t fp = NULL;
+    int32_t new_ver[4] = {0};
+    uint8_t oemapp_version[RT_OEMAPP_VERSION_LEN + 1];
+
+    rt_os_memset(oemapp_version, 0, sizeof(oemapp_version));
+    RT_CHECK_ERR(fp = linux_fopen((char *)RT_OEMAPP_VERSION, "r"), NULL);
+    linux_fseek(fp, 0, RT_FS_SEEK_SET);
+    RT_CHECK_ERR(linux_fread(oemapp_version, RT_OEMAPP_VERSION_LEN, 1, fp),0)
+    version_format(oemapp_version, new_ver);
+
+    new_version = new_ver[0]*1000 + new_ver[1]*100 + new_ver[2]*10 + new_ver[3];
+    old_version = old_ver[0]*1000 + old_ver[1]*100 + old_ver[2]*10 + old_ver[3];
+
+    MSG_PRINTF(LOG_DBG, "Oemapp:%d.%d.%d.%d, Agent:%d.%d.%d.%d\n", \
+        new_ver[0],new_ver[1],new_ver[2],new_ver[3],old_ver[0],old_ver[1],old_ver[2],old_ver[3]);
+
+    if (new_version > old_version) {
+        MSG_PRINTF(LOG_INFO, "New version exists, sleep 10 seconds to restart terminal...\n");
+        linux_delete_file(RT_AGENT_FILE);
+        ipc_restart_monitor(10);
+    }
+
+end:
+    if (fp != NULL) {
+        linux_fclose(fp);
+    }
+
+}
+
 /*
 # Auto generate softsim-release file
 #                  MFR      agent     monitor    so       ubi       share profile batch code
@@ -142,6 +181,7 @@ static int32_t get_oemapp_version(const char *a_version, const char * m_version,
         o_ver_int[i] = a_ver_int[i] + m_ver_int[i] + so_ver_int[i];
     }
 
+    rt_compare_oemapp_version(o_ver_int);
     snprintf(version, v_size, "%d.%d.%d.%d#%s", o_ver_int[0], o_ver_int[1], o_ver_int[2], o_ver_int[3], share_profile_name);
 
     return RT_SUCCESS;
