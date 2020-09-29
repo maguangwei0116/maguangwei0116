@@ -542,24 +542,15 @@ int32_t config_update_uicc_mode(int32_t mode)
     int32_t pair_num = ARRAY_SIZE(g_config_items);
     config_item_t *items = g_config_items;
 
-    MSG_PRINTF(LOG_INFO, "==========> <=========\n");
-
-    
-
     if (mode == MODE_TYPE_SIM_FIRST) {
         rt_os_strcpy(value, UICC_MODE_SIMF);
     } else if (mode == MODE_TYPE_EUICC) {
-        // rt_os_strcpy(value, UICC_MODE_eUICC);
-
-        rt_os_memset(value, UICC_MODE_eUICC, sizeof(UICC_MODE_eUICC));
-
+        rt_os_strcpy(value, UICC_MODE_eUICC);
     } else if (mode == MODE_TYPE_VUICC) {
         rt_os_strcpy(value, UICC_MODE_vUICC);
     } else if (mode == MODE_TYPE_SIM_ONLY) {
         rt_os_strcpy(value, UICC_MODE_SIMO);
     }
-
-    MSG_PRINTF(LOG_INFO, "==========> uicc mode value : %s\n", value);
 
     old_value = local_config_get_data(key);
     if (rt_os_strcmp(old_value, value)) {

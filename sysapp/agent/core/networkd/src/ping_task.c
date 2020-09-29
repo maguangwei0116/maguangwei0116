@@ -356,7 +356,7 @@ int32_t init_ping_task(void *arg)
     g_operation_num = (((public_value_list_t *)arg)->card_info->operational_num);
 
     if (*g_project_mode != PROJECT_REDTEAREADY || *g_sim_mode == MODE_TYPE_SIM_ONLY) {
-        MSG_PRINTF(LOG_INFO, "Not open ping task ....project : %d, mode : %d\n", *g_project_mode, *g_sim_mode);
+        MSG_PRINTF(LOG_INFO, "Not open ping task ....  ===> Project : %s, mode : %d\n", (*g_project_mode == PROJECT_REDTEAREADY) ? "RedteaReady" : "SC", *g_sim_mode);
         return RT_ERROR;
     }
 
