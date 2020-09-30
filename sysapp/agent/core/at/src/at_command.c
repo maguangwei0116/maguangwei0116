@@ -95,7 +95,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     int32_t ret = RT_ERROR;
     int32_t ii = 0, tmp_len = 0, size = 0;
     uint8_t buf[1024] = {0};
-    uint8_t send_buf[1] = {0};
+    int8_t send_buf[1] = {-1};
     rt_bool devicekey_status = RT_FALSE;
 
     if (*cmd == AT_CONTENT_DELIMITER) {
@@ -228,7 +228,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             } else if (cmd[3] == AT_SWITCH_CARD) { // Switch card
                 MSG_PRINTF(LOG_INFO, "Switch to %s\n", &cmd[5]);
                 devicekey_status = rt_get_devicekey_status();
-                if (devicekey_status == RT_FALSE) {
+                if (devicekey_status == RT_FALSE || g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_ONLY) {
                     return RT_ERROR;
                 }
 
@@ -236,15 +236,17 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM && g_p_value_list->card_info->sim_info.state == SIM_READY) {
                         send_buf[0] = PROVISONING_NO_INTERNET;
                         snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC switch to SIM");
+                        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
+                        ret = RT_SUCCESS;
                     }
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_VSIM, AT_CFG_VSIM_LEN)) {   // Switch to vUICC
                     if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                         send_buf[0] = SIM_NO_INTERNET;
                         snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to vUICC");
+                        msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
+                        ret = RT_SUCCESS;
                     }
                 }
-                msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
-                ret = RT_SUCCESS;
 
             } else if (cmd[3] == AT_UPGRADE_UBI_FILE) { // upgrade ubi file
                 char ubi_abs_file[128] = {0};
