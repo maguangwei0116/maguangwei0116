@@ -45,6 +45,7 @@
 #define AT_UPGRADE_UBI_FILE             '6'
 
 #define AT_CONTENT_DELIMITER            ','
+#define AT_EXIST_DELIMITER              '?'
 
 #define AT_PROD_OTI_ADDR                "oti.redtea.io"
 #define AT_STAG_OTI_ADDR                "oti-staging.redtea.io"
@@ -287,15 +288,25 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 {
     int32_t ret = RT_ERROR;
+    rt_bool devicekey_status = RT_FALSE;
 
     MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
 
-    ret = config_update_device_key(&cmd[1]);
-    if (ret == RT_TRUE) {
-        /* rsp: ,para,"device key" */
-        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Welcome to RedteaReady!");
-    } else if (ret == RT_FALSE) {
-        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Please enter the correct Device Key!");
+    if (*cmd == AT_CONTENT_DELIMITER) {
+        ret = config_update_device_key(&cmd[1]);
+        if (ret == RT_TRUE) {
+            /* rsp: ,para,"device key" */
+            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Welcome to RedteaReady!");
+        } else if (ret == RT_FALSE) {
+            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Please enter the correct Device Key!");
+        }
+    } else if (*cmd == AT_EXIST_DELIMITER) {
+        devicekey_status = rt_get_devicekey_status();
+        if (devicekey_status == RT_TRUE) {
+            snprintf(rsp, len, "%s", "DeviceKey verification successful!");
+        } else {
+            snprintf(rsp, len, "%s", "DeviceKey verification failed!");
+        }
     }
 
     return RT_SUCCESS;
