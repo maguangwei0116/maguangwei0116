@@ -300,12 +300,12 @@ static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
         } else if (ret == RT_FALSE) {
             snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Please enter the correct Device Key!");
         }
-    } else if (*cmd == AT_EXIST_DELIMITER) {
+    } else {
         devicekey_status = rt_get_devicekey_status();
         if (devicekey_status == RT_TRUE) {
-            snprintf(rsp, len, "%s", "DeviceKey verification successful!");
+            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "verification successful!");
         } else {
-            snprintf(rsp, len, "%s", "DeviceKey verification failed!");
+            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "verification failed!");
         }
     }
 
