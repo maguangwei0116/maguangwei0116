@@ -61,7 +61,7 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 		share_profile_batch_code="Bxxxxxxxxxxxxxxxxxx"; \
 		if [ -n "`ls $(REDTEA_OEMAPP_SHARE_PROFILES)`" ] ; \
 		then \
-			share_profile_batch_code=`read -n 100 data < $(REDTEA_OEMAPP_SHARE_PROFILES) ; echo $$data | grep -Eo "B[0-9]{0,18}"`; \
+			share_profile_batch_code=`read -n 100 data < $(REDTEA_OEMAPP_SHARE_PROFILES) ; echo $$data | grep -Eo "B[0-9][0-9][0-9]{0,18}"`; \
 		fi; \
 		version_string+="$$manufacturer_name"; \
 		ubi_version_1=0; \
