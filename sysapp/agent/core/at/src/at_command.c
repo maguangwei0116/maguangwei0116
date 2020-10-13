@@ -42,10 +42,7 @@
 #define AT_UPDATE_ENV                   '4'
 #define AT_SWITCH_CARD                  '5'
 
-#define AT_UPGRADE_UBI_FILE             '6'
-
 #define AT_CONTENT_DELIMITER            ','
-#define AT_EXIST_DELIMITER              '?'
 
 #define AT_PROD_OTI_ADDR                "oti.redtea.io"
 #define AT_STAG_OTI_ADDR                "oti-staging.redtea.io"
@@ -248,37 +245,6 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                         ret = RT_SUCCESS;
                     }
                 }
-
-            } else if (cmd[3] == AT_UPGRADE_UBI_FILE) { // upgrade ubi file
-                char ubi_abs_file[128] = {0};
-                char real_file_name[32] = {0};
-                char *p0 = NULL;
-                char *p1 = NULL;
-
-                MSG_PRINTF(LOG_INFO, "ubi file input: %s\n", &cmd[5]);
-                p0 = rt_os_strchr(&cmd[5], '"');
-                if (p0) {
-                    p1 = rt_os_strchr(p0 + 1, '"');
-                    if (p1) {
-                        rt_os_memcpy(ubi_abs_file, p0 + 1, p1 - p0 - 1);
-                        MSG_PRINTF(LOG_INFO, "ubi_abs_file: %s\n", ubi_abs_file);
-                    }
-                }
-                if (rt_os_strlen(ubi_abs_file)) {
-                    ret = ipc_file_verify_by_monitor(ubi_abs_file, real_file_name);
-                    if (!ret && !rt_os_strcmp(OTA_UPGRADE_OEMAPP_UBI, real_file_name)) {
-                        linux_delete_file(OTA_UPGRADE_USR_AGENT);  // must delete agent to create a new one !!!
-                        ret = ubi_update((const char *)ubi_abs_file);
-                        if (ret == RT_SUCCESS) {
-                            /* rsp: ,para,"ubi_file" */
-                            snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
-                        }
-                    } else {
-                        MSG_PRINTF(LOG_ERR, "ubi file verify fail\n");
-                    }
-                } else {
-                    ret = RT_ERROR;
-                }
             }
         }
     }
@@ -303,13 +269,49 @@ static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     } else {
         devicekey_status = rt_get_devicekey_status();
         if (devicekey_status == RT_TRUE) {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "verification successful!");
+            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "verification successed!");
         } else {
             snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "verification failed!");
         }
     }
 
     return RT_SUCCESS;
+}
+
+static int32_t update_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
+{
+    int32_t ret = RT_ERROR;
+    char ubi_abs_file[128] = {0};
+    char real_file_name[32] = {0};
+    char *p0 = NULL;
+    char *p1 = NULL;
+
+    MSG_PRINTF(LOG_INFO, "ubi file input: %s\n", &cmd[1]);
+    p0 = rt_os_strchr(&cmd[1], '"');
+    if (p0) {
+        p1 = rt_os_strchr(p0 + 1, '"');
+        if (p1) {
+            rt_os_memcpy(ubi_abs_file, p0 + 1, p1 - p0 - 1);
+            MSG_PRINTF(LOG_INFO, "ubi_abs_file: %s\n", ubi_abs_file);
+        }
+    }
+    if (rt_os_strlen(ubi_abs_file)) {
+        ret = ipc_file_verify_by_monitor(ubi_abs_file, real_file_name);
+        if (!ret && !rt_os_strcmp(OTA_UPGRADE_OEMAPP_UBI, real_file_name)) {
+            linux_delete_file(OTA_UPGRADE_USR_AGENT);  // must delete agent to create a new one !!!
+            ret = ubi_update((const char *)ubi_abs_file);
+            if (ret == RT_SUCCESS) {
+                /* rsp: ,para,"ubi_file" */
+                snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Update successed!");
+            }
+        } else {
+            MSG_PRINTF(LOG_ERR, "ubi file verify fail\n");
+        }
+    } else {
+        ret = RT_ERROR;
+    }
+
+    return ret;
 }
 
 int32_t init_at_command(void *arg)
@@ -321,6 +323,9 @@ int32_t init_at_command(void *arg)
 
     /* install "deviceKey" at command */
     AT_CMD_INSTALL(dkey);
+
+    /* install "Update" at command */
+    AT_CMD_INSTALL(update);
 
     return RT_SUCCESS;
 }
