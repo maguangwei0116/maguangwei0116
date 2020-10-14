@@ -46,6 +46,27 @@ static void rt_iptables_forbid()
     system("iptables -D FORWARD -i bridge0 -p tcp -m state --state INVALID -j DROP");
 }
 
+static void rt_provsioning_forbit_ping()
+{
+    MSG_PRINTF(LOG_INFO, "====> provisoning forbit ping\n");
+
+    system("iptables -A INPUT -i bridge0 -p tcp --dport 23 -j ACCEPT");     // 允许telnet输入
+    system("iptables -A OUTPUT -p tcp --sport 23 -j ACCEPT");               // 允许telnet输出
+
+    system("iptables -A FORWARD -i bridge0 -p icmp -j DROP");
+    system("iptables -A FORWARD -i bridge0 -p tcp -j DROP");                // icmp, tcp, udp 所有的转发数据包全部丢掉
+    system("iptables -A FORWARD -i bridge0 -p udp -j DROP");
+
+    system("iptables -A INPUT -i bridge0 -p icmp -j DROP");
+    system("iptables -A INPUT -i bridge0 -p tcp -j DROP");                  // icmp, tcp, udp 所有的输入数据包全部丢掉
+    system("iptables -A INPUT -i bridge0 -p udp -j DROP");
+}
+
+static void rt_allow_ping()
+{
+    system("iptables -F");
+}
+
 void network_update_switch(network_update_switch_e state)
 {
     g_update_network_state = state;
@@ -70,8 +91,15 @@ void network_update_state(int32_t state)
 
     if (g_network_state == RT_DSI_STATE_CALL_CONNECTED) {  // network connected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
-        rt_iptables_allow();
         card_detection_disable();
+
+        if (*g_task_param.type == PROFILE_TYPE_PROVISONING || *g_task_param.type == PROFILE_TYPE_TEST) {
+            rt_provsioning_forbit_ping();
+        } else if (*g_task_param.type == PROFILE_TYPE_SIM || *g_task_param.type == PROFILE_TYPE_OPERATIONAL) {
+            rt_allow_ping();
+        }
+        rt_iptables_allow();
+
     } else if (g_network_state == RT_DSI_STATE_CALL_IDLE) {  // network disconnected
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_DISCONNECTED, NULL, 0);
         rt_iptables_forbid();
