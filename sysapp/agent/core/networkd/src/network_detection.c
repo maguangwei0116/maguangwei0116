@@ -93,9 +93,9 @@ void network_update_state(int32_t state)
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_NETWORK_CONNECTED, NULL, 0);
         card_detection_disable();
 
-        if (*g_task_param.type == PROFILE_TYPE_PROVISONING || *g_task_param.type == PROFILE_TYPE_TEST) {
+        if (*g_task_param.type == PROFILE_TYPE_PROVISONING) {
             rt_provsioning_forbit_ping();
-        } else if (*g_task_param.type == PROFILE_TYPE_SIM || *g_task_param.type == PROFILE_TYPE_OPERATIONAL) {
+        } else {
             rt_allow_ping();
         }
         rt_iptables_allow();
