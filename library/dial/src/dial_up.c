@@ -428,29 +428,14 @@ static int32_t dial_up_signo_check(int32_t cur_signo)
     }
     #endif
 
-    if (chk_counter >= MAX_BAD_DSI_CALL_CNT) {
+    if (chk_counter == MAX_BAD_DSI_CALL_CNT) {
         MSG_PRINTF(LOG_WARN, "too many dsi call (%d) !!!\r\n", chk_counter);
-        goto too_many_bad_dsi_call_entry; 
     }
 
     MSG_PRINTF(LOG_DBG, "cur_signo: %d, last_signo: %d, counter: %d\r\n", cur_signo, last_signo, chk_counter);
 
     last_signo = cur_signo;
 
-    return RT_SUCCESS;
-
-too_many_bad_dsi_call_entry:
-    
-    /* stop */
-    chk_counter = 0;
-    MSG_PRINTF(LOG_WARN, "sleep 10 seconds to reboot terminal ...\r\n");
-    rt_os_sleep(10);
-    rt_os_reboot();
-
-    while (1) {
-        rt_os_sleep(1);
-    }
-    
     return RT_SUCCESS;
 }
 
