@@ -572,8 +572,6 @@ int32_t config_update_proj_mode(int32_t mode)
     int32_t pair_num = ARRAY_SIZE(g_config_items);
     config_item_t *items = g_config_items;
 
-    MSG_PRINTF(LOG_INFO, "==========> value : %s\n", value);
-
     old_value = local_config_get_data(key);
     if (rt_os_strcmp(old_value, value)) {
         /* only update when value changed */

@@ -110,7 +110,10 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 			if [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "quectel" ]] ; \
 			then \
 				release_oemapp_title+="Q"; \
-				if [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20FASG" ]] ; \
+				if [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20FAG" ]] ; \
+				then \
+					module="EC20FAG"; \
+				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20FASG" ]] ; \
 				then \
 					module="EC20FASG"; \
 				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20HDLG" ]] ; \
