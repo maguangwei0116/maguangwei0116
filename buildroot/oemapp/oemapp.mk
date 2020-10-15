@@ -107,12 +107,19 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 			else \
 				release_oemapp_title+="S"; \
 			fi; \
-			if [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "general" ] ; \
-			then \
-				release_oemapp_title+="A"; \
-			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "quectel" ] ; \
+			if [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "quectel" ]] ; \
 			then \
 				release_oemapp_title+="Q"; \
+				if [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20FASG" ]] ; \
+				then \
+					module="EC20FASG"; \
+				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20HDLG" ]] ; \
+				then \
+					module="EC20HDLG"; \
+				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EG25GB" ]] ; \
+				then \
+					module="EG25GB"; \
+				fi; \
 			elif [ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" = "neoway" ] ; \
 			then \
 				release_oemapp_title+="N"; \
@@ -143,7 +150,7 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 				release_oemapp_title+="S"; \
 			fi; \
 			release_oemapp_title+="$$release_version"; \
-			release_oemapp_title+="_RELEASE_"; \
+			release_oemapp_title+=""_"$$module"_""; \
 			release_oemapp_title+=$(REDTEA_OEMAPP_LOCAL_BUILD_DATE); \
 			release_oemapp_title+="#""$$share_profile_batch_code"; \
 			echo "$$release_oemapp_title" > $(REDTEA_OEMAPP_VERSION_FILE); \

@@ -10,7 +10,7 @@ config BR2_CFG_PRODUCT_NAME
 
 config BR2_CFG_SOFTWARE_NAME
 	string "Software Name"
-	default "general"
+	default "quectel-EC20HDLG"
 
 config BR2_CFG_AGENT_RUN_PATH
 	string "Running path"
