@@ -190,6 +190,12 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
              } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config SIM First/eUICC/vUICC/SIM Only
                 MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
+
+                if (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) {
+                    MSG_PRINTF(LOG_INFO, "RedteaReady does not allow configuration mode\n");
+                    return RT_ERROR;
+                }
+
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMF, AT_CFG_SIMF_LEN)) {
                     ret = config_update_uicc_mode(MODE_TYPE_SIM_FIRST);
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_EUICC, AT_CFG_UICC_LEN)) {
