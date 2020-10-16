@@ -22,7 +22,7 @@
 #include "hash.h"
 
 #define MSG_ONE_BLOCK_SIZE                  128
-#define DEVICE_PUBLIC_KEY                   "e30211481a3ead603da4fbb06c62ed4c46aaac3394c31f20fbca686ba2efb043"
+#define DEVICE_FIXED_KEY                    "e30211481a3ead603da4fbb06c62ed4c46aaac3394c31f20fbca686ba2efb043"
 #define RT_CHECK_ERR(process, result)       if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
 static proj_mode_e project_mode;
@@ -478,7 +478,7 @@ rt_bool inspect_device_key(const char *file_name)
 
     sha256_init(&sha_ctx);
     sha256_update(&sha_ctx, (uint8_t *)file_buffer, DEVICE_KEY_LEN);         // app key
-    sha256_update(&sha_ctx, (uint8_t *)DEVICE_PUBLIC_KEY, MAX_FILE_HASH_LEN);   // fix key
+    sha256_update(&sha_ctx, (uint8_t *)DEVICE_FIXED_KEY, MAX_FILE_HASH_LEN);   // fix key
     sha256_final(&sha_ctx, (uint8_t *)hash_out);
     bytestring_to_charstring((const char *)hash_out, (char *)hash_result, MAX_FILE_HASH_BYTE_LEN);
 
