@@ -269,14 +269,14 @@ static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             /* rsp: ,para,"device key" */
             snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Welcome to RedteaReady!");
         } else if (ret == RT_FALSE) {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Please enter the correct Device Key!");
+            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Please enter the correct device key!");
         }
     } else {
         devicekey_status = rt_get_devicekey_status();
         if (devicekey_status == RT_TRUE) {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "verification successed!");
+            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Verification successed!");
         } else {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "verification failed!");
+            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Verification failed!");
         }
     }
 
