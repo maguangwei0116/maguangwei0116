@@ -190,10 +190,9 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
              } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config SIM First/eUICC/vUICC/SIM Only
                 MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
-
                 if (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) {
-                    MSG_PRINTF(LOG_INFO, "RedteaReady does not allow configuration mode\n");
-                    return RT_ERROR;
+                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "RedteaReady does not allow configuration");
+                    return RT_SUCCESS;
                 }
 
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMF, AT_CFG_SIMF_LEN)) {
@@ -212,6 +211,11 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
             } else if (cmd[3] == AT_CONFIG_PROJ_MODE) {  // config RedteaReady or SC
                 MSG_PRINTF(LOG_INFO, "config project mode: %s\n", &cmd[5]);
+                if (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) {
+                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "RedteaReady does not allow configuration");
+                    return RT_SUCCESS;
+                }
+
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_REDTEAREADY, AT_CFG_PROJ_LEN)) {
                     ret = config_update_proj_mode(PROJECT_REDTEAREADY);
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SC, AT_CFG_PROJ_LEN)) {
@@ -224,6 +228,11 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
             } else if (cmd[3] == AT_UPDATE_ENV) {  // config Environment
                 MSG_PRINTF(LOG_INFO, "config env : %s\n", &cmd[5]);
+                if (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) {
+                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "RedteaReady does not allow configuration");
+                    return RT_SUCCESS;
+                }
+
                 if (!rt_os_strncasecmp(&cmd[5], AT_CFG_PROD_ENV, AT_CFG_ENV_LEN)) {
                     ret = config_update_env_mode(PROD_ENV_MODE);
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_STAG_ENV, AT_CFG_ENV_LEN)) {
@@ -237,8 +246,12 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             } else if (cmd[3] == AT_SWITCH_CARD) { // Switch card
                 MSG_PRINTF(LOG_INFO, "Switch to %s\n", &cmd[5]);
                 devicekey_status = rt_get_devicekey_status();
-                if (devicekey_status == RT_FALSE || g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_ONLY) {
-                    return RT_ERROR;
+                if (devicekey_status == RT_FALSE) {
+                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "DeviceKey verification failed");
+                    return RT_SUCCESS;
+                } else if (g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_ONLY) {
+                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "SIM Only prohubit switch card");
+                    return RT_SUCCESS;
                 }
 
                 if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_SIM, AT_CFG_SIM_LEN)) {           // Switch to SIM
@@ -247,12 +260,21 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                         snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC switch to SIM");
                         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
                         ret = RT_SUCCESS;
+                    } else if (g_p_value_list->card_info->sim_info.state == SIM_ERROR) {
+                        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Switch failed, SIM not exist");
+                        ret = RT_SUCCESS;
+                    } else if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
+                        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Switch failed, SIM is using");
+                        ret = RT_SUCCESS;
                     }
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_VSIM, AT_CFG_VSIM_LEN)) {   // Switch to vUICC
                     if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                         send_buf[0] = SIM_NO_INTERNET;
                         snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to vUICC");
                         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
+                        ret = RT_SUCCESS;
+                    } else {
+                        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Switch failed, vUICC is using");
                         ret = RT_SUCCESS;
                     }
                 }
@@ -325,6 +347,63 @@ static int32_t update_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     return ret;
 }
 
+static int32_t redtea_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
+{
+    int32_t ret = RT_ERROR;
+
+    if (*cmd == AT_CONTENT_DELIMITER) {
+        if ((cmd[1] == AT_TYPE_GET_INFO) && (cmd[2] == AT_CONTENT_DELIMITER)) {
+            MSG_PRINTF(LOG_DBG, "cmd=%s\n", cmd);
+
+        } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
+            MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
+
+            if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config SIM First/eUICC/vUICC/SIM Only
+                MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
+                if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMF, AT_CFG_SIMF_LEN)) {
+                    ret = config_update_uicc_mode(MODE_TYPE_SIM_FIRST);
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_EUICC, AT_CFG_UICC_LEN)) {
+                    ret = config_update_uicc_mode(MODE_TYPE_EUICC);
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_VUICC, AT_CFG_UICC_LEN)) {
+                    ret = config_update_uicc_mode(MODE_TYPE_VUICC);
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SIMO, AT_CFG_SIMF_LEN)) {
+                    ret = config_update_uicc_mode(MODE_TYPE_SIM_ONLY);
+                }
+                if (ret == RT_SUCCESS) {
+                    /* rsp: ,para,"uicc-type" */
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
+                }
+            } else if (cmd[3] == AT_CONFIG_PROJ_MODE) {  // config RedteaReady or SC
+                MSG_PRINTF(LOG_INFO, "config project mode: %s\n", &cmd[5]);
+                if (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) {
+                    MSG_PRINTF(LOG_INFO, "RedteaReady does not allow configuration\n");
+                    return RT_ERROR;
+                }
+                if (!rt_os_strncasecmp(&cmd[5], AT_CFG_REDTEAREADY, AT_CFG_PROJ_LEN)) {
+                    ret = config_update_proj_mode(PROJECT_REDTEAREADY);
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_SC, AT_CFG_PROJ_LEN)) {
+                    ret = config_update_proj_mode(PROJECT_SC);
+                }
+                if (ret == RT_SUCCESS) {
+                    /* rsp: ,para,"uicc-type" */
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
+                }
+            } else if (cmd[3] == AT_UPDATE_ENV) {  // config Environment
+                MSG_PRINTF(LOG_INFO, "config env : %s\n", &cmd[5]);
+                if (!rt_os_strncasecmp(&cmd[5], AT_CFG_PROD_ENV, AT_CFG_ENV_LEN)) {
+                    ret = config_update_env_mode(PROD_ENV_MODE);
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_CFG_STAG_ENV, AT_CFG_ENV_LEN)) {
+                    ret = config_update_env_mode(STAG_ENV_MODE);
+                }
+                if (ret == RT_SUCCESS) {
+                    /* rsp: ,para,"env-type" */
+                    snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
+                }
+            }
+        }
+    }
+}
+
 int32_t init_at_command(void *arg)
 {
     g_p_value_list = ((public_value_list_t *)arg);
@@ -332,11 +411,14 @@ int32_t init_at_command(void *arg)
     /* install "UICC" at command */
     AT_CMD_INSTALL(uicc);
 
-    /* install "deviceKey" at command */
+    /* install "DeviceKey" at command */
     AT_CMD_INSTALL(dkey);
 
     /* install "Update" at command */
     AT_CMD_INSTALL(update);
+
+    /* install "Redtea" at command */
+    AT_CMD_INSTALL(redtea);
 
     return RT_SUCCESS;
 }
