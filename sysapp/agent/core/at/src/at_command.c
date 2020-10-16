@@ -33,7 +33,7 @@
 #define AT_GET_UICC_TYPE                '2'
 #define AT_GET_PROJ_MODE                '3'
 #define AT_GET_ENV_TYPE                 '4'
-#define AT_GET_DEVICE_ID                '5'
+#define AT_GET_CUR_TYPE                 '5'
 
 #define AT_SWITCH_TO_PROVISIONING       '0'
 #define AT_SWITCH_TO_OPERATION          '1'
@@ -143,6 +143,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, \
                     (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) ? "ReateaReady" : "SC");
                 ret = RT_SUCCESS;
+
             } else if (cmd[3] == AT_GET_ENV_TYPE) {   // get Environment
                 if(!strcmp(g_p_value_list->config_info->oti_addr, AT_PROD_OTI_ADDR)) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "prod");
@@ -154,11 +155,15 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "Unknow Environment");
                 }
                 ret = RT_SUCCESS;
-            } else if (cmd[3] == AT_GET_DEVICE_ID) {  // get Device id
-                snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, g_p_value_list->device_info->device_id);
+
+            } else if (cmd[3] == AT_GET_CUR_TYPE) {   // Get type in using
+                if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM");
+                } else {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
+                }
                 ret = RT_SUCCESS;
             }
-
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             MSG_PRINTF(LOG_INFO, "cmd=%s\n", cmd);
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
@@ -340,13 +345,3 @@ int32_t init_at_command(void *arg)
 }
 
 #endif
-
-// else if (cmd[3] == AT_GET_CUR_TYPE) {   // Get type in using
-//     if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
-//         snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM");
-//     } else {
-//         snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
-//     }
-//     ret = RT_SUCCESS;
-
-// }
