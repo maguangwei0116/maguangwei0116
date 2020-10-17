@@ -473,10 +473,10 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     MSG_PRINTF(LOG_INFO, "connecting emq mqtt server ...\n");
     pconn_opts->MQTTVersion = MQTTVERSION_3_1;
     MSG_PRINTF(LOG_INFO, "g_mqtt_info.type:%d\n", *(g_mqtt_info.type));
-    if (*(g_mqtt_info.type) == PROFILE_TYPE_OPERATIONAL) {
-        pconn_opts->keepAliveInterval   = MQTT_KEEP_ALIVE_INTERVAL;
-    } else {
+    if (*(g_mqtt_info.type) == PROFILE_TYPE_PROVISONING) {
         pconn_opts->keepAliveInterval   = MQTT_KEEP_ALIVE_INTERVAL1;
+    } else {
+        pconn_opts->keepAliveInterval   = MQTT_KEEP_ALIVE_INTERVAL;
     }
     pconn_opts->reliable            = 0;
     pconn_opts->cleansession        = 0;
