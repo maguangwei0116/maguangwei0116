@@ -191,7 +191,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
              } else if (cmd[3] == AT_CONFIG_LPA_CHANNEL) {  // config SIM First/eUICC/vUICC/SIM Only
                 MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
                 if (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) {
-                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "RedteaReady does not allow configuration");
+                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Prohibit configuration");
                     return RT_SUCCESS;
                 }
 
@@ -212,7 +212,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             } else if (cmd[3] == AT_CONFIG_PROJ_MODE) {  // config RedteaReady or SC
                 MSG_PRINTF(LOG_INFO, "config project mode: %s\n", &cmd[5]);
                 if (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) {
-                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "RedteaReady does not allow configuration");
+                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Prohibit configuration");
                     return RT_SUCCESS;
                 }
 
@@ -229,7 +229,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             } else if (cmd[3] == AT_UPDATE_ENV) {  // config Environment
                 MSG_PRINTF(LOG_INFO, "config env : %s\n", &cmd[5]);
                 if (g_p_value_list->config_info->proj_mode == PROJECT_REDTEAREADY) {
-                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "RedteaReady does not allow configuration");
+                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Prohibit configuration");
                     return RT_SUCCESS;
                 }
 
