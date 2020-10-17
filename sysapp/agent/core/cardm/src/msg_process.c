@@ -22,6 +22,7 @@
 #include "hash.h"
 
 #define MSG_ONE_BLOCK_SIZE                  128
+#define INSPECT_FILE_SIZE                   128
 #define DEVICE_FIXED_KEY                    "e30211481a3ead603da4fbb06c62ed4c46aaac3394c31f20fbca686ba2efb043"
 #define RT_CHECK_ERR(process, result)       if((process) == result){ MSG_PRINTF(LOG_WARN, "[%s] error\n", #process);  goto end;}
 
@@ -500,7 +501,7 @@ end:
 
 rt_bool rt_get_devicekey_status(void)
 {
-    uint8_t  inspect_file[128] = {0};
+    uint8_t  inspect_file[INSPECT_FILE_SIZE] = {0};
     snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
 
     if (project_mode == PROJECT_SC) {
