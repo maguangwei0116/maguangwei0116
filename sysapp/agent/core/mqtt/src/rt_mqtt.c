@@ -384,8 +384,8 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
 {
     int32_t c = 0;
 
-    //MSG_PRINTF(LOG_INFO, "Connect mqtt broker [%s] !\n", opts->serverURIs);
-    //MSG_PRINTF(LOG_INFO, "Connect mqtt ssl %p !\n", opts->ssl);
+    MSG_PRINTF(LOG_DBG, "Connect mqtt broker [%s] !\n", opts->serverURIs);
+    MSG_PRINTF(LOG_DBG, "Connect mqtt ssl %p !\n", opts->ssl);
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
         g_mqtt_param.mqtt_conn_state    = RT_TRUE;
         g_mqtt_param.mqtt_flag          = RT_TRUE;
@@ -481,7 +481,7 @@ static rt_bool mqtt_connect_server(mqtt_param_t *param)
     pconn_opts->reliable            = 0;
     pconn_opts->cleansession        = 0;
 
-    //MSG_PRINTF(LOG_DBG, "pconn_opts->struct_version=%d\n", pconn_opts->struct_version);
+    MSG_PRINTF(LOG_DBG, "pconn_opts->struct_version=%d\n", pconn_opts->struct_version);
     if (mqtt_connect(c, pconn_opts) == RT_FALSE) {
         MSG_PRINTF(LOG_WARN, "connecting %s mqtt server fail\r\n", opts->channel);
         if (++opts->try_connect_timer > MAX_TRY_CONNECT_TIME) {

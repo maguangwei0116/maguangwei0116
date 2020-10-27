@@ -162,7 +162,7 @@ int32_t rt_write_ticket(int32_t offset, uint8_t *ticket, int32_t len)
 
 int32_t rt_read_ticket(int32_t offset, uint8_t *ticket, int32_t len)
 {
-    int32_t ret = rt_read_data(RUN_CONFIG_FILE, RT_DEVICE_KEY_OFFSET + offset, ticket, len);
+    int32_t ret = rt_read_data(RUN_CONFIG_FILE, RT_TICKET_SERVER_OFFSET + offset, ticket, len);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Read ticket server fail, ret : %d\n", ret);
     }
