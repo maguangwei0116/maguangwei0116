@@ -86,7 +86,9 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 			fi; \
 		done; \
 		ubi_version=$$ubi_version_1.$$ubi_version_2.$$ubi_version_3; \
-		release_version=`printf "%03d" $$ubi_version_3`; \
+		release_version+=$$ubi_version_1; \
+		release_version+=$$ubi_version_2; \
+		release_version+=$$ubi_version_3; \
 		if [ -n "$$ubi_version_4" ] ; \
 		then \
 			ubi_version+=".$$ubi_version_4"; \
