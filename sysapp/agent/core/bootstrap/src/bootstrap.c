@@ -85,11 +85,13 @@ static void bootstrap_local_select_profile(void)
         g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME;
         MSG_PRINTF(LOG_ERR, "bootstrap select un-work profiles too many times\r\n");
     } else {
+        uint16_t i = 0;
         uint16_t mcc = 0;
         char mcc_mnc[32] = {0};
         char apn[128] = {0};
         uint8_t profile_buffer[1024] = {0};
         uint16_t profile_len = 0;
+        static int32_t last_mcc = 0;
 
         #if 0  // only for debug
         unsigned long cur_time = time(NULL);
@@ -104,8 +106,25 @@ static void bootstrap_local_select_profile(void)
         MSG_PRINTF(LOG_INFO, "<<< bootstrap select card (%d/%d) >>>\r\n", g_retry_times, g_max_retry_times);
         #endif
 
-        rt_qmi_get_mcc_mnc(&mcc, NULL);
-        bootstrap_select_profile(mcc, apn, mcc_mnc, profile_buffer, &profile_len);
+        while (1) {
+            if (last_mcc == 0) {
+                rt_qmi_get_mcc_mnc(&mcc, NULL);
+                if (mcc != 0) {
+                    last_mcc = mcc;
+                    break;
+                }
+                if (++i > 10) {
+                    break;
+                }
+                MSG_PRINTF(LOG_INFO, "=====> i : %d\n", i);
+                rt_os_sleep(4);
+            } else {
+                break;
+            }
+        }
+
+        MSG_PRINTF(LOG_INFO, "bootstrap mcc :%d\n", last_mcc);
+        bootstrap_select_profile(last_mcc, apn, mcc_mnc, profile_buffer, &profile_len);
         rt_qmi_modify_profile(1, 0, 0, apn, mcc_mnc);
         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer, profile_len);
         msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_START_NETWORK_DETECTION, NULL, 0);

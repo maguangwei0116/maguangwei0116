@@ -464,6 +464,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         for (i = 0; i < ARRAY_SIZE(g_rt_plmn); ++i) {
             if (mcc == g_rt_plmn[i].mcc) {
                 hexstring2bytes(g_rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
+                MSG_PRINTF(LOG_INFO, "selected_rplmn : %s\n", g_rt_plmn[i].rplmn);
                 bootstrap_request->tbhRequest.rplmn = OCTET_STRING_new_fromBuf(
                     &asn_DEF_TBHRequest, bytes, length);
                 // bootstrap_request->tbhRequest.hplmn = OCTET_STRING_new_fromBuf(
