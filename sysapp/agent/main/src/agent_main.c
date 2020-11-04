@@ -318,7 +318,7 @@ static int32_t agent_init_call(void)
         ret = g_init_objs[i].init(g_init_objs[i].arg);
         if (rt_os_strcmp("init_log_file", g_init_objs[i].name)) {
             if (0 == ret) {
-                MSG_PRINTF(LOG_DBG, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
+                MSG_PRINTF(LOG_INFO, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
             } else {
                 MSG_PRINTF(LOG_ERR, "%-30s[%s]\r\n", g_init_objs[i].name, !ret ? " OK " : "FAIL");
             }

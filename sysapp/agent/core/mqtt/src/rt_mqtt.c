@@ -384,8 +384,8 @@ static rt_bool mqtt_connect(MQTTClient* client, MQTTClient_connectOptions* opts)
 {
     int32_t c = 0;
 
-    MSG_PRINTF(LOG_DBG, "Connect mqtt broker [%s] !\n", opts->serverURIs);
-    MSG_PRINTF(LOG_DBG, "Connect mqtt ssl %p !\n", opts->ssl);
+    // MSG_PRINTF(LOG_DBG, "Connect mqtt broker [%s] !\n", opts->serverURIs);
+    // MSG_PRINTF(LOG_DBG, "Connect mqtt ssl %p !\n", opts->ssl);
     if ((c = MQTTClient_connect(*client, opts)) == 0) {
         g_mqtt_param.mqtt_conn_state    = RT_TRUE;
         g_mqtt_param.mqtt_flag          = RT_TRUE;
