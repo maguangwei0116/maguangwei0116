@@ -118,6 +118,9 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20FASG" ]] ; \
 				then \
 					module="EC20FASG"; \
+				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20FILG" ]] ; \
+				then \
+					module="EC20FILG"; \
 				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20HDLG" ]] ; \
 				then \
 					module="EC20HDLG"; \
