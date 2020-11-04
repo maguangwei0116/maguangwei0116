@@ -27,6 +27,10 @@
 #define MAX_BAD_DSI_CALL_CNT        10      
 #define RT_FORCE_DSI_EVT_NET_NO_NET 99          // others see dsi_net_evt_t at dsi_netctrl.h
 
+#define RT_LOCAL_NETWORK            1
+#define RT_ROAM_NETWORK             5
+#define RT_REFUSE_NETWORK           3
+
 #define CHINA_DNS                   "114.114.114.114"
 #define GOOGLE_NDS                  "8.8.8.8"
 
@@ -319,11 +323,13 @@ static rt_bool dial_up_get_regist_state(void)
 {
     int32_t regist_state = 0;
     int32_t ret;
-    
+
     ret = rt_qmi_get_register_state(&regist_state);
-    if (regist_state == 1) {
+    if (regist_state == RT_LOCAL_NETWORK || regist_state == RT_ROAM_NETWORK) {
         MSG_PRINTF(LOG_INFO, "regist state:%d\n", regist_state);
         return RT_TRUE;
+    } else if (regist_state == RT_REFUSE_NETWORK) {
+        MSG_PRINTF(LOG_INFO, "regist state:%d\n", regist_state);
     }
     MSG_PRINTF(LOG_DBG, "regist state:%d, ret=%d\n", regist_state, ret);
 
@@ -570,8 +576,9 @@ static int32_t dial_up_state_mechine_start(dsi_call_info_t *dsi_net_hndl)
     while (1) {
         switch (dsi_net_hndl->call_state) {
             case DSI_STATE_CALL_IDLE:
-                MSG_PRINTF(LOG_INFO, "Start dial up ...\r\n");
+                MSG_PRINTF(LOG_INFO, "Start searching ...\r\n");
                 if (dial_up_check_register_state(CHK_REG_STATE_INTERVAL, MAX_CHK_REG_STATE_CNT) == RT_SUCCESS) {
+                    MSG_PRINTF(LOG_INFO, "Start dial up ...\r\n");
                     dial_up_state_changed(dsi_net_hndl, DSI_STATE_CALL_CONNECTING);
                 } else {
                     #if 0
