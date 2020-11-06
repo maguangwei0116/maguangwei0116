@@ -68,6 +68,7 @@ typedef struct PROFILE_SIM_INFO {
 } profile_sim_info_t;
 
 typedef enum SWITCH_CARD_TYPE {
+    SWITCH_TO_XUICC                 = 0,
     SWITCH_TO_SIM                   = 1,
     SWITCH_TO_ESIM                  = 2,
 } switch_card_type_e;

@@ -510,7 +510,14 @@ int32_t card_switch_type(cJSON *switchparams)
 
     card_type = cJSON_GetObjectItem(switchparams, "type");
     if (card_type != NULL) {
-        if (card_type->valueint == SWITCH_TO_SIM) {
+        if (card_type->valueint == SWITCH_TO_XUICC) {
+            if (g_p_info.type == PROFILE_TYPE_SIM) {
+                MSG_PRINTF(LOG_INFO, "Update message received : Switch to xUICC\n");
+                send_buf[0] = SIM_NO_INTERNET;
+                card_change_profile(send_buf);
+                return RT_SUCCESS;
+            }
+        } else if (card_type->valueint == SWITCH_TO_SIM) {
             if (g_p_info.type != PROFILE_TYPE_SIM && g_p_info.sim_info.state == SIM_READY) {
                 MSG_PRINTF(LOG_INFO, "Update message received : Switch to SIM\n");
                 send_buf[0] = PROVISONING_NO_INTERNET;
@@ -524,10 +531,6 @@ int32_t card_switch_type(cJSON *switchparams)
         }
     } else {
         MSG_PRINTF(LOG_WARN, "Switch card type content is NULL !\n");
-    }
-
-    if (g_p_info.sim_info.state == SIM_ERROR) {
-        return RT_NO_SIM;
     }
 
     return state;
