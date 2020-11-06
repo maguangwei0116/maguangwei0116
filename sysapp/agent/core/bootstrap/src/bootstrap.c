@@ -112,18 +112,20 @@ static void bootstrap_local_select_profile(void)
                 if (mcc != 0) {
                     last_mcc = mcc;
                     break;
+                } else {
+                    if (++i > 10) {
+                        MSG_PRINTF(LOG_ERR, "QMI get mcc fail, Unable to configure rplmn\n");
+                        break;
+                    }
+                    MSG_PRINTF(LOG_INFO, "=====> i : %d\n", i);
+                    rt_os_sleep(5);
                 }
-                if (++i > 10) {
-                    break;
-                }
-                MSG_PRINTF(LOG_INFO, "=====> i : %d\n", i);
-                rt_os_sleep(4);
             } else {
                 break;
             }
         }
 
-        MSG_PRINTF(LOG_INFO, "bootstrap mcc :%d\n", last_mcc);
+        MSG_PRINTF(LOG_INFO, "provsioning mcc :%d\n", last_mcc);
         bootstrap_select_profile(last_mcc, apn, mcc_mnc, profile_buffer, &profile_len);
         rt_qmi_modify_profile(1, 0, 0, apn, mcc_mnc);
         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer, profile_len);
