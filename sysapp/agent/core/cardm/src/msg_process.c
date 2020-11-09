@@ -504,8 +504,8 @@ rt_bool rt_get_devicekey_status(void)
     uint8_t  inspect_file[INSPECT_FILE_SIZE] = {0};
     snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
 
-    if (project_mode == PROJECT_SC) {
-        MSG_PRINTF(LOG_DBG, "SC project, do not verify DeviceKey, mode : %d\n", project_mode);
+    if (project_mode == PROJECT_EV) {
+        MSG_PRINTF(LOG_DBG, "Enterprise version, do not verify DeviceKey, mode : %d\n", project_mode);
         return RT_TRUE;
     }
 

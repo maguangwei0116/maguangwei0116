@@ -19,8 +19,8 @@ typedef enum MODE_TYPE {
 } mode_type_e;
 
 typedef enum PROJECT_MODE {
-    PROJECT_REDTEAREADY             = 0,
-    PROJECT_SC                      = 1,
+    PROJECT_SV                      = 0,
+    PROJECT_EV                      = 1,
 } proj_mode_e;
 
 typedef struct CONFIG_INFO {

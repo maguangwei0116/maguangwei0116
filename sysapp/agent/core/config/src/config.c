@@ -49,8 +49,8 @@
 #define ANNOTATION_SYMBOL                   '#'                     // ע�ͱ�ʶ��
 #define CONFIG_FILE_PATH                    "rt_config.ini"
 #define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // �ж��Ƿ�Ϊ�հ׷�
-#define PROJ_MODE_REDTEAREADY               "0"
-#define PROJ_MODE_SC                        "1"
+#define PROJ_MODE_SV                        "0"
+#define PROJ_MODE_EV                        "1"
 #define UICC_MODE_SIMF                      "0"
 #define UICC_MODE_eUICC                     "1"
 #define UICC_MODE_vUICC                     "2"
@@ -200,7 +200,7 @@ ITEM(INIT_PROFILE_TYPE,         config_init_pro_type,       INTEGER,        "2",
 ITEM(RPLMN_ENABLE,                  NULL,                   INTEGER,        "1",                            "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,             config_log_size,            INTEGER,        "1",                            "The max size of rt_log file (MB)"),
 ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "0",                            "The mode of UICC (0:SIM first  1:eUICC  2:vUICC  3:SIM only)"),
-ITEM(PROJ_MODE,                 config_proj_mode,           INTEGER,        "0",                            "The mode of Project (0:RedteaReady  1:SC)"),
+ITEM(PROJ_MODE,                 config_proj_mode,           INTEGER,        "0",                            "The mode of Project (0:Standard version  1:Enterprise version)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
 ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
@@ -210,7 +210,7 @@ ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG
 #endif
 ITEM(USAGE_ENABLE,              config_switch_value,        INTEGER,        "0",                            "Whether enable upload user traffic (0:disable  1:enable)"),
 ITEM(USAGE_FREQ,                config_usage_freq,          INTEGER,        "60",                           "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
-ITEM(CARD_FLOW_SWITCH,          config_card_flow_switch,    INTEGER,        "0",                            "The switch of seed card flow control(0:close 1:open)"),
+ITEM(CARD_FLOW_SWITCH,          config_card_flow_switch,    INTEGER,        "1",                            "The switch of seed card flow control(0:close 1:open)"),
 };
 
 static config_info_t g_config_info;
@@ -499,7 +499,7 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n",    local_config_get_data("RPLMN_ENABLE"));
     MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
     MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n",    local_config_get_data("UICC_MODE"));
-    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_REDTEAREADY) ? "RedteaReady" : "SC");
+    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_SV) ? "Standard version" : "Enterprise version");
     MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n",    local_config_get_data("MONITOR_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n",    local_config_get_data("AGENT_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n",    local_config_get_data("USAGE_ENABLE"));
@@ -567,7 +567,7 @@ int32_t config_update_uicc_mode(int32_t mode)
 int32_t config_update_proj_mode(int32_t mode)
 {
     const char *key = "PROJ_MODE";
-    const char *value = (mode == PROJECT_REDTEAREADY) ? PROJ_MODE_REDTEAREADY : PROJ_MODE_SC;
+    const char *value = (mode == PROJECT_SV) ? PROJ_MODE_SV : PROJ_MODE_EV;
     const char *old_value = NULL;
     int32_t pair_num = ARRAY_SIZE(g_config_items);
     config_item_t *items = g_config_items;

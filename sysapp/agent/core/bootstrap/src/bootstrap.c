@@ -117,8 +117,8 @@ static void bootstrap_local_select_profile(void)
                         MSG_PRINTF(LOG_ERR, "QMI get mcc fail, Unable to configure rplmn\n");
                         break;
                     }
-                    MSG_PRINTF(LOG_INFO, "=====> i : %d\n", i);
-                    rt_os_sleep(5);
+                    MSG_PRINTF(LOG_INFO, "count : %d, mcc : %d\n", i, mcc);
+                    rt_os_sleep(3);
                 }
             } else {
                 break;

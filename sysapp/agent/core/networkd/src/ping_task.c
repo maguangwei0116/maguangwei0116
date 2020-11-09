@@ -355,7 +355,7 @@ int32_t init_ping_task(void *arg)
     g_sim_cpin      = (profile_sim_cpin_e *)&(((public_value_list_t *)arg)->card_info->sim_info.state);
     g_operation_num = (((public_value_list_t *)arg)->card_info->operational_num);
 
-    if (*g_project_mode == PROJECT_REDTEAREADY && (*g_sim_mode == MODE_TYPE_SIM_FIRST || *g_sim_mode == MODE_TYPE_VUICC)) {
+    if (*g_project_mode == PROJECT_SV && (*g_sim_mode == MODE_TYPE_SIM_FIRST || *g_sim_mode == MODE_TYPE_VUICC)) {
         ret = rt_create_task(&task_id, (void *)network_ping_task, NULL);
         if (ret != RT_SUCCESS) {
             MSG_PRINTF(LOG_ERR, "create task fail\n");
@@ -364,6 +364,8 @@ int32_t init_ping_task(void *arg)
         return RT_SUCCESS;
     }
 
-    MSG_PRINTF(LOG_INFO, "Not open ping task ....  ===> Project : %s, mode : %d\n", (*g_project_mode == PROJECT_REDTEAREADY) ? "RedteaReady" : "SC", *g_sim_mode);
+    MSG_PRINTF(LOG_INFO, "Not open ping task ....  ===> Project : %s, mode : %d\n", \
+        (*g_project_mode == PROJECT_SV) ? "Standard version" : "Enterprise version", *g_sim_mode);
+
     return RT_ERROR;
 }
