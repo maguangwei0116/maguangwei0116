@@ -32,7 +32,7 @@ static const char *g_upload_api                 = "/api/v2/report";
 static const profile_type_e *g_last_card_type   = NULL;
 const char *g_push_channel                      = NULL;
 const devicde_info_t *g_upload_device_info      = NULL;
-const card_info_t *g_upload_card_info           = NULL;
+card_info_t *g_upload_card_info                 = NULL;
 const target_versions_t *g_upload_ver_info      = NULL;
 static rt_bool g_upload_network                 = RT_FALSE;
 static rt_bool g_upload_mqtt                    = RT_FALSE;
@@ -479,7 +479,7 @@ int32_t init_upload(void *arg)
     g_upload_device_info    = (const devicde_info_t *)public_value_list->device_info;
     g_push_channel          = (const char *)public_value_list->push_channel;
     g_upload_eid            = (const char *)public_value_list->card_info->eid;
-    g_upload_card_info      = (const card_info_t *)public_value_list->card_info->info;
+    g_upload_card_info      = (card_info_t *)public_value_list->card_info->info;
     g_upload_deviceid       = (const char *)g_upload_device_info->device_id;
     g_upload_addr           = (const char *)public_value_list->config_info->oti_addr;
     g_upload_port           = public_value_list->config_info->oti_port;

@@ -33,6 +33,7 @@
 
 #define DEFAULT_SINGLE_INTERVAL_TIME            10                                      // default interval time (seconds)
 #define MAX_WAIT_REGIST_TIME                    180
+#define RT_MCC_MINIMUM                          201
 
 /* define your interval time table, unit: seconds, max 2.1h */
 static const uint32_t g_time_table[]            = {10, 30, 90, 270, 840, 2520, 7560};
@@ -91,7 +92,6 @@ static void bootstrap_local_select_profile(void)
         char apn[128] = {0};
         uint8_t profile_buffer[1024] = {0};
         uint16_t profile_len = 0;
-        static int32_t last_mcc = 0;
 
         #if 0  // only for debug
         unsigned long cur_time = time(NULL);
@@ -106,11 +106,13 @@ static void bootstrap_local_select_profile(void)
         MSG_PRINTF(LOG_INFO, "<<< bootstrap select card (%d/%d) >>>\r\n", g_retry_times, g_max_retry_times);
         #endif
 
+        MSG_PRINTF(LOG_INFO, "g_public_value->card_info->mcc : %d\n", g_public_value->card_info->mcc);
+
         while (1) {
-            if (last_mcc == 0) {
+            if (g_public_value->card_info->mcc < RT_MCC_MINIMUM) {
                 rt_qmi_get_mcc_mnc(&mcc, NULL);
-                if (mcc != 0) {
-                    last_mcc = mcc;
+                if (mcc > RT_MCC_MINIMUM) {
+                    g_public_value->card_info->mcc = mcc;
                     break;
                 } else {
                     if (++i > 10) {
@@ -125,8 +127,8 @@ static void bootstrap_local_select_profile(void)
             }
         }
 
-        MSG_PRINTF(LOG_INFO, "provsioning mcc :%d\n", last_mcc);
-        bootstrap_select_profile(last_mcc, apn, mcc_mnc, profile_buffer, &profile_len);
+        MSG_PRINTF(LOG_INFO, "provsioning mcc :%d\n", g_public_value->card_info->mcc);
+        bootstrap_select_profile(g_public_value->card_info->mcc, apn, mcc_mnc, profile_buffer, &profile_len);
         rt_qmi_modify_profile(1, 0, 0, apn, mcc_mnc);
         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer, profile_len);
         msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_START_NETWORK_DETECTION, NULL, 0);

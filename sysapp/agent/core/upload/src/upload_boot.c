@@ -16,10 +16,11 @@
 #define RT_MCCMNC_LEN   5
 #define RT_ERR_MCCMNC   "00000"
 
+
 extern const devicde_info_t *g_upload_device_info;
-extern const card_info_t *g_upload_card_info;
 extern const target_versions_t *g_upload_ver_info;
 extern profile_sim_info_t *g_upload_sim_info;
+extern card_info_t *g_upload_card_info;
 
 static rt_bool device_key_check_memory(const void *buf, int32_t len, int32_t value)
 {
@@ -204,8 +205,8 @@ static void rt_get_network_info(char *mcc_mnc, int32_t mcc_mnc_size,
         snprintf(mcc_mnc, mcc_mnc_size, "%03d%02d", mcc_int, mnc_int);
         if (!rt_os_strncmp(mcc_mnc, RT_ERR_MCCMNC, RT_MCCMNC_LEN)) {
             MSG_PRINTF(LOG_INFO, "get mcc mnc fail, mcc_mnc : %s\n", mcc_mnc);
-            rt_os_sleep(1);
-            if (++j >= 3) {
+            rt_os_sleep(2);
+            if (++j >= 5) {
                 MSG_PRINTF(LOG_ERR, "get mcc mnc fail, will reboot !\n");
                 rt_os_reboot();
             }
@@ -213,6 +214,8 @@ static void rt_get_network_info(char *mcc_mnc, int32_t mcc_mnc_size,
         }
         break;
     }
+
+    g_upload_card_info->mcc = mcc_int;
 
     /* signal level: [1,5] */
     rt_get_cur_signal(dbm);

@@ -76,6 +76,7 @@ typedef enum SWITCH_CARD_TYPE {
 typedef struct CARD_INFO {
     profile_info_t                  info[THE_MAX_CARD_NUM];
     profile_sim_info_t              sim_info;
+    uint16_t                        mcc;
     uint8_t                         num;
     uint8_t                         operational_num;
     uint8_t                         eid[MAX_EID_LEN + 1];
