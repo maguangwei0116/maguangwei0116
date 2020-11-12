@@ -354,8 +354,10 @@ int32_t init_at_command(void *arg)
     /* install "UICC" at command */
     AT_CMD_INSTALL(uicc);
 
-    /* install "DeviceKey" at command */
-    AT_CMD_INSTALL(dkey);
+    if (g_p_value_list->config_info->proj_mode == PROJECT_SV) {
+        /* install "DeviceKey" at command */
+        AT_CMD_INSTALL(dkey);
+    }
 
     /* install "Update" at command */
     AT_CMD_INSTALL(update);
