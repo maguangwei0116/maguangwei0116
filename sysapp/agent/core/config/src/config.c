@@ -55,8 +55,10 @@
 #define UICC_MODE_eUICC                     "1"
 #define UICC_MODE_vUICC                     "2"
 #define UICC_MODE_SIMO                      "3"
+#define MAX_LOG_SIZE_VALUE                  "5"
 #define PROD_ENV_MODE                       0
 #define STAG_ENV_MODE                       1
+#define MAX_LOG_SIZE                        5
 
 #if 0 // @ref cJSON.h
 /* cJSON Types: */
@@ -466,8 +468,11 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     }
 
     size = msg_string_to_int(local_config_get_data("LOG_FILE_SIZE"));
-    if (size > 0) {
+    if (size > 0 && size <= MAX_LOG_SIZE) {
         infos->log_max_size = size * M_BYTES;
+    } else {
+        infos->log_max_size = MAX_LOG_SIZE * M_BYTES;
+        config_log_max_size();
     }
 
     infos->mbn_enable = msg_string_to_int(local_config_get_data("MBN_CONFIGURATION"));
@@ -530,6 +535,19 @@ int32_t init_config(void *arg)
     log_set_param(LOG_PRINTF_FILE, infos->agent_log_level, infos->log_max_size);
 
     config_debug_cur_param(pair_num, items);
+
+    return RT_SUCCESS;
+}
+
+int32_t config_log_max_size()
+{
+    const char *key = "LOG_FILE_SIZE";
+    int32_t pair_num = ARRAY_SIZE(g_config_items);
+    config_item_t *items = g_config_items;
+
+    config_set_data(key, MAX_LOG_SIZE_VALUE, pair_num, items);
+    config_write_file(CONFIG_FILE_PATH, pair_num, items);
+    rt_os_sync();
 
     return RT_SUCCESS;
 }
