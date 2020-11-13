@@ -46,33 +46,33 @@
 
 #define AT_CFG_SV                       "SV"
 #define AT_CFG_EV                       "EV"
+#define AT_CFG_PROJ_LEN                 2
 
 #define AT_CFG_VUICC                    "vUICC"
 #define AT_CFG_EUICC                    "eUICC"
 #define AT_CFG_SIMF                     "SIMF"      // SIM First
 #define AT_CFG_SIMO                     "SIMO"      // SIM Only
+#define AT_CFG_SIMF_LEN                 4
+#define AT_CFG_UICC_LEN                 5
+
 
 #define RT_ENV_CONFIG                   "Config env"
 #define RT_ENV_TIPS                     "Current env"
 #define AT_CFG_PROD_ENV                 "prod"
 #define AT_CFG_STAG_ENV                 "stag"
+#define AT_CFG_ENV_LEN                  4
 
 #define AT_SWITCH_SIM                   "SIM"
-#define AT_SWITCH_VSIM                  "VSIM"
-
-#define AT_CFG_PROJ_LEN                 2
+#define AT_SWITCH_VSIM                  "SOFTSIM"
 #define AT_CFG_SIM_LEN                  3
-#define AT_CFG_VSIM_LEN                 4
-#define AT_CFG_ENV_LEN                  4
-#define AT_CFG_SIMF_LEN                 4
-#define AT_CFG_UICC_LEN                 5
-
-#define PROD_ENV_MODE                   0
-#define STAG_ENV_MODE                   1
+#define AT_CFG_SOFTSIM_LEN              7
 
 #define OTA_UPGRADE_OEMAPP_UBI          "oemapp.ubi"
 #define OTA_UPGRADE_USR_AGENT           CFG_AGENT_RUN_PATH"rt_agent"
 #define RT_DEFAULT_ICCID                "FFFFFFFFFFFFFFFFFFFF"
+
+#define PROD_ENV_MODE                   0
+#define STAG_ENV_MODE                   1
 
 /*
 handle function name: xxx_at_cmd_handle
@@ -217,7 +217,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                         snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Switch failed, SIM is using");
                         ret = RT_SUCCESS;
                     }
-                } else if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_VSIM, AT_CFG_VSIM_LEN)) {   // Switch to vUICC
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_VSIM, AT_CFG_SOFTSIM_LEN)) {   // Switch to vUICC
                     if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                         send_buf[0] = SIM_NO_INTERNET;
                         snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to xUICC");
@@ -351,13 +351,13 @@ int32_t init_at_command(void *arg)
 {
     g_p_value_list = ((public_value_list_t *)arg);
 
-    /* install "UICC" at command */
-    AT_CMD_INSTALL(uicc);
-
     if (g_p_value_list->config_info->proj_mode == PROJECT_SV) {
         /* install "DeviceKey" at command */
         AT_CMD_INSTALL(dkey);
     }
+
+    /* install "UICC" at command */
+    AT_CMD_INSTALL(uicc);
 
     /* install "Update" at command */
     AT_CMD_INSTALL(update);
