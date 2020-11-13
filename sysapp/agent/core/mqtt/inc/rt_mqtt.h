@@ -22,6 +22,7 @@
 #define MAX_CONNECT_SERVER_TIMER        3
 #define MQTT_PUBLISH_NO_YUNBA           -88
 #define MQTT_PUBLISH_NO_CONNECTED       -89
+#define MQTT_CONNECT_EMQ_FAIL           -90
 
 /* switch for EMQ MQTTS */
 // #define CFG_DOWN_EMQ_MQTTS_ENABLE                0

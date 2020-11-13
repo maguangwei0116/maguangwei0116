@@ -26,6 +26,8 @@
 
 #define MQTT_KEEP_ALIVE_INTERVAL1       600 // seconds, about 10 mins, for provisioning
 
+#define DELAY_500MS                     500
+
 /*
 max wait time:
 MQTT_RECONNECT_MAX_CNT * ((30 seconds, connect timeout) * (retry 3 times) * (server addr type 3 cnt)) ~= 15 mins
@@ -184,29 +186,31 @@ static int32_t mqtt_client_pulish_msg(MQTTClient handle, int32_t qos, const char
     pubmsg.qos          = qos;
     pubmsg.retained     = 0;
 
-    #if 1
+#if 1
     do {
         rc1 = MQTTClient_publishMessage(handle, topic, &pubmsg, &token);
-        MSG_PRINTF(LOG_TRACE, "Waiting for up to %dS to publish (%d bytes): \r\n%s\r\n",
-                (int32_t)(MQTT_PUBLISH_TIMEOUT/1000), data_len, (const char *)data);
+        MSG_PRINTF(LOG_TRACE, "Waiting for up to %dS to publish (%d bytes): \r\n%s\r\n", (int32_t)(MQTT_PUBLISH_TIMEOUT/1000), data_len, (const char *)data);
         MSG_PRINTF(LOG_TRACE, "on topic [%s] ClientID: [%s] rc1=%d, token=%lld\r\n", topic, g_mqtt_info.device_id, rc1, token);
+
         rc2 = MQTTClient_waitForCompletion(handle, token, MQTT_PUBLISH_TIMEOUT);
         MSG_PRINTF(LOG_TRACE, "Message with delivery token %lld delivered, rc2=%d\n", token, rc2);
+
         if (rc1 != 0 || rc2 != 0) {
             MSG_PRINTF(LOG_WARN, "MQTT publish msg fail !\r\n");
             rc1 = RT_ERROR;
             goto exit_entry;
         }
+
         MSG_PRINTF(LOG_INFO, "MQTT publish msg ok !\r\n");
     } while(0);
-    #else
+#else
     deliveredtoken = 0;
     rc = MQTTClient_publishMessage(client, topic, &pubmsg, &token);
     MSG_PRINTF(LOG_INFO, "Waiting for up to %d seconds for publication of %s\n"
                 "on topic %s for client with ClientID: %s, rc=%d\n",
                 (int)(TIMEOUT/1000), (const char *)data, topic, (const char *)client_id, rc);
     while(deliveredtoken != token);
-    #endif
+#endif
 
     rc1 = RT_SUCCESS;
 
@@ -219,13 +223,18 @@ static int32_t mqtt_pulish(const char* topic, const void* data, int32_t data_len
 {
     int32_t ret;
 
-    /* check mqtt connected state */
-    if (g_mqtt_param.mqtt_flag != RT_TRUE) {
-        return MQTT_PUBLISH_NO_CONNECTED;
+    while (1) {
+        if (g_mqtt_param.opts.last_connect_status == MQTT_CONNECT_EMQ_ERROR) {
+            MSG_PRINTF(LOG_ERR, "mqtt connect emq error ...\n");
+            return MQTT_CONNECT_EMQ_FAIL;
+        } else {
+            if (g_mqtt_param.mqtt_conn_state == RT_TRUE) {
+                ret = mqtt_client_pulish_msg(g_mqtt_param.client, g_mqtt_param.opts.qos, topic, data, data_len);
+                return ret;
+            }
+        }
+        rt_os_msleep(DELAY_500MS);
     }
-
-    ret = mqtt_client_pulish_msg(g_mqtt_param.client, g_mqtt_param.opts.qos, topic, data, data_len);
-    //MSG_PRINTF(LOG_WARN, "mqtt pulish (%d bytes): %s, ret=%d\r\n", data_len, (const char*)data, ret);
 
     return ret;
 }
@@ -405,12 +414,12 @@ static rt_bool mqtt_disconnect(MQTTClient* client, int32_t *wait_cnt)
 {
     MSG_PRINTF(LOG_WARN, "MQTTClient disconnect\n");
     MQTTClient_disconnect(*client, 0);
-    g_mqtt_param.mqtt_flag      = RT_FALSE;
-    g_mqtt_param.mqtt_conn_state= RT_FALSE;
-    g_mqtt_param.lost_flag      = RT_FALSE;
-    g_mqtt_param.subscribe_flag = 0;  // reset subscribe flag
+    g_mqtt_param.mqtt_flag              = RT_FALSE;
+    g_mqtt_param.mqtt_conn_state        = RT_FALSE;
+    g_mqtt_param.lost_flag              = RT_FALSE;
+    g_mqtt_param.subscribe_flag         = 0;  // reset subscribe flag
     if (wait_cnt) {
-        *wait_cnt               = 0;  // reset wait counter
+        *wait_cnt                       = 0;  // reset wait counter
     }
     msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_DISCONNECTED, NULL, 0);
     MSG_PRINTF(LOG_INFO, "MQTTClient disconnect msg throw out !\n");

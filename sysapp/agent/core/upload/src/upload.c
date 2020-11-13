@@ -16,7 +16,7 @@
 #ifndef MAX_URL_LEN
 #define MAX_URL_LEN                         128
 #endif
-#define MQTT_UPLOAD_SWITCH_STATE            0       // turn off now !!!
+#define MQTT_UPLOAD_SWITCH_STATE            1       // turn off now !!!
 
 #define HTTP_POST "POST %s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n"\
     "Content-Type:application/json;charset=UTF-8\r\n"\
@@ -149,10 +149,7 @@ static int32_t upload_send_final_request(const char *data, int32_t data_len)
     int32_t ret = RT_ERROR;
 
 #if (MQTT_UPLOAD_SWITCH_STATE)
-    /* send with MQTT frist */
-    if (g_upload_mqtt == RT_TRUE) {
-        ret = upload_send_mqtt_request(data, data_len);
-    }
+    ret = upload_send_mqtt_request(data, data_len);
 #endif
 
     /* send with http when MQTT upload fail, or MQTT disconnected */
@@ -172,9 +169,8 @@ int32_t upload_event_final_report(void *buffer, int32_t len)
         upload_wait_network_connected();
         MSG_PRINTF(LOG_DBG, "begin to send final report ...\r\n");
         ret = upload_send_final_request(buffer, len);
-        if (HTTP_SOCKET_CONNECT_ERROR == ret || \
-                        HTTP_SOCKET_SEND_ERROR == ret || \
-                        HTTP_SOCKET_RECV_ERROR == ret) {
+
+        if (HTTP_SOCKET_CONNECT_ERROR == ret || HTTP_SOCKET_SEND_ERROR == ret || HTTP_SOCKET_RECV_ERROR == ret) {
             MSG_PRINTF(LOG_WARN, "upload event final report fail, ret=%d, retry i=%d\r\n", ret, i);
             rt_os_sleep(3);
             continue;

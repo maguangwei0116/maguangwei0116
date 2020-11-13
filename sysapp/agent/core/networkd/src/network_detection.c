@@ -155,7 +155,7 @@ static void network_detection_task(void *arg)
     while (1) {
         /* init dial up */
         ret = dial_up_init(&dsi_net_hndl);
-        sleep(3);
+        rt_os_sleep(3);
 
         if (ret != RT_SUCCESS) {
             if (++cnt < MAX_INIT_RETRY_CNT) {
