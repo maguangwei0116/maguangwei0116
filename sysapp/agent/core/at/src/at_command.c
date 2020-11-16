@@ -152,7 +152,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
 
                 if (g_p_value_list->config_info->proj_mode == PROJECT_SV) {
-                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Prohibit configuration");
+                    snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Prohibit configuration");
                     return RT_SUCCESS;
                 }
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
@@ -176,7 +176,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 MSG_PRINTF(LOG_INFO, "config uicc type: %s\n", &cmd[5]);
 
                 if (g_p_value_list->config_info->proj_mode == PROJECT_SV) {
-                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Prohibit configuration");
+                    snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Prohibit configuration");
                     return RT_SUCCESS;
                 }
 
@@ -197,34 +197,34 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 MSG_PRINTF(LOG_INFO, "Switch to %s\n", &cmd[5]);
                 devicekey_status = rt_get_devicekey_status();
                 if (devicekey_status == RT_FALSE) {
-                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "DeviceKey verification failed");
+                    snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "DeviceKey verification failed");
                     return RT_SUCCESS;
                 } else if (g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_ONLY) {
-                    snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "SIM Only prohubit switch card");
+                    snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "SIM Only prohubit switch card");
                     return RT_SUCCESS;
                 }
 
                 if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_SIM, AT_CFG_SIM_LEN)) {           // Switch to SIM
                     if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM && g_p_value_list->card_info->sim_info.state == SIM_READY) {
                         send_buf[0] = PROVISONING_NO_INTERNET;
-                        snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "xUICC switch to SIM");
+                        snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "xUICC switch to SIM");
                         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
                         ret = RT_SUCCESS;
                     } else if (g_p_value_list->card_info->sim_info.state == SIM_ERROR) {
-                        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Switch failed, SIM not exist");
+                        snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Switch failed, SIM not exist");
                         ret = RT_SUCCESS;
                     } else if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
-                        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Switch failed, SIM is using");
+                        snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Switch failed, SIM is using");
                         ret = RT_SUCCESS;
                     }
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_VSIM, AT_CFG_SOFTSIM_LEN)) {   // Switch to vUICC
                     if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                         send_buf[0] = SIM_NO_INTERNET;
-                        snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to xUICC");
+                        snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to xUICC");
                         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
                         ret = RT_SUCCESS;
                     } else {
-                        snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Switch failed, xUICC is using");
+                        snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Switch failed, xUICC is using");
                         ret = RT_SUCCESS;
                     }
                 }
@@ -244,16 +244,16 @@ static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     if (*cmd == AT_CONTENT_DELIMITER) {
         ret = config_update_device_key(&cmd[1]);
         if (ret == RT_TRUE) {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Welcome to RedteaReady!");
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Welcome to RedteaReady!");
         } else if (ret == RT_FALSE) {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Please enter the correct device key!");
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Please enter the correct device key!");
         }
     } else {
         devicekey_status = rt_get_devicekey_status();
         if (devicekey_status == RT_TRUE) {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Verification successed!");
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Verification successed!");
         } else {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Verification failed!");
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Verification failed!");
         }
     }
 
@@ -283,7 +283,7 @@ static int32_t update_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             linux_delete_file(OTA_UPGRADE_USR_AGENT);  // must delete agent to create a new one !!!
             ret = ubi_update((const char *)ubi_abs_file);
             if (ret == RT_SUCCESS) {
-                snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Update successed!");
+                snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Update successed!");
             }
         } else {
             MSG_PRINTF(LOG_ERR, "ubi file verify fail\n");
@@ -307,17 +307,17 @@ static int32_t env_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             ret = config_update_env_mode(STAG_ENV_MODE);
         }
         if (ret == RT_SUCCESS) {
-            snprintf(rsp, len, "%c%s : %s", AT_CONTENT_DELIMITER, RT_ENV_CONFIG, &cmd[1]);
+            snprintf(rsp, len, "%c\"%s : %s\"", AT_CONTENT_DELIMITER, RT_ENV_CONFIG, &cmd[1]);
         }
     } else {
         if(!strcmp(g_p_value_list->config_info->oti_addr, AT_PROD_OTI_ADDR)) {
-            snprintf(rsp, len, "%c%s : %s", AT_CONTENT_DELIMITER, RT_ENV_TIPS, "prod");
+            snprintf(rsp, len, "%c\"%s : %s\"", AT_CONTENT_DELIMITER, RT_ENV_TIPS, "Prod");
         } else if (!strcmp(g_p_value_list->config_info->oti_addr, AT_STAG_OTI_ADDR)) {
-            snprintf(rsp, len, "%c%s : %s", AT_CONTENT_DELIMITER, RT_ENV_TIPS, "stag");
+            snprintf(rsp, len, "%c\"%s : %s\"", AT_CONTENT_DELIMITER, RT_ENV_TIPS, "Stag");
         } else if (!strcmp(g_p_value_list->config_info->oti_addr, AT_QA_OTI_ADDR)) {
-            snprintf(rsp, len, "%c%s : %s", AT_CONTENT_DELIMITER, RT_ENV_TIPS, "qa");
+            snprintf(rsp, len, "%c\"%s : %s\"", AT_CONTENT_DELIMITER, RT_ENV_TIPS, "QA");
         } else {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, "Unknow Environment");
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Unknow Environment");
         }
         ret = RT_SUCCESS;
     }
@@ -337,7 +337,7 @@ static int32_t option_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             ret = config_update_proj_mode(PROJECT_EV);
         }
         if (ret == RT_SUCCESS) {
-            snprintf(rsp, len, "%c%s", AT_CONTENT_DELIMITER, &cmd[1]);
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, &cmd[1]);
         }
     } else {
         snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, (g_p_value_list->config_info->proj_mode == PROJECT_SV) ? "Standard version" : "Enterprise version");
