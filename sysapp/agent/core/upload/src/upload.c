@@ -16,7 +16,7 @@
 #ifndef MAX_URL_LEN
 #define MAX_URL_LEN                         128
 #endif
-#define MQTT_UPLOAD_SWITCH_STATE            1       // turn off now !!!
+#define MQTT_UPLOAD_SWITCH_STATE            0       // turn off now !!!
 
 #define HTTP_POST "POST %s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n"\
     "Content-Type:application/json;charset=UTF-8\r\n"\
