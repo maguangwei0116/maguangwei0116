@@ -679,12 +679,6 @@ static void mqtt_client_state_mechine(void)
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
                         reconnect_cnt = 0;
-#ifndef CFG_PLATFORM_ANDROID
-                        if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
-                            // network_force_down();
-                            g_mqtt_param.network_state = NETWORK_DISCONNECTED;
-                        }
-#endif
                     }
                     delay_s = 3;
                 }
@@ -712,12 +706,6 @@ static void mqtt_client_state_mechine(void)
                     if (++reconnect_cnt >= MQTT_RECONNECT_MAX_CNT) {
                         mqtt_client_state_changed(MQTT_DISCONNECTED);
                         reconnect_cnt = 0;
-#ifndef CFG_PLATFORM_ANDROID
-                        if (g_mqtt_param.network_state == NETWORK_CONNECTED) {
-                            // network_force_down();
-                            g_mqtt_param.network_state = NETWORK_DISCONNECTED;
-                        }
-#endif
                     }
                     delay_s = 3;
                 }
