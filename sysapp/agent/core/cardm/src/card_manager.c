@@ -507,11 +507,13 @@ int32_t card_switch_type(cJSON *switchparams)
     cJSON *card_type = NULL;
     int32_t state = RT_ERROR;
     uint8_t send_buf[1] = {0};
+    rt_bool devicekey_status = RT_FALSE;
 
     card_type = cJSON_GetObjectItem(switchparams, "type");
     if (card_type != NULL) {
         if (card_type->valueint == SWITCH_TO_XUICC) {
-            if (g_p_info.type == PROFILE_TYPE_SIM) {
+            devicekey_status = rt_get_devicekey_status();
+            if (g_p_info.type == PROFILE_TYPE_SIM && devicekey_status == RT_TRUE) {
                 MSG_PRINTF(LOG_INFO, "Update message received : Switch to xUICC\n");
                 send_buf[0] = SIM_NO_INTERNET;
                 card_change_profile(send_buf);
