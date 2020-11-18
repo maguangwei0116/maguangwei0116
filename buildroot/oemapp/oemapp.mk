@@ -112,19 +112,19 @@ define CREATE_OEMAPP_SOFTSIM_RELEASE
 			if [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "quectel" ]] ; \
 			then \
 				release_oemapp_title+="Q"; \
-				if [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20FAG" ]] ; \
+				if [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "ec20fag" ]] ; \
 				then \
 					module="EC20FAG"; \
-				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20FASG" ]] ; \
+				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "ec20fasg" ]] ; \
 				then \
 					module="EC20FASG"; \
-				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20FILG" ]] ; \
+				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "ec20filg" ]] ; \
 				then \
 					module="EC20FILG"; \
-				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EC20HDLG" ]] ; \
+				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "ec20hdlg" ]] ; \
 				then \
 					module="EC20HDLG"; \
-				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "EG25GB" ]] ; \
+				elif [[ "$(RELEASE_OEMAPP_SOFTWARE_NAME)" =~ "eg25gb" ]] ; \
 				then \
 					module="EG25GB"; \
 				fi; \

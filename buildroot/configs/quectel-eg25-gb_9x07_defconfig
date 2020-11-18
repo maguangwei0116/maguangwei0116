@@ -7,7 +7,7 @@ BR2_HAVE_DOT_CONFIG=y
 #
 # Product Options
 #
-BR2_CFG_SOFTWARE_NAME="quectel-EG25GB"
+BR2_CFG_SOFTWARE_NAME="quectel-eg25gb"
 BR2_CFG_SYSTEM_NAME="linux"
 BR2_CFG_PRODUCT_NAME="euicc"
 BR2_CFG_AGENT_RUN_PATH="/usrdata/redtea/"
