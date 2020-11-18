@@ -66,6 +66,7 @@ static void flow_control_main(void)
 
             case FLOW_WAIT_ENABLE_STATE:
                 if (time == 1) {
+                    MSG_PRINTF(LOG_INFO, "Provisioning Enable ...\n");
                     network_update_switch(NETWORK_UPDATE_ENABLE);
                     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_UPDATE_SEED, NULL, 0);
                 } else if (time >= INITIAL_ENABLE_JUDGE_TIMES) {
@@ -86,6 +87,7 @@ static void flow_control_main(void)
                         time = 0;
                         num = 1;
                     } else {
+                        MSG_PRINTF(LOG_INFO, "Provisioning Disable ...\n");
                         network_update_switch(NETWORK_UPDATE_DISABLE);
                         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_DISABLE_EXIST_CARD, (void *)(g_p_info->iccid), rt_os_strlen(g_p_info->iccid));
                         num ++;
@@ -97,7 +99,7 @@ static void flow_control_main(void)
                 }
             break;
         }
-        if (g_p_info->type != PROFILE_TYPE_PROVISONING) {
+        if (g_p_info->type == PROFILE_TYPE_OPERATIONAL) {
             network_update_switch(NETWORK_UPDATE_ENABLE);
             time = 0;
         }
