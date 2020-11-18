@@ -92,7 +92,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     int32_t ret = RT_ERROR;
     int32_t ii = 0, tmp_len = 0, size = 0;
     uint8_t buf[1024] = {0};
-    int8_t send_buf[1] = {-1};
+    uint8_t send_buf[1] = {0};
     rt_bool devicekey_status = RT_FALSE;
 
     if (*cmd == AT_CONTENT_DELIMITER) {

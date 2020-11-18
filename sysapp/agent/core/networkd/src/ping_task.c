@@ -125,7 +125,7 @@ static int32_t rt_send_msg_card_status(void)
 {
     uint8_t send_buf[1] = {0};
 
-    if (*g_card_type == PROFILE_TYPE_PROVISONING) {
+    if (*g_card_type == PROFILE_TYPE_PROVISONING || *g_card_type == PROFILE_TYPE_TEST) {
         if (*g_sim_mode == MODE_TYPE_VUICC || *g_sim_cpin == SIM_ERROR) {
             MSG_PRINTF(LOG_DBG, "SIM mode : %d, SIM cpin : %d\n", *g_sim_mode, *g_sim_cpin);
             return RT_SUCCESS;

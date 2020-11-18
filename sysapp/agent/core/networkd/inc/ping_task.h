@@ -49,9 +49,9 @@
 #define RT_PROVISONING_IP           "23.91.101.68"
 
 typedef enum REDTEAREADY_CARD_STATUS_CMD {
-    SIM_NO_INTERNET                 = 0,
-    PROVISONING_NO_INTERNET,
-    OPERATIONAL_NO_INTERNET,
+    SIM_NO_INTERNET                 = 1,
+    PROVISONING_NO_INTERNET         = 2,
+    OPERATIONAL_NO_INTERNET         = 3,
 } redteaready_card_status_cmd_e;
 
 int32_t init_ping_task(void *arg);
