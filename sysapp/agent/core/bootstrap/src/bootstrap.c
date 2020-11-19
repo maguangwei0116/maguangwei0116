@@ -31,6 +31,7 @@
 #define SHARE_PROFILE                           "/oemapp/rt_share_profile.der"
 #endif
 
+#define RT_GET_MCC_MAX_TIMES                    10
 #define DEFAULT_SINGLE_INTERVAL_TIME            10                                      // default interval time (seconds)
 #define MAX_WAIT_REGIST_TIME                    180
 #define RT_MCC_MINIMUM                          201
@@ -115,7 +116,7 @@ static void bootstrap_local_select_profile(void)
                     g_public_value->card_info->mcc = mcc;
                     break;
                 } else {
-                    if (++i > 10) {
+                    if (++i > RT_GET_MCC_MAX_TIMES) {
                         MSG_PRINTF(LOG_ERR, "QMI get mcc fail, Unable to configure rplmn\n");
                         break;
                     }

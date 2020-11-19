@@ -30,7 +30,7 @@ int32_t init_device_info(void *arg)
     }
 
     info.imei[MAX_DEVICE_IMEI_LEN] = '\0';    
-    
+
     MD5Init(&ctx);
     MD5Update(&ctx, (uint8_t *)info.model, MAX_DEVICE_MODEL_LEN);
     MD5Update(&ctx, (uint8_t *)info.imei, MAX_DEVICE_IMEI_LEN);
@@ -45,7 +45,7 @@ int32_t init_device_info(void *arg)
     info.model[MAX_DEVICE_MODEL_LEN - 1] = '\0';
 
     MSG_PRINTF(LOG_INFO, "device_id:[%s] imei:[%s] model:[%s] sn:[%s]\n", info.device_id, info.imei, info.model, info.sn);
-    
+
     ((public_value_list_t *)arg)->device_info = &info;
 
     return RT_SUCCESS;

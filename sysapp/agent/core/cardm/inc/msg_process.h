@@ -58,6 +58,7 @@ int32_t init_msg_process(void *arg, void *proxy_addr, int32_t project);
 int32_t msg_set_apn(const char *iccid);
 int32_t msg_analyse_apn(cJSON *command_content, uint8_t *iccid);
 int32_t msg_apnlist_handler(cJSON *apnparams_list);
+rt_bool rt_get_device_key_status(void);
 int32_t config_update_device_key(const char *devicekey);
 int32_t msg_analyse_strategy(cJSON *command_content);
 rt_bool inspect_device_key(const char *file_name);

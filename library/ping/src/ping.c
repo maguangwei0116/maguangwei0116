@@ -190,16 +190,9 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
 
                 if(read_length >= (sizeof(ip_header) + sizeof(icmp_header) + RT_DATA_SIZE)) {
                     double tmp_time = get_time_interval(&start, &end);
-
-                    // MSG_PRINTF(LOG_DBG, "%ld bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n",
-                    //     read_length, domain, inet_ntoa(from.sin_addr), recv_icmp_header->seq / 256,
-                    //     ip_ttl, tmp_time);
-
                     recv_count ++;
                     time_sum += tmp_time;
                     time_interval[i] = tmp_time;
-
-                    // MSG_PRINTF(LOG_INFO, "time_sum is %lf\n", time_sum);
                     MSG_PRINTF(LOG_DBG, "time_interval[%d] is %lf\n", i, time_interval[i]);
                 }
 

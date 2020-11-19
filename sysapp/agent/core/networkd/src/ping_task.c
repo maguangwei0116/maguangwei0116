@@ -201,7 +201,7 @@ static void network_ping_task(void *arg)
     int32_t network_level;
     int32_t strategy_num = NULL;
     uint8_t tmp_buffer[RT_STRATEGY_LIST_LEN + 1] = {0};
-    rt_bool devicekey_status = RT_FALSE;
+    rt_bool device_key_status = RT_FALSE;
     cJSON *enabled = NULL;
     cJSON *interval = NULL;
     cJSON *network_detect = NULL;
@@ -215,8 +215,8 @@ static void network_ping_task(void *arg)
     rt_os_sleep(RT_INIT_TIME);
 
     while (1) {
-        devicekey_status = rt_get_devicekey_status();
-        if (devicekey_status == RT_FALSE) {
+        device_key_status = rt_get_device_key_status();
+        if (device_key_status == RT_FALSE) {
             rt_os_sleep(RT_DEVICE_TIME);
             continue;
         }

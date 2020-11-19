@@ -89,10 +89,10 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     cJSON *content = NULL;
     cJSON *content_d = NULL;
     cJSON *properties = NULL;
-    cJSON *switchparams= NULL;
+    cJSON *switch_params= NULL;
     cJSON *card_type = NULL;
-    cJSON *apnparams_list = NULL;
-    cJSON *monitorstrategyparams = NULL;
+    cJSON *apn_params_list = NULL;
+    cJSON *monitor_strategy_params = NULL;
     uint8_t *content_s;
     int32_t state = RT_ERROR;
 
@@ -114,25 +114,25 @@ static int32_t update_handler(const void *in, const char *event, void **out)
     }
 
     // switchparams
-    switchparams = cJSON_GetObjectItem(properties, "switchparams");
-    if (switchparams != NULL) {
-        state = card_switch_type(switchparams);
+    switch_params = cJSON_GetObjectItem(properties, "switchparams");
+    if (switch_params != NULL) {
+        state = card_switch_type(switch_params);
     } else {
         MSG_PRINTF(LOG_DBG, "switchparams is NULL!\n");
     }
 
     // apnparams
-    apnparams_list = cJSON_GetObjectItem(properties, "apnparams");
-    if (apnparams_list != NULL) {
-        state = msg_apnlist_handler(apnparams_list);
+    apn_params_list = cJSON_GetObjectItem(properties, "apnparams");
+    if (apn_params_list != NULL) {
+        state = msg_apnlist_handler(apn_params_list);
     } else {
         MSG_PRINTF(LOG_DBG, "apnparams is NULL!\n");
     }
 
     // monitorstrategyparams
-    monitorstrategyparams = cJSON_GetObjectItem(properties, "monitorstrategyparams");
-    if (monitorstrategyparams != NULL) {
-        state = msg_analyse_strategy(monitorstrategyparams);
+    monitor_strategy_params = cJSON_GetObjectItem(properties, "monitorstrategyparams");
+    if (monitor_strategy_params != NULL) {
+        state = msg_analyse_strategy(monitor_strategy_params);
     } else {
         MSG_PRINTF(LOG_DBG, "monitor strategyparams is NULL!!\n");
     }

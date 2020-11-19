@@ -93,7 +93,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     int32_t ii = 0, tmp_len = 0, size = 0;
     uint8_t buf[1024] = {0};
     uint8_t send_buf[1] = {0};
-    rt_bool devicekey_status = RT_FALSE;
+    rt_bool device_key_status = RT_FALSE;
 
     if (*cmd == AT_CONTENT_DELIMITER) {
         if ((cmd[1] == AT_TYPE_GET_INFO) && (cmd[2] == AT_CONTENT_DELIMITER)) {
@@ -195,8 +195,8 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
             } else if (cmd[3] == AT_SWITCH_CARD) { // Switch card
                 MSG_PRINTF(LOG_INFO, "Switch to %s\n", &cmd[5]);
-                devicekey_status = rt_get_devicekey_status();
-                if (devicekey_status == RT_FALSE) {
+                device_key_status = rt_get_device_key_status();
+                if (device_key_status == RT_FALSE) {
                     snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "DeviceKey verification failed");
                     return RT_SUCCESS;
                 } else if (g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_ONLY) {
@@ -237,7 +237,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 {
     int32_t ret = RT_ERROR;
-    rt_bool devicekey_status = RT_FALSE;
+    rt_bool device_key_status = RT_FALSE;
 
     MSG_PRINTF(LOG_INFO, "devicekey cmd=%s\n", cmd);
 
@@ -249,8 +249,8 @@ static int32_t dkey_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
             snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Please enter the correct device key!");
         }
     } else {
-        devicekey_status = rt_get_devicekey_status();
-        if (devicekey_status == RT_TRUE) {
+        device_key_status = rt_get_device_key_status();
+        if (device_key_status == RT_TRUE) {
             snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Verification successed!");
         } else {
             snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Verification failed!");

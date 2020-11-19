@@ -38,7 +38,7 @@ static int32_t get_system_tf_free(uint32_t *free_byte)
     unsigned long long totalBlocks;
     unsigned long long freeDisk;
     const char *disk_path = CFG_AGENT_RUN_PATH;
-    
+
     if (linux_statfs(disk_path, &diskInfo) < 0) {
         MSG_PRINTF(LOG_ERR, "get free byte fail\r\n");
         return RT_ERROR;
@@ -91,7 +91,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 
     /* build http body */
     post_info = cJSON_CreateObject();
-    
+
     http_get_ip_addr(g_upgrade_addr, convert_ip);
 
     /* check target type frsit */
@@ -112,7 +112,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
     dw_struct.http_header.version = 0;
     dw_struct.http_header.record_size = 0;
-    
+
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
     if (out != NULL) {
         rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));

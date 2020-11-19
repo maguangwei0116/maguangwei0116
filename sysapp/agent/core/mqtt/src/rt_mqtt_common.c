@@ -144,7 +144,7 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
             MSG_PRINTF(LOG_DBG, "path json data error\n");
             break;
         }
-        
+
         MSG_PRINTF(LOG_TRACE, "json_data:%s\n",json_data);
         get_md5_string((const char *)json_data, md5_out);
         md5_out[MD5_STRING_LENGTH] = '\0';

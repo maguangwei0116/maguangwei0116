@@ -74,7 +74,12 @@ int32_t rt_write_card_type(int32_t offset, uint8_t *card_type, int32_t len)
 {
     int32_t ret;
     uint8_t init_buf[RT_CARD_TYPE_LEN + 1];
-    
+
+    if (len > RT_CARD_TYPE_LEN) {
+        MSG_PRINTF(LOG_WARN, "Data is too long, cannot be written ...\n");
+        return RT_ERROR;
+    }
+
     rt_os_memset(init_buf, 'F', RT_CARD_TYPE_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_CARD_TYPE_OFFSET, init_buf, RT_CARD_TYPE_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_CARD_TYPE_OFFSET + offset, card_type, len);
@@ -99,14 +104,19 @@ int32_t rt_write_eid(int32_t offset, uint8_t *eid, int32_t len)
 {
     int32_t ret;
     uint8_t init_buf[RT_LAST_EID_LEN + 1];
-    
+
+    if (len > RT_LAST_EID_LEN) {
+        MSG_PRINTF(LOG_WARN, "Data is too long, cannot be written ...\n");
+        return RT_ERROR;
+    }
+
     rt_os_memset(init_buf, 'F', RT_LAST_EID_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_LAST_EID_OFFSET, init_buf, RT_LAST_EID_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_LAST_EID_OFFSET + offset, eid, len);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Write eid fail, ret : %d\n", ret);
     }
-    
+
     return ret;
 }
 
@@ -124,7 +134,12 @@ int32_t rt_write_devicekey(int32_t offset, const uint8_t *devicekey, int32_t len
 {
     int32_t ret;
     uint8_t init_buf[RT_DEVICE_KEY_LEN + 1];
-    
+
+    if (len > RT_DEVICE_KEY_LEN) {
+        MSG_PRINTF(LOG_WARN, "Data is too long, cannot be written ...\n");
+        return RT_ERROR;
+    }
+
     rt_os_memset(init_buf, 'F', RT_DEVICE_KEY_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_DEVICE_KEY_OFFSET, init_buf, RT_DEVICE_KEY_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_DEVICE_KEY_OFFSET + offset, devicekey, len);
@@ -149,7 +164,12 @@ int32_t rt_write_ticket(int32_t offset, uint8_t *ticket, int32_t len)
 {
     int32_t ret;
     uint8_t init_buf[RT_TICKET_SERVER_LEN + 1];
-    
+
+    if (len > RT_TICKET_SERVER_LEN) {
+        MSG_PRINTF(LOG_WARN, "Data is too long, cannot be written ...\n");
+        return RT_ERROR;
+    }
+
     rt_os_memset(init_buf, 'F', RT_TICKET_SERVER_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_TICKET_SERVER_OFFSET, init_buf, RT_TICKET_SERVER_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_TICKET_SERVER_OFFSET + offset, ticket, len);
@@ -174,7 +194,12 @@ int32_t rt_write_strategy(int32_t offset, uint8_t *strategy, int32_t len)
 {
     int32_t ret;
     uint8_t init_buf[RT_STRATEGY_LIST_LEN + 1];
-    
+
+    if (len > RT_STRATEGY_LIST_LEN) {
+        MSG_PRINTF(LOG_WARN, "Data is too long, cannot be written ...\n");
+        return RT_ERROR;
+    }
+
     rt_os_memset(init_buf, 'F', RT_STRATEGY_LIST_LEN);
     rt_write_data(RUN_CONFIG_FILE, RT_STRATEGY_LIST_OFFSET, init_buf, RT_STRATEGY_LIST_LEN);
     ret = rt_write_data(RUN_CONFIG_FILE, RT_STRATEGY_LIST_OFFSET + offset, strategy, len);

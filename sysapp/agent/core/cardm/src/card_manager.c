@@ -61,7 +61,7 @@ static int32_t card_check_init_upload(const uint8_t *eid)
 
         ret = get_upload_event_result("INIT", NULL, 0, NULL);
         if (ret == RT_SUCCESS) {
-            upload_event_report("BOOT", NULL, 0, NULL);     // Request update and push ac events
+            upload_event_report("INFO", NULL, 0, NULL);     // Request update and push ac events
             update_last_eid = RT_TRUE;
         }
         msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
@@ -496,7 +496,7 @@ static int32_t card_change_profile(const uint8_t *buf)
         rt_os_sleep(3);
 
     } else {
-        MSG_PRINTF(LOG_ERR, "Invalid parameter! buff : %s \n", buf);
+        MSG_PRINTF(LOG_ERR, "Invalid parameter. buff : %s \n", buf);
     }
 
     return RT_SUCCESS;
@@ -507,13 +507,13 @@ int32_t card_switch_type(cJSON *switchparams)
     cJSON *card_type = NULL;
     int32_t state = RT_ERROR;
     uint8_t send_buf[1] = {0};
-    rt_bool devicekey_status = RT_FALSE;
+    rt_bool device_key_status = RT_FALSE;
 
     card_type = cJSON_GetObjectItem(switchparams, "type");
     if (card_type != NULL) {
         if (card_type->valueint == SWITCH_TO_XUICC) {
-            devicekey_status = rt_get_devicekey_status();
-            if (g_p_info.type == PROFILE_TYPE_SIM && devicekey_status == RT_TRUE) {
+            device_key_status = rt_get_device_key_status();
+            if (g_p_info.type == PROFILE_TYPE_SIM && device_key_status == RT_TRUE) {
                 MSG_PRINTF(LOG_INFO, "Update message received : Switch to xUICC\n");
                 send_buf[0] = SIM_NO_INTERNET;
                 card_change_profile(send_buf);
@@ -546,7 +546,7 @@ int32_t init_card_manager(void *arg)
     uint8_t send_buf[1] = {0};
     uint8_t cpin_status[THE_CPIN_LENGTH + 1]= {0};
     uint8_t sim_iccid[THE_ICCID_LENGTH + 1] = {0};
-    rt_bool devicekey_status = RT_FALSE;
+    rt_bool device_key_status = RT_FALSE;
 
     init_profile_type_e init_profile_type;
     init_profile_type = ((public_value_list_t *)arg)->config_info->init_profile_type;
@@ -627,8 +627,8 @@ int32_t init_card_manager(void *arg)
 
     if (sim_mode == MODE_TYPE_SIM_FIRST) {
         if (g_p_info.sim_info.state != SIM_READY) {
-            devicekey_status = rt_get_devicekey_status();
-            if (devicekey_status == RT_TRUE) {
+            device_key_status = rt_get_device_key_status();
+            if (device_key_status == RT_TRUE) {
                 send_buf[0] = SIM_NO_INTERNET;
                 card_change_profile(send_buf);
                 card_update_profile_info(UPDATE_JUDGE_BOOTSTRAP);
@@ -703,10 +703,6 @@ int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode)
             break;
 
         case MSG_NETWORK_DISCONNECTED:
-            #if 0  // card detection do the same things
-            rt_os_sleep(1);  // must have
-            ret = card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-            #endif
             break;
 
         case MSG_CARD_ENABLE_EXIST_CARD:

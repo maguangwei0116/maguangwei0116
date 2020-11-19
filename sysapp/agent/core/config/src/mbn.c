@@ -110,7 +110,7 @@ static int32_t mbn_config_device(void)
     at_send_recv(AT_AUTO_CONNECT, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);      // Cancel automatic dialing
     at_send_recv(AT_ECM, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);               // Set ECM
     at_send_recv(MBN_ECHO_OFF, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);
-    
+
     if (mbn_get_auto_state() == RT_FALSE) {
         if (mbn_judge_used_item(MBN_ROW_ITEM) == RT_TRUE) {
             at_send_recv(MBN_ECHO_ON, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);  // open ATE for sifar special !!!
