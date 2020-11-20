@@ -511,7 +511,7 @@ int32_t card_switch_type(cJSON *switchparams)
 
     card_type = cJSON_GetObjectItem(switchparams, "type");
     if (card_type != NULL) {
-        if (card_type->valueint == SWITCH_TO_XUICC) {
+        if (card_type->valueint == SWITCH_TO_ESIM) {
             device_key_status = rt_get_device_key_status();
             if (g_p_info.type == PROFILE_TYPE_SIM && device_key_status == RT_TRUE) {
                 MSG_PRINTF(LOG_INFO, "Update message received : Switch to xUICC\n");
