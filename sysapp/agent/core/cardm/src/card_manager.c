@@ -526,8 +526,6 @@ int32_t card_switch_type(cJSON *switchparams)
                 card_change_profile(send_buf);
                 return RT_SUCCESS;
             }
-        } else if (card_type->valueint == SWITCH_TO_ESIM) {
-            MSG_PRINTF(LOG_INFO, "eSIM\n");
         } else {
             MSG_PRINTF(LOG_WARN, "Invalid parameter !\n");
         }
