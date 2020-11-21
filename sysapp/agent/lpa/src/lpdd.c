@@ -1038,7 +1038,6 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
                 goto end;
             }
         }
-
     }
 
     // ES8+ Replace Session Keys

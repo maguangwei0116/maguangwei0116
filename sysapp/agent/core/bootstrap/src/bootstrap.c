@@ -33,8 +33,8 @@
 
 #define RT_GET_MCC_MAX_TIMES                    10
 #define DEFAULT_SINGLE_INTERVAL_TIME            10                                      // default interval time (seconds)
+#define RT_MCC_MINIMUM                          100
 #define MAX_WAIT_REGIST_TIME                    180
-#define RT_MCC_MINIMUM                          201
 
 /* define your interval time table, unit: seconds, max 2.1h */
 static const uint32_t g_time_table[]            = {10, 30, 90, 270, 840, 2520, 7560};
@@ -120,7 +120,6 @@ static void bootstrap_local_select_profile(void)
                         MSG_PRINTF(LOG_ERR, "QMI get mcc fail, Unable to configure rplmn\n");
                         break;
                     }
-                    MSG_PRINTF(LOG_INFO, "count : %d, mcc : %d\n", i, mcc);
                     rt_os_sleep(3);
                 }
             } else {
