@@ -42,9 +42,9 @@ static int32_t rt_judge_external_event(void)
         MSG_PRINTF(LOG_INFO, "External events interrupt ping ! Hold using card...\n");
         g_downstream_event = RT_FALSE;
         return RT_SUCCESS;
-    } else {
-        return RT_ERROR;
     }
+
+    return RT_ERROR;
 }
 
 static int32_t rt_ping_provisoning_get_status(void)

@@ -393,6 +393,7 @@ int32_t ipc_start_vuicc(uint8_t delay)
         return RT_SUCCESS;
     }
 
+    return RT_ERROR;
 }
 
 int32_t ipc_remove_vuicc(uint8_t delay)
@@ -417,5 +418,6 @@ int32_t ipc_remove_vuicc(uint8_t delay)
         return RT_SUCCESS;
     }
 
+    return RT_ERROR;
 }
 
