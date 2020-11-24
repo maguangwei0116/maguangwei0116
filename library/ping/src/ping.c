@@ -39,7 +39,7 @@ typedef struct TAG_IPHDR {
 
 uint16_t generation_checksum(uint16_t *buf, int32_t size)
 {
-    unsigned long cksum = 0;
+    uint64_t cksum = 0;
     while(size > 1) {
         cksum += *buf++;
         size -= sizeof(uint16_t);
@@ -143,8 +143,8 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
 
     for(i = 0; i < RT_PING_TIMES; i++) {
         uint8_t recv_buf[RT_RECV_DATA_LEN];
-        long result;
-        long read_length;
+        int64_t result;
+        int64_t read_length;
         struct timeval start;
         struct timeval end;
         struct sockaddr_in from;
