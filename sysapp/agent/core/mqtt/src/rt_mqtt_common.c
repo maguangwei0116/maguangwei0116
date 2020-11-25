@@ -138,7 +138,7 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
     char *p = NULL;
     char temp[128];
 
-    do{
+    do {
         if(!json_data || !host_ip || !path) {
             MSG_PRINTF(LOG_DBG, "path json data error\n");
             break;

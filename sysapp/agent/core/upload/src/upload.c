@@ -109,13 +109,13 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
         goto exit_entry;
     }
 
-    snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, g_upload_addr, port, md5_out, data_len, data);
+    snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, md5_out, data_len, data);
     send_len = rt_os_strlen(lpbuf);
 
 #if (CFG_UPLOAD_HTTPS_ENABLE)
-    ret = upload_http_post_single(g_upload_addr, port, upload_deal_rsp_msg, data, rt_os_strlen(data));
+    ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, data, rt_os_strlen(data));
 #else
-    ret = upload_http_post_single(g_upload_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
+    ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
     // MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
 #endif
 

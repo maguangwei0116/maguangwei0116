@@ -22,7 +22,7 @@ typedef struct TAG_ICMP_HEADER {
     uint16_t        check_sum;
     uint16_t        id;
     uint16_t        seq;
-} ICMP_HEADER;
+} icmp_header_t;
 
 typedef struct TAG_IPHDR {
     uint8_t         ip_head_verlen;
@@ -35,17 +35,17 @@ typedef struct TAG_IPHDR {
     uint16_t        ip_checksum;
     int32_t         ip_source;
     int32_t         ip_destination;
-} IP_HEADER;
+} ip_header_t;
 
 uint16_t generation_checksum(uint16_t *buf, int32_t size)
 {
     uint64_t cksum = 0;
-    while(size > 1) {
+    while (size > 1) {
         cksum += *buf++;
         size -= sizeof(uint16_t);
     }
 
-    if(size) {
+    if (size) {
         cksum += *buf++;
     }
 
@@ -63,7 +63,7 @@ double get_time_interval(struct timeval *start, struct timeval *end)
     tp.tv_sec = end->tv_sec - start->tv_sec;
     tp.tv_usec = end->tv_usec - start->tv_usec;
 
-    if(tp.tv_usec < 0) {
+    if (tp.tv_usec < 0) {
         tp.tv_sec -= 1;
         tp.tv_usec += 1000000;
     }
@@ -86,21 +86,21 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     double time_interval[RT_PING_TIMES + 1] = {0};
     double time_mdev = 0;
     in_addr_t dest_ip;
-    ICMP_HEADER * icmp_head;
+    icmp_header_t * icmp_head;
     struct timeval timeout;
     struct sockaddr_in dest_socket_addr;
 
     MSG_PRINTF(LOG_DBG, "start ping...\n");
 
-    if(domain == NULL) {
+    if (domain == NULL) {
         MSG_PRINTF(LOG_WARN, "domain is NULL ...\n");
         return ret;
     }
 
     dest_ip = inet_addr(domain);
-    if(dest_ip == INADDR_NONE) {
+    if (dest_ip == INADDR_NONE) {
         struct hostent* p_hostent = gethostbyname(domain);
-        if(p_hostent) {
+        if (p_hostent) {
             dest_ip = (*(in_addr_t*)p_hostent->h_addr);
         }
     }
@@ -116,12 +116,12 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
     setsockopt(client_fd, IPPROTO_IP, IP_RECVERR, &val, sizeof(int32_t));       // icmp Port Unreachable
 
-    if(setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval))) {
+    if (setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval))) {
         MSG_PRINTF(LOG_ERR, "setsocketopt SO_RCVTIMEO error !\n");
         return ret;
     }
 
-    if(setsockopt(client_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(struct timeval))) {
+    if (setsockopt(client_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(struct timeval))) {
         MSG_PRINTF(LOG_ERR, "setsockopt SO_SNDTIMEO error !\n");
         return ret;
     }
@@ -131,17 +131,17 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     dest_socket_addr.sin_port = htons(0);
     rt_os_memset(dest_socket_addr.sin_zero, 0, sizeof(dest_socket_addr.sin_zero));
 
-    icmp = (uint8_t *)rt_os_malloc(sizeof(ICMP_HEADER) + RT_DATA_SIZE);
-    rt_os_memset(icmp, 0, sizeof(ICMP_HEADER) + RT_DATA_SIZE);
+    icmp = (uint8_t *)rt_os_malloc(sizeof(icmp_header_t) + RT_DATA_SIZE);
+    rt_os_memset(icmp, 0, sizeof(icmp_header_t) + RT_DATA_SIZE);
 
-    icmp_head = (ICMP_HEADER *)icmp;
+    icmp_head = (icmp_header_t *)icmp;
     icmp_head->type = 8;
     icmp_head->code = 0;
     icmp_head->id = 1;
 
     MSG_PRINTF(LOG_DBG, "Ping %s, IP : %s\n", domain, inet_ntoa(*((struct in_addr*)&dest_ip)));
 
-    for(i = 0; i < RT_PING_TIMES; i++) {
+    for (i = 0; i < RT_PING_TIMES; i++) {
         uint8_t recv_buf[RT_RECV_DATA_LEN];
         int64_t result;
         int64_t read_length;
@@ -154,11 +154,11 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
 
         icmp_head->seq = htons(i);
         icmp_head->check_sum = 0;
-        icmp_head->check_sum = generation_checksum((uint16_t*)icmp, sizeof(ICMP_HEADER) + RT_DATA_SIZE);
+        icmp_head->check_sum = generation_checksum((uint16_t*)icmp, sizeof(icmp_header_t) + RT_DATA_SIZE);
         gettimeofday(&start, NULL);
-        result = sendto(client_fd, icmp, sizeof(ICMP_HEADER) + RT_DATA_SIZE, 0, (struct sockaddr *)&dest_socket_addr, sizeof(dest_socket_addr));
+        result = sendto(client_fd, icmp, sizeof(icmp_header_t) + RT_DATA_SIZE, 0, (struct sockaddr *)&dest_socket_addr, sizeof(dest_socket_addr));
 
-        if(result == RT_ERROR) {
+        if (result == RT_ERROR) {
             MSG_PRINTF(LOG_DBG, "PING: sendto: Network is unreachable\n");
             continue;
         }
@@ -170,22 +170,22 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
             read_length = recvfrom(client_fd, recv_buf, RT_RECV_DATA_LEN, 0, (struct sockaddr*)&from, &from_packet_len);
             gettimeofday(&end, NULL);
 
-            if(read_length != RT_ERROR) {
-                IP_HEADER * recv_ip_header = (IP_HEADER *)recv_buf;
+            if (read_length != RT_ERROR) {
+                ip_header_t * recv_ip_header = (ip_header_t *)recv_buf;
                 int32_t ip_ttl = (int32_t)recv_ip_header->ip_ttl;
-                ICMP_HEADER * recv_icmp_header = (ICMP_HEADER *)(recv_buf + (recv_ip_header->ip_head_verlen & 0x0F) * 4);
+                icmp_header_t * recv_icmp_header = (icmp_header_t *)(recv_buf + (recv_ip_header->ip_head_verlen & 0x0F) * 4);
 
-                if(recv_icmp_header->type != 0) {
+                if (recv_icmp_header->type != 0) {
                     MSG_PRINTF(LOG_WARN, "error type %d received, error code %d \n", recv_icmp_header->type, recv_icmp_header->code);
                     break;
                 }
 
-                if(recv_icmp_header->id != icmp_head->id) {
+                if (recv_icmp_header->id != icmp_head->id) {
                     MSG_PRINTF(LOG_WARN, "some else's packet\n");
                     continue;
                 }
 
-                if(read_length >= (sizeof(IP_HEADER) + sizeof(ICMP_HEADER) + RT_DATA_SIZE)) {
+                if (read_length >= (sizeof(ip_header_t) + sizeof(icmp_header_t) + RT_DATA_SIZE)) {
                     double tmp_time = get_time_interval(&start, &end);
                     recv_count ++;
                     time_sum += tmp_time;
@@ -202,12 +202,12 @@ int32_t ping_host_ip(const uint8_t *domain, double *avg_delay, int32_t *lost, do
     }
 
 PING_EXIT:
-    if(NULL != icmp) {
+    if (NULL != icmp) {
         rt_os_free(icmp);
         icmp = NULL;
     }
 
-    if(client_fd != RT_ERROR) {
+    if (client_fd != RT_ERROR) {
         close(client_fd);
     }
 
