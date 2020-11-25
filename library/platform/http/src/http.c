@@ -23,13 +23,6 @@
 #include "log.h"
 #include "http.h"
 
-#define HTTP_POST "POST %s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n"\
-    "Content-Type:application/json;charset=UTF-8\r\n"\
-    "md5sum:%s\r\n"\
-    "Content-Length: %d\r\n\r\n%s"
-    
-#define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
-
 void http_get_ip_addr(const char *domain, char *ip_addr)
 {
     int32_t i;
@@ -37,7 +30,7 @@ void http_get_ip_addr(const char *domain, char *ip_addr)
 
     host = gethostbyname(domain);
     if (!host) {
-        host = rt_gethostbyname(domain);
+        host = (struct hostent *)rt_gethostbyname(domain);
         if (!host) {
             ip_addr = NULL;
             return ;
@@ -200,96 +193,6 @@ int32_t http_parse_result(const char *lpbuf)
         return RT_ERROR;
     }
     return ptmp - lpbuf;
-}
-
-http_result_e http_post(const char *url, const char *post_str, const char *header, socket_call_back cb)
-{
-    int32_t socket_fd = -1;
-    int8_t  *lpbuf = NULL;
-    int32_t port = 0;
-    int8_t  *file = NULL;
-    int8_t  *host_addr = NULL;
-    int32_t offset = 0;
-    http_result_e ret = HTTP_SUCCESS;
-
-    if (rt_os_strlen(post_str) >= BUFFER_SIZE * 4 || !url || !header || !cb) {
-        return HTTP_PARAMETER_ERROR;
-    }
-
-    do {
-        lpbuf = (int8_t *)rt_os_malloc(BUFFER_SIZE * 4);
-        if (lpbuf == NULL) {
-            ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_PRINTF(LOG_WARN, "lpbuf memory alloc error\n");
-            break;
-        }
-        rt_os_memset(lpbuf, '0', BUFFER_SIZE * 4);
-
-        host_addr = (int8_t *)rt_os_malloc(HOST_ADDRESS_LEN);
-        if (host_addr == NULL) {
-            ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_PRINTF(LOG_WARN, "lpbuf memory alloc error\n");
-            break;
-        }
-        rt_os_memset(host_addr, '0', HOST_ADDRESS_LEN);
-
-        file = (int8_t *)rt_os_malloc(HOST_PATH_LEN);
-        if (file == NULL) {
-            ret = HTTP_SYSTEM_CALL_ERROR;
-            MSG_PRINTF(LOG_WARN, "file memory alloc error\n");
-            break;
-        }
-        rt_os_memset(file, '0', HOST_PATH_LEN);
-
-        if (!url || !post_str) {
-            MSG_PRINTF(LOG_WARN, "failed!\n");
-            break;
-        }
-
-        if (http_parse_url(url, host_addr, file, &port)) {
-            MSG_PRINTF(LOG_WARN, "http parse url failed!\n");
-            ret = HTTP_PARAMETER_ERROR;
-            break;
-        }
-
-        MSG_PRINTF(LOG_WARN, "http pose host_addr : %s\n", host_addr);
-
-        socket_fd = http_tcpclient_create(host_addr, port);       // connect network
-        if (socket_fd < 0) {
-            ret = HTTP_SOCKET_CONNECT_ERROR;
-            MSG_PRINTF(LOG_WARN, "http tcpclient create failed\n");
-            break;
-        }
-        snprintf(lpbuf, BUFFER_SIZE * 4, HTTP_POST, file, host_addr, port, header, rt_os_strlen(post_str), post_str);
-
-        if (http_tcpclient_send(socket_fd,lpbuf, rt_os_strlen(lpbuf)) < 0) {      // send data
-            ret = HTTP_SOCKET_SEND_ERROR;
-            MSG_PRINTF(LOG_WARN, "http tcpclient send failed..\n");
-            break;
-        }
-        rt_os_memset(lpbuf, 0, BUFFER_SIZE * 4);
-        /*it's time to recv from server*/
-
-        if (http_tcpclient_recv(socket_fd, lpbuf, BUFFER_SIZE * 4) <= 0) {     // recv data
-            ret = HTTP_SOCKET_RECV_ERROR;
-            MSG_PRINTF(LOG_WARN, "http tcpclient recv failed\n");
-            break;
-        } else {
-             offset = http_parse_result(lpbuf);
-             MSG_PRINTF(LOG_DBG, "%s\n", lpbuf + offset);
-             if (cb(lpbuf + offset) != 0) {
-                ret = HTTP_RESPOND_ERROR;
-             }
-        }
-    } while(0);
-
-    rt_os_free(file);
-    rt_os_free(host_addr);
-    rt_os_free(lpbuf);
-
-    http_tcpclient_close(socket_fd);
-
-    return ret;
 }
 
 http_result_e http_post_raw(const char *host_ip, int32_t port, void *buffer, int32_t len, socket_call_back cb)
