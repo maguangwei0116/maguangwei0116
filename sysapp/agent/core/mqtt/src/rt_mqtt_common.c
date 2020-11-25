@@ -137,7 +137,6 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
     char md5_out[MD5_STRING_LENGTH+1];
     char *p = NULL;
     char temp[128];
-    char convert_ip[HOST_ADDRESS_LEN] = {0};
 
     do{
         if(!json_data || !host_ip || !path) {
@@ -149,9 +148,7 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
         get_md5_string((const char *)json_data, md5_out);
         md5_out[MD5_STRING_LENGTH] = '\0';
 
-        http_get_ip_addr(host_ip, convert_ip);
-        MSG_PRINTF(LOG_TRACE, "convert_ip:%s, port:%d\r\n", convert_ip, port);
-        socket_fd = http_tcpclient_create(convert_ip, port);       // connect network
+        socket_fd = http_tcpclient_create(host_ip, port);       // connect network
         if (socket_fd < 0) {
             ret = HTTP_SOCKET_CONNECT_ERROR;
             MSG_PRINTF(LOG_WARN, "http tcpclient create failed\n");

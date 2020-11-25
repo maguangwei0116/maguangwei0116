@@ -229,7 +229,6 @@ static void log_file_upload(void *arg)
     const char *tranId;
     char log_name[MAX_FILE_NAME_LEN];
     char log_cut_file[MAX_FILE_NAME_LEN];
-    char convert_ip[HOST_ADDRESS_LEN] = {0};
 
     /* create a tmp log file */
     log_get_log_file_name(log_name, sizeof(log_name));
@@ -244,10 +243,8 @@ static void log_file_upload(void *arg)
     obj->manager_type = 0;  // uoload
     obj->http_header.method = 0;  // POST
 
-    http_get_ip_addr(g_upload_log_addr, convert_ip);
-
-    snprintf(log_url, sizeof(log_url), "http://%s:%d%s", convert_ip, g_upload_log_port, g_upload_log_api); 
-    snprintf(log_host, sizeof(log_host), "%s:%d", convert_ip, g_upload_log_port);
+    snprintf(log_url, sizeof(log_url), "http://%s:%d%s", g_upload_log_addr, g_upload_log_port, g_upload_log_api); 
+    snprintf(log_host, sizeof(log_host), "%s:%d", g_upload_log_addr, g_upload_log_port);
 
     rt_os_memcpy(obj->http_header.url, log_url, rt_os_strlen(log_url));
     obj->http_header.url[rt_os_strlen(log_url)] = '\0';

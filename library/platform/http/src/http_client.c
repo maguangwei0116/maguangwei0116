@@ -95,7 +95,7 @@ static int http_client_upload_init(http_client_struct_t *obj)
                                 &obj->http_header.port), 0);
 
     http_get_ip_addr(obj->http_header.addr, convert_ip);
-    MSG_PRINTF(LOG_DBG, "addr:%s,port:%d\n", convert_ip, obj->http_header.port);
+    MSG_PRINTF(LOG_DBG, "upload addr:%s, port:%d\n", convert_ip, obj->http_header.port);
 
     ipAddr.s_addr = inet_addr((char *)convert_ip);
     server_addr.sin_family = AF_INET;
@@ -175,7 +175,7 @@ static int http_client_download_init(http_client_struct_t *obj)
                                 &obj->http_header.port), 0);
 
     http_get_ip_addr(obj->http_header.addr, convert_ip);
-    MSG_PRINTF(LOG_DBG, "addr:%s,port:%d\n", convert_ip, obj->http_header.port);
+    MSG_PRINTF(LOG_DBG, "download addr:%s, port:%d\n", convert_ip, obj->http_header.port);
 
     ipAddr.s_addr           = inet_addr((char *)convert_ip);
     server_addr.sin_family  = AF_INET;

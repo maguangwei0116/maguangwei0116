@@ -30,14 +30,38 @@
     
 #define HTTP_GET "GET /%s HTTP/1.1\r\nHOST: %s:%d\r\nAccept: */*\r\n\r\n"
 
+void http_get_ip_addr(const char *domain, char *ip_addr)
+{
+    int32_t i;
+    struct hostent *host = NULL;
+
+    host = gethostbyname(domain);
+    if (!host) {
+        host = rt_gethostbyname(domain);
+        if (!host) {
+            ip_addr = NULL;
+            return ;
+        }
+    }
+
+    for (i = 0; host->h_addr_list[i]; i++) {
+        rt_os_strcpy(ip_addr, inet_ntoa( * (struct in_addr*) host->h_addr_list[i]));
+        break;
+    }
+}
+
 int32_t http_tcpclient_create(const char *addr, int32_t port)
 {
-    struct sockaddr_in server_addr;
     int32_t socket_fd;
+    char convert_ip[HOST_ADDRESS_LEN] = {0};
     struct in_addr ipAddr;
+    struct sockaddr_in server_addr;
     struct timeval timeout = {HTTP_CONNECT_TIMEOUT, 0};
 
-    ipAddr.s_addr           = inet_addr(addr);
+    http_get_ip_addr(addr, convert_ip);
+    MSG_PRINTF(LOG_DBG, "%s -> %s\n", addr, convert_ip);
+
+    ipAddr.s_addr           = inet_addr(convert_ip);
     server_addr.sin_family  = AF_INET;
     server_addr.sin_port    = htons(port);
     server_addr.sin_addr    = ipAddr;
@@ -117,21 +141,6 @@ int32_t http_parse_url(const char *url, char *host, char *file, int32_t *port)
     rt_os_strcpy(host, local_host);
 
     return RT_SUCCESS;
-}
-
-void http_get_ip_addr(const char *domain, char *ip_addr)
-{
-    int32_t i;
-    struct hostent *host = gethostbyname(domain);
-    if (!host) {
-        ip_addr = NULL;
-        return;
-    }
-    
-    for (i = 0; host->h_addr_list[i]; i++) {
-        rt_os_strcpy(ip_addr, inet_ntoa( * (struct in_addr*) host->h_addr_list[i]));
-        break;
-    }
 }
 
 int32_t http_tcpclient_recv(int32_t socket, uint8_t *lpbuff, int32_t length)
@@ -287,7 +296,6 @@ http_result_e http_post_raw(const char *host_ip, int32_t port, void *buffer, int
 {
     int32_t socket_fd = -1;
     int8_t  *lpbuf = NULL;
-    char convert_ip[HOST_ADDRESS_LEN] = {0};
     int32_t offset = 0;
     http_result_e ret = HTTP_SUCCESS;
 
@@ -303,11 +311,7 @@ http_result_e http_post_raw(const char *host_ip, int32_t port, void *buffer, int
             break;
         }
         rt_os_memset(lpbuf, '0', BUFFER_SIZE * 4);
-
-        http_get_ip_addr(host_ip, convert_ip);
-        MSG_PRINTF(LOG_TRACE, "convert_ip:%s, port:%d\r\n", convert_ip, port);
-
-        socket_fd = http_tcpclient_create(convert_ip, port);       // connect network
+        socket_fd = http_tcpclient_create(host_ip, port);       // connect network
         if (socket_fd < 0) {
             ret = HTTP_SOCKET_CONNECT_ERROR;
             MSG_PRINTF(LOG_WARN, "http tcpclient create failed\n");

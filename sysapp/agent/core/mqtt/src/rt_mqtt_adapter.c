@@ -119,14 +119,12 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
 rt_bool mqtt_connect_adapter(mqtt_param_t *param, const char *oti_addr, int32_t oti_port, const char *eid)
 {
     uint8_t num = 0;
-    char convert_ip[HOST_ADDRESS_LEN] = {0};
     MQTTClient *c = &param->client;
     mqtt_opts_t *opts = &param->opts;
     const char *alias = param->alias;
 
-    http_get_ip_addr(oti_addr, convert_ip);
-    mqtt_set_reg_url(convert_ip, oti_port);
-    MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", convert_ip, oti_port);
+    mqtt_set_reg_url(oti_addr, oti_port);
+    MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", oti_addr, oti_port);
 
     /* connect redtea adpater server with max 3 times to get ticket server addr and port */
     do {
