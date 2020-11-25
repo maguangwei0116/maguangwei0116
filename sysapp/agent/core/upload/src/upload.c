@@ -238,20 +238,6 @@ static void upload_get_random_tran_id(char *tran_id, uint16_t size)
     random_uuid(tran_id, size);
 }
 
-#if 0
-{
-    "tranId": "6c90fcc5-a30d-444f-9ba4-5bc4338956c7",
-    "version": 0,
-    "timestamp": 1566284086,
-    "topic": "89086001202200101018000001017002",
-    "payload": \"" {
-        "event": "INFO",
-        "status": 0,
-        "content": {}
-     } \""
-}
-#endif
-
 static rt_bool upload_check_memory(const void *buf, int32_t len, int32_t value)
 {
     int32_t i = 0;
@@ -371,22 +357,6 @@ static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t 
 
     return !ret ? upload : NULL;
 }
-
-#if 0
-static int32_t init_upload_obj(void)
-{
-    const upload_event_t *obj = NULL;
-    cJSON *ret;
-
-    MSG_PRINTF(LOG_WARN, "event_START ~ event_END : %p ~ %p\r\n", g_upload_event_START, g_upload_event_END);
-    for (obj = g_upload_event_START; obj <= g_upload_event_END; obj++) {
-        MSG_PRINTF(LOG_WARN, "upload %p, %s ...\r\n", obj, obj->event);
-        ret = obj->packer(NULL);
-    }
-
-    return RT_SUCCESS;
-}
-#endif
 
 int32_t get_upload_event_result(const char *event, const char *tran_id, int32_t status, void *private_arg)
 {
