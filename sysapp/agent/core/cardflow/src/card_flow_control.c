@@ -99,7 +99,7 @@ static void flow_control_main(void)
                 }
             break;
         }
-        if (g_p_info->type == PROFILE_TYPE_OPERATIONAL) {
+        if (g_p_info->type == PROFILE_TYPE_OPERATIONAL || g_p_info->type == PROFILE_TYPE_SIM) {
             network_update_switch(NETWORK_UPDATE_ENABLE);
             time = 0;
         }
