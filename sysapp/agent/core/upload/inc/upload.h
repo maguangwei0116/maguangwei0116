@@ -42,6 +42,7 @@ typedef struct UPLOAD_EVENT {
 UPLOAD_EVENT_OBJ_EXTERN_HERE(START);
 UPLOAD_EVENT_OBJ_EXTERN_HERE(END);
 
+int32_t init_upload_event_report(const char *event, const char *tran_id, int32_t status, void *private_arg);
 int32_t upload_event_report(const char *event, const char *tran_id, int32_t status, void *private_arg);
 int32_t upload_event_final_report(void *buffer, int32_t len);
 int32_t init_upload(void *arg);

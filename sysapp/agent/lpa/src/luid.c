@@ -37,7 +37,7 @@ int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out,
     *out_size = 0;
     clean_cb_data();
     ec = der_encode(&asn_DEF_EnableProfileRequest, &req, encode_cb, NULL);
-    MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
+    MSG_DBG("ec.encoded: %d\n", (int)ec.encoded);
     if(ec.encoded == -1) {
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;
@@ -110,7 +110,7 @@ int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out
     *out_size = 0;
     clean_cb_data();
     ec = der_encode(&asn_DEF_DeleteProfileRequest, &req, encode_cb, NULL);
-    MSG_INFO("ec.encoded: %d\n", (int)ec.encoded);
+    MSG_DBG("ec.encoded: %d\n", (int)ec.encoded);
     if(ec.encoded == -1) {
         MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
         return RT_ERR_ASN1_ENCODE_FAIL;

@@ -11,10 +11,24 @@
 
 #include "stdint.h"
 
+typedef enum MODE_TYPE {
+    MODE_TYPE_SIM_FIRST             = 0,
+    MODE_TYPE_EUICC                 = 1,
+    MODE_TYPE_VUICC                 = 2,
+    MODE_TYPE_SIM_ONLY              = 3,
+} mode_type_e;
+
+typedef enum PROJECT_MODE {
+    PROJECT_SV                      = 0,
+    PROJECT_EV                      = 1,
+} proj_mode_e;
+
 typedef struct CONFIG_INFO {
     char *              oti_addr;           // OTI server addr
     char *              emq_addr;           // EMQ server addr
     char *              proxy_addr;         // proxy server addr
+    proj_mode_e         proj_mode;          // project mode
+    mode_type_e         sim_mode;           // sim mode
     uint8_t             lpa_channel_type;   // @ref lpa_channel_type_e
     uint32_t            log_max_size;       // unit: MB
     uint8_t             monitor_log_level;  // @ref log_level_e in log.h
@@ -29,7 +43,11 @@ typedef struct CONFIG_INFO {
 
 int32_t init_config(void *arg);
 
+int32_t config_log_max_size();
+
 int32_t config_update_uicc_mode(int32_t mode);  // mode: @ref lpa_channel_type_e
+
+int32_t config_update_proj_mode(int32_t mode);  // mode: @ref Project mode
 
 int32_t config_get_uicc_mode(const char *app_path, int32_t *mode); // mode: @ref lpa_channel_type_e
 

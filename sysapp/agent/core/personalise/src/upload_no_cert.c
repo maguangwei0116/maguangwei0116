@@ -18,9 +18,11 @@
 #include "bootstrap.h"
 #include "cJSON.h"
 #include "convert.h"
+#include "agent_queue.h"
 
 #define SIGN_DATA_LEN         64
 extern const devicde_info_t *g_personalise_device_info;
+extern const target_versions_t *g_personalise_version_info;
 
 static cJSON *upload_no_cert_packer(void *arg)
 {
@@ -32,6 +34,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     uint8_t buf[256];
     uint8_t buf_temp[256];
 
+    const char *batchCode       = g_personalise_version_info->versions[1].name;
     const char *imei            = g_personalise_device_info->imei;
     const char *deviceId        = g_personalise_device_info->device_id;
     const char *model           = g_personalise_device_info->model;
@@ -65,6 +68,7 @@ static cJSON *upload_no_cert_packer(void *arg)
     CJSON_ADD_NEW_STR_OBJ(content, model);
     CJSON_ADD_NEW_STR_OBJ(content, signature);
     CJSON_ADD_NEW_STR_OBJ(content, fileVersion);
+    CJSON_ADD_NEW_STR_OBJ(content, batchCode);
 
     ret = RT_SUCCESS;
 

@@ -25,8 +25,10 @@
 #include "download_file.h"
 #include "file.h"
 #include "vuicc_apdu.h"
+#include "network_detection.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
+#define RT_DATA_PATH                CFG_AGENT_RUN_PATH
 #define RT_MONITOR_RESTART          "monitor restart"
 #define RT_AGENT_RESTART            "agent restart"
 #define RT_PARAM_LINK_STRING        " # "
@@ -42,8 +44,7 @@
 #elif (CFG_STANDARD_MODULE)  // standard
 #define RT_OEMAPP_AGENT_FILE        "/oemapp/rt_agent"
 #define RT_MONITOR_FILE             "/oemapp/rt_monitor"
-#define RT_DATA_PATH                "/usrdata/redtea/"
-#define RT_AGENT_FILE               "/usrdata/redtea/rt_agent"
+#define RT_AGENT_FILE               CFG_AGENT_RUN_PATH"rt_agent"
 #endif
 
 #define RT_MONITOR_LOG              "rt_monitor_log"
@@ -65,10 +66,14 @@
 #define RT_LASTEST_INPUT_PARAM      NULL
 #endif
 
+#define VUICC_DISABLE   0
+#define VUICC_ENABLE    1
+
 extern int init_file_ops(void);
 
 static log_mode_e g_def_mode = LOG_PRINTF_FILE;
 static rt_bool g_agent_debug_terminal = RT_FALSE;
+static int32_t g_vuicc_mode = VUICC_DISABLE;
 
 typedef struct SIGNATURE_DATA {
     uint8_t             hash[64+4];                 // hash, end with "\0"
@@ -84,6 +89,7 @@ typedef struct MONITOR_VERSION {
 
 typedef struct INFO_VUICC_DATA {
     uint8_t             vuicc_switch;              // lpa_channel_type_e, IPC used for vuicc
+    uint8_t             sim_mode;
     uint8_t             log_level;                 // log_level_e
     uint8_t             reserve[2];                // reserve for keep 4 bytes aligned
     uint32_t            log_size;                  // unit: bytes, little endian
@@ -96,6 +102,8 @@ typedef enum AGENT_MONITOR_CMD {
     CMD_GET_MONITOR_VER = 0x03,
     CMD_RESTART_MONITOR = 0x04,
     CMD_RFU             = 0x05,
+    CMD_START_VUICC     = 0x06,
+    CMD_REMOVE_VUICC    = 0x07,
 } agent_monitor_cmd_e;
 
 static void cfinish(int32_t sig)
@@ -158,7 +166,10 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         MSG_PRINTF(LOG_INFO, "Receive msg from agent,uicc type:%s\r\n", (info->vuicc_switch == LPA_CHANNEL_BY_IPC) ? "vUICC" : "eUICC");
         type = info->vuicc_switch;
         if (info->vuicc_switch == LPA_CHANNEL_BY_IPC) {
-            init_trigger(info->vuicc_switch);
+            if (info->sim_mode == VUICC_ENABLE) {
+                g_vuicc_mode = VUICC_ENABLE;
+                init_trigger(info->vuicc_switch);
+            }
             *rsp_len = 0;
         }
         MSG_PRINTF(LOG_INFO, "set log_level=%d, log_max_size=%d\n", info->log_level, info->log_size);
@@ -199,6 +210,16 @@ static uint16_t monitor_deal_agent_msg(uint8_t cmd, const uint8_t *data, uint16_
         uint8_t delay = data[0];
         MSG_PRINTF(LOG_ERR, "restart monitor in %d seconds ...\r\n", delay);
         register_timer(delay, 0, &monitor_exit);
+        rsp[0] = RT_TRUE;
+        *rsp_len = 1;
+    } else if (cmd == CMD_START_VUICC) {
+        g_vuicc_mode = VUICC_ENABLE;
+        init_trigger(LPA_CHANNEL_BY_IPC);
+        rsp[0] = RT_TRUE;
+        *rsp_len = 1;
+    } else if (cmd == CMD_REMOVE_VUICC) {
+        g_vuicc_mode = VUICC_DISABLE;
+        trigger_remove_card(1);
         rsp[0] = RT_TRUE;
         *rsp_len = 1;
     }
@@ -434,17 +455,12 @@ int32_t main(int32_t argc, const char *argv[])
 {
     rt_bool keep_agent_alive = RT_TRUE;
     rt_bool frist_start = RT_TRUE;
-    int32_t ret = 0;
     int32_t cos_oid = 0;
     uint8_t atr[32] = {0};
     uint16_t atr_size = 32;
-    uint8_t cos_ver[64] = {0};
+    uint8_t cos_ver[64];
     uint16_t cos_ver_len = 64;
-    char cos_hexstring[64] = {0};
-    char cos_res[64] = {0};
-    uint16_t ii = 0;
-    uint16_t jj = 0;
-    uint32_t bytes_sum = 0;
+    uint16_t i = 0;
 
     /* check input param to debug in terminal */
     if (argc > 1 && !rt_os_strcmp(argv[1], RT_DEBUG_IN_TERMINAL)) {
@@ -472,7 +488,7 @@ int32_t main(int32_t argc, const char *argv[])
     init_app_version(NULL);
 
     /* init vuicc and ops callbacks*/
-    init_vuicc(RT_DATA_PATH);
+    init_vuicc(RT_DATA_PATH, &g_vuicc_mode);
 
     /* install system signal handle */
     init_system_signal(NULL);
@@ -491,43 +507,12 @@ int32_t main(int32_t argc, const char *argv[])
     } while(cos_oid == -1);
     cos_client_reset(atr, &atr_size);
     cos_get_ver(cos_ver, &cos_ver_len);
-    bytes2hexstring(cos_ver, cos_ver_len, cos_hexstring);
 
-    MSG_PRINTF(LOG_INFO, "cos version major is %c%c minor is %c%c\r\n", cos_hexstring[0], cos_hexstring[1], cos_hexstring[2], cos_hexstring[3]);
-
-    for (ii = 8; ii < cos_ver_len * 2; ii = ii + 2) {
-        bytes_sum = 0;
-        if (cos_hexstring[ii] == 'A') {
-            bytes_sum = 10;
-        } else if (cos_hexstring[ii] == 'B') {
-            bytes_sum = 11;
-        } else if (cos_hexstring[ii] == 'C') {
-            bytes_sum = 12;
-        } else if (cos_hexstring[ii] == 'D') {
-            bytes_sum = 13;
-        } else if (cos_hexstring[ii] == 'E') {
-            bytes_sum = 14;
-        } else {
-            bytes_sum = cos_hexstring[ii] - '0';
-        }
-
-        if (cos_hexstring[ii + 1] == 'A') {
-            bytes_sum = bytes_sum * 16 + 10;
-        } else if (cos_hexstring[ii + 1] == 'B') {
-            bytes_sum = bytes_sum * 16 + 11;
-        } else if (cos_hexstring[ii + 1] == 'C') {
-            bytes_sum = bytes_sum * 16 + 12;
-        } else if (cos_hexstring[ii + 1] == 'D') {
-            bytes_sum = bytes_sum * 16 + 13;
-        } else if (cos_hexstring[ii + 1] == 'E') {
-            bytes_sum = bytes_sum * 16 + 14;
-        } else {
-            bytes_sum = bytes_sum * 16 + cos_hexstring[ii + 1] - '0';
-        }
-        cos_res[jj] = bytes_sum;
-        jj++;
+    MSG_PRINTF(LOG_INFO, "Cos version: ");
+    for (i = 0; i < cos_ver_len; i ++) {
+        MSG_ORG_PRINTF(LOG_INFO, "%02X", cos_ver[i]);
     }
-    MSG_PRINTF(LOG_INFO, "cos compile date is %s\r\n", cos_res);
+    MSG_ORG_PRINTF(LOG_INFO, "\n");
 
     /* inspect monitor */
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {

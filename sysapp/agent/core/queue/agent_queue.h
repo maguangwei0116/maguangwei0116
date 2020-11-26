@@ -55,6 +55,8 @@ typedef enum MSG_MODE {
     MSG_CARD_UPDATE,
     MSG_CARD_DISABLE_EXIST_CARD,
     MSG_CARD_UPDATE_SEED,
+    MSG_SYNC_DOWNSTREAM_INFO,
+    MSG_SWITCH_CARD,
 } msg_mode_e;
 
 typedef struct TARGET_VERSION {

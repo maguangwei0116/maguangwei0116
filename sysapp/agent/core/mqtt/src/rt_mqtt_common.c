@@ -138,17 +138,16 @@ int32_t mqtt_http_post_json(const char *json_data, const char *host_ip, uint16_t
     char *p = NULL;
     char temp[128];
 
-    do{
+    do {
         if(!json_data || !host_ip || !path) {
             MSG_PRINTF(LOG_DBG, "path json data error\n");
             break;
         }
-        
+
         MSG_PRINTF(LOG_TRACE, "json_data:%s\n",json_data);
         get_md5_string((const char *)json_data, md5_out);
         md5_out[MD5_STRING_LENGTH] = '\0';
 
-        MSG_PRINTF(LOG_TRACE, "host_ip:%s, port:%d\r\n", host_ip, port);
         socket_fd = http_tcpclient_create(host_ip, port);       // connect network
         if (socket_fd < 0) {
             ret = HTTP_SOCKET_CONNECT_ERROR;

@@ -7,19 +7,21 @@ BR2_HAVE_DOT_CONFIG=y
 #
 # Product Options
 #
-BR2_CFG_SOFTWARE_NAME="quectel"
+BR2_CFG_SOFTWARE_NAME="quectel-ec20hdlg"
 BR2_CFG_SYSTEM_NAME="linux"
 BR2_CFG_PRODUCT_NAME="euicc"
+BR2_CFG_AGENT_RUN_PATH="/usrdata/redtea/"
 
 BR2_CFG_PLATFORM_X86=n
 BR2_CFG_PLATFORM_9X07=y
 BR2_CFG_PLATFORM_ANDROID=n
 
-BR2_CFG_SOFTWARE_TYPE_RELEASE=n
-BR2_CFG_SOFTWARE_TYPE_DEBUG=y
+BR2_CFG_SOFTWARE_TYPE_RELEASE=y
+BR2_CFG_SOFTWARE_TYPE_DEBUG=n
 
-BR2_CFG_ENV_TYPE_PROD=n
-BR2_CFG_ENV_TYPE_STAGING=y
+BR2_CFG_ENV_TYPE_PROD=y
+BR2_CFG_ENV_TYPE_STAG=n
+BR2_CFG_ENV_TYPE_QA=n
 
 #
 # Common config
@@ -70,10 +72,10 @@ BR2_PACKAGE_OVERRIDE_FILE="$(TOPDIR)/local.mk"
 # Toolchain
 #
 BR2_TOOLCHAIN_URL="none defined"
-BR2_TOOLCHAIN_INSTALL_PATH="/opt/ec20-cefasg/ql-ol-sdk/ql-ol-crosstool"
+BR2_TOOLCHAIN_INSTALL_PATH="/opt/ql-ol-sdk/ql-ol-crosstool"
 BR2_TOOLCHAIN_PREFIX="sysroots/x86_64-oesdk-linux/usr/bin/arm-oe-linux-gnueabi/arm-oe-linux-gnueabi-"
-BR2_TOOLCHAIN_SYSROOT="/opt/ec20-cefasg/ql-ol-sdk/ql-ol-crosstool/sysroots/armv7a-vfp-neon-oe-linux-gnueabi"
-BR2_TOOLCHAIN_SYSINC="/usr/include/ /usr/include/data/ /usr/include/dsutils/ /usr/include/qmi-framework/ /usr/include/qmi-manager/ /usr/include/qmi/ /sdk/include/"
+BR2_TOOLCHAIN_SYSROOT="/opt/ql-ol-sdk/ql-ol-crosstool/sysroots/armv7a-vfp-neon-oe-linux-gnueabi"
+BR2_TOOLCHAIN_SYSINC="/usr/include/ /usr/include/data/ /usr/include/dsutils/ /usr/include/qmi-framework/ /usr/include/qmi-manager/ /usr/include/qmi/"
 
 #
 # SDK
@@ -90,6 +92,7 @@ BR2_LIBRARY_INSTALL_PATH="$(BASE_DIR)/system/sdk/lib"
 BR2_CONFIG_LIBRARY_ASN.1=y
 BR2_CONFIG_LIBRARY_BRIDGE=y
 BR2_CONFIG_LIBRARY_DIAL=y
+BR2_CONFIG_LIBRARY_PING=y
 BR2_CONFIG_LIBRARY_PLATFORM=y
 BR2_CONFIG_LIBRARY_UTIL=y
 BR2_CONFIG_LIBRARY_SAMPLE=n
@@ -118,6 +121,8 @@ BR2_CFG_LPA_LOG_ON=y
 BR2_CFG_TEST_LPA_ON=y
 BR2_CFG_SHARE_PROFILE_ECC_VERIFY=y
 BR2_CFG_AGENT_SINGLE_BOOTSRRAP_ON=y
+BR2_CFG_REDTEA_READY_ON=y
+BR2_CFG_SIM_DETECT_ON=y
 
 #
 # Release

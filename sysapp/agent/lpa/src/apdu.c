@@ -81,7 +81,6 @@ int open_channel(uint8_t *channel)
     } else {
         ret = rt_qmi_open_channel(euicc_aid, sizeof(euicc_aid), channel);
     }
-    MSG_DBG("open channel %d, ret:%d\n", *channel, ret);
     return ret;
 }
 
@@ -120,7 +119,7 @@ int close_channel(uint8_t channel)
     } else {
         ret = rt_qmi_close_channel(channel);
     }
-    MSG_DBG("close channel %d, ret:%d\n", channel, ret);
+
     return ret;
 }
 

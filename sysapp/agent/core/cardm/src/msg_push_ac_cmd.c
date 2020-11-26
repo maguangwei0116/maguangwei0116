@@ -21,17 +21,18 @@
 #include "card_manager.h"
 
 static uint8_t g_iccid[THE_ICCID_LENGTH + 1] = {0};
+extern const card_info_t *g_upload_card_info;
 
 static cJSON *upload_push_ac_packer(void *arg)
 {
-    MSG_PRINTF(LOG_INFO, "Upload push ac\n");
+    MSG_PRINTF(LOG_DBG, "Upload push ac\n");
 exit_entry:
     return (cJSON *)arg;
 }
 
 static void push_ac_timer(void)
 {
-    MSG_PRINTF(LOG_INFO, "g_iccid:%s\n", g_iccid);
+    MSG_PRINTF(LOG_DBG, "g_iccid:%s\n", g_iccid);
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, g_iccid, rt_os_strlen(g_iccid));
 }
 
@@ -168,12 +169,14 @@ static int32_t download_one_profile(uint8_t *iccid, cJSON *command_content, int3
             cJSON_AddItemToObject(new_command_content, "iccid", cJSON_CreateString((const char *)iccid));
             /* add apn list information */
             apn_list_c = cJSON_PrintUnformatted(apn_list);
-            /* create a new apn list json object */
-            cJSON_AddItemToObject(new_command_content, "apnInfos", cJSON_Parse((const char *)apn_list_c));
-            //debug_json_data(new_command_content, new_command_content);
-            msg_analyse_apn(new_command_content, iccid);
+            if (apn_list_c != NULL) {
+                /* create a new apn list json object */
+                cJSON_AddItemToObject(new_command_content, "apnInfos", cJSON_Parse((const char *)apn_list_c));
+                //debug_json_data(new_command_content, new_command_content);
+                msg_analyse_apn(new_command_content, iccid);
+                cJSON_free(apn_list_c);
+            }
             cJSON_Delete(new_command_content);
-            cJSON_free(apn_list_c);
         }
     }
     return state;
@@ -275,9 +278,11 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
     }
     *out = (void *)up_content;
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
-    if (to_enable && (to_enable->valueint == RT_TRUE) && (state != -1)) {
+
+    if (to_enable && (to_enable->valueint == RT_TRUE) && (state != -1) && g_upload_card_info->type != PROFILE_TYPE_SIM) {
         register_timer(15, 0, &push_ac_timer);
     }
+
 end:
     if (payload != NULL) {
         cJSON_Delete(payload);

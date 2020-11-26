@@ -6,75 +6,13 @@
 #include "hash.h"
 #include "file.h"
 #include "lpa.h"
+#include "card_manager.h"
 #ifdef CFG_PLATFORM_ANDROID
 #include "rt_qmi.h"
 #endif
 
-#if 0 // For agent using trigger
-static pthread_mutex_t g_mutex;
-
-int32_t ipc_get_uicc_atr(uint8_t *atr, uint8_t *atr_size)
-{
-    uint8_t data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xEE};
-    ipc_send_data((const uint8_t *)data, sizeof(data), atr, atr_size);
-}
-
-int32_t ipc_send_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
-{
-    uint16_t cmd = 0;
-    uint16_t sw = 0;
-    static rt_bool reset_flag = RT_FALSE;
-
-    rt_mutex_lock(&g_mutex);
-    cmd = (data[5] << 8) + data[6];
-    MSG_INFO_ARRAY("L-APDU REQ: ", data, data_len);
-    ipc_send_data(data, data_len, rsp, rsp_len);
-    MSG_INFO_ARRAY("L-APDU RSP: ", rsp, *rsp_len);
-    rt_mutex_unlock(&g_mutex);
-
-    /* enable profile and load bootstrap profile, need to reset */
-    if ((cmd == 0xBF31) || (cmd == 0xFF7F)) {
-        cmd = (rsp[0] << 8) + rsp[1];
-        if ((cmd & 0xFF00) == 0x6100) {
-            reset_flag = RT_TRUE;
-            return RT_SUCCESS;
-        } else {
-            reset_flag = RT_TRUE;
-        }
-    }
-
-    if (reset_flag == RT_TRUE) {
-        reset_flag = RT_FALSE;
-        trigger_swap_card(1);
-    }
-}
-
-
-int32_t ipc_send_trigger_cmd(const uint8_t *apdu, uint16_t apdu_len, uint8_t *rsp, uint16_t *rsp_len)
-{
-    rt_mutex_lock(&g_mutex);
-    MSG_INFO_ARRAY("M-APDU REQ: ", apdu, apdu_len);
-    ipc_send_data((const uint8_t *)apdu, apdu_len, rsp, rsp_len);
-    MSG_INFO_ARRAY("M-APDU RSP: ", rsp, *rsp_len);
-    rt_mutex_unlock(&g_mutex);
-}
-
-void init_trigger(uint8_t uicc_switch)
-{
-    int32_t ret = RT_ERROR;
-    ret = rt_mutex_init(&g_mutex);
-    if (ret != 0) {
-        MSG_PRINTF(LOG_ERR, "Mutex init failed", ret);
-    }
-#if 0
-    if (uicc_switch == LPA_CHANNEL_BY_IPC) {
-        trigegr_regist_reset(ipc_get_uicc_atr);
-        trigegr_regist_cmd(ipc_send_trigger_cmd);
-        trigger_swap_card(1);
-    }
-#endif
-}
-#endif
+#define VUICC_DISABLE   0
+#define VUICC_ENABLE    1
 
 int32_t ipc_set_monitor_param(config_info_t *config_info)
 {
@@ -87,11 +25,16 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
     //MSG_PRINTF(LOG_INFO, "atom len:%d\n", sizeof(atom_data_t));
 
     info.vuicc_switch = config_info->lpa_channel_type;
+    if (config_info->sim_mode == MODE_TYPE_VUICC) {
+        info.sim_mode = VUICC_ENABLE;
+    } else {
+        info.sim_mode = VUICC_DISABLE;
+    }
     info.log_level = config_info->monitor_log_level;
     info.log_size = config_info->log_max_size;
 
     rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
-    c_data.cmd = 0x00;
+    c_data.cmd = CMD_SET_PARAM;
     c_data.data_len = (uint8_t)len;
     c_data.data = (uint8_t *)&info;
     len = sizeof(atom_data_t) - sizeof(uint8_t *);
@@ -304,6 +247,7 @@ exit_entry:
     if (fp != NULL) {
         linux_fclose(fp);
     }
+
     if (ret == RT_SUCCESS) {
         MSG_PRINTF(LOG_DBG, "private file sign verify %s !\r\n", !ret ? "ok" : "fail");
     } else {
@@ -359,5 +303,55 @@ int32_t ipc_select_profile_by_monitor(void)
     } else {
         return RT_ERROR;
     }
+}
+
+int32_t ipc_start_vuicc(uint8_t delay)
+{
+    atom_data_t c_data = {0};
+    uint8_t buf[256] = {0};
+    uint16_t len = 1;
+    uint16_t ret_len = 0;
+
+    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
+    c_data.cmd = CMD_START_VUICC;
+    c_data.data_len = (uint8_t)len;
+    c_data.data = (uint8_t *)&delay;
+    len = sizeof(atom_data_t) - sizeof(uint8_t *);
+    rt_os_memcpy(&buf[0], &c_data, len);
+    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
+    len += c_data.data_len;
+
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
+
+    if (ret_len == 1 && buf[0] == RT_TRUE) {
+        return RT_SUCCESS;
+    }
+
+    return RT_ERROR;
+}
+
+int32_t ipc_remove_vuicc(uint8_t delay)
+{
+    atom_data_t c_data = {0};
+    uint8_t buf[256] = {0};
+    uint16_t len = 1;
+    uint16_t ret_len = 0;
+
+    rt_os_memset(c_data.start, 0xFF, sizeof(c_data.start));
+    c_data.cmd = CMD_REMOVE_VUICC;
+    c_data.data_len = (uint8_t)len;
+    c_data.data = (uint8_t *)&delay;
+    len = sizeof(atom_data_t) - sizeof(uint8_t *);
+    rt_os_memcpy(&buf[0], &c_data, len);
+    rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
+    len += c_data.data_len;
+
+    ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
+
+    if (ret_len == 1 && buf[0] == RT_TRUE) {
+        return RT_SUCCESS;
+    }
+
+    return RT_ERROR;
 }
 

@@ -17,17 +17,29 @@
 #include "md5.h"
 #include "downstream.h"
 #include "upload.h"
+#include "hash.h"
+#include "usrdata.h"
+
+#if (CFG_OPEN_MODULE)
+#define RT_DATA_PATH                        "/data/redtea/"
+#elif (CFG_STANDARD_MODULE)
+#define RT_DATA_PATH                        "/usrdata/redtea/"
+#endif
+
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)                       (sizeof((a)) / sizeof((a)[0]))
 #endif
 
 #if (CFG_UPLOAD_HTTPS_ENABLE)
-    #define RT_OTI_SERVER_PORT                  443
+    #define RT_OTI_SERVER_PORT                      443
 #else
-    #define RT_OTI_SERVER_PORT                  7082
+    #if (CFG_ENV_TYPE_PROD) || (CFG_ENV_TYPE_STAG)
+        #define RT_OTI_SERVER_PORT                  7082
+    #elif (CFG_ENV_TYPE_QA)
+        #define RT_OTI_SERVER_PORT                  7083
+    #endif
 #endif
-
 
 
 #define M_BYTES                             (1024 * 1024)
@@ -37,8 +49,16 @@
 #define ANNOTATION_SYMBOL                   '#'                     // ע�ͱ�ʶ��
 #define CONFIG_FILE_PATH                    "rt_config.ini"
 #define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // �ж��Ƿ�Ϊ�հ׷�
-#define UICC_MODE_vUICC                     "0"
+#define PROJ_MODE_SV                        "0"
+#define PROJ_MODE_EV                        "1"
+#define UICC_MODE_SIMF                      "0"
 #define UICC_MODE_eUICC                     "1"
+#define UICC_MODE_vUICC                     "2"
+#define UICC_MODE_SIMO                      "3"
+#define MAX_LOG_SIZE_VALUE                  "5"
+#define PROD_ENV_MODE                       0
+#define STAG_ENV_MODE                       1
+#define MAX_LOG_SIZE                        5
 
 #if 0 // @ref cJSON.h
 /* cJSON Types: */
@@ -137,8 +157,14 @@ static int32_t config_log_size(const void *in, char *out)
     return config_range_int_value(in, 0, 5, out);
 }
 
-/* value: [0,1] */
+/* value: [0,3] */
 static int32_t config_uicc_mode(const void *in, char *out)
+{
+    return config_range_int_value(in, 0, 3, out);
+}
+
+/* value: [0,1] */
+static int32_t config_proj_mode(const void *in, char *out)
 {
     return config_range_int_value(in, 0, 1, out);
 }
@@ -157,39 +183,36 @@ static int32_t config_usage_freq(const void *in, char *out)
 
 static config_item_t g_config_items[] =
 {
-/*     item_name            config_func                 data_type   default_value           annotation          */
+/*     item_name                config_func                 data_type       default_value                   annotation          */
 #if (CFG_ENV_TYPE_PROD)
-#if (CFG_UPLOAD_HTTPS_ENABLE)
-    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "oti.redtea.io",                "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
-#else
-    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "52.220.34.227",                "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
+ITEM(OTI_ENVIRONMENT_ADDR,          NULL,                   STRING,         "oti.redtea.io",                "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
+ITEM(EMQ_SERVER_ADDR,               NULL,                   STRING,         "cthulhu.easyiot.ai",           "EMQ server addr: stage(13.229.31.234) prod(cthulhu.easyiot.ai)"),
+ITEM(PROXY_SERVER_ADDR,             NULL,                   STRING,         "smdp.redtea.io",               "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io)"),
+#elif (CFG_ENV_TYPE_STAG)
+ITEM(OTI_ENVIRONMENT_ADDR,          NULL,                   STRING,         "oti-staging.redtea.io",        "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
+ITEM(EMQ_SERVER_ADDR,               NULL,                   STRING,         "13.229.31.234",                "EMQ server addr: stage(13.229.31.234) prod(cthulhu.easyiot.ai)"),
+ITEM(PROXY_SERVER_ADDR,             NULL,                   STRING,         "smdp-test.redtea.io",          "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io)"),
+#elif (CFG_ENV_TYPE_QA)
+ITEM(OTI_ENVIRONMENT_ADDR,          NULL,                   STRING,         "oti-qa.redtea.io",             "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
+ITEM(EMQ_SERVER_ADDR,               NULL,                   STRING,         "13.229.31.234",                "EMQ server addr: stage(13.229.31.234) prod(cthulhu.easyiot.ai)"),
+ITEM(PROXY_SERVER_ADDR,             NULL,                   STRING,         "smdp-test.redtea.io",          "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io)"),
 #endif
-ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "18.136.190.97",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp.redtea.io",               "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
-#else
-#if (CFG_UPLOAD_HTTPS_ENABLE)
-    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "oti-staging.redtea.io",        "OTI server addr: stage(oti-staging.redtea.io) or prod(oti.redtea.io)"),
-#else
-    ITEM(OTI_ENVIRONMENT_ADDR,  NULL,                   STRING,     "54.222.248.186",               "OTI server addr: stage(54.222.248.186) or prod(52.220.34.227)"),
-#endif
-ITEM(EMQ_SERVER_ADDR,       NULL,                       STRING,     "13.229.31.234",                "EMQ server addr: stage(13.229.31.234) prod(18.136.190.97)"),
-ITEM(PROXY_SERVER_ADDR,     NULL,                       STRING,     "smdp-test.redtea.io",          "SMDP server addr: stage(smdp-test.redtea.io) prod(smdp.redtea.io) qa(smdp-test.redtea.io)"),
-#endif
-ITEM(MBN_CONFIGURATION,     config_switch_value,        INTEGER,    "1",                            "Whether config MBN (0:disable  1:enable)"),
-ITEM(INIT_PROFILE_TYPE,     config_init_pro_type,       INTEGER,    "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
-ITEM(RPLMN_ENABLE,          NULL,                       INTEGER,    "1",                            "Whether set rplmn (0:disable  1:enable)"),
-ITEM(LOG_FILE_SIZE,         config_log_size,            INTEGER,    "1",                            "The max size of rt_log file (MB)"),
-ITEM(UICC_MODE,             config_uicc_mode,           INTEGER,    "0",                            "The mode of UICC (0:vUICC  1:eUICC)"),
+ITEM(MBN_CONFIGURATION,         config_switch_value,        INTEGER,        "1",                            "Whether config MBN (0:disable  1:enable)"),
+ITEM(INIT_PROFILE_TYPE,         config_init_pro_type,       INTEGER,        "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
+ITEM(RPLMN_ENABLE,                  NULL,                   INTEGER,        "1",                            "Whether set rplmn (0:disable  1:enable)"),
+ITEM(LOG_FILE_SIZE,             config_log_size,            INTEGER,        "1",                            "The max size of rt_log file (0 < x <= 5 MB)"),
+ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "0",                            "The mode of UICC (0:SIM first  1:eUICC  2:vUICC  3:SIM only)"),
+ITEM(PROJ_MODE,                 config_proj_mode,           INTEGER,        "0",                            "The mode of Project (0:Standard version  1:Enterprise version)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG_INFO",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 #else
-ITEM(MONITOR_LOG_LEVEL,     config_log_level,           STRING,     "LOG_TRACE",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
-ITEM(AGENT_LOG_LEVEL,       config_log_level,           STRING,     "LOG_TRACE",                     "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_TRACE",                    "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
+ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG_TRACE",                    "The log level of agent (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
 #endif
-ITEM(USAGE_ENABLE,          config_switch_value,        INTEGER,    "0",                            "Whether enable upload user traffic (0:disable  1:enable)"),
-ITEM(USAGE_FREQ,            config_usage_freq,          INTEGER,    "60",                           "Frequency of upload user traffic ( 60 <= x <= 1440 Mins)"),
-ITEM(CARD_FLOW_SWITCH,      config_card_flow_switch,    INTEGER,    "0",                            "The switch of seed card flow control(0:close 1:open)"),
+ITEM(USAGE_ENABLE,              config_switch_value,        INTEGER,        "0",                            "Whether enable upload user traffic (0:disable  1:enable)"),
+ITEM(USAGE_FREQ,                config_usage_freq,          INTEGER,        "60",                           "Frequency of upload user traffic (60 <= x <= 1440 Mins)"),
+ITEM(CARD_FLOW_SWITCH,          config_card_flow_switch,    INTEGER,        "1",                            "The switch of seed card flow control(0:close 1:open)"),
 };
 
 static config_info_t g_config_info;
@@ -435,16 +458,24 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
         return RT_ERROR;
     }
 
-    infos->lpa_channel_type  = !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? \
-                                                    LPA_CHANNEL_BY_IPC : LPA_CHANNEL_BY_QMI;
+    infos->proj_mode = msg_string_to_int(local_config_get_data("PROJ_MODE"));
+    infos->sim_mode = msg_string_to_int(local_config_get_data("UICC_MODE"));
+
+    if (infos->sim_mode == MODE_TYPE_EUICC) {
+        infos->lpa_channel_type = LPA_CHANNEL_BY_QMI;
+    } else {
+        infos->lpa_channel_type = LPA_CHANNEL_BY_IPC;   // SIM only for download cert
+    }
 
     size = msg_string_to_int(local_config_get_data("LOG_FILE_SIZE"));
-    if (size > 0) {
+    if (size > 0 && size <= MAX_LOG_SIZE) {
         infos->log_max_size = size * M_BYTES;
+    } else {
+        infos->log_max_size = MAX_LOG_SIZE * M_BYTES;
+        config_log_max_size();
     }
 
     infos->mbn_enable = msg_string_to_int(local_config_get_data("MBN_CONFIGURATION"));
-
     infos->init_profile_type = msg_string_to_int(local_config_get_data("INIT_PROFILE_TYPE"));
 
     log_level = log_get_level(local_config_get_data("MONITOR_LOG_LEVEL"));
@@ -465,19 +496,20 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
 #endif
     MSG_PRINTF(LOG_INFO, "Restart reason: %s\n", g_restart_reason);
     MSG_PRINTF(LOG_INFO, "Agent version : %s\n", LOCAL_TARGET_RELEASE_VERSION_NAME);
-    MSG_PRINTF(LOG_INFO, "OTI_ENVIRONMENT_ADDR  : %s\n", local_config_get_data("OTI_ENVIRONMENT_ADDR"));
-    MSG_PRINTF(LOG_INFO, "EMQ_SERVER_ADDR       : %s\n", local_config_get_data("EMQ_SERVER_ADDR"));
-    MSG_PRINTF(LOG_INFO, "PROXY_SERVER_ADDR     : %s\n", local_config_get_data("PROXY_SERVER_ADDR"));
-    MSG_PRINTF(LOG_INFO, "MBN_CONFIGURATION     : %s\n", local_config_get_data("MBN_CONFIGURATION"));
-    MSG_PRINTF(LOG_INFO, "INIT_PROFILE_TYPE     : %s\n", local_config_get_data("INIT_PROFILE_TYPE"));
-    MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n", local_config_get_data("RPLMN_ENABLE"));
+    MSG_PRINTF(LOG_INFO, "OTI_ENVIRONMENT_ADDR  : %s\n",    local_config_get_data("OTI_ENVIRONMENT_ADDR"));
+    MSG_PRINTF(LOG_INFO, "EMQ_SERVER_ADDR       : %s\n",    local_config_get_data("EMQ_SERVER_ADDR"));
+    MSG_PRINTF(LOG_INFO, "PROXY_SERVER_ADDR     : %s\n",    local_config_get_data("PROXY_SERVER_ADDR"));
+    MSG_PRINTF(LOG_INFO, "MBN_CONFIGURATION     : %s\n",    local_config_get_data("MBN_CONFIGURATION"));
+    MSG_PRINTF(LOG_INFO, "INIT_PROFILE_TYPE     : %s\n",    local_config_get_data("INIT_PROFILE_TYPE"));
+    MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n",    local_config_get_data("RPLMN_ENABLE"));
     MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
-    MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n", !rt_os_strcmp(local_config_get_data("UICC_MODE"), UICC_MODE_vUICC) ? "vUICC" : "eUICC");
-    MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n", local_config_get_data("MONITOR_LOG_LEVEL"));
-    MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n", local_config_get_data("AGENT_LOG_LEVEL"));
-    MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n", local_config_get_data("USAGE_ENABLE"));
+    MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n",    local_config_get_data("UICC_MODE"));
+    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_SV) ? "Standard version" : "Enterprise version");
+    MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n",    local_config_get_data("MONITOR_LOG_LEVEL"));
+    MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n",    local_config_get_data("AGENT_LOG_LEVEL"));
+    MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n",    local_config_get_data("USAGE_ENABLE"));
     MSG_PRINTF(LOG_INFO, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
-    MSG_PRINTF(LOG_INFO, "CARD_FLOW_SWITCH      : %s\n", local_config_get_data("CARD_FLOW_SWITCH"));
+    MSG_PRINTF(LOG_INFO, "CARD_FLOW_SWITCH      : %s\n",    local_config_get_data("CARD_FLOW_SWITCH"));
 }
 
 int32_t init_config(void *arg)
@@ -507,13 +539,36 @@ int32_t init_config(void *arg)
     return RT_SUCCESS;
 }
 
+int32_t config_log_max_size()
+{
+    const char *key = "LOG_FILE_SIZE";
+    int32_t pair_num = ARRAY_SIZE(g_config_items);
+    config_item_t *items = g_config_items;
+
+    config_set_data(key, MAX_LOG_SIZE_VALUE, pair_num, items);
+    config_write_file(CONFIG_FILE_PATH, pair_num, items);
+    rt_os_sync();
+
+    return RT_SUCCESS;
+}
+
 int32_t config_update_uicc_mode(int32_t mode)
 {
+    char value[1];
     const char *key = "UICC_MODE";
-    const char *value = (mode == LPA_CHANNEL_BY_IPC) ? UICC_MODE_vUICC : UICC_MODE_eUICC;
     const char *old_value = NULL;
     int32_t pair_num = ARRAY_SIZE(g_config_items);
     config_item_t *items = g_config_items;
+
+    if (mode == MODE_TYPE_SIM_FIRST) {
+        rt_os_strcpy(value, UICC_MODE_SIMF);
+    } else if (mode == MODE_TYPE_EUICC) {
+        rt_os_strcpy(value, UICC_MODE_eUICC);
+    } else if (mode == MODE_TYPE_VUICC) {
+        rt_os_strcpy(value, UICC_MODE_vUICC);
+    } else if (mode == MODE_TYPE_SIM_ONLY) {
+        rt_os_strcpy(value, UICC_MODE_SIMO);
+    }
 
     old_value = local_config_get_data(key);
     if (rt_os_strcmp(old_value, value)) {
@@ -523,6 +578,66 @@ int32_t config_update_uicc_mode(int32_t mode)
         config_write_file(CONFIG_FILE_PATH, pair_num, items);
         rt_os_sync();
     }
+
+    return RT_SUCCESS;
+}
+
+int32_t config_update_proj_mode(int32_t mode)
+{
+    const char *key = "PROJ_MODE";
+    const char *value = (mode == PROJECT_SV) ? PROJ_MODE_SV : PROJ_MODE_EV;
+    const char *old_value = NULL;
+    int32_t pair_num = ARRAY_SIZE(g_config_items);
+    config_item_t *items = g_config_items;
+
+    old_value = local_config_get_data(key);
+    if (rt_os_strcmp(old_value, value)) {
+        /* only update when value changed */
+        MSG_PRINTF(LOG_DBG, "Project mode changed: %s => %s\n", old_value, value);
+        config_set_data(key, value, pair_num, items);
+        config_write_file(CONFIG_FILE_PATH, pair_num, items);
+        rt_os_sync();
+    }
+
+    return RT_SUCCESS;
+}
+
+int32_t config_update_env_mode(int32_t mode)
+{
+    const char *oti_key = "OTI_ENVIRONMENT_ADDR";
+    const char *emq_key = "EMQ_SERVER_ADDR";
+    const char *proxy_key = "PROXY_SERVER_ADDR";
+    int32_t pair_num = ARRAY_SIZE(g_config_items);
+    config_item_t *items = g_config_items;
+
+    char oti_value[64];
+    char emq_value[64];
+    char proxy_value[64];
+    memset(oti_value, 0, sizeof(oti_value));
+    memset(emq_value, 0, sizeof(emq_value));
+    memset(proxy_value, 0, sizeof(proxy_value));
+
+    if(mode == PROD_ENV_MODE) {
+        strcpy(oti_value, "oti.redtea.io");
+        strcpy(emq_value, "cthulhu.easyiot.ai");
+        strcpy(proxy_value, "smdp.redtea.io");
+        MSG_PRINTF(LOG_INFO, "switch product env\n");
+    }
+    else if (mode == STAG_ENV_MODE) {
+        strcpy(oti_value, "oti-staging.redtea.io");
+        strcpy(emq_value, "13.229.31.234");
+        strcpy(proxy_value, "smdp-test.redtea.io");
+        MSG_PRINTF(LOG_INFO, "switch staging env\n");
+    } else {
+        MSG_PRINTF(LOG_INFO, "switch fail!\n");
+        return RT_ERROR;
+    }
+
+    config_set_data(oti_key, oti_value, pair_num, items);
+    config_set_data(emq_key, emq_value, pair_num, items);
+    config_set_data(proxy_key, proxy_value, pair_num, items);
+    config_write_file(CONFIG_FILE_PATH, pair_num, items);
+    rt_os_sync();
 
     return RT_SUCCESS;
 }

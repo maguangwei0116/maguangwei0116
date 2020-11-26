@@ -31,7 +31,9 @@
 #define SHARE_PROFILE                           "/oemapp/rt_share_profile.der"
 #endif
 
+#define RT_GET_MCC_MAX_TIMES                    10
 #define DEFAULT_SINGLE_INTERVAL_TIME            10                                      // default interval time (seconds)
+#define RT_MCC_MINIMUM                          100
 #define MAX_WAIT_REGIST_TIME                    180
 
 /* define your interval time table, unit: seconds, max 2.1h */
@@ -85,6 +87,7 @@ static void bootstrap_local_select_profile(void)
         g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME;
         MSG_PRINTF(LOG_ERR, "bootstrap select un-work profiles too many times\r\n");
     } else {
+        uint16_t i = 0;
         uint16_t mcc = 0;
         char mcc_mnc[32] = {0};
         char apn[128] = {0};
@@ -104,8 +107,28 @@ static void bootstrap_local_select_profile(void)
         MSG_PRINTF(LOG_INFO, "<<< bootstrap select card (%d/%d) >>>\r\n", g_retry_times, g_max_retry_times);
         #endif
 
-        rt_qmi_get_mcc_mnc(&mcc, NULL);
-        bootstrap_select_profile(mcc, apn, mcc_mnc, profile_buffer, &profile_len);
+        MSG_PRINTF(LOG_INFO, "g_public_value->card_info->mcc : %d\n", g_public_value->card_info->mcc);
+
+        while (1) {
+            if (g_public_value->card_info->mcc < RT_MCC_MINIMUM) {
+                rt_qmi_get_mcc_mnc(&mcc, NULL);
+                if (mcc > RT_MCC_MINIMUM) {
+                    g_public_value->card_info->mcc = mcc;
+                    break;
+                } else {
+                    if (++i > RT_GET_MCC_MAX_TIMES) {
+                        MSG_PRINTF(LOG_ERR, "QMI get mcc fail, Unable to configure rplmn\n");
+                        break;
+                    }
+                    rt_os_sleep(3);
+                }
+            } else {
+                break;
+            }
+        }
+
+        MSG_PRINTF(LOG_INFO, "provsioning mcc :%d\n", g_public_value->card_info->mcc);
+        bootstrap_select_profile(g_public_value->card_info->mcc, apn, mcc_mnc, profile_buffer, &profile_len);
         rt_qmi_modify_profile(1, 0, 0, apn, mcc_mnc);
         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_PROFILE, profile_buffer, profile_len);
         msg_send_agent_queue(MSG_ID_BOOT_STRAP, MSG_START_NETWORK_DETECTION, NULL, 0);

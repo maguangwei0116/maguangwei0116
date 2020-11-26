@@ -18,9 +18,11 @@
 #include "md5.h"
 #include "lpa_error_codes.h"
 
+extern const card_info_t *g_upload_card_info;
+
 static cJSON *upload_on_delete_packer(void *arg)
 {
-    MSG_PRINTF(LOG_INFO, "Upload on delete\n");
+    MSG_PRINTF(LOG_DBG, "Upload on delete\n");
 exit_entry:
     return (cJSON *)arg;
 }
@@ -129,9 +131,6 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         }
         all_iccid_num = cJSON_GetArraySize(iccids);
 
-        card_force_enable_provisoning_profile();
-        rt_os_sleep(3);
-
         /* update current profile list */
         if (card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP) == RT_SUCCESS) {
             rt_os_sleep(1);
@@ -143,7 +142,7 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
                 MSG_PRINTF(LOG_ERR, "Parse iccid failed!!\n");
                 continue;
             }
-            
+
             code_info = cJSON_CreateObject();
             if (!code_info) {
                 MSG_PRINTF(LOG_ERR, "Code info create error\n");
@@ -186,29 +185,14 @@ static int32_t delete_handler(const void *in, const char *event, void **out)
         cJSON_AddItemToObject(content, "results", delete_result);
     } while(0);
 
-#if 0
-    rt_os_sleep(1);
-    card_update_profile_info(bootstrap_flag);    
-    if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
-        rt_os_sleep(5);  // wait some time for provisioning network disconnected, or it may report ON_DELETE twice !!!
+    if (g_upload_card_info->type != PROFILE_TYPE_SIM) {
+        if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+            card_force_enable_provisoning_profile();
+        }
+        rt_os_sleep(3);
+        card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
     }
-#else
-    /* 
-    when delete all oprtional profiles ok, it will changed to provisoning profile.
-    So it will accur network disconnected from oprtional profiles to provisoning profile.
-    Need to enable provisoning profile frist.
-    It will call network_set_apn_handler, and start bootstrap.
-    It will avoid repporting ON_DELETE twice.
-    */ 
-#if 0
-    if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
-        card_force_enable_provisoning_profile();
-    }
-    rt_os_sleep(3);
-#endif
-    card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
-#endif
     *out = content;
 end:
     rt_os_free((void *)in);

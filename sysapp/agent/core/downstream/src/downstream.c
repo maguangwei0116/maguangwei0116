@@ -105,10 +105,10 @@ int32_t downstream_msg_handle(const void *data, uint32_t len)
     }
 
     for (obj = g_downstream_method_START; obj <= g_downstream_method_END; obj++) {
-        //MSG_PRINTF(LOG_WARN, "downstream %p, %s, %d, %s ...\r\n", obj, obj->method, obj->msg_id, obj->event);
+        // MSG_PRINTF(LOG_WARN, "downstream %p, %s, %d, %s ...\r\n", obj, obj->method, obj->msg_id, obj->event);
         if (!rt_os_strcmp(obj->method, method)) {
+            msg_send_agent_queue(MSG_ID_NETWORK_DECTION, MSG_SYNC_DOWNSTREAM_INFO, NULL, 0);
             downstream_msg_t downstream_msg = {0};
-
             downstream_msg.msg_len = rt_os_strlen(msg);
             downstream_msg.msg = (char *)rt_os_malloc(downstream_msg.msg_len + 1);
             rt_os_memcpy(downstream_msg.msg, msg, downstream_msg.msg_len);

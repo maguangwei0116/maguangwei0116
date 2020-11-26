@@ -48,6 +48,8 @@ static void flow_control_main(void)
     int32_t wait_times = 0;
     flow_control_state_e state = FLOW_INITIAL_WAIT_STATE;
 
+    MSG_PRINTF(LOG_INFO, "Start provisoning flow control ...\n");
+
     while (1) {
         switch (state) {
             case FLOW_INITIAL_WAIT_STATE:
@@ -64,6 +66,7 @@ static void flow_control_main(void)
 
             case FLOW_WAIT_ENABLE_STATE:
                 if (time == 1) {
+                    MSG_PRINTF(LOG_INFO, "Provisioning Enable ...\n");
                     network_update_switch(NETWORK_UPDATE_ENABLE);
                     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_UPDATE_SEED, NULL, 0);
                 } else if (time >= INITIAL_ENABLE_JUDGE_TIMES) {
@@ -84,6 +87,7 @@ static void flow_control_main(void)
                         time = 0;
                         num = 1;
                     } else {
+                        MSG_PRINTF(LOG_INFO, "Provisioning Disable ...\n");
                         network_update_switch(NETWORK_UPDATE_DISABLE);
                         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_DISABLE_EXIST_CARD, (void *)(g_p_info->iccid), rt_os_strlen(g_p_info->iccid));
                         num ++;
@@ -111,7 +115,7 @@ static int32_t flow_control_create_task(void)
 
     ret = rt_create_task(&id, (void *)flow_control_main, NULL);
     if (ret == RT_ERROR) {
-        MSG_PRINTF(LOG_ERR, "create mqtt pthread error, err(%d)=%s\r\n", errno, strerror(errno));
+        MSG_PRINTF(LOG_ERR, "create card flow pthread error, err(%d)=%s\r\n", errno, strerror(errno));
     }
 
     return ret;
@@ -130,5 +134,3 @@ int32_t init_flow_control(void *arg)
 
     return ret;
 }
-
-

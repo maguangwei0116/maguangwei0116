@@ -23,6 +23,8 @@ typedef enum AGENT_MONITOR_CMD {
     CMD_GET_MONITOR_VER = 0x03,
     CMD_RESTART_MONITOR = 0x04,
     CMD_RFU             = 0x05,
+    CMD_START_VUICC     = 0x06,
+    CMD_REMOVE_VUICC    = 0x07,
 } agent_monitor_cmd_e;
 
 typedef struct ATOM_DATA {
@@ -35,6 +37,7 @@ typedef struct ATOM_DATA {
 
 typedef struct INFO_VUICC_DATA {
     uint8_t         vuicc_switch;           // lpa_channel_type_e, IPC used for vuicc
+    uint8_t         sim_mode;               // sim mode
     uint8_t         log_level;              // log_level_e
     uint8_t         reserve[2];             // reserve for keep 4 bytes aligned
     uint32_t        log_size;               // unit: bytes, little endian
@@ -47,8 +50,8 @@ typedef struct MONITOR_VERSION {
 } monitor_version_t;
 
 typedef struct SIGNATURE_DATA {
-    uint8_t         hash[64+4];             // hash, end with ¡®\0¡¯
-    uint8_t         signature[128+4];       // signature data, end with ¡®\0¡¯
+    uint8_t         hash[64+4];             // hash, end with ï¿½ï¿½\0ï¿½ï¿½
+    uint8_t         signature[128+4];       // signature data, end with ï¿½ï¿½\0ï¿½ï¿½
 } signature_data_t;
 
 int32_t ipc_set_monitor_param(config_info_t *config_info);
@@ -59,6 +62,8 @@ int32_t ipc_file_verify_by_monitor(const char *abs_file, char *real_file_name); 
 int32_t ipc_restart_monitor(uint8_t delay);
 int32_t ipc_select_profile_by_monitor(void);
 int32_t ipc_send_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
+int32_t ipc_start_vuicc(uint8_t delay);
+int32_t ipc_remove_vuicc(uint8_t delay);
 
 #endif // __AGENT_2_MONITOR_H__
 

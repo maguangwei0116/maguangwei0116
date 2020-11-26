@@ -17,6 +17,7 @@ int qmi_send_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t
 int qmi_close_channel(uint8_t channel);
 int qmi_open_channel(const uint8_t *aid, uint16_t aid_len, uint8_t *channel);
 int qmi_get_elementary_iccid_file(uint8_t *iccid);
+int qmi_get_elementary_card_state(uint8_t *card_status);
 int qmi_get_elementary_imsi_file(uint8_t *imsi);
 
 #endif // QMI_UIM_H_

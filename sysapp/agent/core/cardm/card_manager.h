@@ -18,21 +18,37 @@
 #include "lpa.h"
 #include "msg_process.h"
 
+#define RT_NO_SIM                   -2
+#define THE_CPIN_LENGTH             16
 #define THE_MAX_CARD_NUM            20
 #define THE_ICCID_LENGTH            20
 #define MAX_EID_LEN                 32
 #define MAX_EID_HEX_LEN             16
 #define MAX_APN_LEN                 32
 
+#define RT_MAX_INTERVAL             180
+
 typedef enum PROFILE_STATE {
     PROFILE_DISABLED                = 0,
     PROFILE_ENABLED                 = 1,
 } profile_state_e;
 
+typedef enum PROFILE_CPIN_STATE {
+    CPIN_ABSENT                     = 0,
+    CPIN_PRESENT                    = 1,
+    CPIN_ERROR                      = 2,
+} profile_cpin_state_e;
+
+typedef enum PROFILE_SIM_CPIN {
+    SIM_ERROR                       = 0,
+    SIM_READY                       = 1,
+} profile_sim_cpin_e;
+
 typedef enum PROFILE_TYPE {
     PROFILE_TYPE_TEST               = 0,
     PROFILE_TYPE_PROVISONING        = 1,
     PROFILE_TYPE_OPERATIONAL        = 2,
+    PROFILE_TYPE_SIM                = 3,
 } profile_type_e;
 
 typedef enum CARD_STATE {
@@ -46,13 +62,26 @@ typedef enum INIT_PROFILE_TYPE {
     INIT_PROFILE_TYPE_LAST_USED     = 2,
 } init_profile_type_e;
 
+typedef struct PROFILE_SIM_INFO {
+    uint8_t             iccid[THE_ICCID_LENGTH + 1];
+    profile_sim_cpin_e  state;
+} profile_sim_info_t;
+
+typedef enum SWITCH_CARD_TYPE {
+    SWITCH_TO_SIM                   = 1,
+    SWITCH_TO_ESIM                  = 2,
+} switch_card_type_e;
+
 typedef struct CARD_INFO {
     profile_info_t                  info[THE_MAX_CARD_NUM];
+    profile_sim_info_t              sim_info;
+    uint16_t                        mcc;
     uint8_t                         num;
+    uint8_t                         operational_num;
     uint8_t                         eid[MAX_EID_LEN + 1];
-    profile_type_e                  type;                      // used card type
-    profile_type_e                  last_type;                 // used card type
-    uint8_t                         iccid[THE_ICCID_LENGTH+1]; // used card iccid
+    profile_type_e                  type;                        // used card type
+    profile_type_e                  last_type;                   // used card type
+    uint8_t                         iccid[THE_ICCID_LENGTH + 1]; // used card iccid
 } card_info_t;
 
 int32_t init_card_manager(void *arg);
@@ -64,5 +93,7 @@ int32_t card_force_enable_provisoning_profile(void);
 int32_t card_force_enable_provisoning_profile_update(void);
 int32_t card_manager_install_profile_ok(void);
 int32_t card_get_avariable_profile_num(int32_t *avariable_num);
+int32_t card_switch_type(cJSON *switchparams);
+int32_t uicc_switch_card(profile_type_e type, uint8_t *iccid);
 
 #endif // __CARD_MANAGER_H__

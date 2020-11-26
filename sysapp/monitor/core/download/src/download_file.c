@@ -20,13 +20,20 @@
 #include "rt_qmi.h"
 #include "inspect_file.h"
 
-#define DEFAULT_OTI_ENVIRONMENT_PORT    7082
 
 #if (CFG_ENV_TYPE_PROD)
-#define DOWNLOAD_OTA_ADDR               "52.220.34.227"
+    #define DOWNLOAD_OTA_ADDR                   "oti.redtea.io"
+    #define DEFAULT_OTI_ENVIRONMENT_PORT        7082
+#elif (CFG_ENV_TYPE_STAG)
+    #define DOWNLOAD_OTA_ADDR                   "oti-staging.redtea.io"
+    #define DEFAULT_OTI_ENVIRONMENT_PORT        7082
+#elif (CFG_ENV_TYPE_QA)
+    #define DOWNLOAD_OTA_ADDR                   "oti-qa.redtea.io"
+    #define DEFAULT_OTI_ENVIRONMENT_PORT        7083
 #else
-#define DOWNLOAD_OTA_ADDR               "54.222.248.186"
+    // do something
 #endif
+
 
 #define STRUCTURE_OTI_URL(buf, buf_len, addr, port, interface) \
 do {                 \
@@ -54,6 +61,7 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
     dw_struct.file_path = (const char *)d_info->file_name;
     dw_struct.manager_type = 1;
     dw_struct.http_header.method = 0;  // POST
+
     STRUCTURE_OTI_URL(buf, sizeof(buf), DOWNLOAD_OTA_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT, "/default/agent/download");  // Build the OTI address
     rt_os_memcpy(dw_struct.http_header.url, buf, rt_os_strlen(buf));
     dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
@@ -64,10 +72,13 @@ static rt_bool download_file_process(upgrade_struct_t *d_info)
     rt_qmi_get_imei(imei, sizeof(imei));
     cJSON_AddItemToObject(post_info, "swType", cJSON_CreateNumber(0)); // 0 for agent
     cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(imei));  // must have a empty "imei"
+
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
-    rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
-    dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
-    cJSON_free(out);
+    if (out != NULL) {
+        rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
+        dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
+        cJSON_free(out);
+    }
 
     snprintf((char *)buf, sizeof(buf), "%s:%d", DOWNLOAD_OTA_ADDR, DEFAULT_OTI_ENVIRONMENT_PORT);
     http_set_header_record(&dw_struct, "HOST", buf);

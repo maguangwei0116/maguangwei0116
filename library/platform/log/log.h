@@ -69,7 +69,7 @@ extern log_level_e log_get_level(const char *level_string);
 static inline void ARRAY_PRINTF(const char *tag, const uint8_t *array, uint16_t len)
 {    
     extern uint32_t rt_os_strlen(const char *string);
-    uint8_t *_p_ = (uint8_t *)array;                                        
+    uint8_t *_p_ = (uint8_t *)array;
     uint16_t i;
     char msg[8192] = {0};
     char *_msg;
@@ -79,19 +79,16 @@ static inline void ARRAY_PRINTF(const char *tag, const uint8_t *array, uint16_t 
     snprintf(msg, _len, "(%d bytes) %s", len, tag);
     _msg = &msg[rt_os_strlen(msg)];
     _len = _len - tag_len;
-    for (i = 0; i < len; i++) {                                             
-        snprintf(_msg, _len, "%02X", _p_[i]);            
+    for (i = 0; i < len; i++) {
+        snprintf(_msg, _len, "%02X", _p_[i]);
         _msg += 2;
         _len -= 2;
-    }                                                                       
-    snprintf(_msg, _len, "\r\n");                          
+    }
+    snprintf(_msg, _len, "\r\n");
     log_print(LOG_DBG, LOG_NO_LEVEL_PRINTF, "%s", msg);
 } 
 #endif
 #define MSG_INFO_ARRAY(tag, array, len)         ARRAY_PRINTF(tag, array, len)
-#if 0
-#define MSG_PRINTF(LOG_LEVEL, format, ...)      log_print(LOG_LEVEL, LOG_HAVE_LEVEL_PRINTF, "[%d %s ] "format, __LINE__, __FILENAME__, ##__VA_ARGS__)
-#else  // add print out pid info
 #include "pthread.h"
 #define MSG_PRINTF(LOG_LEVEL, format, ...)\
 do {\
@@ -101,7 +98,6 @@ do {\
     log_print(LOG_LEVEL, LOG_HAVE_LEVEL_PRINTF, "[%s][ %d %s ] "format, pid_str, __LINE__, __FILENAME__, ##__VA_ARGS__);\
 } while (0)
 #define MSG_ORG_PRINTF(LOG_LEVEL, format, ...)  log_print(LOG_LEVEL, LOG_NO_LEVEL_PRINTF, format, ##__VA_ARGS__)
-#endif
 #define MSG_HEXDUMP(title, data, len)           log_hexdump(__FILE__, __LINE__, title, data, len)
 
 #ifdef __cplusplus

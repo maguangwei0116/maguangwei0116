@@ -17,16 +17,17 @@
 #include "trigger.h"
 #include "log.h"
 
+#define VUICC_ENABLE    1
+
 typedef enum APDU_RESPONSE_STATE{
     APDU_RESPONSE_NOT_USED = 0,
     APDU_RESPONSE_BASIC_USED,
     APDU_RESPONSE_LOGIC_USED
 } apdu_response_state_e;
 
-
 static apdu_response_state_e g_response_state = APDU_RESPONSE_NOT_USED;
 static pthread_mutex_t g_apdu_mutex;
-
+static int32_t *g_vuicc_mode = NULL;
 
 int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len)
 {
@@ -75,7 +76,9 @@ int32_t vuicc_lpa_cmd(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint
             sleep(20); // need wait reset
             sleep_flag = 0;
         }
-        trigger_swap_card(1);
+        if (*g_vuicc_mode == VUICC_ENABLE) {
+            trigger_swap_card(1);
+        }
     }
 }
 
@@ -136,10 +139,11 @@ static void start_cos(void *arg)
     return;
 }
 
-int32_t init_vuicc(void *arg)
+int32_t init_vuicc(void *arg, int32_t *vuicc_mode)
 {
     unsigned long task_id;
     int32_t ret = RT_SUCCESS;
+    g_vuicc_mode = vuicc_mode;
 
     ret = rt_mutex_init(&g_apdu_mutex);
     if (ret != 0) {

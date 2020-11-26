@@ -88,7 +88,7 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
 #if (CFG_UPLOAD_HTTPS_ENABLE)
     ret = mqtt_https_post_json((const char *)json_data, reg_url->url, reg_url->port, \
                             "/api/v1/ticket", mqtt_redtea_ticket_server_cb);
-    #else
+#else
     ret = mqtt_http_post_json((const char *)json_data, reg_url->url, reg_url->port, \
                             "/api/v1/ticket", mqtt_redtea_ticket_server_cb);
 #endif
@@ -104,7 +104,7 @@ int32_t mqtt_adapter_setup_with_appkey(const char *appkey, mqtt_opts_t *opts, co
     snprintf(opts->ticket_server, sizeof(opts->ticket_server), "%s", reg_info->ticket_server);
     snprintf(opts->url, sizeof(opts->url), "%s", reg_info->url);
 
-#if 0
+#if 1
     MSG_PRINTF(LOG_DBG, "client_id     : %s\r\n", reg_info->client_id);
     MSG_PRINTF(LOG_DBG, "username      : %s\r\n", reg_info->username);
     MSG_PRINTF(LOG_DBG, "password      : %s\r\n", reg_info->password);
@@ -124,7 +124,7 @@ rt_bool mqtt_connect_adapter(mqtt_param_t *param, const char *oti_addr, int32_t 
     const char *alias = param->alias;
 
     mqtt_set_reg_url(oti_addr, oti_port);
-    MSG_PRINTF(LOG_INFO, "OTI server addr:%s, port:%d\r\n", oti_addr, oti_port);
+    MSG_PRINTF(LOG_DBG, "OTI server addr:%s, port:%d\r\n", oti_addr, oti_port);
 
     /* connect redtea adpater server with max 3 times to get ticket server addr and port */
     do {
@@ -143,12 +143,12 @@ rt_bool mqtt_connect_adapter(mqtt_param_t *param, const char *oti_addr, int32_t 
     if (!rt_os_strncmp(opts->channel, "EMQ", 3)) {
         MSG_PRINTF(LOG_INFO, "mqtt alias: %s\r\n", alias);
         snprintf(opts->client_id, sizeof(opts->client_id), "%s", alias);
+        /* save ticket server into cache file */
+        mqtt_save_ticket_server((const mqtt_opts_t *)opts);
+        return RT_TRUE;
     }
 
-    /* save ticket server into cache file */
-    mqtt_save_ticket_server((const mqtt_opts_t *)opts);
-
-    return RT_TRUE;
+    return RT_FALSE;
 }
 
 

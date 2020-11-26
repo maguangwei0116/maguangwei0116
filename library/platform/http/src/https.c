@@ -138,8 +138,8 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
         for (count = 0; count < 6; ++count) {
             //MSG_PRINTF(LOG_INFO, "cert: %s\n", cert);
             line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-            MSG_PRINTF(LOG_WARN, "Subject Name: %s\n", line);
-            MSG_PRINTF(LOG_WARN, "count is: %d\n", count);
+            MSG_PRINTF(LOG_DBG, "Subject Name: %s\n", line);
+            MSG_PRINTF(LOG_DBG, "count is: %d\n", count);
             if (strstr(line, "redtea") != NULL) {
                 rt_os_free(line);
                 break;
@@ -148,7 +148,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
             sleep(2);
         }
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        MSG_PRINTF(LOG_WARN, "Issuer: %s\n", line);
+        MSG_PRINTF(LOG_DBG, "Issuer: %s\n", line);
         res = SSL_get_verify_result(https_ctx->ssl);
         if (res != X509_V_OK) {
             MSG_PRINTF(LOG_WARN, "Certificate verification failed: %d\n", res);
@@ -209,8 +209,6 @@ void https_free(https_ctx_t *https_ctx)
 }
 
 #if (CFG_UPLOAD_HTTPS_ENABLE)
-
-    #define PING_ADDR                              "ping -c 1 -W 3 18.136.190.97"
 
     static int new_system(char *cmd)
     {

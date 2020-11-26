@@ -73,6 +73,7 @@ static int http_client_upload_init(http_client_struct_t *obj)
     struct sockaddr_in server_addr;
     struct in_addr ipAddr;
     struct timeval timeout = {30,0};
+    char convert_ip[128] = {0};
 
     RT_CHECK_ERR(obj, NULL);
 
@@ -93,9 +94,10 @@ static int http_client_upload_init(http_client_struct_t *obj)
                                 obj->http_header.url_interface,
                                 &obj->http_header.port), 0);
 
-    MSG_PRINTF(LOG_INFO, "addr:%s,port:%d\n", obj->http_header.addr, obj->http_header.port);
+    http_get_ip_addr(obj->http_header.addr, convert_ip);
+    MSG_PRINTF(LOG_DBG, "upload addr:%s, port:%d\n", convert_ip, obj->http_header.port);
 
-    ipAddr.s_addr = inet_addr((char *)obj->http_header.addr);
+    ipAddr.s_addr = inet_addr((char *)convert_ip);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port   = htons(obj->http_header.port);
     server_addr.sin_addr   = ipAddr;
@@ -156,10 +158,11 @@ static int http_client_download_init(http_client_struct_t *obj)
     struct sockaddr_in server_addr;
     struct in_addr ipAddr;
     struct timeval timeout={30,0};
+    char convert_ip[128] = {0};
 
     RT_CHECK_ERR(obj, NULL);
 
-    MSG_PRINTF(LOG_INFO, "download file_name:%s\n", obj->file_path);
+    MSG_PRINTF(LOG_DBG, "download file_name:%s\n", obj->file_path);
 
     RT_CHECK_ERR(obj->fp = linux_rt_fopen(obj->file_path, "a"), NULL);
     obj->process_length = 0;
@@ -171,9 +174,10 @@ static int http_client_download_init(http_client_struct_t *obj)
                                 obj->http_header.url_interface,
                                 &obj->http_header.port), 0);
 
-    MSG_PRINTF(LOG_INFO, "addr:%s,port:%d\n", obj->http_header.addr, obj->http_header.port);
+    http_get_ip_addr(obj->http_header.addr, convert_ip);
+    MSG_PRINTF(LOG_DBG, "download addr:%s, port:%d\n", convert_ip, obj->http_header.port);
 
-    ipAddr.s_addr           = inet_addr((char *)obj->http_header.addr);
+    ipAddr.s_addr           = inet_addr((char *)convert_ip);
     server_addr.sin_family  = AF_INET;
     server_addr.sin_port    = htons(obj->http_header.port);
     server_addr.sin_addr    = ipAddr;
@@ -352,7 +356,7 @@ static int http_client_send_header(http_client_struct_t *obj)
     }
     rt_os_strcat(obj->buf, "\r\n");
 
-    MSG_PRINTF(LOG_INFO, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
+    MSG_PRINTF(LOG_DBG, "Http request header:\n%s%s\n", obj->buf, obj->http_header.buf);
     obj->process_set = rt_os_strlen(obj->buf);
 
     return http_client_send(obj);
@@ -486,7 +490,7 @@ static int http_client_recv_data(http_client_struct_t *obj)
     obj->try_count = 0;
     obj->process_length = obj->range;
 
-    MSG_PRINTF(LOG_WARN, "obj->range=%d, obj->process_length=%d\n", obj->range, obj->process_length);
+    MSG_PRINTF(LOG_DBG, "obj->range=%d, obj->process_length=%d\n", obj->range, obj->process_length);
 
     /* If the process for download, loop to receive data */
     while (obj->remain_length > 0) {

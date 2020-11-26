@@ -59,6 +59,16 @@ config BR2_CFG_AGENT_SINGLE_BOOTSRRAP_ON
 	bool "BR2_CFG_AGENT_SINGLE_BOOTSRRAP_ON"
 	help
 	  Enable this option if you need to output libbootstrap.so.
+
+config BR2_CFG_REDTEA_READY_ON
+	bool "BR2_CFG_REDTEA_READY_ON"
+	help
+	  Enable this option if you need to bulid RedteaReady.
+
+config BR2_CFG_SIM_DETECT_ON
+	bool "BR2_CFG_SIM_DETECT_ON"
+	help
+	  Enable this option if you need to detect SIM.
 	  
 endmenu
 

@@ -10,20 +10,40 @@
 #include "agent_queue.h"
 #include "rt_qmi.h"
 
+#include "usrdata.h"
 #include "cJSON.h"
 
+#define RT_MCCMNC_LEN   5
+#define RT_ERR_MCCMNC   "00000"
+
+
 extern const devicde_info_t *g_upload_device_info;
-extern const card_info_t *g_upload_card_info;
 extern const target_versions_t *g_upload_ver_info;
+extern profile_sim_info_t *g_upload_sim_info;
+extern card_info_t *g_upload_card_info;
+
+static rt_bool device_key_check_memory(const void *buf, int32_t len, int32_t value)
+{
+    int32_t i = 0;
+    const uint8_t *p = (const uint8_t *)buf;
+
+    for (i = 0; i < len; i++) {
+        if (p[i] != value) {
+            return RT_FALSE;
+        }
+    }
+    return RT_TRUE;
+}
 
 static cJSON *upload_event_boot_device_info(void)
 {
-    int32_t ret         = RT_ERROR;
-    cJSON *deviceInfo   = NULL;
-    const char *imei    = g_upload_device_info->imei;
-    const char *deviceId= g_upload_device_info->device_id;
-    const char *sn      = g_upload_device_info->sn;
-    const char *model   = g_upload_device_info->model;
+    int32_t ret             = RT_ERROR;
+    cJSON *deviceInfo       = NULL;
+    const char *imei        = g_upload_device_info->imei;
+    const char *deviceId    = g_upload_device_info->device_id;
+    const char *sn          = g_upload_device_info->sn;
+    const char *model       = g_upload_device_info->model;
+    char deviceKey[DEVICE_KEY_SIZE + 1] = {0};
 
     deviceInfo = cJSON_CreateObject();
     if (!deviceInfo) {
@@ -35,7 +55,13 @@ static cJSON *upload_event_boot_device_info(void)
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, deviceId);
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, sn);
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, model);
-    
+
+    rt_read_devicekey(0, deviceKey, DEVICE_KEY_SIZE);
+    if (!device_key_check_memory(deviceKey, DEVICE_KEY_SIZE, 'F')) {
+        deviceKey[DEVICE_KEY_SIZE] = '\0';
+        CJSON_ADD_NEW_STR_OBJ(deviceInfo, deviceKey);
+    }
+
     ret = RT_SUCCESS;
     
 exit_entry:
@@ -72,7 +98,7 @@ static cJSON *upload_event_boot_profiles_info(void)
             MSG_PRINTF(LOG_WARN, "The profile is error\n");
             goto exit_entry;
         }
-    
+
         iccid = g_upload_card_info->info[i].iccid;
         type = g_upload_card_info->info[i].class;
         CJSON_ADD_NEW_STR_OBJ(profile, iccid);
@@ -80,8 +106,22 @@ static cJSON *upload_event_boot_profiles_info(void)
         cJSON_AddItemToArray(profiles, profile);
     }
 
+    if (g_upload_card_info->sim_info.state == SIM_READY) {
+        profile = cJSON_CreateObject();
+        if (!profile) {
+            MSG_PRINTF(LOG_WARN, "The profile is error\n");
+            goto exit_entry;
+        }
+
+        type = PROFILE_TYPE_SIM;
+        iccid = g_upload_card_info->sim_info.iccid;
+        CJSON_ADD_NEW_STR_OBJ(profile, iccid);
+        CJSON_ADD_NEW_INT_OBJ(profile, type);
+        cJSON_AddItemToArray(profiles, profile);
+    }
+
     ret = RT_SUCCESS;
-    
+
 exit_entry:
 
     return !ret ? profiles : NULL;
@@ -159,9 +199,23 @@ static void rt_get_network_info(char *mcc_mnc, int32_t mcc_mnc_size,
     if (g_upload_card_info && profileType) {
         *profileType = (int32_t)g_upload_card_info->type;
     }
-    
-    rt_qmi_get_mcc_mnc(&mcc_int, &mnc_int);
-    snprintf(mcc_mnc, mcc_mnc_size, "%03d%02d", mcc_int, mnc_int);
+
+    while(1) {
+        rt_qmi_get_mcc_mnc(&mcc_int, &mnc_int);
+        snprintf(mcc_mnc, mcc_mnc_size, "%03d%02d", mcc_int, mnc_int);
+        if (!rt_os_strncmp(mcc_mnc, RT_ERR_MCCMNC, RT_MCCMNC_LEN)) {
+            MSG_PRINTF(LOG_INFO, "get mcc mnc fail, mcc_mnc : %s\n", mcc_mnc);
+            rt_os_sleep(2);
+            if (++j >= 5) {
+                MSG_PRINTF(LOG_ERR, "get mcc mnc fail, will reboot !\n");
+                rt_os_reboot();
+            }
+            continue;
+        }
+        break;
+    }
+
+    g_upload_card_info->mcc = mcc_int;
 
     /* signal level: [1,5] */
     rt_get_cur_signal(dbm);
@@ -195,7 +249,7 @@ static void rt_get_network_info(char *mcc_mnc, int32_t mcc_mnc_size,
         iccid[j] = 'F';
     }
     iccid[j] = '\0';
-    MSG_PRINTF(LOG_INFO, "*level:%c\n", *level);
+    MSG_PRINTF(LOG_DBG, "*level:%c\n", *level);
 }
 
 static cJSON *upload_event_boot_network_info(void)
@@ -223,9 +277,9 @@ static cJSON *upload_event_boot_network_info(void)
     CJSON_ADD_NEW_STR_OBJ(network, type);
     CJSON_ADD_NEW_INT_OBJ(network, dbm);
     CJSON_ADD_NEW_STR_OBJ(network, signalLevel);
-    
+
     ret = RT_SUCCESS;
-    
+
 exit_entry:
 
     return !ret ? network : NULL;
@@ -247,7 +301,7 @@ static cJSON *upload_event_software_version_info(void)
         MSG_PRINTF(LOG_WARN, "The software is error\n");
         goto exit_entry;
     }
-    
+
     for (i_type = 0; i_type < TARGET_TYPE_MAX; i_type++) {
         single_version = cJSON_CreateObject();
         if (!single_version) {
@@ -267,7 +321,7 @@ static cJSON *upload_event_software_version_info(void)
     }
 
     ret = RT_SUCCESS;
-    
+
 exit_entry:
 
     return !ret ? software : NULL;
@@ -329,7 +383,7 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
 
     network = upload_event_boot_network_info();
     CJSON_ADD_STR_OBJ(content, network);
-    
+
     if (!only_profile_network) {
         software = upload_event_software_version_info();
         CJSON_ADD_STR_OBJ(content, software);

@@ -19,6 +19,7 @@
 #include "card_detection.h"
 #include "rt_type.h"
 #include "rt_os.h"
+#include "ping_task.h"
 
 /*
 queue msg type must large than 0, it's a nonpositive mtype value !
@@ -127,6 +128,8 @@ const char * g_msg_mode_e[] =
     "MSG_CARD_UPDATE",
     "MSG_CARD_DISABLE_EXIST_CARD",
     "MSG_CARD_UPDATE_SEED",
+    "MSG_SYNC_DOWNSTREAM_INFO",
+    "MSG_SWITCH_CARD",
 };
 #endif
 
@@ -169,6 +172,7 @@ static void agent_queue_task(void)
                     break;
 
                 case MSG_ID_NETWORK_DECTION:
+                    sync_downstream_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 case MSG_ID_BROAD_CAST_NETWORK:
@@ -179,6 +183,7 @@ static void agent_queue_task(void)
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode); // It will waste a few time
+                    ping_task_network_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 case MSG_ID_MQTT:

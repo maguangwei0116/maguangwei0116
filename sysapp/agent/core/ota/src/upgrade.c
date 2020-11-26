@@ -37,12 +37,8 @@ static int32_t get_system_tf_free(uint32_t *free_byte)
     rt_statfs_t diskInfo;
     unsigned long long totalBlocks;
     unsigned long long freeDisk;
-#ifdef CFG_STANDARD_MODULE
-    const char *disk_path = "/usrdata/";
-#else
-    const char *disk_path = "/data/";
-#endif
-    
+    const char *disk_path = CFG_AGENT_RUN_PATH;
+
     if (linux_statfs(disk_path, &diskInfo) < 0) {
         MSG_PRINTF(LOG_ERR, "get free byte fail\r\n");
         return RT_ERROR;
@@ -61,7 +57,7 @@ static rt_bool upgrade_check_sys_memory(upgrade_struct_t *d_info)
     rt_bool ret = RT_FALSE;
 
     if (get_system_tf_free(&free_byte) == RT_SUCCESS) {
-        MSG_PRINTF(LOG_INFO, "system freebyte: %d B (%d KB), file size: %d B\r\n", free_byte, free_byte/1024, d_info->size);
+        MSG_PRINTF(LOG_DBG, "system freebyte: %d B (%d KB), file size: %d B\r\n", free_byte, free_byte/1024, d_info->size);
         if (d_info->size < free_byte) {
             ret = RT_TRUE;
         }
@@ -94,7 +90,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
 
     /* build http body */
     post_info = cJSON_CreateObject();
-    
+
     /* check target type frsit */
     if (d_info->type == TARGET_TYPE_DEF_SHARE_PROFILE) {
         snprintf(buf, sizeof(buf), "http://%s:%d%s", g_upgrade_addr, g_upgrade_port, g_upgrade_def_agent_api);
@@ -105,7 +101,7 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
         cJSON_AddItemToObject(post_info, "ticket", cJSON_CreateString((char *)d_info->ticket));
         cJSON_AddItemToObject(post_info, "imei", cJSON_CreateString(""));  // must have a empty "imei"
     }
-    
+
     dw_struct.file_path = (const char *)d_info->tmpFileName;
     dw_struct.manager_type = 1;
     dw_struct.http_header.method = 0;  // POST
@@ -113,11 +109,13 @@ static rt_bool upgrade_download_package(upgrade_struct_t *d_info)
     dw_struct.http_header.url[rt_os_strlen(buf)] = '\0';
     dw_struct.http_header.version = 0;
     dw_struct.http_header.record_size = 0;
-    
+
     out = (int8_t *)cJSON_PrintUnformatted(post_info);
-    rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
-    dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
-    cJSON_free(out);
+    if (out != NULL) {
+        rt_os_memcpy(dw_struct.http_header.buf, out, rt_os_strlen(out));
+        dw_struct.http_header.buf[rt_os_strlen(out)] = '\0';
+        cJSON_free(out);
+    }
 
     snprintf((char *)buf, sizeof(buf), "%s:%d", g_upgrade_addr, g_upgrade_port);
     http_set_header_record(&dw_struct, "HOST", buf);

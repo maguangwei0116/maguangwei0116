@@ -141,6 +141,7 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
     if (channel < 0) {
         return RT_ERR_APDU_OPEN_CHANNEL_FAIL;
     }
+    
     if (g_channel_mode == LPA_CHANNEL_BY_IPC) {
         // select aid
         uint8_t cmd[6] = {0x80,0xC0,0x00,0x00,0x00};
