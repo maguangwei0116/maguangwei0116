@@ -29,7 +29,6 @@
 
 #define RT_LOCAL_NETWORK            1
 #define RT_ROAM_NETWORK             5
-#define RT_REFUSE_NETWORK           3
 
 #define CHINA_DNS                   "114.114.114.114"
 #define GOOGLE_NDS                  "8.8.8.8"
@@ -328,10 +327,8 @@ static rt_bool dial_up_get_regist_state(void)
     if (regist_state == RT_LOCAL_NETWORK || regist_state == RT_ROAM_NETWORK) {
         MSG_PRINTF(LOG_INFO, "regist state:%d\n", regist_state);
         return RT_TRUE;
-    } else if (regist_state == RT_REFUSE_NETWORK) {
-        MSG_PRINTF(LOG_INFO,  "regist state:%d, ret=%d\n", regist_state, ret);
-        return RT_FALSE;
     }
+
     MSG_PRINTF(LOG_DBG, "regist state:%d, ret=%d\n", regist_state, ret);
 
     return RT_FALSE;
