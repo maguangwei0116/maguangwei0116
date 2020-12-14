@@ -37,6 +37,7 @@
 #define AT_SWITCH_TO_OPERATION          '1'
 #define AT_CONFIG_LPA_CHANNEL           '2'
 #define AT_SWITCH_CARD                  '3'
+#define AT_COMPATIBLE_SWITCH_CARD       '5'     // Compatible with previous versions
 
 #define AT_CONTENT_DELIMITER            ','
 
@@ -193,7 +194,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, &cmd[5]);
                 }
 
-            } else if (cmd[3] == AT_SWITCH_CARD) { // Switch card
+            } else if (cmd[3] == AT_SWITCH_CARD || cmd[3] == AT_COMPATIBLE_SWITCH_CARD) { // Switch card
                 MSG_PRINTF(LOG_INFO, "Switch to %s\n", &cmd[5]);
                 device_key_status = rt_get_device_key_status();
                 if (device_key_status == RT_FALSE) {
@@ -217,7 +218,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                         snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Switch failed, SIM is using");
                         ret = RT_SUCCESS;
                     }
-                } else if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_VSIM, AT_CFG_SOFTSIM_LEN)) {   // Switch to vUICC
+                } else if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_VSIM, AT_CFG_SOFTSIM_LEN) || cmd[3] == AT_COMPATIBLE_SWITCH_CARD) {   // Switch to vUICC
                     if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                         send_buf[0] = SIM_NO_INTERNET;
                         snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to xUICC");
