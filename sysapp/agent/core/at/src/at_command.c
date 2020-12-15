@@ -30,13 +30,14 @@
 
 #define AT_GET_EID                      '0'
 #define AT_GET_ICCIDS                   '1'
-#define AT_GET_UICC_TYPE                '2'
+#define AT_COMPATIBLE_GET_CUR_TYPE      '2'
 #define AT_GET_CUR_TYPE                 '3'
+#define AT_GET_UICC_TYPE                '4'
 
 #define AT_SWITCH_TO_PROVISIONING       '0'
 #define AT_SWITCH_TO_OPERATION          '1'
-#define AT_CONFIG_LPA_CHANNEL           '2'
 #define AT_SWITCH_CARD                  '3'
+#define AT_CONFIG_LPA_CHANNEL           '4'
 #define AT_COMPATIBLE_SWITCH_CARD       '5'     // Compatible with previous versions
 
 #define AT_CONTENT_DELIMITER            ','
@@ -124,6 +125,14 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 snprintf(rsp, len, "%c%c%c%s", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, buf);
                 ret = RT_SUCCESS;
 
+            } else if (cmd[3] == AT_GET_CUR_TYPE || cmd[3] == AT_COMPATIBLE_GET_CUR_TYPE) {   // Get type in using
+                if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM");
+                } else {
+                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
+                }
+                ret = RT_SUCCESS;
+
             } else if (cmd[3] == AT_GET_UICC_TYPE) {  // get UICC type
                 /* rsp: ,cmd,"uicc-type" */
                 if (g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_FIRST) {
@@ -134,14 +143,6 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
                 } else if (g_p_value_list->config_info->sim_mode == MODE_TYPE_SIM_ONLY) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM Only");
-                }
-                ret = RT_SUCCESS;
-
-            } else if (cmd[3] == AT_GET_CUR_TYPE) {   // Get type in using
-                if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
-                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM");
-                } else {
-                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "xUICC");
                 }
                 ret = RT_SUCCESS;
             }
@@ -208,7 +209,7 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_SIM, AT_CFG_SIM_LEN)) {           // Switch to SIM
                     if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM && g_p_value_list->card_info->sim_info.state == SIM_READY) {
                         send_buf[0] = PROVISONING_NO_INTERNET;
-                        snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "xUICC switch to SIM");
+                        snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC switch to SIM");
                         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
                         ret = RT_SUCCESS;
                     } else if (g_p_value_list->card_info->sim_info.state == SIM_ERROR) {
@@ -221,11 +222,11 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 } else if (!rt_os_strncasecmp(&cmd[5], AT_SWITCH_VSIM, AT_CFG_SOFTSIM_LEN) || cmd[3] == AT_COMPATIBLE_SWITCH_CARD) {   // Switch to vUICC
                     if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                         send_buf[0] = SIM_NO_INTERNET;
-                        snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to xUICC");
+                        snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM switch to vUICC");
                         msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
                         ret = RT_SUCCESS;
                     } else {
-                        snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Switch failed, xUICC is using");
+                        snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Switch failed, vUICC is using");
                         ret = RT_SUCCESS;
                     }
                 }
