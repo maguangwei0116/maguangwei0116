@@ -105,10 +105,10 @@ static rt_bool mbn_set_auto_state(int32_t state)
 static int32_t mbn_config_device(void)
 {
     char at_rsp[128];
-    
-    at_send_recv(AT_ROAMSERVICE, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);       // Set roaming switch
-    at_send_recv(AT_AUTO_CONNECT, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);      // Cancel automatic dialing
+
     at_send_recv(AT_ECM, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);               // Set ECM
+    at_send_recv(AT_AUTO_CONNECT, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);      // Cancel automatic dialing
+    at_send_recv(AT_ROAMSERVICE, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);       // Set roaming switch
     at_send_recv(MBN_ECHO_OFF, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);
 
     if (mbn_get_auto_state() == RT_FALSE) {
