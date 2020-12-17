@@ -462,6 +462,7 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
 
     infos->proj_mode = msg_string_to_int(local_config_get_data("PROJ_MODE"));
     MSG_PRINTF(LOG_INFO, "proj mode : %d\n", infos->proj_mode);
+    MSG_PRINTF(LOG_INFO, "project mode !!!! : %s\n", local_config_get_data("PROJ_MODE"));
     if (infos->proj_mode != msg_string_to_int(PROJ_MODE_EV)) {
         infos->proj_mode = msg_string_to_int(PROJ_MODE_SV);
     }
@@ -512,7 +513,7 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n",    local_config_get_data("RPLMN_ENABLE"));
     MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
     MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n",    local_config_get_data("UICC_MODE"));
-    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_SV) ? "Standard version" : "Enterprise version");
+    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_EV) ? "Enterprise version" : "Standard version");
     MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n",    local_config_get_data("MONITOR_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n",    local_config_get_data("AGENT_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n",    local_config_get_data("USAGE_ENABLE"));
