@@ -461,12 +461,9 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     }
 
     infos->proj_mode = msg_string_to_int(local_config_get_data("PROJ_MODE"));
-    MSG_PRINTF(LOG_INFO, "proj mode : %d\n", infos->proj_mode);
-    MSG_PRINTF(LOG_INFO, "project mode !!!! : %s\n", local_config_get_data("PROJ_MODE"));
     if (infos->proj_mode != msg_string_to_int(PROJ_MODE_EV)) {
         infos->proj_mode = msg_string_to_int(PROJ_MODE_SV);
     }
-
 
     infos->sim_mode = msg_string_to_int(local_config_get_data("UICC_MODE"));
 

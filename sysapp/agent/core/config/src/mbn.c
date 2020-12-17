@@ -114,7 +114,6 @@ static rt_bool mbn_get_ecm_state(void)
         if (at_send_recv(AT_ECM_STATE, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT) != RT_SUCCESS) {
             MSG_PRINTF(LOG_WARN, "send data error\n");
         }
-        MSG_PRINTF(LOG_WARN, "ecm rsp: %s\n", at_rsp);
         str = rt_os_strstr(at_rsp, AT_ECM_SELECT);
         if (str != NULL) {
             break;
@@ -125,8 +124,6 @@ static rt_bool mbn_get_ecm_state(void)
     if (num == 0) {
         return RT_FALSE;
     }
-
-    MSG_PRINTF(LOG_WARN, "strstr str: %s\n", str);
 
     if (str[8] == '1') {
         return RT_TRUE;
