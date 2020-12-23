@@ -51,10 +51,12 @@
 #define IS_SPACES(x)                        ( ' ' == (x) || '\t' == (x) || '\n' == (x) || '\r' == (x) || '\f' == (x) || '\b' == (x) )  // �ж��Ƿ�Ϊ�հ׷�
 #define PROJ_MODE_SV                        "0"
 #define PROJ_MODE_EV                        "1"
-#define UICC_MODE_SIMF                      "0"
-#define UICC_MODE_eUICC                     "1"
-#define UICC_MODE_vUICC                     "2"
-#define UICC_MODE_SIMO                      "3"
+
+#define UICC_MODE_vUICC                     "0"
+#define UICC_MODE_SIMF                      "1"
+#define UICC_MODE_SIMO                      "2"
+#define UICC_MODE_eUICC                     "3"
+
 #define MAX_LOG_SIZE_VALUE                  "5"
 #define PROD_ENV_MODE                       0
 #define STAG_ENV_MODE                       1
@@ -201,7 +203,7 @@ ITEM(MBN_CONFIGURATION,         config_switch_value,        INTEGER,        "1",
 ITEM(INIT_PROFILE_TYPE,         config_init_pro_type,       INTEGER,        "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
 ITEM(RPLMN_ENABLE,                  NULL,                   INTEGER,        "1",                            "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,             config_log_size,            INTEGER,        "1",                            "The max size of rt_log file (0 < x <= 5 MB)"),
-ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "0",                            "The mode of UICC (0:SIM first  1:eUICC  2:vUICC  3:SIM only)"),
+ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "1",                            "The mode of UICC (0:vUICC  1:SIM first  2:SIM only  3: eUICC)"),
 ITEM(PROJ_MODE,                 config_proj_mode,           INTEGER,        "0",                            "The mode of Project (0:Standard version  1:Enterprise version)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
 ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
@@ -459,6 +461,10 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     }
 
     infos->proj_mode = msg_string_to_int(local_config_get_data("PROJ_MODE"));
+    if (infos->proj_mode != msg_string_to_int(PROJ_MODE_EV)) {
+        infos->proj_mode = msg_string_to_int(PROJ_MODE_SV);
+    }
+
     infos->sim_mode = msg_string_to_int(local_config_get_data("UICC_MODE"));
 
     if (infos->sim_mode == MODE_TYPE_EUICC) {
@@ -504,7 +510,7 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n",    local_config_get_data("RPLMN_ENABLE"));
     MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
     MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n",    local_config_get_data("UICC_MODE"));
-    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_SV) ? "Standard version" : "Enterprise version");
+    MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_EV) ? "Enterprise version" : "Standard version");
     MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n",    local_config_get_data("MONITOR_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n",    local_config_get_data("AGENT_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n",    local_config_get_data("USAGE_ENABLE"));

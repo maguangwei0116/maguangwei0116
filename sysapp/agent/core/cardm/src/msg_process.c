@@ -475,7 +475,7 @@ rt_bool inspect_device_key(const char *file_name)
 
     RT_CHECK_ERR(fp = linux_fopen((char *)file_name, "r"), NULL);
     linux_fseek(fp, RT_DEVICE_KEY_OFFSET, RT_FS_SEEK_SET);
-    RT_CHECK_ERR(linux_fread(file_buffer, DEVICE_KEY_LEN, 1, fp), 0);
+    linux_fread(file_buffer, DEVICE_KEY_LEN, 1, fp);
 
     sha256_init(&sha_ctx);
     sha256_update(&sha_ctx, (uint8_t *)file_buffer, DEVICE_KEY_LEN);         // app key

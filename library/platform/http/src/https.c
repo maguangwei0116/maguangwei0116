@@ -135,18 +135,9 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
     X509* cert = SSL_get_peer_certificate(https_ctx->ssl);
     if (cert) {  // Free immediately
         char *line;
-        for (count = 0; count < 6; ++count) {
-            //MSG_PRINTF(LOG_INFO, "cert: %s\n", cert);
-            line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-            MSG_PRINTF(LOG_DBG, "Subject Name: %s\n", line);
-            MSG_PRINTF(LOG_DBG, "count is: %d\n", count);
-            if (strstr(line, "redtea") != NULL) {
-                rt_os_free(line);
-                break;
-            }
-            rt_os_free(line);
-            sleep(2);
-        }
+        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+        MSG_PRINTF(LOG_DBG, "Subject Name: %s\n", line);
+        rt_os_free(line);
         line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
         MSG_PRINTF(LOG_DBG, "Issuer: %s\n", line);
         res = SSL_get_verify_result(https_ctx->ssl);

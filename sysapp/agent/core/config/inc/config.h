@@ -12,10 +12,10 @@
 #include "stdint.h"
 
 typedef enum MODE_TYPE {
-    MODE_TYPE_SIM_FIRST             = 0,
-    MODE_TYPE_EUICC                 = 1,
-    MODE_TYPE_VUICC                 = 2,
-    MODE_TYPE_SIM_ONLY              = 3,
+    MODE_TYPE_VUICC                 = 0,
+    MODE_TYPE_SIM_FIRST             = 1,
+    MODE_TYPE_SIM_ONLY              = 2,
+    MODE_TYPE_EUICC                 = 3,
 } mode_type_e;
 
 typedef enum PROJECT_MODE {
