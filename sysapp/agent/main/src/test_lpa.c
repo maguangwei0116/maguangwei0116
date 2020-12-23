@@ -23,7 +23,7 @@
 
 static const char *opt_string = "g:EqlLi:r:e:d:a:c:u:vh?";
 static lpa_channel_type_e g_chan_mode = LPA_CHANNEL_BY_QMI;
-static log_level_e g_log_level = LOG_INFO;
+static log_level_e g_log_level = LOG_ALL;
 
 static void display_usage(void)
 {
