@@ -80,7 +80,7 @@ typedef struct CARD_INFO {
     uint8_t                         operational_num;
     uint8_t                         eid[MAX_EID_LEN + 1];
     profile_type_e                  type;                        // used card type
-    profile_type_e                  last_type;                   // used card type
+    profile_type_e                  last_type;                   // last used card type
     uint8_t                         iccid[THE_ICCID_LENGTH + 1]; // used card iccid
 } card_info_t;
 

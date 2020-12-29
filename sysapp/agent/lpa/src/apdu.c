@@ -210,8 +210,11 @@ int cmd_store_data(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_
                     return RT_ERR_APDU_SEND_FAIL;
                 }
                 *rsp_len += size - 2;
-                sw = get_sw(rsp,size);
-                rsp += size-2;
+                sw = get_sw(rsp, size);
+                rsp += size - 2;
+            } else if ((sw & 0xFF00) == SW_NORMAL) {
+                *rsp_len -= 2;   //Remove 9000
+                break;
             } else {
                 break;
             }
