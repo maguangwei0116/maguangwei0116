@@ -142,7 +142,7 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
         MSG_PRINTF(LOG_DBG, "Issuer: %s\n", line);
         res = SSL_get_verify_result(https_ctx->ssl);
         if (res != X509_V_OK) {
-            MSG_PRINTF(LOG_WARN, "Certificate verification failed: %d\n", res);
+            MSG_PRINTF(LOG_WARN, "Certificate verification res: %d\n", res);
 #ifdef TLS_VERIFY_CERT
 #ifdef TLS_VERIFY_CERT_9_AS_OK
             if (res == X509_V_ERR_CERT_NOT_YET_VALID) {
