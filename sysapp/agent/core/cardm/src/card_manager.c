@@ -62,15 +62,11 @@ static int32_t card_check_init_upload(const uint8_t *eid)
         ret = get_upload_event_result("INIT", NULL, 0, NULL);
         if (ret == RT_SUCCESS) {
             upload_event_report("INFO", NULL, 0, NULL);     // Request update and push ac events
-            update_last_eid = RT_TRUE;
+            snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
+            rt_write_eid(0, g_last_eid, sizeof(g_last_eid));
+            MSG_PRINTF(LOG_INFO, "EID updated : %s\n", g_last_eid);
         }
         msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
-    }
-
-    if (update_last_eid == RT_TRUE) {
-        snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
-        rt_write_eid(0, g_last_eid, sizeof(g_last_eid));
-        MSG_PRINTF(LOG_INFO, "EID updated : %s\n", g_last_eid);
     }
 
     return RT_SUCCESS;
