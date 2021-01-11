@@ -129,7 +129,11 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
                 if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
                     snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "SIM");
                 } else {
-                    snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
+                    if (g_p_value_list->config_info->sim_mode == MODE_TYPE_EUICC) {
+                        snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "eUICC");
+                    } else {
+                        snprintf(rsp, len, "%c%c%c\"%s\"", AT_CONTENT_DELIMITER, cmd[3], AT_CONTENT_DELIMITER, "vUICC");
+                    }
                 }
                 ret = RT_SUCCESS;
 
@@ -334,9 +338,15 @@ static int32_t option_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
     if (*cmd == AT_CONTENT_DELIMITER) {
         if (!rt_os_strncasecmp(&cmd[1], AT_CFG_SV, AT_CFG_PROJ_LEN)) {
-            ret = config_update_proj_mode(PROJECT_SV);
+            ret = config_update_uicc_mode(MODE_TYPE_SIM_FIRST);
+            if (!ret) {
+                ret = config_update_proj_mode(PROJECT_SV);
+            }
         } else if (!rt_os_strncasecmp(&cmd[1], AT_CFG_EV, AT_CFG_PROJ_LEN)) {
-            ret = config_update_proj_mode(PROJECT_EV);
+            ret = config_update_uicc_mode(MODE_TYPE_VUICC);
+            if (!ret) {
+                ret = config_update_proj_mode(PROJECT_EV);
+            }
         }
         if (ret == RT_SUCCESS) {
             snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, &cmd[1]);

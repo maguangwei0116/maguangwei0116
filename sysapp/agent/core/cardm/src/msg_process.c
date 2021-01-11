@@ -194,7 +194,7 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name, char *mcc_
                 mcc_mnc_out[rt_os_strlen(mcc_mnc->valuestring)] = '\0';
             } else {
                 mcc_mnc_out[0] = '\0';
-                MSG_PRINTF(LOG_WARN, "mcc mnc is error\n");                
+                MSG_PRINTF(LOG_WARN, "mcc mnc is error\n");
             }
             apn = cJSON_GetObjectItem(apn_item, "apn");
             if (apn != NULL) {
@@ -252,13 +252,14 @@ static int32_t msg_delete(const char *iccid)
     return RT_SUCCESS;
 }
 
-#if 0
+/**
 EnableProfileResponse ::= [49] SEQUENCE { -- Tag 'BF31'
 enableResult INTEGER {ok(0), iccidOrAidNotFound (1),
 profileNotInDisabledState(2), disallowedByPolicy(3), wrongProfileReenabling(4),
 catBusy(5), undefinedError(127)}
 }
-#endif
+**/
+
 static int32_t msg_enable_profile_check(const char *iccid)
 {
     int32_t i = 0;
@@ -321,10 +322,10 @@ int32_t msg_delete_profile(const char *iccid, rt_bool *opr_iccid_using)
 int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21], int32_t avariable_num)
 {
     if (avariable_num < 0) {
-        MSG_PRINTF(LOG_WARN, "avariable prifle num: %d\n", avariable_num); 
+        MSG_PRINTF(LOG_WARN, "avariable prifle num: %d\n", avariable_num);
         return RT_ERR_PROFILE_NUM;
     }
-    
+
     return lpa_download_profile(ac, cc, iccid, (uint8_t *)g_smdp_proxy_addr);
 }
 
