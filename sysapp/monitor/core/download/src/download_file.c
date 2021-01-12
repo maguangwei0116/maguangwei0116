@@ -29,9 +29,10 @@
     #define DEFAULT_OTI_ENVIRONMENT_PORT        7082
 #elif (CFG_ENV_TYPE_QA)
     #define DOWNLOAD_OTA_ADDR                   "oti-qa.redtea.io"
-    #define DEFAULT_OTI_ENVIRONMENT_PORT        7083
+    #define DEFAULT_OTI_ENVIRONMENT_PORT        80
 #else
-    // do something
+    #define DOWNLOAD_OTA_ADDR                   "oti-qa.redtea.io"
+    #define DEFAULT_OTI_ENVIRONMENT_PORT        80
 #endif
 
 

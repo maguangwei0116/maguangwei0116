@@ -37,7 +37,7 @@
     #if (CFG_ENV_TYPE_PROD) || (CFG_ENV_TYPE_STAG)
         #define RT_OTI_SERVER_PORT                  7082
     #elif (CFG_ENV_TYPE_QA)
-        #define RT_OTI_SERVER_PORT                  7083
+        #define RT_OTI_SERVER_PORT                  80
     #endif
 #endif
 
@@ -222,7 +222,7 @@ static const char * g_restart_reason = "";
 
 int32_t config_set_restart_reason(const char *reason)
 {
-    g_restart_reason = reason;   
+    g_restart_reason = reason;
 
     return RT_SUCCESS;
 }
