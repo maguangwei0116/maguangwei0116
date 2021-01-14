@@ -955,7 +955,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
 
         /* check result code */
         MSG_DUMP_ARRAY("sequenceOf88TLV out\n", out, *out_size);
-        if (*out_size != 2) {
+        if (*out_size >= 2) {
             uint32_t profile_installation_result_data_len = 0;
             uint8_t *profile_installation_result_data_buf = NULL;
 
