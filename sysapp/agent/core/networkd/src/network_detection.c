@@ -178,7 +178,7 @@ static void network_detection_task(void *arg)
     }
 
 dial_up_init_error_entry:
-    
+
     MSG_PRINTF(LOG_WARN, "sleep 10 seconds to reboot terminal ...\r\n");
     rt_os_sleep(10);
     rt_os_reboot();

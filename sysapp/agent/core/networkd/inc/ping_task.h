@@ -46,7 +46,7 @@
 #define RT_WAIT_TIME                60
 #define RT_DEVICE_TIME              60
 #define RT_INIT_TIME                90
-#define RT_PROVISONING_IP           "cthulhu.easyiot.ai"
+#define RT_PROVISONING_IP           "ping.redtea.io"
 
 typedef enum REDTEAREADY_CARD_STATUS_CMD {
     SIM_NO_INTERNET                 = 1,
