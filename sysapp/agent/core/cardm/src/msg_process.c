@@ -17,9 +17,9 @@
 #include "rt_qmi.h"
 #include "lpa_error_codes.h"
 #include "usrdata.h"
-#include "trigger.h"
 #include "file.h"
 #include "hash.h"
+#include "config.h"
 
 #define MSG_ONE_BLOCK_SIZE                  128
 #define INSPECT_FILE_SIZE                   128
