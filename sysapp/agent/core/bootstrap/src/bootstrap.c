@@ -29,6 +29,8 @@
 #define SHARE_PROFILE                           "rt_share_profile.der"
 #elif (CFG_STANDARD_MODULE)  // standard
 #define SHARE_PROFILE                           "/oemapp/rt_share_profile.der"
+#else
+#define SHARE_PROFILE                           "/oemapp/rt_share_profile.der"
 #endif
 
 #define RT_GET_MCC_MAX_TIMES                    10

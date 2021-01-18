@@ -9,10 +9,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <openssl/err.h>
-
 #include "log.h"
 #include "https.h"
 #include "dns.h"
+
 #if (CFG_UPLOAD_HTTPS_ENABLE)
     #include "http.h"
     typedef int32_t (*PCALLBACK)(const char *json_data);
