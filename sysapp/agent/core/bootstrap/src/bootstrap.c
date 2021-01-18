@@ -224,7 +224,7 @@ int32_t bootstrap_get_profile_version(char *batch_code, int32_t b_size, char *ve
         return get_share_profile_version(batch_code, b_size, version, v_size);
     } else {
         /* set a temp batch code and version */
-        snprintf(batch_code, b_size, "%s", "Bxxxxxxxxxxxxxxxxxx");
+        snprintf(batch_code, b_size, "%s", "");
         snprintf(version, v_size, "%s", "0.0.0.0");
         return RT_ERROR;
     }
