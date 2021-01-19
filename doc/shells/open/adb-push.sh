@@ -2,13 +2,13 @@
 
 #!/bin/bash -e
 
-adb push ./app_targets/*agent* /usr/bin/rt_agent
+adb push ./app_targets/*-agent-* /usr/bin/rt_agent
 adb shell chmod +x /usr/bin/rt_agent
 
-adb push ./app_targets/*monitor* /usr/bin/rt_monitor
+adb push ./app_targets/*-monitor-* /usr/bin/rt_monitor
 adb shell chmod +x /usr/bin/rt_monitor
 
-adb push ./app_targets/*libcomm.so* /usr/lib/libcomm.so
+adb push ./app_targets/*-libcomm.so-* /usr/lib/libcomm.so
 adb shell chmod +x /usr/lib/libcomm.so
 
 if [ -e ./app_targets/rt_share_profile.der ]; then
