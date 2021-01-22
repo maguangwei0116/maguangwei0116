@@ -26,6 +26,7 @@
 #include "file.h"
 #include "vuicc_apdu.h"
 #include "network_detection.h"
+#include "cos_api.h"
 
 #define RT_AGENT_WAIT_MONITOR_TIME  3
 #define RT_DATA_PATH                CFG_AGENT_RUN_PATH
@@ -458,7 +459,7 @@ int32_t main(int32_t argc, const char *argv[])
     int32_t cos_oid = 0;
     uint8_t atr[32] = {0};
     uint16_t atr_size = 32;
-    uint8_t cos_ver[64];
+    uint8_t cos_ver[128];
     uint16_t cos_ver_len = 64;
     uint16_t i = 0;
 
@@ -505,14 +506,11 @@ int32_t main(int32_t argc, const char *argv[])
             sleep(1);
         }
     } while(cos_oid == -1);
-    cos_client_reset(atr, &atr_size);
-    cos_get_ver(cos_ver, &cos_ver_len);
 
-    MSG_PRINTF(LOG_INFO, "Cos version: ");
-    for (i = 0; i < cos_ver_len; i ++) {
-        MSG_ORG_PRINTF(LOG_INFO, "%02X", cos_ver[i]);
+    cos_client_reset(atr, &atr_size);
+    if (COS_SUCCESS == cos_get_ver(cos_ver, &cos_ver_len)) {
+        MSG_PRINTF(LOG_INFO, "Cos version: %s\n", cos_ver);
     }
-    MSG_ORG_PRINTF(LOG_INFO, "\n");
 
     /* inspect monitor */
     while (monitor_inspect_file(RT_MONITOR_FILE, RT_MONITOR_NAME) != RT_TRUE) {
