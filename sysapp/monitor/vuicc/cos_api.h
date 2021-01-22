@@ -163,7 +163,13 @@ extern result_t cos_client_transport(io_type_e io_type, const uint8_t *req, uint
 extern result_t cos_client_transmit_apdu(bool auto_get_resp, const uint8_t *c_apdu, uint16_t c_apdu_len, uint8_t *r_apdu, uint16_t *r_apdu_len);
 
 /*
- * This function is used to close communicate with the cos 
+ * This function is used to close communicate with the cos
  */
 extern result_t cos_client_close(void);
+
+/*
+ * Reset cos nvm in a factory mode
+ */
+extern result_t cos_factory_reset(uint8_t *para);
+
 #endif /* __COS_API_H__ */
