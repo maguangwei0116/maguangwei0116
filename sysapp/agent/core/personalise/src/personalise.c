@@ -35,6 +35,7 @@ int32_t init_personalise(void *arg)
 int32_t personalise_upload_no_cert(void *arg)
 {
     if (g_share_profile_damaged && *g_share_profile_damaged == RT_SUCCESS) {
+        rt_write_eid(0, "00000000000000000000000000000000", MAX_EID_LEN);
         upload_event_report("NO_CERT", NULL, 0, NULL);
     }
 

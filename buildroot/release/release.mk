@@ -23,7 +23,9 @@ REDTEA_SKB_SO=../sysapp/monitor/vuicc/lib/libskb.so
 REDTEA_SHARE_PROFILES=../doc/share_profile/$(RELEASE_ENV_TYPE)/*.der
 REDTEA_SHARE_PROFILE=rt_share_profile.der
 REDTEA_ADB_PUSH_SHELL=adb-push.sh
+REDTEA_ADB_PUSH_BAT=adb-push.bat
 REDTEA_SHELL_ADB_PUSH=../doc/shells/open/$(REDTEA_ADB_PUSH_SHELL)
+REDTEA_SHELL_ADB_PUSH_BAT=../doc/shells/open/$(REDTEA_ADB_PUSH_BAT)
 RELEASE_AUTHOR=$(shell whoami)
 RELEASE_DATE=$(shell date +"%Y%m%d")
 RELEASE_TIME=$(shell date +"%Y-%m-%d %T")
@@ -84,14 +86,18 @@ endef
 
 define COPY_RELEASE_TARGETS
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(REDTEA_RELEASE_APP_TARGETS)
+	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(REDTEA_RELEASE_APP_TARGETS)/rt_agent
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(REDTEA_RELEASE_APP_TARGETS)
+	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*monitor* $(REDTEA_RELEASE_APP_TARGETS)/rt_monitor
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/test_lpa $(REDTEA_RELEASE_APP_TARGETS)
 	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(REDTEA_RELEASE_APP_TARGETS)
+	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(REDTEA_RELEASE_APP_TARGETS)/libcomm.so
 	-$(Q)cp -rf $(REDTEA_SHARE_PROFILES) $(REDTEA_RELEASE_APP_TARGETS)/$(REDTEA_SHARE_PROFILE)
 	-$(Q)cp -rf $(REDTEA_SKB_SO) $(REDTEA_RELEASE_APP_TARGETS)
 	-$(Q)cp -rf $(REDTEA_SHELL_APP) $(REDTEA_RELEASE_APP_SHELLS)
 	-$(Q)cp -rf $(REDTEA_SHELL_KEEP) $(REDTEA_RELEASE_APP_SHELLS)
 	-$(Q)cp -rf $(REDTEA_SHELL_ADB_PUSH) $(RELEASE_INSTALL_PATH)
+	-$(Q)cp -rf $(REDTEA_SHELL_ADB_PUSH_BAT) $(RELEASE_INSTALL_PATH)
 	-$(Q)cp -rf $(REDTEA_CHANGE_LOG) $(RELEASE_INSTALL_PATH)
 endef
 

@@ -33,6 +33,7 @@
 #define ERROR_DELETE_DATA_STATUS                     1013
 #define ERROR_CREATE_CARD_STATUS                     1014
 #define ERROR_SLOT_NOT_SUPPORT_STATUS                1015
+#define ERROR_SIM_ONLY_STATUS                        1016
 #define ERROR_NO_APN_LIST                            1020
 #define ERROR_NO_REQUIRED_DATA                       1021
 #define ERROR_CARD_OVERFLOW                          1023

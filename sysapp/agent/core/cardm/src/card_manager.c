@@ -32,7 +32,7 @@
 static card_info_t                  g_p_info;
 static uint8_t                      g_last_eid[MAX_EID_LEN + 1] = {0};
 static rt_bool                      g_frist_bootstrap_ok        = RT_FALSE;
-
+static int32_t                      g_sim_mode;
 static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
 {
     int32_t i = 0;
@@ -62,15 +62,11 @@ static int32_t card_check_init_upload(const uint8_t *eid)
         ret = get_upload_event_result("INIT", NULL, 0, NULL);
         if (ret == RT_SUCCESS) {
             upload_event_report("INFO", NULL, 0, NULL);     // Request update and push ac events
-            update_last_eid = RT_TRUE;
+            snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
+            rt_write_eid(0, g_last_eid, sizeof(g_last_eid));
+            MSG_PRINTF(LOG_INFO, "EID updated : %s\n", g_last_eid);
         }
         msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
-    }
-
-    if (update_last_eid == RT_TRUE) {
-        snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
-        rt_write_eid(0, g_last_eid, sizeof(g_last_eid));
-        MSG_PRINTF(LOG_INFO, "EID updated : %s\n", g_last_eid);
     }
 
     return RT_SUCCESS;
@@ -512,6 +508,10 @@ int32_t card_switch_type(cJSON *switchparams)
     card_type = cJSON_GetObjectItem(switchparams, "type");
     if (card_type != NULL) {
         if (card_type->valueint == SWITCH_TO_ESIM) {
+            if (g_sim_mode == MODE_TYPE_SIM_ONLY) {
+                MSG_PRINTF(LOG_ERR, "In sim only mode!!\n");
+                return ERROR_SIM_ONLY_STATUS;  
+            }
             device_key_status = rt_get_device_key_status();
             if (g_p_info.type == PROFILE_TYPE_SIM && device_key_status == RT_TRUE) {
                 MSG_PRINTF(LOG_INFO, "Update message received : Switch to xUICC\n");
@@ -539,7 +539,6 @@ int32_t card_switch_type(cJSON *switchparams)
 int32_t init_card_manager(void *arg)
 {
     int32_t ret = RT_ERROR;
-    int32_t sim_mode;
     int32_t project_mode;
     uint8_t send_buf[1] = {0};
     uint8_t cpin_status[THE_CPIN_LENGTH + 1]= {0};
@@ -556,8 +555,8 @@ int32_t init_card_manager(void *arg)
     rt_os_memset(&g_p_info.eid, '0', MAX_EID_LEN);
     rt_os_memset(&g_last_eid, 'F', MAX_EID_LEN);
 
-    sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
-    if (sim_mode == MODE_TYPE_SIM_FIRST || sim_mode == MODE_TYPE_SIM_ONLY) {
+    g_sim_mode = ((public_value_list_t *)arg)->config_info->sim_mode;
+    if (g_sim_mode == MODE_TYPE_SIM_FIRST || g_sim_mode == MODE_TYPE_SIM_ONLY) {
         card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
         g_p_info.type = PROFILE_TYPE_SIM;
         rt_qmi_get_current_cpin_state(cpin_status);
@@ -623,7 +622,7 @@ int32_t init_card_manager(void *arg)
         MSG_PRINTF(LOG_WARN, "card init profile type fail, ret=%d\r\n", ret);
     }
 
-    if (sim_mode == MODE_TYPE_SIM_FIRST) {
+    if (g_sim_mode == MODE_TYPE_SIM_FIRST) {
         if (g_p_info.sim_info.state != SIM_READY) {
             device_key_status = rt_get_device_key_status();
             if (device_key_status == RT_TRUE) {

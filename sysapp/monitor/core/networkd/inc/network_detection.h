@@ -17,10 +17,10 @@
 #include "rt_type.h"
 
 typedef enum MODE_TYPE {
-    MODE_TYPE_SIM_FIRST,
-    MODE_TYPE_EUICC,
-    MODE_TYPE_SIM_ONLY,
-    MODE_TYPE_VUICC
+    MODE_TYPE_VUICC                 = 0,
+    MODE_TYPE_SIM_FIRST             = 1,
+    MODE_TYPE_SIM_ONLY              = 2,
+    MODE_TYPE_EUICC                 = 3,
 } mode_type_e;
 
 

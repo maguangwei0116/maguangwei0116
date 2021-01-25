@@ -9,9 +9,11 @@
 #include "log.h"
 #include "agent_queue.h"
 
-#define AT_ROAMSERVICE              "AT+QCFG=\"ROAMSERVICE\",2\r\n"     // 2 is force open
-#define AT_AUTO_CONNECT             "AT+QCFG=\"QCAUTOCONNECT\",0\r\n"
-#define AT_ECM                      "AT+QCFG=\"USBNET\",1\r\n"
+#define AT_CONFIG_ROAMSERVICE       "AT+QCFG=\"ROAMSERVICE\",2\r\n"     // 2 is force open
+#define AT_CONFIG_DIAL              "AT+QCFG=\"QCAUTOCONNECT\",0\r\n"
+#define AT_CONFIG_ECM               "AT+QCFG=\"USBNET\",1\r\n"
+#define AT_ECM_STATE                "AT+QCFG=\"USBNET\"\r\n"
+#define AT_ECM_SELECT               "usbnet"
 
 #define MBN_USED_ITEM               "at+qmbncfg=\"select\"\r\n"
 #define MBN_CONFIG_ONE_ITEM         "at+qmbncfg=\"select\",\"%s\"\r\n"
@@ -23,7 +25,7 @@
 #define MBN_ECHO_OFF                "ATE0\r\n"
 #define MBN_ECHO_ON                 "ATE1\r\n"
 #define MBN_RTY_SEND_AT_TIMES       3
-#define MBN_AT_TIMEOUT              1000 
+#define MBN_AT_TIMEOUT              1000
 
 static rt_bool mbn_judge_used_item(const char *item)
 {
@@ -102,13 +104,45 @@ static rt_bool mbn_set_auto_state(int32_t state)
     return RT_TRUE;
 }
 
+static rt_bool mbn_get_ecm_state(void)
+{
+    char at_rsp[128];
+    char *str = NULL;
+    int32_t num = MBN_RTY_SEND_AT_TIMES;
+
+    while (num != 0) {
+        if (at_send_recv(AT_ECM_STATE, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT) != RT_SUCCESS) {
+            MSG_PRINTF(LOG_WARN, "send data error\n");
+        }
+        str = rt_os_strstr(at_rsp, AT_ECM_SELECT);
+        if (str != NULL) {
+            break;
+        }
+        num--;
+        sleep(3);
+    }
+    if (num == 0) {
+        return RT_FALSE;
+    }
+
+    if (str[8] == '1') {
+        return RT_TRUE;
+    }
+
+    return RT_FALSE;
+}
+
 static int32_t mbn_config_device(void)
 {
     char at_rsp[128];
-    
-    at_send_recv(AT_ROAMSERVICE, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);       // Set roaming switch
-    at_send_recv(AT_AUTO_CONNECT, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);      // Cancel automatic dialing
-    at_send_recv(AT_ECM, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);               // Set ECM
+
+    if (mbn_get_ecm_state() == RT_FALSE) {
+        at_send_recv(AT_CONFIG_ECM, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);            // Set ECM
+        MSG_PRINTF(LOG_INFO, "ECM config ok\r\n");
+    }
+
+    at_send_recv(AT_CONFIG_DIAL, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);               // Cancel automatic dialing
+    at_send_recv(AT_CONFIG_ROAMSERVICE, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);        // Set roaming switch
     at_send_recv(MBN_ECHO_OFF, at_rsp, sizeof(at_rsp), MBN_AT_TIMEOUT);
 
     if (mbn_get_auto_state() == RT_FALSE) {

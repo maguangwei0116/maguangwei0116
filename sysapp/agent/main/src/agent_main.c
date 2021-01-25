@@ -137,7 +137,7 @@ static void rt_compare_oemapp_version(int32_t *old_ver)
     rt_os_memset(oemapp_version, 0, sizeof(oemapp_version));
     RT_CHECK_ERR(fp = linux_fopen((char *)RT_OEMAPP_VERSION, "r"), NULL);
     linux_fseek(fp, 0, RT_FS_SEEK_SET);
-    RT_CHECK_ERR(linux_fread(oemapp_version, RT_OEMAPP_VERSION_LEN, 1, fp),0)
+    linux_fread(oemapp_version, RT_OEMAPP_VERSION_LEN, 1, fp);
     version_format(oemapp_version, new_ver);
 
     new_version = new_ver[0]*1000 + new_ver[1]*100 + new_ver[2]*10 + new_ver[3];

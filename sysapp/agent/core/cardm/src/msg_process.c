@@ -17,9 +17,9 @@
 #include "rt_qmi.h"
 #include "lpa_error_codes.h"
 #include "usrdata.h"
-#include "trigger.h"
 #include "file.h"
 #include "hash.h"
+#include "config.h"
 
 #define MSG_ONE_BLOCK_SIZE                  128
 #define INSPECT_FILE_SIZE                   128
@@ -194,7 +194,7 @@ static int32_t msg_get_op_apn_name(const char *iccid, char *apn_name, char *mcc_
                 mcc_mnc_out[rt_os_strlen(mcc_mnc->valuestring)] = '\0';
             } else {
                 mcc_mnc_out[0] = '\0';
-                MSG_PRINTF(LOG_WARN, "mcc mnc is error\n");                
+                MSG_PRINTF(LOG_WARN, "mcc mnc is error\n");
             }
             apn = cJSON_GetObjectItem(apn_item, "apn");
             if (apn != NULL) {
@@ -252,13 +252,14 @@ static int32_t msg_delete(const char *iccid)
     return RT_SUCCESS;
 }
 
-#if 0
+/**
 EnableProfileResponse ::= [49] SEQUENCE { -- Tag 'BF31'
 enableResult INTEGER {ok(0), iccidOrAidNotFound (1),
 profileNotInDisabledState(2), disallowedByPolicy(3), wrongProfileReenabling(4),
 catBusy(5), undefinedError(127)}
 }
-#endif
+**/
+
 static int32_t msg_enable_profile_check(const char *iccid)
 {
     int32_t i = 0;
@@ -321,10 +322,10 @@ int32_t msg_delete_profile(const char *iccid, rt_bool *opr_iccid_using)
 int32_t msg_download_profile(const char *ac, const char *cc, char iccid[21], int32_t avariable_num)
 {
     if (avariable_num < 0) {
-        MSG_PRINTF(LOG_WARN, "avariable prifle num: %d\n", avariable_num); 
+        MSG_PRINTF(LOG_WARN, "avariable prifle num: %d\n", avariable_num);
         return RT_ERR_PROFILE_NUM;
     }
-    
+
     return lpa_download_profile(ac, cc, iccid, (uint8_t *)g_smdp_proxy_addr);
 }
 
@@ -475,7 +476,7 @@ rt_bool inspect_device_key(const char *file_name)
 
     RT_CHECK_ERR(fp = linux_fopen((char *)file_name, "r"), NULL);
     linux_fseek(fp, RT_DEVICE_KEY_OFFSET, RT_FS_SEEK_SET);
-    RT_CHECK_ERR(linux_fread(file_buffer, DEVICE_KEY_LEN, 1, fp), 0);
+    linux_fread(file_buffer, DEVICE_KEY_LEN, 1, fp);
 
     sha256_init(&sha_ctx);
     sha256_update(&sha_ctx, (uint8_t *)file_buffer, DEVICE_KEY_LEN);         // app key
@@ -503,8 +504,10 @@ rt_bool rt_get_device_key_status(void)
 {
     uint8_t  inspect_file[INSPECT_FILE_SIZE] = {0};
     snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
-
-    if (project_mode == PROJECT_EV) {
+#if (CFG_STANDARD_MODULE)
+    if (project_mode == PROJECT_EV)
+#endif 
+    {
         MSG_PRINTF(LOG_DBG, "Enterprise version, do not verify DeviceKey ...\n");
         return RT_TRUE;
     }

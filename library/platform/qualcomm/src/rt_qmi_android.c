@@ -37,7 +37,7 @@ extern WAEK_API int32_t jni_euicc_close_channel(uint8_t *channel);
 extern WAEK_API int32_t jni_euicc_transmit_apdu(const uint8_t *data, const uint32_t *data_len, \
                                     uint8_t *rsp, uint32_t *rsp_len, const uint32_t *channel);
 
-extern WAEK_API int32_t jni_vuicc_transmit_apdu(const uint8_t *data, const uint32_t *data_len, 
+extern WAEK_API int32_t jni_vuicc_transmit_apdu(const uint8_t *data, const uint32_t *data_len,
                                     uint8_t *rsp, uint32_t *rsp_len);
 
 #define JNI_RETURN_ERROR        -1000
@@ -74,7 +74,7 @@ static int32_t jni_api_common(const char *func, int32_t cnt, ...)
     va_list vl_list;
     int32_t i = 0;
     int32_t ret = RT_ERROR;
-    void *tmp = NULL;    
+    void *tmp = NULL;
     void *param_list[MAX_PARAM_CNT] = {0};
 
     MSG_PRINTF(LOG_INFO, "%s start ...\r\n", func);
@@ -86,7 +86,7 @@ static int32_t jni_api_common(const char *func, int32_t cnt, ...)
 
     if (cnt > MAX_PARAM_CNT) {
         MSG_PRINTF(LOG_WARN, "param cnt too many, cnt=%d\r\n", cnt);
-        goto exit_entry;  
+        goto exit_entry;
     }
 
     va_start(vl_list, cnt);
@@ -157,7 +157,7 @@ static int32_t rt_qmi_close_channel_handle(void)
 {
     const uint32_t *channel = (const uint32_t *)g_thread_data.param.param1;
     int32_t ret;
-    
+
     ret = jni_euicc_close_channel(channel);
 
     return ret;
@@ -179,7 +179,7 @@ static int32_t rt_qmi_open_channel_handle(void)
 {
     const uint32_t *channel = (const uint32_t *)g_thread_data.param.param1;
     int32_t ret;
-    
+
     ret = jni_euicc_open_channel(channel);
 
     return ret;
@@ -354,7 +354,7 @@ static int32_t rt_qmi_modify_profile_handle(void)
 
 int32_t rt_qmi_get_model(char *model, int32_t model_size)
 {
-    return jni_api_common(__func__, 2, model, model_size);   
+    return jni_api_common(__func__, 2, model, model_size);
 }
 
 static int32_t rt_qmi_get_model_handle(void)
@@ -364,7 +364,7 @@ static int32_t rt_qmi_get_model_handle(void)
     int32_t ret = RT_SUCCESS;
 
     ret = jni_get_model(model);
-    
+
     return ret;
 }
 
@@ -386,7 +386,7 @@ static int32_t rt_qmi_get_network_type_handle(void)
 
 int32_t rt_qmi_get_monitor_version(uint8_t *version)
 {
-    return jni_api_common(__func__, 1, version);   
+    return jni_api_common(__func__, 1, version);
 }
 
 static int32_t rt_qmi_get_monitor_version_handle(void)
@@ -395,7 +395,7 @@ static int32_t rt_qmi_get_monitor_version_handle(void)
     int32_t ret = RT_SUCCESS;
 
     ret = jni_get_monitor_version(version);
-    
+
     return ret;
 }
 
@@ -408,7 +408,7 @@ typedef struct JNI_API {
 
 #define JNI_API_DEF(api)    {#api, (jni_handle_func)api##_handle}
 
-static const jni_api_t g_jni_apis[] = 
+static const jni_api_t g_jni_apis[] =
 {
     JNI_API_DEF(rt_qmi_send_apdu),
     JNI_API_DEF(rt_qmi_close_channel),
@@ -437,7 +437,7 @@ static int32_t jni_apis_handle(void)
             ret = g_jni_apis[i].handle();
             *g_thread_data.ret = ret;
             if (ret == JNI_RETURN_ERROR) {
-                MSG_PRINTF(LOG_WARN, "jni return fail\r\n"); 
+                MSG_PRINTF(LOG_WARN, "jni return fail\r\n");
             }
             return ret;
         }
@@ -449,11 +449,11 @@ static int32_t jni_apis_handle(void)
 }
 
 static void android_jni_thread(void)
-{   
+{
     int32_t retval = RT_ERROR;
-    
+
     g_thread_data.running = 1;
-    
+
     while (1) {
         retval = linux_sem_wait(g_thread_data.send_sem);
         //MSG_PRINTF(LOG_INFO, "%s wait send sem ...retval=%d, errno(%d)=%s\r\n", __func__, retval, errno, strerror(errno));
@@ -461,11 +461,11 @@ static void android_jni_thread(void)
         if (g_thread_data.running == -1) {
             break;
         }
-        
+
         jni_apis_handle();
 
         linux_sem_post(g_thread_data.recv_sem);
-        //MSG_PRINTF(LOG_INFO, "%s post recv sem ...\r\n", __func__);        
+        //MSG_PRINTF(LOG_INFO, "%s post recv sem ...\r\n", __func__);
     }
 
     linux_mutex_release(g_thread_data.mutex);
@@ -495,7 +495,7 @@ int32_t rt_qmi_init(void *arg)
         }
         g_thread_data.task_id = 0;
     } else {  // frist call
-        call_index = 2;       
+        call_index = 2;
     }
 
     g_thread_data.mutex = linux_mutex_init();
@@ -508,18 +508,18 @@ int32_t rt_qmi_init(void *arg)
     } else {
         g_thread_data.task_id = id_connect;
     }
-    
+
     return ret;
 }
 
 static void rt_jni_init_callback(void)
 {
-    rt_qmi_init(NULL);    
+    rt_qmi_init(NULL);
 }
 
 int32_t rt_jni_init(void *arg)
 {
-    (void)arg;    
+    (void)arg;
     register_timer(1, 0, rt_jni_init_callback);
     return RT_SUCCESS;
 }

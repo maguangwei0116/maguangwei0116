@@ -11,8 +11,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* switch for upload HTTPS */
-// #define UPLOAD_HTTPS_ENABLE                0
-// #define CFG_UPLOAD_HTTPS_ENABLE                0
+//#define CFG_UPLOAD_HTTPS_ENABLE                1
 
 /* error code for https handle */
 typedef enum ERR_HTTPS_CODE {
@@ -32,7 +31,7 @@ typedef enum ERR_HTTPS_CODE {
 
 typedef struct HTTPS_CXT {
     int                                 socket;     // tcp socket fd
-    SSL *                               ssl;        // openssl handle      
+    SSL *                               ssl;        // openssl handle
     SSL_CTX *                           ssl_cxt;    // openssl ssl CTX
 } https_ctx_t;
 
