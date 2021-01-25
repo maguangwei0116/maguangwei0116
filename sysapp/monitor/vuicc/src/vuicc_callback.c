@@ -146,7 +146,6 @@ int init_callback_ops(void *arg)
         ret = cos_factory_reset(NULL);
         if (ret == COS_SUCCESS) {
             cos_init(&server_opt, &client_opt);
-
         }
         MSG_PRINTF(LOG_ERR, "cos init failed!!\n");
         return RT_ERROR;
