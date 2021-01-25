@@ -53,7 +53,7 @@ uint16_t bertlv_get_tag(const uint8_t* tag, uint8_t* tag_size)
         tag_value = utils_u08s_to_u16(tag);
     }
 
-    if (tag_size != RT_NULL) {
+    if (tag_size != NULL) {
         *tag_size = size;
     }
 
@@ -170,7 +170,7 @@ uint32_t bertlv_find_tag(const uint8_t* tlv, uint32_t tlv_len, uint16_t tag, uin
     offset = 0;
 
     while (offset < tlv_len) {
-        if (bertlv_get_tag(tlv + offset, RT_NULL) == tag) {
+        if (bertlv_get_tag(tlv + offset, NULL) == tag) {
             occurrence--;
             if (occurrence == 0) {
                 return offset;
@@ -198,7 +198,7 @@ uint16_t bertlv_get_tl_length(const uint8_t* tlv, uint32_t* value_len)
     tag_size = bertlv_get_tag_size(tlv);
     length = bertlv_get_length(tlv + tag_size, &length_size);
 
-    if (value_len != RT_NULL) {
+    if (value_len != NULL) {
         *value_len = length;
     }
 
@@ -255,7 +255,7 @@ uint32_t bertlv_get_integer(const uint8_t* tlv, uint32_t* tlv_size)
         break;
     }
 
-    if (tlv_size != RT_NULL) {
+    if (tlv_size != NULL) {
         *tlv_size = offset + value_length;
     }
 
@@ -282,7 +282,7 @@ uint8_t bertlv_move_to_next(const uint8_t* tlv, uint8_t** next)
     }
     *next = (uint8_t*)(tlv + tlv_size);
 
-    return RES_OK;
+    return RT_SUCCESS;
 }
 
 /**
@@ -311,7 +311,7 @@ uint32_t bertlv_build_tlv(uint16_t tag, uint32_t len, const uint8_t* value, uint
 
     length_size = bertlv_calc_length_size(len);
 
-    if (value != RT_NULL) {
+    if (value != NULL) {
         // Copy value
         utils_mem_copy(dst + tag_size + length_size, value, (uint16_t)len);
     }

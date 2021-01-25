@@ -192,11 +192,11 @@ uint8_t utils_mem_search(const uint8_t* src, uint16_t src_len, const uint8_t* ta
     for (i = 0; (i + target_len) <= src_len; i++) {
         if (utils_mem_cmp(src + i, target, target_len) == UTILS_CMP_EQU) {
             *offset = i;
-            return RES_OK;
+            return RT_SUCCESS;
         }
     }
 
-    return (uint8_t)RES_ERR;
+    return (uint8_t)RT_ERROR;
 }
 
 /**
@@ -446,7 +446,7 @@ uint8_t utils_mem_calc_xor(const uint8_t* src, uint16_t len)
  *   <em> false </em>   ----failed.
  * @note                  
  */
-bool_t utils_mem_is_all_byte(const uint8_t* buf, uint8_t content, uint16_t len)
+rt_bool utils_mem_is_all_byte(const uint8_t* buf, uint8_t content, uint16_t len)
 {
     while (len != 0) {
         len--;
@@ -468,7 +468,7 @@ bool_t utils_mem_is_all_byte(const uint8_t* buf, uint8_t content, uint16_t len)
  *   <em> false </em>   ----failed.
  * @note
  */
-bool_t utils_mem_is_all_zero(const uint8_t* buf, uint16_t len)
+rt_bool utils_mem_is_all_zero(const uint8_t* buf, uint16_t len)
 {
     while (len != 0) {
         len--;

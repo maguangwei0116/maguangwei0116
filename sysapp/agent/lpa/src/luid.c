@@ -1,51 +1,45 @@
-
-#include "EnableProfileRequest.h"
-#include "DisableProfileRequest.h"
-#include "DeleteProfileRequest.h"
-#include "GetEuiccDataRequest.h"
-#include "ProfileInfoListRequest.h"
-#include "SetNicknameRequest.h"
-#include "EuiccMemoryResetRequest.h"
-#include "MoreEIDOperateRequest.h"
 #include "luid.h"
+#include "lpdd.h"
 #include "lpa_config.h"
 #include "lpa_error_codes.h"
 #include "apdu.h"
-
-// Defined in lpdd.c
-extern int encode_cb(const void *buffer, size_t size, void *app_key);
-extern void clean_cb_data(void);
-extern uint8_t *get_cb_data(void);
-extern uint16_t get_cb_size(void);
+#include "bertlv.h"
 
 int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
+    uint8_t refresh_value;
     int ret = RT_SUCCESS;
-    asn_enc_rval_t ec;
-    EnableProfileRequest_t req = {0};
+
+    /*
+    EnableProfileRequest ::= [49] SEQUENCE { -- Tag 'BF31' 
+        profileIdentifier CHOICE { 
+            isdpAid [APPLICATION 15] OctetTo16, -- AID, tag '4F' 
+            iccid Iccid -- ICCID, tag '5A' 
+        }, 
+        refreshFlag BOOLEAN -- indicating whether REFRESH is required
+    }
+    */
 
     if (pid == PID_ISDP_AID) {
-        req.profileIdentifier.present = EnableProfileRequest__profileIdentifier_PR_isdpAid;
-        req.profileIdentifier.choice.isdpAid.buf = id;
-        req.profileIdentifier.choice.isdpAid.size = 16;
+        // isdpAid [APPLICATION 15] OctetTo16
+        g_buf_size = bertlv_build_tlv(0x4F, 16, id, g_buf);
     } else if (pid == PID_ICCID) {
-        req.profileIdentifier.present = EnableProfileRequest__profileIdentifier_PR_iccid;
-        req.profileIdentifier.choice.iccid.buf = id;
-        req.profileIdentifier.choice.iccid.size = 10;
+        // iccid Iccid
+        g_buf_size = bertlv_build_tlv(0x5A, 10, id, g_buf);
     }
-    req.refreshFlag = refresh ? 0xFF : 0x00;
+    // profileIdentifier CHOICE
+    g_buf_size = bertlv_build_tlv(0xA0, g_buf_size, g_buf, g_buf);
+    // refreshFlag BOOLEAN
+    refresh_value = refresh ? 0xFF : 0x00;
+    g_buf_size += bertlv_build_tlv(0x81, 1, &refresh_value, g_buf + g_buf_size);
+    // EnableProfileRequest -- Tag 'BF31' 
+    g_buf_size = bertlv_build_tlv(TAG_LPA_ENABLE_PROFILE_REQ, g_buf_size, g_buf, g_buf);
+    MSG_DUMP_ARRAY("EnableProfileRequest: ", g_buf_size, g_buf);
+
     *out_size = 0;
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_EnableProfileRequest, &req, encode_cb, NULL);
-    MSG_DBG("ec.encoded: %d\n", (int)ec.encoded);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("EnableProfileRequest: ", get_cb_data(), get_cb_size());
     ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
     if (ret == RT_SUCCESS){
-        *out_size -= 2;  // Remove sw 9000
+        // *out_size -= 2;  // Remove sw 9000
     } else if (ret == RT_ERR_AT_WRONG_RSP) {
         // BF31038001009000
         // With refresh request, it might be failed to get response, this also indicates success

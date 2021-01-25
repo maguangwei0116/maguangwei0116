@@ -9,11 +9,11 @@
 #include "convert.h"
 #include "lpa_https.h"
 #include "lpa_error_codes.h"
-#include "ProfileInfoListResponse.h"
-#include "ProfileInstallationResult.h"
-#include "MoreEIDOperateResponse.h"
 
 #define BUFFER_SIZE                10*1024
+
+uint8_t g_buf[10 * 1024];
+uint16_t g_buf_size;
 
 static rt_pthread_mutex_t *g_lpa_mutex;
 
@@ -96,57 +96,9 @@ end:
 
 int lpa_get_eid_list(uint8_t (*eid_list)[33])
 {
-    int ret = RT_SUCCESS;
-    uint8_t buf[500] = {0};
-    asn_dec_rval_t dc;
-    uint16_t size = sizeof(buf);
-    int i;
-    int num =0;
-    EIDInfo_t **p = NULL;
-    uint8_t channel = 0xFF;
-    MoreEIDOperateResponse_t *rsp = NULL;
+    // Reserved
 
-    linux_mutex_lock(g_lpa_mutex);
-
-    if (open_channel(&channel) != RT_SUCCESS) {
-        ret = RT_ERR_APDU_OPEN_CHANNEL_FAIL;
-        goto end;
-    }
-
-    get_eid_list(buf, &size, channel);
-    MSG_DUMP_ARRAY("get eid list:\n", buf, size);
-    dc = ber_decode(NULL, &asn_DEF_MoreEIDOperateResponse, (void **)&rsp, buf, size);
-    if (dc.code != RC_OK) {
-        MSG_ERR("Broken ProfileInfoListResponse decoding at byte %ld\n", (long)dc.consumed);
-        ret = RT_ERR_ASN1_DECODE_FAIL;
-        goto end;
-    }
-    if (rsp->present != MoreEIDOperateResponse__moreEIDOperateResult_ok) {
-        ret = RT_ERR_UNKNOWN_ERROR;
-        goto end;
-    }
-    num = rsp->choice.eidListinfo.list.count;
-    p = (EIDInfo_t **)(rsp->choice.eidListinfo.list.array);
-    MSG_INFO("count: %d, size: %d, present: %d\n", num,(p[0])->eidValue.size, rsp->present);
-    if (p != NULL) {
-        for (i = 0; i < num; i++) {
-            //memcpy(eid,(p[i])->eidValue.buf, (p[i])->eidValue.size);
-            bytes2hexstring((p[i])->eidValue.buf,(p[i])->eidValue.size,eid_list[i]);
-            MSG_INFO("eid%d: %s\n", i,eid_list[i]);
-        }
-    }
-
-end:
-
-    ASN_STRUCT_FREE(asn_DEF_MoreEIDOperateResponse, rsp);
-
-    if (ret != RT_ERR_APDU_OPEN_CHANNEL_FAIL) {
-        close_channel(channel);
-    }
-
-    linux_mutex_unlock(g_lpa_mutex);
-
-    return ret;
+    return RT_SUCCESS;
 }
 
 int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
@@ -477,7 +429,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     mid = calloc(1, matching_id_len + 1);
     RT_CHECK_GO(mid, RT_ERR_OUT_OF_MEMORY, end);
     memcpy(mid, ac+matching_id_start, matching_id_len);
-    mid[matching_id_len + 1] = '\0';
+    mid[matching_id_len] = '\0';
     MSG_DBG("AC_token:     %s\n", mid);
     MSG_DBG("SMDP_ADDRESS: %s\n", smdp_addr);
     MSG_DBG("Need CC:      %s\n", need_cc ? "Yes" : "No");

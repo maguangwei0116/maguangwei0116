@@ -320,23 +320,23 @@ uint8_t utils_mem_calc_xor(const uint8_t* src, uint16_t len);
  * @param[in] buf         The pointer of buffer to check
  * @param[in] content     The specified value
  * @param[in] len         Length of buffer
- * @return bool_t <br>
+ * @return rt_bool <br>
  *   <em> true </em>    ----success    <br>
  *   <em> false </em>   ----failed.
  * @note                  
  */
-bool_t utils_mem_is_all_byte(const uint8_t* buf, uint8_t content, uint16_t len);
+rt_bool utils_mem_is_all_byte(const uint8_t* buf, uint8_t content, uint16_t len);
 
 /**
  * @brief                 Check whether all members of the specified array is 0x00
  * @param[in] buf         The pointer of buffer to check
  * @param[in] len         Length of buffer
- * @return bool_t <br>
+ * @return rt_bool <br>
  *   <em> true </em>    ----success    <br>
  *   <em> false </em>   ----failed.
  * @note
  */
-bool_t utils_mem_is_all_zero(const uint8_t* buf, uint16_t len);
+rt_bool utils_mem_is_all_zero(const uint8_t* buf, uint16_t len);
 
 /**
  * @brief                 Reverse the order of array members
@@ -346,25 +346,6 @@ bool_t utils_mem_is_all_zero(const uint8_t* buf, uint16_t len);
  * @note                  
  */
 void utils_mem_reverse(uint8_t* bytes, uint16_t len);
-
-/**
- * @brief                 Nibble reverses all array members
- * @param[in][out] bytes  The pointer of byte array
- * @param[in] len         length of array
- * @return void
- * @note                  
- */
-void utils_mem_bcd_swap(uint8_t* bytes, uint16_t len);
-
-/**
- * @brief                 Shift the array to the left
- * @param[in][out] bytes  The byte array
- * @param[in] len         The length of array
- * @param[in] shift       Number of bits to be shift
- * @return void
- * @note
- */
-void utils_mem_shift_left(uint8_t* bytes, uint16_t len, uint8_t shift);
 
 #ifdef __cpluplus
 }
