@@ -471,6 +471,34 @@ static int32_t upload_boot_info_event(void)
     return RT_SUCCESS;
 }
 
+static void upload_boot_task(void)
+{
+    while (1) {
+        if (g_upload_mqtt == RT_TRUE) {
+            upload_boot_info_event();
+            break;
+        } else {
+            rt_os_sleep(1);
+        }
+    }
+
+    rt_exit_task(NULL);
+}
+
+static int32_t upload_boot_info_event_handle(void)
+{
+    rt_task task_id = 0;
+    int32_t ret = RT_ERROR;
+
+    ret = rt_create_task(&task_id, (void *)upload_boot_task, NULL);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "create task fail\n");
+        return RT_ERROR;
+    }
+
+    return ret;
+}
+
 int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     (void)buf;
@@ -479,7 +507,7 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
     if (MSG_NETWORK_CONNECTED == mode) {
         MSG_PRINTF(LOG_DBG, "upload module recv network connected\r\n");
         g_upload_network = RT_TRUE;
-        upload_boot_info_event();
+        upload_boot_info_event_handle();
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_DBG, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;
