@@ -87,7 +87,7 @@ GEN_VERSION_FILE:
 	$(Q)$(call GEN_LIBRARY_VERSION_C,$(VER_C_FILE))
 	$(Q)$(call GEN_LIBRARY_VERSION_H,$(VER_H_FILE_OUT))
 	$(Q)$(call INSTALL_LIBRARY_VERSION_H,$(VER_H_FILE_OUT))
-	
+
 # Add SHA256withECC signature to the tail of a file
 define SO_ADD_SHA256withECC
 	$(REDTEA_SUPPORT_SCRIPTS_PATH)/sign_file.sh $(1) $(REDTEA_SUPPORT_SCRIPTS_PATH) Q=$(Q)
@@ -109,8 +109,8 @@ generate_signature: $(O)/$(LIB_SO_NAME)
 $(O)/$(LIB_SO_NAME): $(OBJS) $(ALL_TARGETS)
 	$($(quiet)do_link) $(LDFLAGS) -shared -Wl,-soname=$(LIB_SO_NAME) -Wl,--whole-archive $^ -Wl,--no-whole-archive -o"$@"
 	$(STRIP_ALL) "$@"
-	
-$(O)/$(LIB_A_NAME): $(OBJS) $(ALL_TARGETS) 
+
+$(O)/$(LIB_A_NAME): $(OBJS) $(ALL_TARGETS)
 #	echo ALL_OBJ_TARGETS=$(ALL_OBJ_TARGETS)
 	$($(quiet)do_ar) cru "$@" $(ALL_OBJ_TARGETS)
 	$($(quiet)do_ranlib) "$@"

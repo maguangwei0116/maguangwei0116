@@ -11,7 +11,9 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* switch for upload HTTPS */
-//#define CFG_UPLOAD_HTTPS_ENABLE                1
+#if (CFG_ENV_TYPE_QA)
+    #define CFG_UPLOAD_HTTPS_ENABLE                1
+#endif
 
 /* error code for https handle */
 typedef enum ERR_HTTPS_CODE {
