@@ -9,6 +9,7 @@
 #include "convert.h"
 #include "lpa_https.h"
 #include "lpa_error_codes.h"
+#include "bertlv.h"
 
 #define BUFFER_SIZE                10*1024
 
@@ -194,13 +195,13 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
             // find ProfileClass
             element_off = bertlv_find_tag(buf + offset + i + info_off, info_len, 0x95, 1);
             if (element_off != BERTLV_INVALID_OFFSET) {
-                pi[i].class = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off);
+                pi[i].class = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off, NULL);
             }
 
             // find ProfileClass
             element_off = bertlv_find_tag(buf + offset + i + info_off, info_len, 0x9F70, 1);
             if (element_off != BERTLV_INVALID_OFFSET) {
-                pi[i].state = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off);
+                pi[i].state = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off, NULL);
             }
 
             // get next E3 TLV
@@ -388,8 +389,7 @@ static int check_ac(const char *ac, uint16_t *smdp_addr_start, uint16_t *smdp_ad
 static int process_bpp_rsp(const uint8_t* pir, uint16_t pir_len,
                                 char* iccid, uint8_t* bppcid, uint8_t* error)
 {
-    // char* bpp_cmd = NULL;
-    // char* error_reason = NULL;
+    uint8_t tmp[16];
     uint16_t tag;
     uint16_t result_data_offset = 0;
     uint16_t iccid_offset = 0;
@@ -461,7 +461,7 @@ static int process_bpp_rsp(const uint8_t* pir, uint16_t pir_len,
 
     // profileInstallationResultData [39] ProfileInstallationResultData
     result_data_offset = bertlv_get_tl_length(pir, NULL);
-    if (bertlv_get_tag(pir + result_data_offset) != 0xBF27) {
+    if (bertlv_get_tag(pir + result_data_offset, NULL) != 0xBF27) {
         MSG_ERR("Could not found profileInstallationResultData! \n");
         return RT_ERROR;
     }
@@ -479,19 +479,21 @@ static int process_bpp_rsp(const uint8_t* pir, uint16_t pir_len,
     }
     iccid_offset += bertlv_get_tl_length(pir + result_data_offset + iccid_offset, &notify_metadata_len);
 
-    // find notificationMetadata
+    // find iccid OPTIONAL
     iccid_offset += bertlv_find_tag(pir + result_data_offset + iccid_offset, notify_metadata_len, 0x5A, 1);
     if (final_result_offset == BERTLV_INVALID_OFFSET) {
         MSG_ERR("Could not found iccid! \n");
-        return RT_ERROR;
-    }
-    iccid_offset += bertlv_get_tl_length(pir + result_data_offset + iccid_offset, &notify_metadata_len);
-    MSG_DUMP_ARRAY("ICCID: ", pir + result_data_offset + iccid_offset, notify_metadata_len);
-    swap_nibble(pir + result_data_offset + iccid_offset, notify_metadata_len);
-    ret = bytes2hexstring(pir + result_data_offset + iccid_offset, notify_metadata_len, iccid);
-    if (ret != RT_SUCCESS) {
-        MSG_ERR("iccid convert error! \n");
-        return ret;
+        utils_mem_clr(iccid, 20);
+    } else {
+        iccid_offset += bertlv_get_tl_length(pir + result_data_offset + iccid_offset, &notify_metadata_len);
+        MSG_DUMP_ARRAY("ICCID: ", pir + result_data_offset + iccid_offset, notify_metadata_len);
+        utils_mem_copy(tmp, pir + result_data_offset + iccid_offset, (uint16_t)notify_metadata_len);
+        swap_nibble(tmp, notify_metadata_len);
+        ret = bytes2hexstring(tmp, notify_metadata_len, iccid);
+        if (ret != RT_SUCCESS) {
+            MSG_ERR("iccid convert error! \n");
+            return ret;
+        }
     }
 
     // find finalResult
@@ -641,8 +643,6 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     MSG_DUMP_ARRAY("load_bound_profile_package:\n", buf2, buf2_len);
 
-    ret = parse_install_profile_result(buf2, buf2_len);
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     ret = process_bpp_rsp(buf2, buf2_len, iccid, &bppcid, &error);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 

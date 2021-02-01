@@ -11,32 +11,11 @@
 #include "lpa_error_codes.h"
 #include "rt_os.h"
 #include "lpa_https.h"
+#include "lpa.h"
 #include "tlv.h"
 #include "bertlv.h"
 
 static char g_transaction_id[33] = {0};
-
-int encode_cb(const void *buffer, size_t size, void *app_key)
-{
-    memcpy(g_buf + g_buf_size, buffer, size);
-    g_buf_size += size;
-    return 0;
-}
-
-void clean_cb_data(void)
-{
-    g_buf_size = 0;
-}
-
-uint8_t *get_cb_data(void)
-{
-    return g_buf;
-}
-
-uint16_t get_cb_size(void)
-{
-    return g_buf_size;
-}
 
 int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
@@ -63,15 +42,15 @@ int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size, uint8
         g_buf_size = bertlv_build_tlv(TAG_LPA_LIST_NOTIFICATION_REQ, 0, NULL, g_buf);
     } else {
         // profileManagementOperation [1] NotificationEvent
-        g_buf_size = bertlv_build_tlv(0x81, 2, buf, buf);
-        g_buf_size = bertlv_build_tlv(TAG_LPA_LIST_NOTIFICATION_REQ, len, g_buf, g_buf);
+        g_buf_size = bertlv_build_tlv(0x81, 2, g_buf, g_buf);
+        g_buf_size = bertlv_build_tlv(TAG_LPA_LIST_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
     }
 
     *out_size = 0;
 
-    MSG_DUMP_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("ListNotificationRequest: ", g_buf, g_buf_size);
 
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
+    RT_CHECK(cmd_store_data(g_buf, g_buf_size, out, out_size, channel));
     //*out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
@@ -90,8 +69,8 @@ int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_
     //     MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
     //     return RT_ERR_ASN1_ENCODE_FAIL;
     // }
-    // MSG_DUMP_ARRAY("LoadCRLRequest: ", get_cb_data(), get_cb_size());
-    // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
+    // MSG_DUMP_ARRAY("LoadCRLRequest: ", g_buf, g_buf_size);
+    // RT_CHECK(cmd_store_data(g_buf, g_buf_size, out, out_size));
     // *out_size -= 2;  // Remove sw 9000
 
     // Impl for crl prepared by caller
@@ -141,11 +120,12 @@ int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint1
 
     *out_size = 0;
 
-    MSG_DUMP_ARRAY("RetrieveNotificationsListRequest: ", get_cb_data(), get_cb_size());
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
+    MSG_DUMP_ARRAY("RetrieveNotificationsListRequest: ", g_buf, g_buf_size);
+    ret = cmd_store_data(g_buf, g_buf_size, out, out_size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*out_size -= 2;  // Remove sw 9000
 
+end:
     return ret;
 }
 
@@ -156,11 +136,11 @@ int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size, ui
     */
     *out_size = 0;
 
-    g_buf_size = bertlv_build_integer_tlv(0x80, (uint32_t)*seq, g_buf);
+    g_buf_size = bertlv_build_integer_tlv(0x80, (uint32_t)seq, g_buf);
     g_buf_size = bertlv_build_tlv(TAG_LPA_REMOVE_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
 
-    MSG_DUMP_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
+    MSG_DUMP_ARRAY("ListNotificationRequest: ", g_buf, g_buf_size);
+    RT_CHECK(cmd_store_data(g_buf, g_buf_size, out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
@@ -179,9 +159,9 @@ int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *si
     GetEuiccInfo1Request ::= [32] SEQUENCE { -- Tag 'BF20' }
     */
     g_buf_size = bertlv_build_tlv(TAG_LPA_GET_EUICC_INFO1_REQ, 0, NULL, g_buf);
-    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), info1, size1, channel);
+    ret = cmd_store_data(g_buf, g_buf_size, info1, size1, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size1 -= 2;  // Remove sw 9000
 
@@ -190,13 +170,14 @@ int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *si
         GetEuiccInfo2Request ::= [34] SEQUENCE { -- Tag 'BF22' }
         */
         g_buf_size = bertlv_build_tlv(TAG_LPA_GET_EUICC_INFO2_REQ, 0, NULL, g_buf);
-        MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
+        MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
 
-        ret = cmd_store_data(get_cb_data(), get_cb_size(), info2, size2, channel);
+        ret = cmd_store_data(g_buf, g_buf_size, info2, size2, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
         //*size2 -= 2;  // Remove sw 9000
     }
 
+end:
     return ret;
 }
 
@@ -211,13 +192,14 @@ int get_euicc_challenge(uint8_t challenge[16], uint8_t channel)
     */
     g_buf_size = bertlv_build_tlv(TAG_LPA_GET_EUICC_CHALLENGE_REQ, 0, NULL, g_buf);
 
-    MSG_DUMP_ARRAY("GetEuiccChallengeRequest: ", get_cb_data(), get_cb_size());
-    // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), rsp, &rlen));
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), rsp, &rlen, channel);
+    MSG_DUMP_ARRAY("GetEuiccChallengeRequest: ", g_buf, g_buf_size);
+    // RT_CHECK(cmd_store_data(g_buf, g_buf_size, rsp, &rlen));
+    ret = cmd_store_data(g_buf, g_buf_size, rsp, &rlen, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     memcpy(challenge, rsp + 5, 16);
 
+end:
     return ret;
 }
 
@@ -231,12 +213,13 @@ int get_rat(uint8_t *rat, uint16_t *size, uint8_t channel)
     */
     g_buf_size = bertlv_build_tlv(TAG_LPA_GET_RAT_REQ, 0, NULL, g_buf);
 
-    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
-    // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), rat, size));
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), rat, size, channel);
+    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
+    // RT_CHECK(cmd_store_data(g_buf, g_buf_size, rat, size));
+    ret = cmd_store_data(g_buf, g_buf_size, rat, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
+end:
     return ret;
 }
 
@@ -264,14 +247,15 @@ int cancel_session(const uint8_t *tid, uint8_t tid_size, uint8_t reason, uint8_t
     // transactionId TransactionId
     g_buf_size = bertlv_build_tlv(0x80, tid_size, tid, g_buf);
     // CancelSessionReason ::= INTEGER
-    g_buf_size += bertlv_build_integer_tlv(0x81, (uint32_t)*seq, g_buf + g_buf_size);
+    g_buf_size += bertlv_build_integer_tlv(0x81, reason, g_buf + g_buf_size);
     // CancelSessionRequest ::= [65] SEQUENCE { -- Tag 'BF41'
     g_buf_size = bertlv_build_tlv(TAG_LPA_CACEL_SESSION_REQ, g_buf_size, g_buf, g_buf);
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), csr, size, channel);
+    ret = cmd_store_data(g_buf, g_buf_size, csr, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
+end:
     return ret;
 }
 
@@ -481,7 +465,7 @@ static int get_data_from_json(cJSON* json, const char* key, char* buf, uint16_t 
 
     ret = rt_base64_decode(b64_str, buf, len);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_DUMP_ARRAY("data: ", buf, len);
+    MSG_DUMP_ARRAY("data: ", buf, *len);
 
 end:
     return ret;
@@ -601,9 +585,9 @@ int authenticate_server(const char *matching_id, const char *auth_data,
 
     // AuthenticateServerRequest
     g_buf_size = bertlv_build_tlv(TAG_LPA_AUTH_SERVER_REQ, g_buf_size, g_buf, g_buf);
-    MSG_DUMP_ARRAY("AuthenticateServerRequest\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("AuthenticateServerRequest\n", g_buf, g_buf_size);
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), response, size, channel);
+    ret = cmd_store_data(g_buf, g_buf_size, response, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
@@ -724,9 +708,9 @@ int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t
 
     // PrepareDownloadRequest
     g_buf_size = bertlv_build_tlv(TAG_LPA_PREPARE_DOWNLOAD_REQ, g_buf_size, g_buf, g_buf);
-    MSG_DUMP_ARRAY("PrepareDownloadRequest\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("PrepareDownloadRequest\n", g_buf, g_buf_size);
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
+    ret = cmd_store_data(g_buf, g_buf_size, out, out_size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*out_size -= 2;  // Remove sw 9000
 
@@ -814,7 +798,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
 
     ret = get_data_from_json(content, "boundProfilePackage", g_buf, &g_buf_size);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_DUMP_ARRAY("boundProfilePackage\n", get_cb_data(), get_cb_size());
+    MSG_DUMP_ARRAY("boundProfilePackage\n", g_buf, g_buf_size);
 
     // Tag and length fields of the BoundProfilePackage TLV plus the initialiseSecureChannelRequest TLV
     // ES8+ InitialiseSecureChannel
@@ -836,8 +820,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     if (*out_size > 0) {
-        ret = parse_install_profile_result(out, *out_size);
-        RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+        goto end;
     }
     offset += len;
 
@@ -862,8 +845,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         /* check result code */
         MSG_DUMP_ARRAY("sequenceOf88TLV out\n", out, *out_size);
         if (*out_size > 0) {
-            ret = parse_install_profile_result(out, *out_size);
-            RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+            goto end;
         }
     }
     offset += value_len;
@@ -877,8 +859,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
         if (*out_size > 0) {
-            ret = parse_install_profile_result(out, *out_size);
-            RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+            goto end;
         }
         offset += len;
     }
@@ -898,6 +879,9 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
         MSG_DUMP_ARRAY("sequenceOf86TLV\n", g_buf + offset + sub_off, len);
         ret = cmd_store_data(g_buf + offset + sub_off, len, out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
+        if (*out_size > 0) {
+            goto end;
+        }
         sub_off += len;
     }
 

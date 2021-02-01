@@ -1,4 +1,4 @@
-/*******************************************************************************
+﻿/*******************************************************************************
  * Copyright (c) redtea mobile.
  * File name   : utils.h
  * Date        : 2021.01.21
@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-#include "rtm_typedef.h"
+#include <rt_type.h>
 
 /**
  * definition of compare result

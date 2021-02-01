@@ -2,6 +2,7 @@
 #include "lpdd.h"
 #include "lpa_config.h"
 #include "lpa_error_codes.h"
+#include "lpa.h"
 #include "apdu.h"
 #include "bertlv.h"
 

@@ -278,7 +278,7 @@ uint8_t bertlv_move_to_next(const uint8_t* tlv, uint8_t** next)
     tlv_size = bertlv_get_tlv_length(tlv);
     // Tag and length field must present
     if (tlv_size < 2) {
-        return (uint8_t)RES_ERR;
+        return (uint8_t)RT_ERROR;
     }
     *next = (uint8_t*)(tlv + tlv_size);
 

@@ -107,8 +107,6 @@ static const plmn_info_t g_rt_plmn[] = {
 };
 
 static profile_data_t g_data;
-static uint8_t *g_buf = NULL;
-static uint16_t g_buf_size = 0;
 static char g_share_profile[128];
 
 #define SHARED_PROFILE_NAME     "sharedprofile"
@@ -250,18 +248,6 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
         MSG_PRINTF(LOG_ERR, "Share profile hash check failed\n");
         return RT_ERROR;
     }
-    return RT_SUCCESS;
-}
-
-static int32_t encode_cb_fun(const void *buffer, size_t size, void *app_key)
-{
-    g_buf = rt_os_realloc(g_buf, g_buf_size + size);
-    if (!g_buf) {
-        MSG_PRINTF(LOG_ERR, "realloc failed!!\n");
-        return RT_ERROR;
-    }
-    rt_os_memcpy(g_buf + g_buf_size, (void *) buffer, size);
-    g_buf_size += size;
     return RT_SUCCESS;
 }
 
@@ -412,10 +398,10 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     }
 
     // build tbhRequest TLV
-    g_buf_size = bertlv_build_tlv(0x30, tbh_len, g_buf, tbh_len);
+    g_buf_size = bertlv_build_tlv(0x30, tbh_len, g_buf, g_buf);
     calc_hash(g_buf, g_buf_size, profile_hash);
     // build hash TLV
-    g_buf_size += bertlv_build_tlv(0x41, profile_hash, 32, g_buf + g_buf_size);
+    g_buf_size += bertlv_build_tlv(0x41, 32, profile_hash, g_buf + g_buf_size);
     // build new BootstrapRequest
     g_buf_size = bertlv_build_tlv(0xFF7F, g_buf_size, g_buf, g_buf);
 
@@ -511,7 +497,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
     linux_fseek(fp, off, RT_FS_SEEK_SET);
     linux_fread(profile_buffer, 1, profile_len, fp);
 
-    build_profile(profile_buffer, profile_len, selected_profile_index, request->sequential, mcc, profile, len_out);
+    build_profile(profile_buffer, profile_len, selected_profile_index, sequential, mcc, profile, len_out);
     rt_os_free(profile_buffer);
     ret = RT_SUCCESS;
 end:
@@ -566,8 +552,6 @@ int32_t bootstrap_get_key(void)
     ret = RT_SUCCESS;
 end:
     //ASN_STRUCT_FREE(asn_DEF_SetRootKeyRequest, &key_request);
-    rt_os_free(g_buf);
-    g_buf = NULL;
 
     return ret;
 }

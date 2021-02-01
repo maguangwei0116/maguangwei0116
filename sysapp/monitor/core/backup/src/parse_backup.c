@@ -23,21 +23,12 @@
 #include "tlv.h"
 #include "bertlv.h"
 
+#define TAG_LPA_SET_ROOT_KEY_REQ                0xFF20
+
 static int32_t g_operator_num = 0;
 
-static uint8_t *g_buf = NULL;
-static uint16_t g_buf_size = 0;
-static int32_t encode_cb_fun(const void *buffer, size_t size, void *app_key)
-{
-    g_buf = rt_os_realloc(g_buf, g_buf_size + size);
-    if (!g_buf) {
-        MSG_PRINTF(LOG_ERR, "realloc failed!!\n");
-        return RT_ERROR;
-    }
-    rt_os_memcpy(g_buf + g_buf_size, (void *) buffer, size);
-    g_buf_size += size;
-    return RT_SUCCESS;
-}
+static uint8_t g_buf[10 * 1024];
+static uint16_t g_buf_size;
 
 static int32_t insert_profile(const uint8_t *buf, int32_t len)
 {
@@ -108,9 +99,8 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     ret = cmd_store_data(g_buf, g_buf_size, rsp_buf, &rsp_len, channel);
     MSG_PRINTF(LOG_TRACE, "root_aes_key_apdu cmd_store_data ret is : %d \n", ret);
     ret = rt_close_channel(channel);
+
     MSG_PRINTF(LOG_TRACE, "rt_close_channel ret is : %d \n", ret);
-    rt_os_free(g_buf);
-    g_buf = NULL;
     /******************************************************************************/
     rt_open_channel(&channel);
     ret = cmd_store_data((const uint8_t *)apdu_info, 3, rsp_buf, &rsp_len, channel);
@@ -134,13 +124,13 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
         if (offset == BERTLV_INVALID_OFFSET) {
             continue;
         }
-        if (bertlv_get_integer(pi + pi_offset + offset) == 0x01) {
+        if (bertlv_get_integer(pi + pi_offset + offset, NULL) == 0x01) {
             // find profileState [112]
             offset = bertlv_find_tag(pi + pi_offset, pi_len, 0x9F70, 1);
             if (offset == BERTLV_INVALID_OFFSET) {
                 continue;
             }
-            if (bertlv_get_integer(pi + pi_offset + offset) == 0x01) {
+            if (bertlv_get_integer(pi + pi_offset + offset, NULL) == 0x01) {
                 // find iccid
                 offset = bertlv_find_tag(pi + pi_offset, pi_len, 0x5A, 1);
                 if (offset == BERTLV_INVALID_OFFSET) {
@@ -276,7 +266,7 @@ static int32_t parse_profile(void)
     apn_name = (char *)rt_os_malloc(apn_name_len + 1);
     apn_name[apn_name_len] = '\0';
     mcc_mnc = (char*)rt_os_malloc(mccmnc_len + 1);
-    apn_name[mcc_mnc] = '\0';
+    mcc_mnc[mccmnc_len] = '\0';
 
     rt_qmi_modify_profile(1, 0, 0, apn_name, mcc_mnc);
     MSG_PRINTF(LOG_INFO, "set apn name  : %s [%s]\n", apn_name, mcc_mnc);
