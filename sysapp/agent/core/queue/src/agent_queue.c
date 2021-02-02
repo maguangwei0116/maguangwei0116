@@ -177,8 +177,8 @@ static void agent_queue_task(void)
 
                 case MSG_ID_BROAD_CAST_NETWORK:
                     card_manager_update_profiles_event(que_t.data_buf, que_t.data_len, que_t.mode); // Update profiles frist
-                    upload_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     mqtt_connect_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    upload_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     ota_upgrade_task_check_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     bootstrap_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
@@ -281,7 +281,7 @@ static int32_t upload_queue_clear_msg(int32_t time_cnt)
         if (ret == RT_ERROR && !upload_queue.data_buf) {
             break;
         }
-        
+
         rt_os_msleep(1);  // delay 1ms
     }
 
@@ -338,7 +338,7 @@ int32_t msg_send_agent_queue(int32_t msgid, int32_t mode, void *buffer, int32_t 
 #endif
 {
     agent_que_t que_t;
-    
+
     que_t.msg_typ = AGENT_QUEUE_MSG_TYPE;
     que_t.msg_id = msgid;
     que_t.mode = mode;

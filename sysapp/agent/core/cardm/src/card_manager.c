@@ -46,6 +46,14 @@ static rt_bool eid_check_memory(const void *buf, int32_t len, int32_t value)
     return RT_TRUE;
 }
 
+static int32_t card_last_eid_init(void)
+{
+    rt_read_eid(0, g_last_eid, sizeof(g_last_eid));
+    MSG_PRINTF(LOG_DBG, "g_last_eid=%s\r\n", g_last_eid);
+
+    return RT_SUCCESS;
+}
+
 static int32_t card_check_init_upload(const uint8_t *eid)
 {
     rt_bool update_last_eid = RT_FALSE;
@@ -55,6 +63,10 @@ static int32_t card_check_init_upload(const uint8_t *eid)
         update_last_eid = RT_TRUE;
     }
 
+    ret = card_last_eid_init();
+    if (ret) {
+        MSG_PRINTF(LOG_WARN, "card update last card type fail, ret=%d\r\n", ret);
+    }
     if (rt_os_strcmp((const char *)g_last_eid, (const char *)eid) && !update_last_eid) {
         MSG_PRINTF(LOG_INFO, "g_last_eid: %s, cur_eid: %s\r\n", g_last_eid, eid);
         MSG_PRINTF(LOG_INFO, "EID changed, upload INIT event\n");
@@ -68,14 +80,6 @@ static int32_t card_check_init_upload(const uint8_t *eid)
         }
         msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
     }
-
-    return RT_SUCCESS;
-}
-
-static int32_t card_last_eid_init(void)
-{
-    rt_read_eid(0, g_last_eid, sizeof(g_last_eid));
-    MSG_PRINTF(LOG_DBG, "g_last_eid=%s\r\n", g_last_eid);
 
     return RT_SUCCESS;
 }
@@ -510,7 +514,7 @@ int32_t card_switch_type(cJSON *switchparams)
         if (card_type->valueint == SWITCH_TO_ESIM) {
             if (g_sim_mode == MODE_TYPE_SIM_ONLY) {
                 MSG_PRINTF(LOG_ERR, "In sim only mode!!\n");
-                return ERROR_SIM_ONLY_STATUS;  
+                return ERROR_SIM_ONLY_STATUS;
             }
             device_key_status = rt_get_device_key_status();
             if (g_p_info.type == PROFILE_TYPE_SIM && device_key_status == RT_TRUE) {
@@ -586,11 +590,6 @@ int32_t init_card_manager(void *arg)
         } else {
             MSG_PRINTF(LOG_ERR, "share profile damaged !");
         }
-    }
-
-    ret = card_last_type_init();
-    if (ret) {
-        MSG_PRINTF(LOG_WARN, "card update last card type fail, ret=%d\r\n", ret);
     }
 
     ret = card_update_eid(RT_TRUE);

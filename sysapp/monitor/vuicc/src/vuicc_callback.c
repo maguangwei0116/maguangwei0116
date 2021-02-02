@@ -137,11 +137,17 @@ cos_client_operation_t client_opt = {
 
 int init_callback_ops(void *arg)
 {
+    int32_t ret = COS_FAILURE;
     snprintf(g_vuicc_file, VUICC_FILE_NAME_LEN, "%s%s", (uint8_t *)arg, VUICC_FILE_NAME);
     MSG_PRINTF(LOG_INFO, "g_vuicc_file:%s\n", g_vuicc_file);
 
-    if (cos_init(&server_opt, &client_opt) == RT_ERROR) {
-        MSG_PRINTF(LOG_ERR, "cos init failed.\n");
+    if (cos_init(&server_opt, &client_opt) != COS_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "cos nvm damaged!!\n");
+        ret = cos_factory_reset(NULL);
+        if (ret == COS_SUCCESS) {
+            cos_init(&server_opt, &client_opt);
+        }
+        MSG_PRINTF(LOG_ERR, "cos init failed!!\n");
         return RT_ERROR;
     }
 

@@ -361,6 +361,7 @@ static cJSON *upload_packet_all(const char *tran_id, const char *event, int32_t 
 int32_t get_upload_event_result(const char *event, const char *tran_id, int32_t status, void *private_arg)
 {
     const upload_event_t *obj = NULL;
+    int32_t count = 1;
 
     for (obj = g_upload_event_START; obj <= g_upload_event_END; obj++) {
         if (!rt_os_strcmp(obj->event, event)) {
@@ -375,7 +376,14 @@ int32_t get_upload_event_result(const char *event, const char *tran_id, int32_t 
             upload = upload_packet_all(tran_id, event, status, obj->topic, content);
             upload_json_pag = (char *)cJSON_PrintUnformatted(upload);
             if (upload_json_pag != NULL) {
-                ret = upload_send_http_request((const void *)upload_json_pag, rt_os_strlen(upload_json_pag));
+                while (ret != RT_SUCCESS) {
+                    ret = upload_send_request((const void *)upload_json_pag, rt_os_strlen(upload_json_pag));
+                    if ((ret == RT_SUCCESS) || (ret == HTTP_RESPOND_ERROR)) {
+                        break;
+                    }
+                    rt_os_sleep(3 * count);
+                    count ++;
+                }
             }
 
             if (upload) {
@@ -471,6 +479,34 @@ static int32_t upload_boot_info_event(void)
     return RT_SUCCESS;
 }
 
+static void upload_boot_task(void)
+{
+    while (1) {
+        if (g_upload_mqtt == RT_TRUE) {
+            upload_boot_info_event();
+            break;
+        } else {
+            rt_os_sleep(1);
+        }
+    }
+
+    rt_exit_task(NULL);
+}
+
+static int32_t upload_boot_info_event_handle(void)
+{
+    rt_task task_id = 0;
+    int32_t ret = RT_ERROR;
+
+    ret = rt_create_task(&task_id, (void *)upload_boot_task, NULL);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "create task fail\n");
+        return RT_ERROR;
+    }
+
+    return ret;
+}
+
 int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
 {
     (void)buf;
@@ -479,7 +515,7 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
     if (MSG_NETWORK_CONNECTED == mode) {
         MSG_PRINTF(LOG_DBG, "upload module recv network connected\r\n");
         g_upload_network = RT_TRUE;
-        upload_boot_info_event();
+        upload_boot_info_event_handle();
     } else if (MSG_NETWORK_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_DBG, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;

@@ -127,43 +127,6 @@ exit_entry:
     return ret;
 }
 
-#if 0
-static rt_bool on_issue_cert_install(const void *arg)
-{
-    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
-    rt_bool ret = RT_FALSE;
-
-    MSG_PRINTF(LOG_INFO, "tmpFileName=%s, targetFileName=%s\r\n", upgrade->tmpFileName, upgrade->targetFileName);
-    if (linux_rt_rename_file(upgrade->tmpFileName, upgrade->targetFileName) != 0) {
-        MSG_PRINTF(LOG_WARN, "re-name error\n");
-        goto exit_entry;
-    }
-
-    if (rt_os_chmod(upgrade->targetFileName, RT_S_IRWXU | RT_S_IRWXG | RT_S_IRWXO) != 0) {
-        MSG_PRINTF(LOG_WARN, "change mode error\n");
-        goto exit_entry;
-    }
-
-    //SET_UPGRADE_STATUS(upgrade, 1);
-
-    rt_os_sync();
-    rt_os_sync();
-
-    ret = RT_TRUE;
-
-exit_entry:
-
-    return ret;
-}
-
-static rt_bool on_issue_cert_file_check(const void *arg)
-{
-    const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
-
-    return RT_TRUE;
-}
-#endif
-
 static rt_bool on_issue_cert_cleanup(const void *arg)
 {
     const upgrade_struct_t *upgrade = (const upgrade_struct_t *)arg;
@@ -200,7 +163,7 @@ static rt_bool on_issue_cert_upload_event(const void *arg)
         if (ret) {
             on_issue_cert_status = ret;
         }
-        
+
         if (fp) {
             linux_fclose(fp);
             fp = NULL;
@@ -272,7 +235,7 @@ static int32_t upgrade_download_issue_cert_package(const void *in, const char *u
 
     ret = RT_SUCCESS;
 
-exit_entry:   
+exit_entry:
 
     return ret;
 }
@@ -281,14 +244,14 @@ static int32_t downstream_issue_cert_handler(const void *in, const char *event, 
 {
     int32_t ret = RT_SUCCESS;
     const issue_cert_struct_t *param = (const issue_cert_struct_t *)in;
-    
+
     ret = upgrade_download_issue_cert_package(param, event);
 
     if (param) {
         rt_os_free((void *)param);
         param = NULL;
     }
-    
+
     return ret;
 }
 
