@@ -561,7 +561,7 @@ int authenticate_server(const char *matching_id, const char *auth_data,
 
     // serverSignature1 [APPLICATION 55] OCTET STRING
     ret = get_data_from_json(content, "serverSignature1", g_buf + g_buf_size, &len);
-    if (bertlv_get_tag(g_buf, NULL) != 0x5F37) {
+    if (bertlv_get_tag(g_buf + g_buf_size, NULL) != 0x5F37) {
         MSG_ERR("Broken serverSignature1 decoding at byte 0\n");
         ret = RT_ERR_ASN1_DECODE_FAIL;
     }
@@ -679,15 +679,16 @@ int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t
     // smdpSigned2 SmdpSigned2
     ret = get_data_from_json(content, "smdpSigned2", g_buf, &len);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    g_buf_size += len;
+    g_buf_size = len;
 
     // smdpSignature2 [APPLICATION 55] OCTET STRING
     ret = get_data_from_json(content, "smdpSignature2", g_buf + g_buf_size, &len);
-    if (bertlv_get_tag(g_buf, NULL) != 0x5F37) {
+    if (bertlv_get_tag(g_buf + g_buf_size, NULL) != 0x5F37) {
         MSG_ERR("Broken serverSignature1 decoding at byte 0\n");
         ret = RT_ERR_ASN1_DECODE_FAIL;
     }
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    g_buf_size += len;
 
     // hashCc Octet32 OPTIONAL
     if (cc != NULL) {
@@ -871,6 +872,7 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     MSG_DUMP_ARRAY("sequenceOf86\n", g_buf + offset, len + value_len);
     ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    offset += len;
 
     // Each of the '86' TLVs
     for (sub_off = 0; sub_off < value_len; ) {

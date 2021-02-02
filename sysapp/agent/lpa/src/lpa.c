@@ -176,32 +176,33 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
     offset += bertlv_get_tl_length(buf + offset, &total_info_len);
 
     if (pi != NULL) {
-        for (i = 0, *num = 0; i < total_info_len; *num++) {
+        for (i = 0, *num = 0; i < total_info_len; (*num)++) {
             if (*num >= max_num) {
                 MSG_WARN("too many profile detected (%d > %d)\n", *num, max_num);
-                break;;
+                break;
             }
             // ProfileInfo E3 TL
             info_off = bertlv_get_tl_length(buf + offset + i, &info_len);
+
             // find ICCID
             element_off = bertlv_find_tag(buf + offset + i + info_off, info_len, 0x5A, 1);
             if (element_off != BERTLV_INVALID_OFFSET) {
                 // get ICCID value offset
                 element_off += bertlv_get_tl_length(buf + offset + i + info_off + element_off, NULL);
                 swap_nibble(buf + offset + i + info_off + element_off, 10);
-                bytes2hexstring(buf + offset + i + info_off + element_off, 10, pi[i].iccid);
+                bytes2hexstring(buf + offset + i + info_off + element_off, 10, pi[*num].iccid);
             }
 
             // find ProfileClass
             element_off = bertlv_find_tag(buf + offset + i + info_off, info_len, 0x95, 1);
             if (element_off != BERTLV_INVALID_OFFSET) {
-                pi[i].class = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off, NULL);
+                pi[*num].class = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off, NULL);
             }
 
-            // find ProfileClass
+            // find ProfileState
             element_off = bertlv_find_tag(buf + offset + i + info_off, info_len, 0x9F70, 1);
             if (element_off != BERTLV_INVALID_OFFSET) {
-                pi[i].state = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off, NULL);
+                pi[*num].state = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off, NULL);
             }
 
             // get next E3 TLV
