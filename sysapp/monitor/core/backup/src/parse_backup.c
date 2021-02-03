@@ -13,13 +13,10 @@
 
 #include "parse_backup.h"
 #include "backup_profile.h"
-#include "ProfileFile.h"
 #include "rt_qmi.h"
 #include "apdu.h"
 #include "trigger.h"
 #include "random.h"
-#include "ProfileInfoListResponse.h"
-#include "SetRootKeyRequest.h"
 #include "tlv.h"
 #include "bertlv.h"
 

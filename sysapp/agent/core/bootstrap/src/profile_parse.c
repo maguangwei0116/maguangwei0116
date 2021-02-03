@@ -13,11 +13,6 @@
 
 #include "profile_parse.h"
 #include "file.h"
-#include "ProfileInfo1.h"
-#include "FileInfo.h"
-#include "TBHRequest.h"
-#include "SetRootKeyRequest.h"
-#include "BootstrapRequest.h"
 #include "tlv.h"
 #include "bertlv.h"
 #include "agent_queue.h"
@@ -263,7 +258,7 @@ static int32_t calc_hash(uint8_t *tbh, int32_t tbh_len, uint8_t *profile_hash)
 }
 
 static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index,
-                            BOOLEAN_t sequential, uint16_t mcc, uint8_t *profile, uint16_t *len_out)
+                            uint8_t sequential, uint16_t mcc, uint8_t *profile, uint16_t *len_out)
 {
     uint8_t jt[4] = {0x08, 0x29, 0x43, 0x05};
     uint8_t profile_hash[32], imsi_buffer[2], bytes[12];
@@ -308,7 +303,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     // find ICCID in tbhRequest
     iccid_off = bertlv_find_tag(profile_buffer + tbh_off, tbh_len, 0x80, 1);
     if (iccid_off == BERTLV_INVALID_OFFSET) {
-        MSG_PRINTF(LOG_ERR, "iccid not found!");
+        MSG_PRINTF(LOG_ERR, "iccid not found!\n");
         goto end;
     }
     iccid_off += tbh_off;
@@ -448,7 +443,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
     uint32_t apn_off, apn_len;
     uint32_t apn_name_off, apn_name_len;
     uint32_t mcc_mnc_off, mcc_mnc_len;
-    uint32_t total_num, total_num_len;;
+    uint32_t total_num_off, total_num, total_num_len;;
     uint8_t sequential;
 
     linux_fseek(fp, off, RT_FS_SEEK_SET);
@@ -470,9 +465,11 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
     mcc_mnc_off = bertlv_get_tl_length(buf + apn_name_off + apn_name_len, &mcc_mnc_len);  // mccMnc 81 TL
     mcc_mnc_off += apn_name_off + apn_name_len;
     // get total number
-    total_num = bertlv_get_integer(buf + apn_off + apn_len, &total_num_len);
+    total_num_off = bertlv_get_tlv_length(buf + apn_off);
+    total_num_off += apn_off;
+    total_num = bertlv_get_integer(buf + total_num_off, &total_num_len);
     // get sequential BOOLEAN
-    sequential = (uint8_t)bertlv_get_integer(buf + apn_off + apn_len + total_num_len, NULL);
+    sequential = (uint8_t)bertlv_get_integer(buf + total_num_off + total_num_len, NULL);
 
     off += size;
     linux_fseek(fp, off, RT_FS_SEEK_SET);
