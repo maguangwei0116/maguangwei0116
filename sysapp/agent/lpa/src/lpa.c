@@ -9,7 +9,7 @@
 #include "convert.h"
 #include "lpa_https.h"
 #include "lpa_error_codes.h"
-#include "bertlv.h"
+#include "ber_tlv.h"
 
 #define BUFFER_SIZE                10*1024
 
@@ -165,15 +165,15 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
     */
 
     //  ProfileInfoListResponse
-    offset = bertlv_get_tl_length(buf, NULL);
+    offset = ber_tlv_get_tl_length(buf, NULL);
 
-    if (bertlv_get_tag(buf + offset, NULL) != 0xA0) {
+    if (ber_tlv_get_tag(buf + offset, NULL) != 0xA0) {
         ret = RT_ERR_UNKNOWN_ERROR;
         goto end;
     }
 
     // profileInfoListOk SEQUENCE OF ProfileInfo
-    offset += bertlv_get_tl_length(buf + offset, &total_info_len);
+    offset += ber_tlv_get_tl_length(buf + offset, &total_info_len);
 
     if (pi != NULL) {
         for (i = 0, *num = 0; i < total_info_len; (*num)++) {
@@ -182,31 +182,31 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
                 break;
             }
             // ProfileInfo E3 TL
-            info_off = bertlv_get_tl_length(buf + offset + i, &info_len);
+            info_off = ber_tlv_get_tl_length(buf + offset + i, &info_len);
 
             // find ICCID
-            element_off = bertlv_find_tag(buf + offset + i + info_off, info_len, 0x5A, 1);
-            if (element_off != BERTLV_INVALID_OFFSET) {
+            element_off = ber_tlv_find_tag(buf + offset + i + info_off, info_len, 0x5A, 1);
+            if (element_off != BER_TLV_INVALID_OFFSET) {
                 // get ICCID value offset
-                element_off += bertlv_get_tl_length(buf + offset + i + info_off + element_off, NULL);
+                element_off += ber_tlv_get_tl_length(buf + offset + i + info_off + element_off, NULL);
                 swap_nibble(buf + offset + i + info_off + element_off, 10);
                 bytes2hexstring(buf + offset + i + info_off + element_off, 10, pi[*num].iccid);
             }
 
             // find ProfileClass
-            element_off = bertlv_find_tag(buf + offset + i + info_off, info_len, 0x95, 1);
-            if (element_off != BERTLV_INVALID_OFFSET) {
-                pi[*num].class = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off, NULL);
+            element_off = ber_tlv_find_tag(buf + offset + i + info_off, info_len, 0x95, 1);
+            if (element_off != BER_TLV_INVALID_OFFSET) {
+                pi[*num].class = (uint8_t)ber_tlv_get_integer(buf + offset + i + info_off + element_off, NULL);
             }
 
             // find ProfileState
-            element_off = bertlv_find_tag(buf + offset + i + info_off, info_len, 0x9F70, 1);
-            if (element_off != BERTLV_INVALID_OFFSET) {
-                pi[*num].state = (uint8_t)bertlv_get_integer(buf + offset + i + info_off + element_off, NULL);
+            element_off = ber_tlv_find_tag(buf + offset + i + info_off, info_len, 0x9F70, 1);
+            if (element_off != BER_TLV_INVALID_OFFSET) {
+                pi[*num].state = (uint8_t)ber_tlv_get_integer(buf + offset + i + info_off + element_off, NULL);
             }
 
             // get next E3 TLV
-            i += bertlv_get_tlv_length(buf + offset + i);
+            i += ber_tlv_get_tlv_length(buf + offset + i);
         }
     }
 
@@ -461,32 +461,32 @@ static int process_bpp_rsp(const uint8_t* pir, uint16_t pir_len,
     */
 
     // profileInstallationResultData [39] ProfileInstallationResultData
-    result_data_offset = bertlv_get_tl_length(pir, NULL);
-    if (bertlv_get_tag(pir + result_data_offset, NULL) != 0xBF27) {
+    result_data_offset = ber_tlv_get_tl_length(pir, NULL);
+    if (ber_tlv_get_tag(pir + result_data_offset, NULL) != 0xBF27) {
         MSG_ERR("Could not found profileInstallationResultData! \n");
         return RT_ERROR;
     }
-    element_len = bertlv_get_tlv_length(pir + result_data_offset);
+    element_len = ber_tlv_get_tlv_length(pir + result_data_offset);
     MSG_INFO_ARRAY("ProfileInstallationResultData: ", pir + result_data_offset, element_len);
 
     // get ProfileInstallationResultData value
-    result_data_offset += bertlv_get_tl_length(pir + result_data_offset, &element_len);
+    result_data_offset += ber_tlv_get_tl_length(pir + result_data_offset, &element_len);
     
     // find notificationMetadata
-    iccid_offset = bertlv_find_tag(pir + result_data_offset, element_len, 0xBF2F, 1);
-    if (final_result_offset == BERTLV_INVALID_OFFSET) {
+    iccid_offset = ber_tlv_find_tag(pir + result_data_offset, element_len, 0xBF2F, 1);
+    if (final_result_offset == BER_TLV_INVALID_OFFSET) {
         MSG_ERR("Could not found notificationMetadata! \n");
         return RT_ERROR;
     }
-    iccid_offset += bertlv_get_tl_length(pir + result_data_offset + iccid_offset, &notify_metadata_len);
+    iccid_offset += ber_tlv_get_tl_length(pir + result_data_offset + iccid_offset, &notify_metadata_len);
 
     // find iccid OPTIONAL
-    iccid_offset += bertlv_find_tag(pir + result_data_offset + iccid_offset, notify_metadata_len, 0x5A, 1);
-    if (final_result_offset == BERTLV_INVALID_OFFSET) {
+    iccid_offset += ber_tlv_find_tag(pir + result_data_offset + iccid_offset, notify_metadata_len, 0x5A, 1);
+    if (final_result_offset == BER_TLV_INVALID_OFFSET) {
         MSG_ERR("Could not found iccid! \n");
         utils_mem_clr(iccid, 20);
     } else {
-        iccid_offset += bertlv_get_tl_length(pir + result_data_offset + iccid_offset, &notify_metadata_len);
+        iccid_offset += ber_tlv_get_tl_length(pir + result_data_offset + iccid_offset, &notify_metadata_len);
         MSG_DUMP_ARRAY("ICCID: ", pir + result_data_offset + iccid_offset, notify_metadata_len);
         utils_mem_copy(tmp, pir + result_data_offset + iccid_offset, (uint16_t)notify_metadata_len);
         swap_nibble(tmp, notify_metadata_len);
@@ -498,16 +498,16 @@ static int process_bpp_rsp(const uint8_t* pir, uint16_t pir_len,
     }
 
     // find finalResult
-    final_result_offset = bertlv_find_tag(pir + result_data_offset, element_len, 0xA2, 1);
-    if (final_result_offset == BERTLV_INVALID_OFFSET) {
+    final_result_offset = ber_tlv_find_tag(pir + result_data_offset, element_len, 0xA2, 1);
+    if (final_result_offset == BER_TLV_INVALID_OFFSET) {
         MSG_ERR("Could not found finalResult! \n");
         return RT_ERROR;
     }
     final_result_offset += result_data_offset;
 
-    final_result_offset += bertlv_get_tl_length(pir + final_result_offset, NULL);
+    final_result_offset += ber_tlv_get_tl_length(pir + final_result_offset, NULL);
 
-    tag = bertlv_get_tag(pir + final_result_offset, NULL);
+    tag = ber_tlv_get_tag(pir + final_result_offset, NULL);
     if (tag == 0xA0) {
         // successResult SuccessResult
         MSG_INFO("Profile intatll success. \n");
@@ -516,33 +516,33 @@ static int process_bpp_rsp(const uint8_t* pir, uint16_t pir_len,
         return RT_SUCCESS;
     } else if (tag == 0xA1) {
         // errorResult ErrorResult
-        final_result_offset += bertlv_get_tl_length(pir + final_result_offset, &element_len);
+        final_result_offset += ber_tlv_get_tl_length(pir + final_result_offset, &element_len);
 
         // bppCommandId BppCommandId
-        bpp_id_off = bertlv_find_tag(pir + final_result_offset, element_len, 0x80, 1);
-        if (final_result_offset == BERTLV_INVALID_OFFSET) {
+        bpp_id_off = ber_tlv_find_tag(pir + final_result_offset, element_len, 0x80, 1);
+        if (final_result_offset == BER_TLV_INVALID_OFFSET) {
             MSG_ERR("Profile intatll failed. bppCommandId not found! \n");
             return RT_ERROR;
         }
-        *bppcid = (uint8_t)bertlv_get_integer(pir + final_result_offset + bpp_id_off, NULL);
+        *bppcid = (uint8_t)ber_tlv_get_integer(pir + final_result_offset + bpp_id_off, NULL);
 
         // errorReason ErrorReason
-        error_reson_off = bertlv_find_tag(pir + final_result_offset, element_len, 0x81, 1);
-        if (final_result_offset == BERTLV_INVALID_OFFSET) {
+        error_reson_off = ber_tlv_find_tag(pir + final_result_offset, element_len, 0x81, 1);
+        if (final_result_offset == BER_TLV_INVALID_OFFSET) {
             MSG_ERR("Profile intatll failed. bppCommandId not found! \n");
             return RT_ERROR;
         }
-        *error = (uint8_t)bertlv_get_integer(pir + final_result_offset + error_reson_off, NULL);
+        *error = (uint8_t)ber_tlv_get_integer(pir + final_result_offset + error_reson_off, NULL);
 
         MSG_ERR("Profile intatll failed. bppCommandId: %d, errorReason: %d. \n", *bppcid, *error);
 
         // simaResponse
-        euicc_response_off = bertlv_find_tag(pir + final_result_offset, element_len, 0x82, 1);
-        if (final_result_offset == BERTLV_INVALID_OFFSET) {
+        euicc_response_off = ber_tlv_find_tag(pir + final_result_offset, element_len, 0x82, 1);
+        if (final_result_offset == BER_TLV_INVALID_OFFSET) {
             MSG_ERR("Profile intatll failed. simaResponse not found! \n");
             return RT_ERROR;
         }
-        element_len = bertlv_get_tlv_length(pir + final_result_offset + euicc_response_off);
+        element_len = ber_tlv_get_tlv_length(pir + final_result_offset + euicc_response_off);
         MSG_DUMP_ARRAY("simaResponse: \n", pir + final_result_offset + euicc_response_off, element_len);
         return RT_SUCCESS;
     } else {

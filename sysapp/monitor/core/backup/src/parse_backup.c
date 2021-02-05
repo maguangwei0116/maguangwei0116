@@ -18,7 +18,7 @@
 #include "trigger.h"
 #include "random.h"
 #include "tlv.h"
-#include "bertlv.h"
+#include "ber_tlv.h"
 
 #define TAG_LPA_SET_ROOT_KEY_REQ                0xFF20
 
@@ -44,14 +44,14 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     uint32_t all_profile_len = 0;
     uint8_t *all_profile_buf = NULL;
 
-    all_profile_buf = (uint8_t*)card_buf + bertlv_get_tl_length((uint8_t*)card_buf, &all_profile_len);
-
+    all_profile_buf = (uint8_t*)card_buf + ber_tlv_get_tl_length((uint8_t*)card_buf, &all_profile_len);
+    
     MSG_INFO_ARRAY("all_profile_buf: ", all_profile_buf, all_profile_len);
     /******************************************************************************/
     uint32_t all_profile_no_hash_len = 0;
     uint8_t *all_profile_no_hash_buf = NULL;
 
-    all_profile_no_hash_buf = all_profile_buf + bertlv_get_tl_length(all_profile_buf, &all_profile_no_hash_len);
+    all_profile_no_hash_buf = all_profile_buf + ber_tlv_get_tl_length(all_profile_buf, &all_profile_no_hash_len);
 
     MSG_INFO_ARRAY("all_profile_no_hash_buf: ", all_profile_no_hash_buf, all_profile_no_hash_len);
     /******************************************************************************/
@@ -59,7 +59,7 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     uint32_t profile_info_tag_len = 0;
     uint8_t *profile_info_buf = NULL;
 
-    profile_info_tag_len = bertlv_get_tl_length(all_profile_no_hash_buf, &profile_info_len);
+    profile_info_tag_len = ber_tlv_get_tl_length(all_profile_no_hash_buf, &profile_info_len);
     profile_info_buf = all_profile_no_hash_buf + profile_info_tag_len;
 
     MSG_INFO_ARRAY("profile_info_buf: ", profile_info_buf, profile_info_len);
@@ -69,8 +69,8 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     uint32_t root_key_tag_len = 0;
     uint8_t *root_key_buf = NULL;
 
-    root_key_tag_len = bertlv_get_tl_length(profile_info_buf, &root_key_len);
-    root_key_buf = profile_info_buf + root_key_tag_len;
+    root_key_tag_len = ber_tlv_get_tl_length(profile_info_buf + profile_info_len, &root_key_len);
+    root_key_buf = profile_info_buf + profile_info_len + root_key_tag_len;
 
     MSG_INFO_ARRAY("root_key_buf: ", root_key_buf, root_key_len);
     /******************************************************************************/
@@ -79,15 +79,15 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     uint32_t aes_key_tag_len = 0;
     uint8_t *aes_key_buf = NULL;
 
-    aes_key_tag_len = bertlv_get_tl_length(root_key_buf + root_key_len, &aes_key_len);
+    aes_key_tag_len = ber_tlv_get_tl_length(root_key_buf + root_key_len, &aes_key_len);
     aes_key_buf = root_key_buf + root_key_len + aes_key_tag_len;
 
     MSG_INFO_ARRAY("aes_key_buf: ", aes_key_buf, aes_key_len);
     /******************************************************************************/
     // build setRootKeyRequest
-    g_buf_size = bertlv_build_tlv(0x80, root_key_len, root_key_buf, g_buf);
-    g_buf_size += bertlv_build_tlv(0x81, aes_key_len, aes_key_buf, g_buf + g_buf_size);
-    g_buf_size = bertlv_build_tlv(TAG_LPA_SET_ROOT_KEY_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0x80, root_key_len, root_key_buf, g_buf);
+    g_buf_size += ber_tlv_build_tlv(0x81, aes_key_len, aes_key_buf, g_buf + g_buf_size);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_SET_ROOT_KEY_REQ, g_buf_size, g_buf, g_buf);
 
     MSG_INFO_ARRAY("g_buf: ", g_buf, g_buf_size);
     /******************************************************************************/
@@ -105,35 +105,35 @@ static int32_t insert_profile(const uint8_t *buf, int32_t len)
     MSG_INFO_ARRAY("list profile info: ", rsp_buf, rsp_len);
 
     // BF2D
-    pi_offset = bertlv_get_tl_length(rsp_buf, NULL);
+    pi_offset = ber_tlv_get_tl_length(rsp_buf, NULL);
     // profileInfoListOk A0
-    if (bertlv_get_tag(rsp_buf + pi_offset, NULL) != 0xA0) {
+    if (ber_tlv_get_tag(rsp_buf + pi_offset, NULL) != 0xA0) {
         ret = RT_ERROR;
         goto end;
     }
-    pi_offset += bertlv_get_tl_length(rsp_buf + pi_offset, &list_len);
+    pi_offset += ber_tlv_get_tl_length(rsp_buf + pi_offset, &list_len);
     pi = rsp_buf + pi_offset;
 
-    for (i = 1; (pi_offset = bertlv_find_tag(pi, list_len, 0xE3, i)) != BERTLV_INVALID_OFFSET; i++) {
-        pi_offset += bertlv_get_tl_length(pi + pi_offset, &pi_len);
+    for (i = 1; (pi_offset = ber_tlv_find_tag(pi, list_len, 0xE3, i)) != BER_TLV_INVALID_OFFSET; i++) {
+        pi_offset += ber_tlv_get_tl_length(pi + pi_offset, &pi_len);
         // find profileClass [21]
-        offset = bertlv_find_tag(pi + pi_offset, pi_len, 0x95, 1);
-        if (offset == BERTLV_INVALID_OFFSET) {
+        offset = ber_tlv_find_tag(pi + pi_offset, pi_len, 0x95, 1);
+        if (offset == BER_TLV_INVALID_OFFSET) {
             continue;
         }
-        if (bertlv_get_integer(pi + pi_offset + offset, NULL) == 0x01) {
+        if (ber_tlv_get_integer(pi + pi_offset + offset, NULL) == 0x01) {
             // find profileState [112]
-            offset = bertlv_find_tag(pi + pi_offset, pi_len, 0x9F70, 1);
-            if (offset == BERTLV_INVALID_OFFSET) {
+            offset = ber_tlv_find_tag(pi + pi_offset, pi_len, 0x9F70, 1);
+            if (offset == BER_TLV_INVALID_OFFSET) {
                 continue;
             }
-            if (bertlv_get_integer(pi + pi_offset + offset, NULL) == 0x01) {
+            if (ber_tlv_get_integer(pi + pi_offset + offset, NULL) == 0x01) {
                 // find iccid
-                offset = bertlv_find_tag(pi + pi_offset, pi_len, 0x5A, 1);
-                if (offset == BERTLV_INVALID_OFFSET) {
+                offset = ber_tlv_find_tag(pi + pi_offset, pi_len, 0x5A, 1);
+                if (offset == BER_TLV_INVALID_OFFSET) {
                     break;
                 }
-                offset += bertlv_get_tl_length(pi + pi_offset + offset, &iccid_len);
+                offset += ber_tlv_get_tl_length(pi + pi_offset + offset, &iccid_len);
                 rt_os_memcpy(&apdu_enable[7], pi + pi_offset + offset, iccid_len);
                 MSG_INFO_ARRAY("Enable iccid: ", apdu_enable, sizeof(apdu_enable));
                 ret = cmd_store_data((const uint8_t*)apdu_enable, sizeof(apdu_enable), rsp_buf, &rsp_len, channel);
@@ -195,14 +195,14 @@ static int32_t parse_profile(void)
     char *mcc_mnc = NULL;
 
     // get value offset of sharedProfile
-    shared_profile_value_off  = bertlv_get_tl_length(card_buf, NULL);
-    shared_profile_value_off += bertlv_get_tl_length(card_buf + shared_profile_value_off, &shared_profile_value_len);
+    shared_profile_value_off = ber_tlv_get_tl_length(card_buf, NULL);
+    shared_profile_value_off += ber_tlv_get_tl_length(card_buf + shared_profile_value_off, &shared_profile_value_len);
 
     // the first TLV is fileInfo. get value offset of fileInfo
-    file_info_value_off = bertlv_get_tl_length(card_buf + shared_profile_value_off, NULL);
+    file_info_value_off = ber_tlv_get_tl_length(card_buf + shared_profile_value_off, NULL);
     file_info_value_off += shared_profile_value_off;
     // the first TLV is operatorNum
-    operator_num = bertlv_get_integer(card_buf + file_info_value_off, NULL);
+    operator_num = ber_tlv_get_integer(card_buf + file_info_value_off, NULL);
 
     MSG_PRINTF(LOG_INFO, "Operator num : %d\n", operator_num);
     if (g_operator_num >= operator_num) {
@@ -210,34 +210,34 @@ static int32_t parse_profile(void)
     }
 
     // find the optProfiles
-    opt_profiles_value_off = bertlv_find_tag(card_buf + shared_profile_value_off, shared_profile_value_len, 0xA3, 1);
+    opt_profiles_value_off = ber_tlv_find_tag(card_buf + shared_profile_value_off, shared_profile_value_len, 0xA3, 1);
     opt_profiles_value_off += shared_profile_value_off;
-    opt_profiles_value_off += bertlv_get_tl_length(card_buf + opt_profiles_value_off, &opt_profiles_value_len);
+    opt_profiles_value_off += ber_tlv_get_tl_length(card_buf + opt_profiles_value_off, &opt_profiles_value_len);
 
     // find the Specified OperatorProfile
-    profile_info_value_off = bertlv_find_tag(card_buf + opt_profiles_value_off, shared_profile_value_len, 0x30, g_operator_num + 1);
+    profile_info_value_off = ber_tlv_find_tag(card_buf + opt_profiles_value_off, shared_profile_value_len, 0x30, g_operator_num + 1);
     opt_profiles_value_off += profile_info_value_off;
+    opt_profiles_value_off += ber_tlv_get_tl_length(card_buf + opt_profiles_value_off, &opt_profiles_value_len);
 
     // the first TLV is profileInfo
-    profile_info_value_off = bertlv_get_tl_length(card_buf + opt_profiles_value_off, &profile_info_value_len);
+    profile_info_value_off = ber_tlv_get_tl_length(card_buf + opt_profiles_value_off, &profile_info_value_len);
     profile_info_value_off += opt_profiles_value_off;
 
     // find total number
-    profile_total_num = bertlv_find_tag(card_buf + profile_info_value_off, profile_info_value_len, 0x81, 1);
-    profile_total_num = bertlv_get_integer(card_buf + profile_info_value_off + profile_total_num, NULL);
+    profile_total_num = ber_tlv_find_tag(card_buf + profile_info_value_off, profile_info_value_len, 0x81, 1);
+    profile_total_num += profile_info_value_off;
+    profile_total_num = ber_tlv_get_integer(card_buf + profile_total_num, NULL);
 
     // get content
     profiles_off = profile_info_value_off + profile_info_value_len;
-    profiles_off += bertlv_get_tl_length(card_buf + profiles_off, &profiles_len);
+    profiles_off += ber_tlv_get_tl_length(card_buf + profiles_off, &profiles_len);
 
     profile_seq = get_selecte_profile_index(profile_total_num);
 
     // get bootstrap profile
-    profile_off = bertlv_find_tag(card_buf + profiles_off, profiles_len, 0xFF7F, profile_seq + 1);
+    profile_off = ber_tlv_find_tag(card_buf + profiles_off, profiles_len, 0xFF7F, profile_seq + 1);
     profile_off += profiles_off;
-    profile_len = bertlv_get_tlv_length(card_buf + profile_off);
-
-    MSG_INFO_ARRAY("insert profile buffer: ", card_buf + profile_off, profile_len);
+    profile_len = ber_tlv_get_tlv_length(card_buf + profile_off);
 
     ret = insert_profile(card_buf + profile_off, profile_len);
     if (ret != RT_SUCCESS) {
@@ -246,23 +246,26 @@ static int32_t parse_profile(void)
     }
 
     // the first TLV of profileInfo is apn
-    apn_off = bertlv_get_tl_length(card_buf + profile_info_value_off, &apn_len);
+    apn_off = ber_tlv_get_tl_length(card_buf + profile_info_value_off, &apn_len);
     apn_off += profile_info_value_off;
     // find specified ApnList
-    apn_name_off = bertlv_find_tag(card_buf + apn_off, apn_len, 0x30, g_operator_num + 1);
+    apn_name_off = ber_tlv_find_tag(card_buf + apn_off, apn_len, 0x30, g_operator_num + 1);
     apn_name_off += apn_off;
 
     // the first TLV is APN name
-    apn_name_off += bertlv_get_tl_length(card_buf + apn_name_off, NULL);  // get apn_name_off
-    apn_name_off += bertlv_get_tl_length(card_buf + apn_name_off, &apn_name_len);  // get apn name value off
+    apn_name_off += ber_tlv_get_tl_length(card_buf + apn_name_off, NULL);  // get apn_name_off
+    apn_name_off += ber_tlv_get_tl_length(card_buf + apn_name_off, &apn_name_len);  // get apn name value off
 
     // get mcc mnc value off
     mccmnc_off = apn_name_off + apn_name_len;
-    mccmnc_off += bertlv_get_tl_length(card_buf + mccmnc_off, &mccmnc_len);
+    mccmnc_off += ber_tlv_get_tl_length(card_buf + mccmnc_off, &mccmnc_len);
 
     apn_name = (char *)rt_os_malloc(apn_name_len + 1);
+    utils_mem_copy(apn_name, card_buf + apn_name_off, apn_name_len);
     apn_name[apn_name_len] = '\0';
+
     mcc_mnc = (char*)rt_os_malloc(mccmnc_len + 1);
+    utils_mem_copy(mcc_mnc, card_buf + mccmnc_off, mccmnc_len);
     mcc_mnc[mccmnc_len] = '\0';
 
     rt_qmi_modify_profile(1, 0, 0, apn_name, mcc_mnc);

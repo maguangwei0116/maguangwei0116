@@ -13,7 +13,7 @@
 #include "lpa_https.h"
 #include "lpa.h"
 #include "tlv.h"
-#include "bertlv.h"
+#include "ber_tlv.h"
 
 static char g_transaction_id[33] = {0};
 
@@ -39,11 +39,11 @@ int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size, uint8
     }
 
     if (ne == NE_ALL) {
-        g_buf_size = bertlv_build_tlv(TAG_LPA_LIST_NOTIFICATION_REQ, 0, NULL, g_buf);
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_LIST_NOTIFICATION_REQ, 0, NULL, g_buf);
     } else {
         // profileManagementOperation [1] NotificationEvent
-        g_buf_size = bertlv_build_tlv(0x81, 2, g_buf, g_buf);
-        g_buf_size = bertlv_build_tlv(TAG_LPA_LIST_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
+        g_buf_size = ber_tlv_build_tlv(0x81, 2, g_buf, g_buf);
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_LIST_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
     }
 
     *out_size = 0;
@@ -93,11 +93,11 @@ int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint1
     */
 
     if (ne == NE_ALL) {
-        g_buf_size = bertlv_build_tlv(TAG_LPA_RETRIEVE_NOTIFICATION_REQ, 0, NULL, g_buf);
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_RETRIEVE_NOTIFICATION_REQ, 0, NULL, g_buf);
     } else {
         if (ne == NE_SEQ_NUM) {
             // seqNumber [0] INTEGER,
-            g_buf_size = bertlv_build_integer_tlv(0x80, (uint32_t)*seq, g_buf);
+            g_buf_size = ber_tlv_build_integer_tlv(0x80, (uint32_t)*seq, g_buf);
         } else {
             // profileManagementOperation [1] NotificationEvent
             if (ne == NE_INSTALL) {
@@ -113,9 +113,9 @@ int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint1
                 g_buf[0] = 4;
                 g_buf[1] = 0x10;
             }
-            g_buf_size = bertlv_build_tlv(0x81, 2, g_buf, g_buf);
+            g_buf_size = ber_tlv_build_tlv(0x81, 2, g_buf, g_buf);
         }
-        g_buf_size = bertlv_build_tlv(TAG_LPA_RETRIEVE_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_RETRIEVE_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
     }
 
     *out_size = 0;
@@ -136,8 +136,8 @@ int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size, ui
     */
     *out_size = 0;
 
-    g_buf_size = bertlv_build_integer_tlv(0x80, (uint32_t)seq, g_buf);
-    g_buf_size = bertlv_build_tlv(TAG_LPA_REMOVE_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_integer_tlv(0x80, (uint32_t)seq, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_REMOVE_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
 
     MSG_DUMP_ARRAY("ListNotificationRequest: ", g_buf, g_buf_size);
     RT_CHECK(cmd_store_data(g_buf, g_buf_size, out, out_size, channel));
@@ -158,7 +158,7 @@ int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *si
     /*
     GetEuiccInfo1Request ::= [32] SEQUENCE { -- Tag 'BF20' }
     */
-    g_buf_size = bertlv_build_tlv(TAG_LPA_GET_EUICC_INFO1_REQ, 0, NULL, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_GET_EUICC_INFO1_REQ, 0, NULL, g_buf);
     MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
 
     ret = cmd_store_data(g_buf, g_buf_size, info1, size1, channel);
@@ -169,7 +169,7 @@ int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *si
         /*
         GetEuiccInfo2Request ::= [34] SEQUENCE { -- Tag 'BF22' }
         */
-        g_buf_size = bertlv_build_tlv(TAG_LPA_GET_EUICC_INFO2_REQ, 0, NULL, g_buf);
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_GET_EUICC_INFO2_REQ, 0, NULL, g_buf);
         MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
 
         ret = cmd_store_data(g_buf, g_buf_size, info2, size2, channel);
@@ -190,7 +190,7 @@ int get_euicc_challenge(uint8_t challenge[16], uint8_t channel)
     /*
     GetEuiccChallengeRequest ::= [46] SEQUENCE { -- Tag 'BF2E' }
     */
-    g_buf_size = bertlv_build_tlv(TAG_LPA_GET_EUICC_CHALLENGE_REQ, 0, NULL, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_GET_EUICC_CHALLENGE_REQ, 0, NULL, g_buf);
 
     MSG_DUMP_ARRAY("GetEuiccChallengeRequest: ", g_buf, g_buf_size);
     // RT_CHECK(cmd_store_data(g_buf, g_buf_size, rsp, &rlen));
@@ -211,7 +211,7 @@ int get_rat(uint8_t *rat, uint16_t *size, uint8_t channel)
     GetRatRequest ::= [67] SEQUENCE { -- Tag ' BF43' 
         -- No input data }
     */
-    g_buf_size = bertlv_build_tlv(TAG_LPA_GET_RAT_REQ, 0, NULL, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_GET_RAT_REQ, 0, NULL, g_buf);
 
     MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
     // RT_CHECK(cmd_store_data(g_buf, g_buf_size, rat, size));
@@ -245,11 +245,11 @@ int cancel_session(const uint8_t *tid, uint8_t tid_size, uint8_t reason, uint8_t
     */
 
     // transactionId TransactionId
-    g_buf_size = bertlv_build_tlv(0x80, tid_size, tid, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0x80, tid_size, tid, g_buf);
     // CancelSessionReason ::= INTEGER
-    g_buf_size += bertlv_build_integer_tlv(0x81, reason, g_buf + g_buf_size);
+    g_buf_size += ber_tlv_build_integer_tlv(0x81, reason, g_buf + g_buf_size);
     // CancelSessionRequest ::= [65] SEQUENCE { -- Tag 'BF41'
-    g_buf_size = bertlv_build_tlv(TAG_LPA_CACEL_SESSION_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_CACEL_SESSION_REQ, g_buf_size, g_buf, g_buf);
 
     ret = cmd_store_data(g_buf, g_buf_size, csr, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -422,32 +422,32 @@ int gen_ctx_params1(const char *matching_id, char* buff, uint16_t* len)
 
     // matchingId UTF8String OPTIONAL
     if (matching_id != NULL) {
-        *len = bertlv_build_tlv(0x80, strlen(matching_id), matching_id, buff);
+        *len = ber_tlv_build_tlv(0x80, strlen(matching_id), matching_id, buff);
     } else {
         *len = 0;
     }
 
     // tac Octet4,
-    tac_len = bertlv_build_tlv(0x80, sizeof(arr_tac), arr_tac, buff + *len);
+    tac_len = ber_tlv_build_tlv(0x80, sizeof(arr_tac), arr_tac, buff + *len);
 
-    dev_cap_len = bertlv_build_tlv(0x80, sizeof(arr_gsm), arr_gsm, buff + *len + tac_len);
-    dev_cap_len += bertlv_build_tlv(0x81, sizeof(arr_utran), arr_utran, buff + *len + tac_len + dev_cap_len);
-    dev_cap_len += bertlv_build_tlv(0x82, sizeof(arr_cdma1x), arr_cdma1x, buff + *len + tac_len + dev_cap_len);
-    dev_cap_len += bertlv_build_tlv(0x83, sizeof(arr_cdmahrpd), arr_cdmahrpd, buff + *len + tac_len + dev_cap_len);
-    dev_cap_len += bertlv_build_tlv(0x84, sizeof(arr_cdmaehrpd), arr_cdmaehrpd, buff + *len + tac_len + dev_cap_len);
-    dev_cap_len += bertlv_build_tlv(0x85, sizeof(arr_eutran), arr_eutran, buff + *len + tac_len + dev_cap_len);
-    dev_cap_len += bertlv_build_tlv(0x86, sizeof(arr_contract_less), arr_contract_less, buff + *len + tac_len + dev_cap_len);
-    dev_cap_len += bertlv_build_tlv(0x87, sizeof(arr_rsp_ctl), arr_rsp_ctl, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len = ber_tlv_build_tlv(0x80, sizeof(arr_gsm), arr_gsm, buff + *len + tac_len);
+    dev_cap_len += ber_tlv_build_tlv(0x81, sizeof(arr_utran), arr_utran, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x82, sizeof(arr_cdma1x), arr_cdma1x, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x83, sizeof(arr_cdmahrpd), arr_cdmahrpd, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x84, sizeof(arr_cdmaehrpd), arr_cdmaehrpd, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x85, sizeof(arr_eutran), arr_eutran, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x86, sizeof(arr_contract_less), arr_contract_less, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x87, sizeof(arr_rsp_ctl), arr_rsp_ctl, buff + *len + tac_len + dev_cap_len);
     // DeviceCapabilities ::= SEQUENCE {
-    dev_cap_len = bertlv_build_tlv(0xA1, dev_cap_len, buff + *len + tac_len, buff + *len + tac_len);
+    dev_cap_len = ber_tlv_build_tlv(0xA1, dev_cap_len, buff + *len + tac_len, buff + *len + tac_len);
 
     // imei Octet8 OPTIONAL = NULL
 
     // DeviceInfo ::= SEQUENCE
-    tac_len = bertlv_build_tlv(0xA1, tac_len + dev_cap_len, buff + *len, buff + *len);
+    tac_len = ber_tlv_build_tlv(0xA1, tac_len + dev_cap_len, buff + *len, buff + *len);
 
     // CtxParams1 ::= CHOICE ctxParamsForCommonAuthentication CtxParamsForCommonAuthentication
-    *len = bertlv_build_tlv(0xA0, *len + tac_len, buff, buff);
+    *len = ber_tlv_build_tlv(0xA0, *len + tac_len, buff, buff);
 
     return ret;
 }
@@ -478,18 +478,18 @@ static int get_transaction_id(uint8_t* server_signed, uint8_t *transaction_id, u
     uint32_t value_len;
 
     // get ServerSigned1 value
-    offset = bertlv_get_tl_length(server_signed, &value_len);
+    offset = ber_tlv_get_tl_length(server_signed, &value_len);
     // find transactionId tag
-    offset_2 = (uint16_t)bertlv_find_tag(server_signed + offset, value_len, 0x80, 1);
+    offset_2 = (uint16_t)ber_tlv_find_tag(server_signed + offset, value_len, 0x80, 1);
 
-    if (offset_2 == BERTLV_INVALID_OFFSET) {
+    if (offset_2 == BER_TLV_INVALID_OFFSET) {
         MSG_ERR("Could not find transactionId !\n");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
     offset += offset_2;
 
     // get transactionId value
-    offset_2 = bertlv_get_tl_length(server_signed + offset, &value_len);
+    offset_2 = ber_tlv_get_tl_length(server_signed + offset, &value_len);
     offset += offset_2;
 
     *size = (uint8_t)value_len;
@@ -561,7 +561,7 @@ int authenticate_server(const char *matching_id, const char *auth_data,
 
     // serverSignature1 [APPLICATION 55] OCTET STRING
     ret = get_data_from_json(content, "serverSignature1", g_buf + g_buf_size, &len);
-    if (bertlv_get_tag(g_buf + g_buf_size, NULL) != 0x5F37) {
+    if (ber_tlv_get_tag(g_buf + g_buf_size, NULL) != 0x5F37) {
         MSG_ERR("Broken serverSignature1 decoding at byte 0\n");
         ret = RT_ERR_ASN1_DECODE_FAIL;
     }
@@ -584,7 +584,7 @@ int authenticate_server(const char *matching_id, const char *auth_data,
     g_buf_size += len;
 
     // AuthenticateServerRequest
-    g_buf_size = bertlv_build_tlv(TAG_LPA_AUTH_SERVER_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_AUTH_SERVER_REQ, g_buf_size, g_buf, g_buf);
     MSG_DUMP_ARRAY("AuthenticateServerRequest\n", g_buf, g_buf_size);
 
     ret = cmd_store_data(g_buf, g_buf_size, response, size, channel);
@@ -683,7 +683,7 @@ int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t
 
     // smdpSignature2 [APPLICATION 55] OCTET STRING
     ret = get_data_from_json(content, "smdpSignature2", g_buf + g_buf_size, &len);
-    if (bertlv_get_tag(g_buf + g_buf_size, NULL) != 0x5F37) {
+    if (ber_tlv_get_tag(g_buf + g_buf_size, NULL) != 0x5F37) {
         MSG_ERR("Broken serverSignature1 decoding at byte 0\n");
         ret = RT_ERR_ASN1_DECODE_FAIL;
     }
@@ -698,7 +698,7 @@ int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t
         ret = get_cc_hash(cc, transaction_id, transaction_id_len, hash_cc);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
-        len = bertlv_build_tlv(ASN1_TAG_OCTET_STRING, SHA256_DIGEST_LENGTH, hash_cc, g_buf + g_buf_size);
+        len = ber_tlv_build_tlv(ASN1_TAG_OCTET_STRING, SHA256_DIGEST_LENGTH, hash_cc, g_buf + g_buf_size);
         g_buf_size += len;
     }
 
@@ -708,7 +708,7 @@ int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t
     g_buf_size += len;
 
     // PrepareDownloadRequest
-    g_buf_size = bertlv_build_tlv(TAG_LPA_PREPARE_DOWNLOAD_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_PREPARE_DOWNLOAD_REQ, g_buf_size, g_buf, g_buf);
     MSG_DUMP_ARRAY("PrepareDownloadRequest\n", g_buf, g_buf_size);
 
     ret = cmd_store_data(g_buf, g_buf_size, out, out_size, channel);
@@ -803,11 +803,11 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
 
     // Tag and length fields of the BoundProfilePackage TLV plus the initialiseSecureChannelRequest TLV
     // ES8+ InitialiseSecureChannel
-    RT_CHECK_GO(bertlv_get_tag(g_buf, NULL) == 0xBF36, ret, end);
-    len = bertlv_get_tl_length(g_buf, NULL);  // Play a trick here, include the BPP TLV
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf, NULL) == 0xBF36, ret, end);
+    len = ber_tlv_get_tl_length(g_buf, NULL);  // Play a trick here, include the BPP TLV
 
-    RT_CHECK_GO(bertlv_get_tag(g_buf + len, NULL) == 0xBF23, ret, end);
-    len += bertlv_get_tlv_length(g_buf + len);  // TLV of InitialiseSecureChannel
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf + len, NULL) == 0xBF23, ret, end);
+    len += ber_tlv_get_tlv_length(g_buf + len);  // TLV of InitialiseSecureChannel
     MSG_DUMP_ARRAY("initialiseSecureChannelRequest\n", g_buf, len);
     ret = cmd_store_data(g_buf, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -815,8 +815,8 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
 
     // Tag and length fields of the first sequenceOf87 TLV plus the first '87' TLV
     // ES8+ Configure ISDP
-    RT_CHECK_GO(bertlv_get_tag(g_buf + offset, NULL) == 0xA0, ret, end);
-    len = bertlv_get_tlv_length(g_buf + offset);  // TLV of Configure ISDP
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset, NULL) == 0xA0, ret, end);
+    len = ber_tlv_get_tlv_length(g_buf + offset);  // TLV of Configure ISDP
     MSG_DUMP_ARRAY("firstSequenceOf87\n", g_buf + offset, len);
     ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
@@ -826,8 +826,8 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     offset += len;
 
     // Tag and length fields of the sequenceOf88 TLV
-    RT_CHECK_GO(bertlv_get_tag(g_buf + offset, NULL) == 0xA1, ret, end);
-    len = bertlv_get_tl_length(g_buf + offset, &value_len);
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset, NULL) == 0xA1, ret, end);
+    len = ber_tlv_get_tl_length(g_buf + offset, &value_len);
     // ES8+ Store Metadata
     MSG_DUMP_ARRAY("sequenceOf88\n", g_buf + offset, len + value_len);
     ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
@@ -836,8 +836,8 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
 
     // Each of the '88' TLVs
     for (sub_off = 0; sub_off < value_len; ) {
-        RT_CHECK_GO(bertlv_get_tag(g_buf + offset + sub_off, NULL) == 0x88, ret, end);
-        len = bertlv_get_tlv_length(g_buf + offset + sub_off);
+        RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset + sub_off, NULL) == 0x88, ret, end);
+        len = ber_tlv_get_tlv_length(g_buf + offset + sub_off);
         MSG_DUMP_ARRAY("sequenceOf88TLV\n", g_buf + offset + sub_off, len);
         ret = cmd_store_data(g_buf + offset + sub_off, len, out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
@@ -853,8 +853,8 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
 
     // Tag and length fields of the sequenceOf87 TLV plus the first '87' TLV
     // ES8+ Replace Session Keys
-    if (bertlv_get_tag(g_buf + offset, NULL) == 0xA2) {
-        len = bertlv_get_tlv_length(g_buf + offset);
+    if (ber_tlv_get_tag(g_buf + offset, NULL) == 0xA2) {
+        len = ber_tlv_get_tlv_length(g_buf + offset);
         MSG_DUMP_ARRAY("secondSequenceOf87\n", g_buf + offset, len);
         // TODO: Test this
         ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
@@ -866,8 +866,8 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     }
 
     // Tag and length fields of the sequenceOf86 TLV
-    RT_CHECK_GO(bertlv_get_tag(g_buf + offset, NULL) == 0xA3, ret, end);
-    len = bertlv_get_tl_length(g_buf + offset, &value_len);
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset, NULL) == 0xA3, ret, end);
+    len = ber_tlv_get_tl_length(g_buf + offset, &value_len);
     // ES8+ Load Profile Elements
     MSG_DUMP_ARRAY("sequenceOf86\n", g_buf + offset, len + value_len);
     ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
@@ -876,8 +876,8 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
 
     // Each of the '86' TLVs
     for (sub_off = 0; sub_off < value_len; ) {
-        RT_CHECK_GO(bertlv_get_tag(g_buf + offset + sub_off, NULL) == 0x86, ret, end);
-        len = bertlv_get_tlv_length(g_buf + offset + sub_off);
+        RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset + sub_off, NULL) == 0x86, ret, end);
+        len = ber_tlv_get_tlv_length(g_buf + offset + sub_off);
         MSG_DUMP_ARRAY("sequenceOf86TLV\n", g_buf + offset + sub_off, len);
         ret = cmd_store_data(g_buf + offset + sub_off, len, out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000

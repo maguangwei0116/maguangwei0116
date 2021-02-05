@@ -4,7 +4,7 @@
 #include "lpa_error_codes.h"
 #include "lpa.h"
 #include "apdu.h"
-#include "bertlv.h"
+#include "ber_tlv.h"
 
 int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
@@ -23,18 +23,18 @@ int enable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out,
 
     if (pid == PID_ISDP_AID) {
         // isdpAid [APPLICATION 15] OctetTo16
-        g_buf_size = bertlv_build_tlv(0x4F, 16, id, g_buf);
+        g_buf_size = ber_tlv_build_tlv(0x4F, 16, id, g_buf);
     } else if (pid == PID_ICCID) {
         // iccid Iccid
-        g_buf_size = bertlv_build_tlv(0x5A, 10, id, g_buf);
+        g_buf_size = ber_tlv_build_tlv(0x5A, 10, id, g_buf);
     }
     // profileIdentifier CHOICE
-    g_buf_size = bertlv_build_tlv(0xA0, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0xA0, g_buf_size, g_buf, g_buf);
     // refreshFlag BOOLEAN
     refresh_value = refresh ? 0xFF : 0x00;
-    g_buf_size += bertlv_build_tlv(0x81, 1, &refresh_value, g_buf + g_buf_size);
+    g_buf_size += ber_tlv_build_tlv(0x81, 1, &refresh_value, g_buf + g_buf_size);
     // EnableProfileRequest -- Tag 'BF31' 
-    g_buf_size = bertlv_build_tlv(TAG_LPA_ENABLE_PROFILE_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_ENABLE_PROFILE_REQ, g_buf_size, g_buf, g_buf);
     MSG_DUMP_ARRAY("EnableProfileRequest: ", g_buf, g_buf_size);
 
     *out_size = 0;
@@ -67,19 +67,19 @@ int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out
 
     if (pid == PID_ISDP_AID) {
         // isdpAid [APPLICATION 15] OctetTo16
-        g_buf_size = bertlv_build_tlv(0x4F, 16, id, g_buf);
+        g_buf_size = ber_tlv_build_tlv(0x4F, 16, id, g_buf);
     } else if (pid == PID_ICCID) {
         // iccid Iccid
-        g_buf_size = bertlv_build_tlv(0x5A, 10, id, g_buf);
+        g_buf_size = ber_tlv_build_tlv(0x5A, 10, id, g_buf);
     }
 
     // profileIdentifier CHOICE
-    g_buf_size = bertlv_build_tlv(0xA0, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0xA0, g_buf_size, g_buf, g_buf);
     // refreshFlag BOOLEAN
     refresh_value = refresh ? 0xFF : 0x00;
-    g_buf_size += bertlv_build_tlv(0x81, 1, &refresh_value, g_buf + g_buf_size);
+    g_buf_size += ber_tlv_build_tlv(0x81, 1, &refresh_value, g_buf + g_buf_size);
     // DisableProfileRequest -- Tag 'BF32'
-    g_buf_size = bertlv_build_tlv(TAG_LPA_DISABLE_PROFILE_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_DISABLE_PROFILE_REQ, g_buf_size, g_buf, g_buf);
     MSG_DUMP_ARRAY("EnableProfileRequest: ", g_buf, g_buf_size);
 
     *out_size = 0;
@@ -107,13 +107,13 @@ int delete_profile(profile_id_t pid, uint8_t id[16], uint8_t *out, uint16_t *out
 
     if (pid == PID_ISDP_AID) {
         // isdpAid [APPLICATION 15] OctetTo16
-        g_buf_size = bertlv_build_tlv(0x4F, 16, id, g_buf);
+        g_buf_size = ber_tlv_build_tlv(0x4F, 16, id, g_buf);
     } else if (pid == PID_ICCID) {
         // iccid Iccid
-        g_buf_size = bertlv_build_tlv(0x5A, 10, id, g_buf);
+        g_buf_size = ber_tlv_build_tlv(0x5A, 10, id, g_buf);
     }
     // DeleteProfileRequest -- Tag 'BF33'
-    g_buf_size = bertlv_build_tlv(TAG_LPA_DELETE_PROFILE_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_DELETE_PROFILE_REQ, g_buf_size, g_buf, g_buf);
     MSG_DUMP_ARRAY("DeleteProfileRequest: ", g_buf, g_buf_size);
 
     *out_size = 0;
@@ -132,8 +132,8 @@ int get_eid(uint8_t *eid, uint16_t *size, uint8_t channel)
     */
 
     g_buf[0] = 0x5A;
-    g_buf_size = bertlv_build_tlv(0x5C, 1, g_buf, g_buf);
-    g_buf_size = bertlv_build_tlv(TAG_LPA_GET_EUICC_DATA_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0x5C, 1, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_GET_EUICC_DATA_REQ, g_buf_size, g_buf, g_buf);
 
     MSG_DUMP_ARRAY("GetEuiccDataRequest: ", g_buf, g_buf_size);
     RT_CHECK(cmd_store_data(g_buf, g_buf_size, eid, size, channel));
@@ -175,20 +175,20 @@ int get_profiles_info(search_criteria_t sc, uint8_t *criteria, uint16_t c_size,
     if (sc != SEARCH_NONE) {
         if (sc == SEARCH_ISDP_AID) {
             // isdpAid [APPLICATION 15] OctetTo16
-            g_buf_size = bertlv_build_tlv(0x4F, c_size, criteria, g_buf);
+            g_buf_size = ber_tlv_build_tlv(0x4F, c_size, criteria, g_buf);
         } else if (sc == SEARCH_ICCID) {
             // iccid Iccid
-            g_buf_size = bertlv_build_tlv(0x5A, c_size, criteria, g_buf);
+            g_buf_size = ber_tlv_build_tlv(0x5A, c_size, criteria, g_buf);
         } else if (sc == SEARCH_PROFILE_CLASS) {
             // profileClass [21] ProfileClass
-            g_buf_size = bertlv_build_tlv(0x95, c_size, criteria, g_buf);
+            g_buf_size = ber_tlv_build_tlv(0x95, c_size, criteria, g_buf);
         }
         // searchCriteria [0] CHOICE
-        g_buf_size = bertlv_build_tlv(0xA0, g_buf_size, g_buf, g_buf);
+        g_buf_size = ber_tlv_build_tlv(0xA0, g_buf_size, g_buf, g_buf);
     }
 
     // ProfileInfoListRequest -- Tag 'BF2D' 
-    g_buf_size = bertlv_build_tlv(TAG_LPA_PROFILE_INFO_LIST_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_PROFILE_INFO_LIST_REQ, g_buf_size, g_buf, g_buf);
 
     MSG_DUMP_ARRAY("ProfileInfoListRequest_t: ", g_buf, g_buf_size);
     
@@ -212,12 +212,12 @@ int set_nickname(uint8_t iccid[10], const char *nickname, uint8_t *out, uint16_t
     */
 
     // iccid Iccid
-    g_buf_size = bertlv_build_tlv(0x5A, 10, iccid, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0x5A, 10, iccid, g_buf);
     // profileNickname [16] UTF8String (SIZE(0..64))
-    g_buf_size += bertlv_build_tlv(0x90, strlen(nickname), nickname, g_buf + g_buf_size);
+    g_buf_size += ber_tlv_build_tlv(0x90, strlen(nickname), nickname, g_buf + g_buf_size);
 
     // ProfileInfoListRequest -- Tag 'BF2D' 
-    g_buf_size = bertlv_build_tlv(TAG_LPA_SET_NICK_NAME_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_SET_NICK_NAME_REQ, g_buf_size, g_buf, g_buf);
 
     MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
     RT_CHECK(cmd_store_data(g_buf, g_buf_size, out, out_size, channel));
@@ -255,10 +255,10 @@ int euicc_memory_reset(memory_reset_t mrt, uint8_t *out, uint16_t *out_size, uin
     }
 
     // resetOptions [2] BIT STRING
-    g_buf_size = bertlv_build_tlv(0x82, 2, bit_string, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0x82, 2, bit_string, g_buf);
 
     // EuiccMemoryResetRequest -- Tag 'BF34' 
-    g_buf_size = bertlv_build_tlv(TAG_LPA_EUICC_MEMORY_RESET_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_EUICC_MEMORY_RESET_REQ, g_buf_size, g_buf, g_buf);
 
     *out_size = 0;
     MSG_DUMP_ARRAY("ListNotificationRequest: ", g_buf, g_buf_size);

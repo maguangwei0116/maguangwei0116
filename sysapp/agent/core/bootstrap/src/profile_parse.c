@@ -14,7 +14,7 @@
 #include "profile_parse.h"
 #include "file.h"
 #include "tlv.h"
-#include "bertlv.h"
+#include "ber_tlv.h"
 #include "agent_queue.h"
 #include "convert.h"
 #include "hash.h"
@@ -294,31 +294,31 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     */
 
     // BootstrapRequest value
-    br_off = bertlv_get_tl_length(profile_buffer, &br_len);
+    br_off = ber_tlv_get_tl_length(profile_buffer, &br_len);
 
     // tbhRequest value
-    tbh_off = bertlv_get_tl_length(profile_buffer + br_off, &tbh_len);
+    tbh_off = ber_tlv_get_tl_length(profile_buffer + br_off, &tbh_len);
     tbh_off += br_off;
 
     // find ICCID in tbhRequest
-    iccid_off = bertlv_find_tag(profile_buffer + tbh_off, tbh_len, 0x80, 1);
-    if (iccid_off == BERTLV_INVALID_OFFSET) {
+    iccid_off = ber_tlv_find_tag(profile_buffer + tbh_off, tbh_len, 0x80, 1);
+    if (iccid_off == BER_TLV_INVALID_OFFSET) {
         MSG_PRINTF(LOG_ERR, "iccid not found!\n");
         goto end;
     }
     iccid_off += tbh_off;
     // iccid value
-    iccid_off += bertlv_get_tl_length(profile_buffer + iccid_off, &iccid_len);
+    iccid_off += ber_tlv_get_tl_length(profile_buffer + iccid_off, &iccid_len);
 
     // find IMSI in tbhRequest
-    imsi_off = bertlv_find_tag(profile_buffer + tbh_off, tbh_len, 0x81, 1);
-    if (imsi_off == BERTLV_INVALID_OFFSET) {
+    imsi_off = ber_tlv_find_tag(profile_buffer + tbh_off, tbh_len, 0x81, 1);
+    if (imsi_off == BER_TLV_INVALID_OFFSET) {
         MSG_PRINTF(LOG_ERR, "imsi not found!");
         goto end;
     }
     imsi_off += tbh_off;
     // imsi value
-    imsi_off += bertlv_get_tl_length(profile_buffer + imsi_off, &imsi_len);
+    imsi_off += ber_tlv_get_tl_length(profile_buffer + imsi_off, &imsi_len);
 
     // copy tbhRequest
     utils_mem_copy(g_buf, profile_buffer + tbh_off, tbh_len);
@@ -361,26 +361,26 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
                 MSG_PRINTF(LOG_INFO, "selected_rplmn : %s\n", g_rt_plmn[i].rplmn);
                 
                 // find rplmn in tbhRequest
-                rplmn_off = bertlv_find_tag(g_buf, tbh_len, 0x87, 1);
-                if (rplmn_off == BERTLV_INVALID_OFFSET) {
+                rplmn_off = ber_tlv_find_tag(g_buf, tbh_len, 0x87, 1);
+                if (rplmn_off == BER_TLV_INVALID_OFFSET) {
                     rplmn_len = 0;
                     // find insert offset
                     for (tag = 0x88; tag >= 0x8B; tag++) {
-                        rplmn_off = bertlv_find_tag(g_buf, tbh_len, tag, 1);
-                        if (rplmn_off != BERTLV_INVALID_OFFSET) {
+                        rplmn_off = ber_tlv_find_tag(g_buf, tbh_len, tag, 1);
+                        if (rplmn_off != BER_TLV_INVALID_OFFSET) {
                             break;
                         }
                     }
                     // if tag from '88' fplmn to '8B' oplmn all not found, set to end of tlv list
-                    if (rplmn_off == BERTLV_INVALID_OFFSET) {
+                    if (rplmn_off == BER_TLV_INVALID_OFFSET) {
                         rplmn_off = tbh_len;
                     }
                 } else {
-                    rplmn_len = bertlv_get_tlv_length(g_buf + rplmn_off);
+                    rplmn_len = ber_tlv_get_tlv_length(g_buf + rplmn_off);
                 }
                 // modify or insert it
                 if (length != 0) {
-                    length = bertlv_build_tlv(0x87, length, bytes, bytes);
+                    length = ber_tlv_build_tlv(0x87, length, bytes, bytes);
                 }
 
                 utils_mem_copy(g_buf + rplmn_off + length, g_buf + rplmn_off + rplmn_len, tbh_len - rplmn_off - rplmn_len);
@@ -393,12 +393,12 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     }
 
     // build tbhRequest TLV
-    g_buf_size = bertlv_build_tlv(0x30, tbh_len, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0x30, tbh_len, g_buf, g_buf);
     calc_hash(g_buf, g_buf_size, profile_hash);
     // build hash TLV
-    g_buf_size += bertlv_build_tlv(0x41, 32, profile_hash, g_buf + g_buf_size);
+    g_buf_size += ber_tlv_build_tlv(0x41, 32, profile_hash, g_buf + g_buf_size);
     // build new BootstrapRequest
-    g_buf_size = bertlv_build_tlv(0xFF7F, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0xFF7F, g_buf_size, g_buf, g_buf);
 
     rt_os_memcpy(profile, g_buf, g_buf_size);
     *len_out = g_buf_size;
@@ -456,20 +456,20 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
 
     MSG_INFO_ARRAY("Profile Info: ", buf, size);
 
-    apn_off = bertlv_get_tl_length(buf, &apn_len);  // ProfileInfo1 A0 TL
-    apn_name_off = bertlv_get_tl_length(buf + apn_off, &apn_len);  // apn A0 TL
+    apn_off = ber_tlv_get_tl_length(buf, &apn_len);  // ProfileInfo1 A0 TL
+    apn_name_off = ber_tlv_get_tl_length(buf + apn_off, &apn_len);  // apn A0 TL
     apn_name_off += apn_off;
-    apn_name_off += bertlv_get_tl_length(buf + apn_name_off, &apn_name_len);  // ApnList 30 TL
-    apn_name_off += bertlv_get_tl_length(buf + apn_name_off, &apn_name_len);  // apnName 80 TL
+    apn_name_off += ber_tlv_get_tl_length(buf + apn_name_off, &apn_name_len);  // ApnList 30 TL
+    apn_name_off += ber_tlv_get_tl_length(buf + apn_name_off, &apn_name_len);  // apnName 80 TL
 
-    mcc_mnc_off = bertlv_get_tl_length(buf + apn_name_off + apn_name_len, &mcc_mnc_len);  // mccMnc 81 TL
+    mcc_mnc_off = ber_tlv_get_tl_length(buf + apn_name_off + apn_name_len, &mcc_mnc_len);  // mccMnc 81 TL
     mcc_mnc_off += apn_name_off + apn_name_len;
     // get total number
-    total_num_off = bertlv_get_tlv_length(buf + apn_off);
+    total_num_off = ber_tlv_get_tlv_length(buf + apn_off);
     total_num_off += apn_off;
-    total_num = bertlv_get_integer(buf + total_num_off, &total_num_len);
+    total_num = ber_tlv_get_integer(buf + total_num_off, &total_num_len);
     // get sequential BOOLEAN
-    sequential = (uint8_t)bertlv_get_integer(buf + total_num_off + total_num_len, NULL);
+    sequential = (uint8_t)ber_tlv_get_integer(buf + total_num_off + total_num_len, NULL);
 
     off += size;
     linux_fseek(fp, off, RT_FS_SEEK_SET);
@@ -538,12 +538,12 @@ int32_t bootstrap_get_key(void)
     int32_t ret = RT_ERROR;
 
     get_specify_data(data, &data_len, g_data.root_sk_offset);
-    g_buf_size = bertlv_build_tlv(0x80, data_len, data, g_buf);
+    g_buf_size = ber_tlv_build_tlv(0x80, data_len, data, g_buf);
 
     get_specify_data(data, &data_len, g_data.aes_key_offset);
-    g_buf_size += bertlv_build_tlv(0x81, data_len, data, g_buf + g_buf_size);
+    g_buf_size += ber_tlv_build_tlv(0x81, data_len, data, g_buf + g_buf_size);
 
-    g_buf_size = bertlv_build_tlv(TAG_LPA_SET_ROOT_KEY_REQ, g_buf_size, g_buf, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_SET_ROOT_KEY_REQ, g_buf_size, g_buf, g_buf);
 
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_KEY, g_buf, g_buf_size);
     ret = RT_SUCCESS;

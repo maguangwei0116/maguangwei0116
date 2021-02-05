@@ -1,6 +1,6 @@
 ﻿/*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : bertlv.c
+ * File name   : ber_tlv.c
  * Date        : 2021.01.21
  * Note        :
  * Description :
@@ -10,7 +10,7 @@
  * are made available under the terms of the Sublime text 2
  *******************************************************************************/
 
-#include "bertlv.h"
+#include "ber_tlv.h"
 #include "utils.h"
 
 /**
@@ -19,10 +19,10 @@
  * @return uint8_t        The size of tag
  * @note                  
  */
-uint8_t bertlv_get_tag_size(const uint8_t* tag)
+uint8_t ber_tlv_get_tag_size(const uint8_t* tag)
 {
     uint8_t size = 1;
-    
+
     if ((tag[0] & 0x1F) != 0x1F) {
         return size;
     }
@@ -41,12 +41,12 @@ uint8_t bertlv_get_tag_size(const uint8_t* tag)
  * @return uint8_t        The size of tag
  * @note                  Only support two-bytes tag
  */
-uint16_t bertlv_get_tag(const uint8_t* tag, uint8_t* tag_size)
+uint16_t ber_tlv_get_tag(const uint8_t* tag, uint8_t* tag_size)
 {
     uint8_t size;
     uint16_t tag_value;
 
-    size = bertlv_get_tag_size(tag);
+    size = ber_tlv_get_tag_size(tag);
     if (size == 1) {
         tag_value = tag[0];
     } else {
@@ -67,7 +67,7 @@ uint16_t bertlv_get_tag(const uint8_t* tag, uint8_t* tag_size)
  * @return uint32_t       The length value(size of value)
  * @note                  
  */
-uint32_t bertlv_get_length(const uint8_t* len, uint8_t* len_size)
+uint32_t ber_tlv_get_length(const uint8_t* len, uint8_t* len_size)
 {
     if (len[0] < 0x80) {
         *len_size = 1;
@@ -99,7 +99,7 @@ uint32_t bertlv_get_length(const uint8_t* len, uint8_t* len_size)
  * @return uint8_t        The size of length
  * @note                  
  */
-uint8_t bertlv_calc_length_size(uint32_t len)
+uint8_t ber_tlv_calc_length_size(uint32_t len)
 {
     if (len < 0x80) {
         return 1;
@@ -121,7 +121,7 @@ uint8_t bertlv_calc_length_size(uint32_t len)
  * @return uint8_t        The size of length
  * @note
  */
-uint8_t bertlv_set_length(uint32_t len, uint8_t* buf)
+uint8_t ber_tlv_set_length(uint32_t len, uint8_t* buf)
 {
     if (len < 0x80) {
         buf[0] = (uint8_t)len;
@@ -159,27 +159,27 @@ uint8_t bertlv_set_length(uint32_t len, uint8_t* buf)
  * @return uint32_t       The offset of the tag was found
  * @note                  
  */
-uint32_t bertlv_find_tag(const uint8_t* tlv, uint32_t tlv_len, uint16_t tag, uint8_t occurrence)
+uint32_t ber_tlv_find_tag(const uint8_t* tlv, uint32_t tlv_len, uint16_t tag, uint8_t occurrence)
 {
     uint32_t offset;
 
     if (occurrence == 0) {
-        return BERTLV_INVALID_OFFSET;
+        return BER_TLV_INVALID_OFFSET;
     }
 
     offset = 0;
 
     while (offset < tlv_len) {
-        if (bertlv_get_tag(tlv + offset, NULL) == tag) {
+        if (ber_tlv_get_tag(tlv + offset, NULL) == tag) {
             occurrence--;
             if (occurrence == 0) {
                 return offset;
             }
         }
-        offset += bertlv_get_tlv_length(tlv + offset);
+        offset += ber_tlv_get_tlv_length(tlv + offset);
     }
 
-    return BERTLV_INVALID_OFFSET;
+    return BER_TLV_INVALID_OFFSET;
 }
 
 /**
@@ -189,14 +189,14 @@ uint32_t bertlv_find_tag(const uint8_t* tlv, uint32_t tlv_len, uint16_t tag, uin
  * @return uint16_t       The size of T(ag) and L(ength)
  * @note                  
  */
-uint16_t bertlv_get_tl_length(const uint8_t* tlv, uint32_t* value_len)
+uint16_t ber_tlv_get_tl_length(const uint8_t* tlv, uint32_t* value_len)
 {
     uint8_t tag_size;
     uint8_t length_size;
     uint32_t length;
 
-    tag_size = bertlv_get_tag_size(tlv);
-    length = bertlv_get_length(tlv + tag_size, &length_size);
+    tag_size = ber_tlv_get_tag_size(tlv);
+    length = ber_tlv_get_length(tlv + tag_size, &length_size);
 
     if (value_len != NULL) {
         *value_len = length;
@@ -211,12 +211,12 @@ uint16_t bertlv_get_tl_length(const uint8_t* tlv, uint32_t* value_len)
  * @return uint32_t       The size of TLV
  * @note
  */
-uint32_t bertlv_get_tlv_length(const uint8_t* tlv)
+uint32_t ber_tlv_get_tlv_length(const uint8_t* tlv)
 {
     uint16_t tl_size;
     uint32_t value_length;
 
-    tl_size = bertlv_get_tl_length(tlv, &value_length);
+    tl_size = ber_tlv_get_tl_length(tlv, &value_length);
 
     return (uint16_t)(tl_size + value_length);
 }
@@ -227,13 +227,13 @@ uint32_t bertlv_get_tlv_length(const uint8_t* tlv)
  * @return uint32_t       The integer value
  * @note                  If you do not confirm that the length is less than or equal to 4, please do not use this method
  */
-uint32_t bertlv_get_integer(const uint8_t* tlv, uint32_t* tlv_size)
+uint32_t ber_tlv_get_integer(const uint8_t* tlv, uint32_t* tlv_size)
 {
     uint32_t value;
     uint32_t value_length;
     uint16_t offset;
 
-    offset = bertlv_get_tl_length(tlv, &value_length);
+    offset = ber_tlv_get_tl_length(tlv, &value_length);
     // find by sequence number
     switch (value_length) {
     case 0x00:
@@ -271,11 +271,11 @@ uint32_t bertlv_get_integer(const uint8_t* tlv, uint32_t* tlv_size)
  *   <em> -1 </em>   ----failed.
  * @note
  */
-uint8_t bertlv_move_to_next(const uint8_t* tlv, uint8_t** next)
+uint8_t ber_tlv_move_to_next(const uint8_t* tlv, uint8_t** next)
 {
     uint32_t tlv_size;
 
-    tlv_size = bertlv_get_tlv_length(tlv);
+    tlv_size = ber_tlv_get_tlv_length(tlv);
     // Tag and length field must present
     if (tlv_size < 2) {
         return (uint8_t)RT_ERROR;
@@ -294,7 +294,7 @@ uint8_t bertlv_move_to_next(const uint8_t* tlv, uint8_t** next)
  * @return uint32_t       The size of TLV
  * @note                  Support for overlapping value and dst arrays
  */
-uint32_t bertlv_build_tlv(uint16_t tag, uint32_t len, const uint8_t* value, uint8_t* dst)
+uint32_t ber_tlv_build_tlv(uint16_t tag, uint32_t len, const uint8_t* value, uint8_t* dst)
 {
     uint8_t tag_size;
     uint8_t length_size;
@@ -309,7 +309,7 @@ uint32_t bertlv_build_tlv(uint16_t tag, uint32_t len, const uint8_t* value, uint
         tag_size = 2;
     }
 
-    length_size = bertlv_calc_length_size(len);
+    length_size = ber_tlv_calc_length_size(len);
 
     if (value != NULL) {
         // Copy value
@@ -318,7 +318,7 @@ uint32_t bertlv_build_tlv(uint16_t tag, uint32_t len, const uint8_t* value, uint
     // Set tag
     utils_mem_copy(dst, tag_buffer, tag_size);
     // Set length
-    bertlv_set_length(len, dst + tag_size);
+    ber_tlv_set_length(len, dst + tag_size);
 
     return (uint32_t)(tag_size + length_size + len);
 }
@@ -331,7 +331,7 @@ uint32_t bertlv_build_tlv(uint16_t tag, uint32_t len, const uint8_t* value, uint
  * @return uint32_t       The size of TLV
  * @note
  */
-uint32_t bertlv_build_integer_tlv(uint16_t tag, uint32_t integer, uint8_t* dst)
+uint32_t ber_tlv_build_integer_tlv(uint16_t tag, uint32_t integer, uint8_t* dst)
 {
     uint8_t i;
     uint8_t length;
@@ -339,7 +339,7 @@ uint32_t bertlv_build_integer_tlv(uint16_t tag, uint32_t integer, uint8_t* dst)
 
     if (integer == 0x00) {
         value[0x00] = 0x00;
-        return bertlv_build_tlv(tag, 0x01, value, dst);
+        return ber_tlv_build_tlv(tag, 0x01, value, dst);
     }
 
     utils_u32_to_u08s(integer, value + 1);
@@ -356,5 +356,5 @@ uint32_t bertlv_build_integer_tlv(uint16_t tag, uint32_t integer, uint8_t* dst)
         length++;
     }
 
-    return bertlv_build_tlv(tag, length, value + i, dst);
+    return ber_tlv_build_tlv(tag, length, value + i, dst);
 }
