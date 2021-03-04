@@ -479,7 +479,7 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
     utils_mem_copy(apn, buf + apn_name_off, apn_name_len);
     apn[apn_name_len] = '\0';
     utils_mem_copy(mcc_mnc, buf + mcc_mnc_off, mcc_mnc_len);
-    apn[mcc_mnc_len] = '\0';
+    mcc_mnc[mcc_mnc_len] = '\0';
     MSG_PRINTF(LOG_INFO, "apn:%s  mcc_mnc:%s\n", apn, mcc_mnc);
 
     selected_profile_index = get_selecte_profile_index(total_num);
