@@ -19,6 +19,9 @@
 #include "cJSON.h"
 #include "md5.h"
 #include "card_manager.h"
+#ifdef CFG_FACTORY_MODE_ON
+#include "factory.h"
+#endif
 
 static uint8_t g_iccid[THE_ICCID_LENGTH + 1] = {0};
 extern const card_info_t *g_upload_card_info;
@@ -279,7 +282,13 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
     *out = (void *)up_content;
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
+#ifdef CFG_FACTORY_MODE_ON
+    if (to_enable && (to_enable->valueint == RT_TRUE) && (state != -1) && 
+        (g_upload_card_info->type != PROFILE_TYPE_SIM) &&
+        (factory_get_mode() == FACTORY_DISABLE)) {
+#else            
     if (to_enable && (to_enable->valueint == RT_TRUE) && (state != -1) && g_upload_card_info->type != PROFILE_TYPE_SIM) {
+#endif        
         register_timer(15, 0, &push_ac_timer);
     }
 
