@@ -82,14 +82,11 @@ static int32_t is_check_code_valid(const char* check_code, uint8_t* iccid)
         MSG_PRINTF(LOG_ERR, "Convert iccid failed.\n");
         goto end;
     }
-    MSG_PRINTF(LOG_TRACE, "iccid : %s\n", str_iccid);
     rt_os_memset(str_chk_code, 0, sizeof(str_chk_code));
     for (ii = 0; ii < CHECK_CODE_LENGT; ii++) {
         str_chk_code[ii] = str_iccid[ICCID_STR_LENGTH - CHECK_CODE_LENGT + ii] + g_enc_code[ii];
     }
     str_chk_code[ii] = '\0';
-    MSG_PRINTF(LOG_INFO, "str_chk_code is %s.\n", str_chk_code);
-    MSG_PRINTF(LOG_INFO, "check_code is %s.\n", check_code);
     if (rt_os_strncmp(str_chk_code, check_code, CHECK_CODE_LENGT) != 0) {
         MSG_PRINTF(LOG_ERR, "Check code is invalid.\n");
         goto end;
