@@ -40,6 +40,9 @@
 #include "at_command.h"
 #endif
 #include "card_flow_control.h"
+#ifdef CFG_FACTORY_MODE_ON
+#include "factory.h"
+#endif
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
 
@@ -285,6 +288,9 @@ static const init_obj_t g_init_objs[] =
 #ifdef CFG_STANDARD_MODULE
     INIT_OBJ(init_at_command,           (void *)&g_value_list),
 #endif
+#ifdef CFG_FACTORY_MODE_ON
+    INIT_OBJ(init_factory,              (void *)&g_value_list),
+#endif    
     INIT_OBJ(init_bootstrap,            (void *)&g_value_list),
     INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_versions,             (void *)&g_value_list),

@@ -502,17 +502,7 @@ end:
 
 rt_bool rt_get_device_key_status(void)
 {
-    uint8_t  inspect_file[INSPECT_FILE_SIZE] = {0};
-    snprintf(inspect_file, sizeof(RT_DATA_PATH) + sizeof(RUN_CONFIG_FILE), "%s%s", RT_DATA_PATH, RUN_CONFIG_FILE);
-#if (CFG_STANDARD_MODULE)
-    if (project_mode == PROJECT_EV)
-#endif 
-    {
-        MSG_PRINTF(LOG_DBG, "Enterprise version, do not verify DeviceKey ...\n");
-        return RT_TRUE;
-    }
-
-    return inspect_device_key(inspect_file);
+    return RT_TRUE;    
 }
 
 int32_t config_update_device_key(const char *devicekey)
