@@ -35,6 +35,11 @@ exit_entry:
 
 static void push_ac_timer(void)
 {
+#ifdef CFG_FACTORY_MODE_ON
+    if (factory_get_mode() == FACTORY_ENABLE) {
+        return;
+    }
+#endif
     MSG_PRINTF(LOG_DBG, "g_iccid:%s\n", g_iccid);
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, g_iccid, rt_os_strlen(g_iccid));
 }
@@ -282,13 +287,7 @@ static int32_t push_ac_handler(const void *in, const char *event, void **out)
     *out = (void *)up_content;
     card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
 
-#ifdef CFG_FACTORY_MODE_ON
-    if (to_enable && (to_enable->valueint == RT_TRUE) && (state != -1) && 
-        (g_upload_card_info->type != PROFILE_TYPE_SIM) &&
-        (factory_get_mode() == FACTORY_DISABLE)) {
-#else            
     if (to_enable && (to_enable->valueint == RT_TRUE) && (state != -1) && g_upload_card_info->type != PROFILE_TYPE_SIM) {
-#endif        
         register_timer(15, 0, &push_ac_timer);
     }
 
