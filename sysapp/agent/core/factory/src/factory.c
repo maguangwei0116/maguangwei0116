@@ -58,13 +58,11 @@ static int32_t fetch_profile_index(const char* active_code, uint32_t *profile_in
         goto end;
     }
     index = strtol(active_code + CHECK_CODE_LENGT, &p, 10);
-    MSG_PRINTF(LOG_INFO, "strtol(%s)=%d\n", active_code + CHECK_CODE_LENGT, index);
     if (index == 0 || index > MAX_PROFILE_INDEX) {
         MSG_PRINTF(LOG_ERR, "profile index is out of range.\n");
         goto end;
     }
     *profile_index = index - 1;
-    MSG_PRINTF(LOG_INFO, "profile index is %d = %d - 1.\n", *profile_index, index);
     ret = RT_SUCCESS;
 end:
     return ret;    
