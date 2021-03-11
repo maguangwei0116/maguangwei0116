@@ -38,14 +38,13 @@
 #define RT_AGENT_NAME               "agent"
 #define RT_MONITOR_NAME             "monitor"
 
-#if (CFG_OPEN_MODULE)
+#if (CFG_OPEN_MODULE)  // open
 #define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_FILE             "/usr/bin/rt_monitor"
-#define RT_DATA_PATH                "/data/redtea/"
 #elif (CFG_STANDARD_MODULE)  // standard
+#define RT_AGENT_FILE               CFG_AGENT_RUN_PATH"rt_agent"
 #define RT_OEMAPP_AGENT_FILE        "/oemapp/rt_agent"
 #define RT_MONITOR_FILE             "/oemapp/rt_monitor"
-#define RT_AGENT_FILE               CFG_AGENT_RUN_PATH"rt_agent"
 #endif
 
 #define RT_MONITOR_LOG              "rt_monitor_log"
