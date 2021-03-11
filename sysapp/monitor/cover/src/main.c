@@ -458,7 +458,7 @@ int32_t main(int32_t argc, const char *argv[])
     rt_bool frist_start = RT_TRUE;
     int32_t cos_oid = 0;
     uint8_t atr[32] = {0};
-    uint16_t atr_size = 32;
+    uint8_t atr_size = 32;
     uint8_t cos_ver[128];
     uint16_t cos_ver_len = sizeof(cos_ver);
     uint16_t i = 0;
