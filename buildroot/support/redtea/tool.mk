@@ -1,5 +1,5 @@
 
-# Config for common tool
+# Config for common tools
 
 CC					= $(CROSS_COMPILE)gcc
 CXX					= $(CROSS_COMPILE)g++
@@ -11,13 +11,26 @@ OBJCOPY				= $(CROSS_COMPILE)objcopy
 OBJDUMP				= $(CROSS_COMPILE)objdump
 STRIP				= $(CROSS_COMPILE)strip
 
+TOUCH 				= touch
 MKDIR				= mkdir
 ECHO				= echo
 DEL					= rm
 CHMOD				= chmod
 CP					= cp
 LN					= ln
+TR 					= tr
 CD					= cd
+MV 					= mv
+ifeq ($(MYCAT),)
+CAT 				= cat
+else
+CAT 				= $(MYCAT)
+endif
+ifeq ($(MYSED),)
+SED 				= sed
+else
+SED 				= $(MYSED)
+endif
 
 # Force to config SHELL, or [echo -e] will be a problem !
 SHELL				= /bin/bash
@@ -52,5 +65,5 @@ do_compress        	= $(COMPRESS)
 ifeq ($(CFG_STRIP_strip),y)
 STRIP_ALL           = $($(quiet)do_strip) --strip-all
 else
-STRIP_ALL           = $(Q)touch
+STRIP_ALL           = $(Q)$(TOUCH)
 endif

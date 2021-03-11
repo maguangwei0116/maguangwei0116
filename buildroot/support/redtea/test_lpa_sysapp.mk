@@ -29,8 +29,8 @@ $(TEST_LPA_O): $(conf-file)
 
 $(O)/$(TEST_TARGET_FILE_NAME): $(TEST_LPA_TOTAL_OBJS)
 	$($(quiet)do_link) -o "$@" -Wl,--whole-archive $(TEST_LPA_TOTAL_OBJS) -Wl,--no-whole-archive $(TEST_LPA_LDFLAGS) -Wl,-Map=$(O)/$(MAP_FILE_NAME) 
-	$($(quiet)do_objdump) -l -x -d "$@" > $(O)/$(TEST_DMP_FILE_NAME)
-	$($(quiet)do_copy) -O binary -S "$@" $(O)/$(TEST_BIN_FILE_NAME)
+#	$($(quiet)do_objdump) -l -x -d "$@" > $(O)/$(TEST_DMP_FILE_NAME)
+#	$($(quiet)do_copy) -O binary -S "$@" $(O)/$(TEST_BIN_FILE_NAME)
 	@$(CHMOD) +x "$@"
 	$(STRIP_ALL) "$@"
 	-$(Q)$(CP) -rf $(O)/$(TEST_TARGET_FILE_NAME) $(O)/$(TEST_ELF_FILE_NAME)
