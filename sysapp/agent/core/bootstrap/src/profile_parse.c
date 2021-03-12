@@ -373,7 +373,7 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
 #ifdef CFG_FACTORY_MODE_ON
         /* TODO: special process for RTN of profiles of China mobile */
         if (rt_os_strncmp(&select_buffer[3], "46000", 5) == 0 || rt_os_strncmp(&select_buffer[3], "46004", 5) == 0) {
-            static uint8_t rtn[] = {0x20, 0x13, 0x2F, 0x49, 0x5B};
+            const uint8_t rtn[] = {0x20, 0x13, 0x2F, 0x49, 0x5B};
             OCTET_STRING_fromBuf(bootstrap_request->tbhRequest.rotation, rtn, sizeof(rtn));
             rt_os_memset(select_buffer, 0 ,sizeof(select_buffer));
             bytes2hexstring(bootstrap_request->tbhRequest.rotation->buf, bootstrap_request->tbhRequest.rotation->size, select_buffer);
@@ -783,8 +783,8 @@ static int32_t parse_profile_iccid(rt_fshandle_t fp, uint32_t off, uint32_t prof
     linux_fread(buf, 1, 100, fp);
     size = get_length(buf, 0) + get_length(buf, 1);
 
-    // 如果tag为A0则与子项tag重名导致无法解析
     if (buf[0] == 0xA0) {
+        /* replace 0xA0 with 0x30*/
         buf[0] = 0x30;
     }
     dc = ber_decode(NULL, &asn_DEF_ProfileInfo1, (void **) &request, buf, size);
