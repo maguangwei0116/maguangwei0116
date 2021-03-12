@@ -11,6 +11,9 @@
 #include "downstream.h"
 #include "personalise.h"
 #include "rt_mqtt.h"
+#ifdef CFG_FACTORY_MODE_ON
+#include "factory.h"
+#endif
 
 #define USE_ADAPTER_SERVER              1  // use mqtt ticket adapter proxy server ?
 
@@ -360,7 +363,11 @@ static int32_t mqtt_msg_arrived(void* context, char* topic_name, int32_t topic_l
     int32_t len = md->payloadlen;
     int32_t retained = md->retained;
     char *msg_buf = NULL;
-
+#ifdef CFG_FACTORY_MODE_ON
+    if (factory_get_mode() == FACTORY_ENABLE) {
+        goto exit;
+    }
+#endif    
     if (len > 0) {
         msg_buf = (char *)rt_os_malloc(len + 1);
         if (msg_buf) {
@@ -375,7 +382,9 @@ static int32_t mqtt_msg_arrived(void* context, char* topic_name, int32_t topic_l
             rt_os_free(msg_buf);
         }
     }
-
+#ifdef CFG_FACTORY_MODE_ON
+exit:    
+#endif
     MQTTClient_freeMessage(&md);
     MQTTClient_free(topic_name);
 

@@ -27,7 +27,7 @@
 #include "ql_customer_at.h"
 
 #define AT_REQ_SELECT_TIMEOUT   5
-#define MAX_CUSTOMER_AT_NUM     5
+#define MAX_CUSTOMER_AT_NUM     6
 
 static at_cmd_t g_at_cmd[MAX_CUSTOMER_AT_NUM];
 static int32_t g_at_cmd_cnt = 0;

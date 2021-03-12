@@ -69,7 +69,12 @@ config BR2_CFG_SIM_DETECT_ON
 	bool "BR2_CFG_SIM_DETECT_ON"
 	help
 	  Enable this option if you need to detect SIM.
-	  
+
+config BR2_CFG_FACTORY_MODE_ON
+	bool "BR2_CFG_FACTORY_MODE_ON"
+	help
+	  Enable this option if you need to support factory test mode.
+
 endmenu
 
 endif

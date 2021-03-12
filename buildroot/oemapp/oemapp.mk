@@ -35,6 +35,10 @@ REDTEA_OEMAPP_SKB_SO=../sysapp/monitor/vuicc/lib/libskb.so
 REDTEA_OEMAPP_TOOLS=../doc/tools/
 REDTEA_OEMAPP_SHARE_PROFILES=../doc/share_profile/$(RELEASE_OEMAPP_ENV_TYPE)/*.der
 REDTEA_OEMAPP_SHARE_PROFILE=rt_share_profile.der
+ifeq ($(BR2_CFG_FACTORY_MODE_ON),y)
+REDTEA_OEMAPP_FACTORY_PROFILES=../doc/share_profile/test/*.der
+REDTEA_OEMAPP_FACTORY_PROFILE=rt_factory_profile.der
+endif
 REDTEA_OEMAPP_LOCAL_BUILD_DATE=$(shell date "+%Y%m%d")
 
 # Auto generate oemapp cfg file
@@ -189,6 +193,14 @@ define COPY_SHARE_PROFILE
 	fi;
 endef
 
+# Copy oemapp factory profile
+define COPY_OEMAPP_FACTORY_PROFILE
+	-$(Q)if [ -n "`ls $(REDTEA_OEMAPP_FACTORY_PROFILES)`" ] ; \
+	then \
+		cp -rf $(REDTEA_OEMAPP_FACTORY_PROFILES) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/$(REDTEA_OEMAPP_FACTORY_PROFILE) ; \
+	fi;
+endef
+
 define COPY_RELEASE_OEMAPP_TARGETS
 	-$(Q)cp -rf $(REDTEA_OEMAPP_SHELL_START) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
 	-$(Q)cp -rf $(REDTEA_OEMAPP_SHELL_APP) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/
@@ -198,6 +210,7 @@ define COPY_RELEASE_OEMAPP_TARGETS
 	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/libcomm.so
 	-$(Q)cp -rf $(REDTEA_OEMAPP_SKB_SO) $(BR2_RELEASE_OEMAPP_INSTALL_PATH)/libskb.so
 	-$(Q)$(call COPY_SHARE_PROFILE)
+	-$(Q)$(call COPY_OEMAPP_FACTORY_PROFILE)
 	-$(Q)$(call COPY_TEST_OEMAPP_TARGETS)
 endef
 

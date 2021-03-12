@@ -14,7 +14,7 @@ TARGET                              = $(shell pwd | sed 's/^\(.*\)[/]//')
 ENV_TYPE                            = $(SYSAPP_ENV_TYPE)
 
 # Config your sysapp version: (VERSION_MAJOR).(VERSION_MINOR).(VERSION_REVSION).(VERSION_MODIFY)
-LOCAL_TARGET_VERSION                = 0.1.5
+LOCAL_TARGET_VERSION                = 0.1.6
 
 # Check input tag version
 ifdef AGENT_VERSION
@@ -136,6 +136,9 @@ SRC-y                                   += ./core/cardm/src/msg_enable_cmd.c
 SRC-y                                   += ./core/cardm/src/msg_update_cmd.c
 SRC-y                                   += ./core/networkd/src/upload_network.c
 
+# Factory module
+SRC-$(CFG_FACTORY_MODE_ON)              += ./core/factory/src/factory.c
+
 # Personalise module
 SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/personalise.c
 SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/device_info.c
@@ -182,6 +185,7 @@ INC-PATH-y 		                        += ./lpa/
 INC-PATH-y 		                        += ./core/upload/
 INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
+INC-PATH-$(CFG_FACTORY_MODE_ON)         += ./core/factory/inc/
 INC-PATH-y 		                        += ./core/logm/
 INC-PATH-y 		                        += ./core/agent2monitor/
 INC-PATH-y 		                        += ./core/at/

@@ -19,6 +19,9 @@
 #include "cJSON.h"
 #include "md5.h"
 #include "card_manager.h"
+#ifdef CFG_FACTORY_MODE_ON
+#include "factory.h"
+#endif
 
 static uint8_t g_iccid[THE_ICCID_LENGTH + 1] = {0};
 extern const card_info_t *g_upload_card_info;
@@ -32,6 +35,11 @@ exit_entry:
 
 static void push_ac_timer(void)
 {
+#ifdef CFG_FACTORY_MODE_ON
+    if (factory_get_mode() == FACTORY_ENABLE) {
+        return;
+    }
+#endif
     MSG_PRINTF(LOG_DBG, "g_iccid:%s\n", g_iccid);
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, g_iccid, rt_os_strlen(g_iccid));
 }
