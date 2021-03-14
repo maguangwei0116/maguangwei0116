@@ -520,8 +520,11 @@ int32_t main(int32_t argc, const char *argv[])
     agent_process_kill();
 
     /* install ipc callbacks and start up ipc server */
+    MSG_PRINTF(LOG_INFO, "ipc_regist_callback begin\n");
     ipc_regist_callback(monitor_cmd);
+    MSG_PRINTF(LOG_INFO, "ipc_socket_server_start begin\n");
     ipc_socket_server_start();
+    MSG_PRINTF(LOG_INFO, "ipc_socket_server_start end\n");
 
     /* start up agent */
     do {
