@@ -1,7 +1,7 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : ipc_socket_server.c
+ * File name   : ipc_socket_client.c
  * Date        : 2019.08.07
  * Note        :
  * Description :
@@ -15,11 +15,8 @@
 #include "socket.h"
 
 #define MAT_SOCKET_BUFFER   1024
-#if SERVER_ADDR_EN
-int32_t ipc_send_data(const char *server_addr, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
-#else
-int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
-#endif
+
+int32_t lib_ipc_send_data(const char *server_addr, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
     int32_t socket_id = -1;
     int32_t ret = RT_ERROR;
@@ -28,23 +25,29 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
     if (socket_id <= 0) {
         return RT_ERROR;
     }
+
+    MSG_PRINTF(LOG_INFO, "socket_create socket_id:%d ok \n",socket_id);
+
+
+    MSG_PRINTF(LOG_INFO, "socket_connect %s begin \n",server_addr);
 #if SERVER_ADDR_EN
-    MSG_PRINTF(LOG_INFO, "ipc_send_data %s\n", server_addr);
     ret = socket_connect(server_addr, socket_id);
 #else
-	ret = socket_connect(socket_id);
-#endif	
+    ret = socket_connect(socket_id);
+#endif    
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "connet server failed\n");
         goto end;
     }
 
+    MSG_PRINTF(LOG_INFO, "socket_connect %s ok \n",server_addr);
     ret = socket_send(socket_id, data, len);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "send data failed\n");
         goto end;
     }
 
+    MSG_PRINTF(LOG_INFO, "socket_send %s ok \n",server_addr);
     ret = socket_recv(socket_id, rsp, MAT_SOCKET_BUFFER);
     if (ret <= 0) {
         MSG_PRINTF(LOG_ERR, "recv data failed, ret=%d\n", ret);
@@ -52,7 +55,9 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
         goto end;
     }
     *rsp_len = ret;
+    MSG_PRINTF(LOG_INFO, "socket_recv %s ok \n",server_addr);
     ret = RT_SUCCESS;
+    return ret;
 end:
 
     socket_close(socket_id);

@@ -36,6 +36,7 @@ typedef struct CONFIG_INFO {
     uint8_t             init_profile_type;  // @ref init_profile_type_e in card_manager.h
     uint8_t             mbn_enable;         // 0: disable   1: enable
     uint8_t             flow_control_switch;// 0: close     1: open
+    uint8_t             sim_monitor_enable; // 0: disable   1: enable
 
     /* some config item which never changed dynamically */
     uint32_t            oti_port;           // port for OTI server
@@ -52,6 +53,10 @@ int32_t config_update_proj_mode(int32_t mode);  // mode: @ref Project mode
 int32_t config_get_uicc_mode(const char *app_path, int32_t *mode); // mode: @ref lpa_channel_type_e
 
 int32_t config_set_restart_reason(const char *reason);
+
+int32_t config_get_sim_monitor(int32_t *mode);
+
+int32_t config_update_sim_monitor(int32_t mode);
 
 #endif  // __RT_CONFIG_H__
 

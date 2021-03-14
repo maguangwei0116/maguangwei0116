@@ -69,7 +69,12 @@ config BR2_CFG_SIM_DETECT_ON
 	bool "BR2_CFG_SIM_DETECT_ON"
 	help
 	  Enable this option if you need to detect SIM.
-	  
+
+config BR2_CFG_TEST_CLIENT_ON	  
+	bool "BR2_CFG_TEST_CLIENT_ON"
+	help
+	  Enable this option if you want to export test lpa tool.
+
 endmenu
 
 endif

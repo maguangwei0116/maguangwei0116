@@ -22,6 +22,7 @@ static proj_mode_e *                g_project_mode          = NULL;
 static mode_type_e *                g_sim_mode              = NULL;
 static profile_type_e *             g_card_type             = NULL;
 static profile_sim_cpin_e *         g_sim_cpin              = NULL;
+static uint8_t *                    g_sim_monitor           = NULL;
 static uint8_t                      g_operation_num         = 0;
 static rt_bool                      g_network_state         = RT_FALSE;
 static rt_bool                      g_downstream_event      = RT_FALSE;
@@ -238,13 +239,14 @@ static void network_ping_task(void *arg)
             }
         }
 
+        MSG_PRINTF(LOG_INFO, "*g_card_type: %d, g_sim_monitor: %d !\n", *g_card_type, *g_sim_monitor);
         if (enabled->valueint == RT_TRUE) {
             if (*g_card_type == PROFILE_TYPE_PROVISONING || *g_card_type == PROFILE_TYPE_TEST) {
                 ret = rt_ping_provisoning_get_status();
 
             } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL 
 #ifdef CFG_SIM_DETECT_ON
-            || *g_card_type == PROFILE_TYPE_SIM
+            || ((*g_card_type == PROFILE_TYPE_SIM) && (*g_sim_monitor))
 #endif
             ) {
                 type = cJSON_GetObjectItem(network_detect, "type");
@@ -354,6 +356,7 @@ int32_t init_ping_task(void *arg)
     g_card_type     = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
     g_sim_cpin      = (profile_sim_cpin_e *)&(((public_value_list_t *)arg)->card_info->sim_info.state);
     g_operation_num = (((public_value_list_t *)arg)->card_info->operational_num);
+    g_sim_monitor   = (uint8_t *)&((public_value_list_t *)arg)->config_info->sim_monitor_enable;
 
     if (*g_project_mode == PROJECT_SV && (*g_sim_mode == MODE_TYPE_SIM_FIRST || *g_sim_mode == MODE_TYPE_VUICC)) {
         ret = rt_create_task(&task_id, (void *)network_ping_task, NULL);

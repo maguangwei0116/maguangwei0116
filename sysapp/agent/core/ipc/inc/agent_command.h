@@ -1,8 +1,8 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : ipc_socket.h
- * Date        : 2019.08.07
+ * File name   : agent_command.h
+ * Date        : 2021.03.13
  * Note        :
  * Description :
  * Contributors: RT - create the file
@@ -11,17 +11,17 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifndef __IPC_SOCKET_CLIENT_H__
-#define __IPC_SOCKET_CLIENT_H__
+#ifndef __AGENT_COMMAND_H__
+#define __AGENT_COMMAND_H__
 
 #include "rt_type.h"
-#if SERVER_ADDR_EN
-int32_t ipc_socket_server(const char *server_addr);
-#else
-int32_t ipc_socket_server(void);
-#endif
-void    ipc_regist_callback(void *fun);
-rt_bool ipc_server_check(void);
 
-#endif // __IPC_SOCKET_CLIENT_H__
+#ifdef CFG_OPEN_MODULE
 
+int32_t init_agent_cmd(void *arg);
+
+uint16_t agent_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
+
+#endif // CFG_OPEN_MODULE
+
+#endif // __AGENT_COMMAND_H__

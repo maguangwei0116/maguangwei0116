@@ -32,7 +32,7 @@ typedef enum RT_BOOL {
 
 #define RT_ERROR        -1
 #define RT_SUCCESS      0
-
+#define SERVER_ADDR_EN	1
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

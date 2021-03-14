@@ -109,6 +109,7 @@ SRC-y                                   += src/card_detection.c
 SRC-y                                   += src/card_flow_control.c
 SRC-y                                   += src/msg_process.c
 SRC-y                                   += src/ipc_socket_client.c
+SRC-y                                   += src/ipc_socket_server.c
 SRC-y                                   += src/network_detection.c
 SRC-y                                   += src/ping_task.c
 SRC-y                                   += src/lpa.c
@@ -146,6 +147,9 @@ SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/downstream_iss
 SRC-$(CFG_AGENT_OTA_ON)                 += ./core/ota/src/upgrade.c
 SRC-$(CFG_AGENT_OTA_ON)                 += ./core/ota/src/ota_upgrade.c
 
+SRC-y                                   += ./core/ipc/src/ipc_task.c
+SRC-y                                   += ./core/ipc/src/agent_command.c
+
 # logger manager module
 SRC-y                                   += ./core/logm/src/logm.c
 
@@ -182,6 +186,7 @@ INC-PATH-y 		                        += ./lpa/
 INC-PATH-y 		                        += ./core/upload/
 INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
+INC-PATH-y 		                        += ./core/ipc/
 INC-PATH-y 		                        += ./core/logm/
 INC-PATH-y 		                        += ./core/agent2monitor/
 INC-PATH-y 		                        += ./core/at/
@@ -212,6 +217,9 @@ ifeq ($(SYSAPP_PLATFORM_ANDROID), y)
 endif
 ifeq ($(CFG_TEST_LPA_ON), y)
 -include $(REDTEA_SUPPORT_REDTEA_PATH)/test_lpa_sysapp.mk
+endif
+ifeq ($(CFG_TEST_CLIENT_ON), y)
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/test_client_sysapp.mk
 endif
 ############################################################################################
 # Never modify end this line
