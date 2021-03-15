@@ -83,7 +83,7 @@ int main(int argc, char **argv)
                     fprintf(stderr, "Get SIM monitor FAILED: %d\n", ret);
                     goto end;
                 }
-                fprintf(stderr, "SIM monitor mode is: %s!\n", ret == 0 ? "Disable" : "Enable");
+                fprintf(stderr, "SIM monitor mode is: %s!\n", value == 0 ? "Disable" : "Enable");
                 break;            
 
             case 'h':   // fall-through

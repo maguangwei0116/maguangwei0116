@@ -752,7 +752,7 @@ int32_t config_get_sim_monitor(int32_t *mode)
     char value[256] = {0};
     int32_t ret = RT_ERROR;
 
-    ret = config_get_key_value_fast(CONFIG_FILE_PATH, key, value);
+    ret = config_get_key_value_fast(RT_DATA_PATH, key, value);
     if (!ret && mode) {
         *mode = msg_string_to_int(value);
     }

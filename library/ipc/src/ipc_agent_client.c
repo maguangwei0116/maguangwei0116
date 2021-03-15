@@ -34,7 +34,7 @@ int32_t ipc_agent_switch_card(agent_switch_card_param_e param)
     if (lib_ipc_send_data(AGENT_SERVER_PATH, buf, 7, rsp, &ret_len) != RT_SUCCESS) {
         goto exit;
     }
-    if (ret_len != 3 && rsp[0] != AGENT_RESULT_OK) {
+    if ((ret_len != 3) || (rsp[0] != AGENT_RESULT_OK)) {
         goto exit;
     }
     ret = RT_SUCCESS;
@@ -60,7 +60,7 @@ int32_t ipc_agent_set_sim_monitor(agent_set_sim_monitor_param_e param)
     if (lib_ipc_send_data(AGENT_SERVER_PATH, buf, 7, rsp, &ret_len) != RT_SUCCESS) {
         goto exit;
     }
-    if (ret_len != 3 && rsp[0] != AGENT_RESULT_OK) {
+    if ((ret_len != 3) || (rsp[0] != AGENT_RESULT_OK)) {
         goto exit;
     }
     ret = RT_SUCCESS;
@@ -86,7 +86,7 @@ int32_t ipc_agent_get_card_type(agent_switch_card_param_e *type)
         MSG_PRINTF(LOG_ERR, "lib_ipc_send_data failed\r\n");
         goto exit;
     }
-    if (ret_len != 4 && rsp[0] != AGENT_RESULT_OK) {
+    if ((ret_len != 4) || (rsp[0] != AGENT_RESULT_OK)) {
         MSG_PRINTF(LOG_ERR, "ipc_agent_get_card_type ret_len: %d, rsp[0]: %d\r\n", ret_len, rsp[0]);
         goto exit;
     }
@@ -114,7 +114,7 @@ int32_t ipc_agent_get_sim_monitor(agent_set_sim_monitor_param_e *state)
         MSG_PRINTF(LOG_ERR, "lib_ipc_send_data failed\r\n");
         goto exit;
     }
-    if (ret_len != 4 && rsp[0] != AGENT_RESULT_OK) {
+    if ((ret_len != 4) || (rsp[0] != AGENT_RESULT_OK)) {
         MSG_PRINTF(LOG_ERR, "ipc_agent_get_sim_monitor ret_len: %d, rsp[0]: %d\r\n", ret_len, rsp[0]);        
         goto exit;
     }
