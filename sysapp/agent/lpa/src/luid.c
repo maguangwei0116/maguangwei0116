@@ -80,7 +80,7 @@ int disable_profile(profile_id_t pid, uint8_t id[16], bool refresh, uint8_t *out
     g_buf_size += ber_tlv_build_tlv(0x81, 1, &refresh_value, g_buf + g_buf_size);
     // DisableProfileRequest -- Tag 'BF32'
     g_buf_size = ber_tlv_build_tlv(TAG_LPA_DISABLE_PROFILE_REQ, g_buf_size, g_buf, g_buf);
-    MSG_DUMP_ARRAY("EnableProfileRequest: ", g_buf, g_buf_size);
+    MSG_DUMP_ARRAY("DisableProfileRequest: ", g_buf, g_buf_size);
 
     *out_size = 0;
     ret = cmd_store_data(g_buf, g_buf_size, out, out_size, channel);
