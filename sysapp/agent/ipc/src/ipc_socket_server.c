@@ -27,7 +27,6 @@ static rt_bool g_ipc_server_ok = RT_FALSE;
 void ipc_regist_callback(void *fun)
 {
     ipc_cmd = (ipc_callback)fun;
-    MSG_PRINTF(LOG_INFO, "ipc_regist_callback ok, ipc_cmd: %x\r\n", ipc_cmd);
 }
 
 rt_bool ipc_server_check(void)
@@ -68,15 +67,12 @@ int32_t ipc_socket_server(void)
         */
         rt_os_exit(-1);
     }
-    MSG_PRINTF(LOG_INFO, "ipc_socket_server bind ok, server_addr: %s\r\n", server_addr);
 
     ret = socket_listen(socket_id, THE_MAX_CLIENT_NUM);
     if (ret == -1) {
         MSG_PRINTF(LOG_ERR, "socket listen failed\n");
         goto end;
     }
-
-    MSG_PRINTF(LOG_INFO, "monitor server socket_id:%d\r\n", socket_id);
 
     g_ipc_server_ok = RT_TRUE;
 
@@ -88,7 +84,7 @@ int32_t ipc_socket_server(void)
         }
         rcv_len = socket_recv(new_fd, buffer, THT_BUFFER_LEN);
         rt_os_memset(rsp, 0x00, THT_BUFFER_LEN);
-        MSG_INFO_ARRAY(" IPC SERVER REQ: ", buffer, rcv_len);
+        //MSG_INFO_ARRAY(" IPC SERVER REQ: ", buffer, rcv_len);
         ipc_cmd((const uint8_t *)buffer, rcv_len, rsp, &rsp_len);
         socket_send(new_fd, rsp, rsp_len);
         close(new_fd);

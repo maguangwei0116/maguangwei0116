@@ -12,9 +12,7 @@
  *******************************************************************************/
 
 #include "rt_os.h"
-//#include "usrdata.h"
 #include "ipc_task.h"
-//#include "agent_queue.h"
 #include "agent_command.h"
 #include "ipc_socket_server.h"
 
@@ -41,13 +39,11 @@ int32_t init_ipc_task(void *arg)
 
     ipc_regist_callback(agent_cmd);
 
-    MSG_PRINTF(LOG_INFO, "Creating IPC server task ....");
     ret = rt_create_task(&task_id, (void *)ipc_server_task, NULL);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "create IPC server task failed\n");
         return RT_ERROR;
     }
-    MSG_PRINTF(LOG_INFO, "IPC server task create success");
 
     return RT_SUCCESS;
 }

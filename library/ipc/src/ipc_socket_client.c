@@ -26,10 +26,6 @@ int32_t lib_ipc_send_data(const char *server_addr, const uint8_t *data, uint16_t
         return RT_ERROR;
     }
 
-    MSG_PRINTF(LOG_INFO, "socket_create socket_id:%d ok \n",socket_id);
-
-
-    MSG_PRINTF(LOG_INFO, "socket_connect %s begin \n",server_addr);
 #if SERVER_ADDR_EN
     ret = socket_connect(server_addr, socket_id);
 #else
@@ -40,14 +36,12 @@ int32_t lib_ipc_send_data(const char *server_addr, const uint8_t *data, uint16_t
         goto end;
     }
 
-    MSG_PRINTF(LOG_INFO, "socket_connect %s ok \n",server_addr);
     ret = socket_send(socket_id, data, len);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "send data failed\n");
         goto end;
     }
 
-    MSG_PRINTF(LOG_INFO, "socket_send %s ok \n",server_addr);
     ret = socket_recv(socket_id, rsp, MAT_SOCKET_BUFFER);
     if (ret <= 0) {
         MSG_PRINTF(LOG_ERR, "recv data failed, ret=%d\n", ret);
@@ -55,7 +49,6 @@ int32_t lib_ipc_send_data(const char *server_addr, const uint8_t *data, uint16_t
         goto end;
     }
     *rsp_len = ret;
-    MSG_PRINTF(LOG_INFO, "socket_recv %s ok \n",server_addr);
     ret = RT_SUCCESS;
     return ret;
 end:

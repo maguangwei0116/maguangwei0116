@@ -54,7 +54,6 @@ int32_t socket_connect(int32_t socket_id)
     server_sai.sun_family = AF_UNIX;
     server_sai.sun_path[0] = '\0';  // must be '\0'
 #if SERVER_ADDR_EN	
-    MSG_PRINTF(LOG_INFO, "socket_connect %s\n", server_addr);
     rt_os_strcpy(server_sai.sun_path + 1, server_addr);
     server_len = rt_os_strlen(server_addr) + offsetof(struct sockaddr_un, sun_path);
 #else
@@ -77,7 +76,6 @@ int32_t socket_bind(int32_t socket_id)
     server_sai.sun_family = AF_UNIX;
     server_sai.sun_path[0] = '\0';  // must be '\0'
 #if SERVER_ADDR_EN	
-    MSG_PRINTF(LOG_INFO, "socket_bind %s\n", server_addr);
     rt_os_strcpy(server_sai.sun_path + 1, server_addr);
     server_len = rt_os_strlen(server_addr) + offsetof(struct sockaddr_un, sun_path);
 #else

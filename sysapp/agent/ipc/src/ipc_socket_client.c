@@ -29,7 +29,6 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
         return RT_ERROR;
     }
 #if SERVER_ADDR_EN
-    MSG_PRINTF(LOG_INFO, "ipc_send_data %s\n", server_addr);
     ret = socket_connect(server_addr, socket_id);
 #else
 	ret = socket_connect(socket_id);
