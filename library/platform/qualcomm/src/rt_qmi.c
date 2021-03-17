@@ -297,3 +297,19 @@ int32_t rt_qmi_modify_profile(int8_t index, int8_t profile_type, int8_t pdp_type
     
     return ret;
 }
+
+int32_t rt_qmi_get_operating_mode(rt_qmi_operating_mode_e *mode)
+{
+    int32_t ret = RT_ERROR;
+    uint8_t ii = 0;
+
+    while (ret != RT_SUCCESS) {
+        ret = qmi_query_operating_mode((uint8_t*)mode);
+        ii++;
+        if (ii > 3) {
+            break;
+        }
+    }
+
+    return ret;    
+}

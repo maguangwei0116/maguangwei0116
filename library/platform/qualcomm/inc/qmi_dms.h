@@ -43,4 +43,6 @@ typedef struct QMI_DEVICE_INFO {
 
 int qmi_query_device_info(qmi_device_info_t *devinfo);
 void dump_device_info(qmi_device_info_t *devinfo);
+int qmi_query_operating_mode(uint8_t *mode);
+
 #endif // QMI_DMS_H_
