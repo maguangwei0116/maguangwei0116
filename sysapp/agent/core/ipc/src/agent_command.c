@@ -24,6 +24,9 @@
 #define AT_CONTENT_DELIMITER            ','
 #define MAX_BUFFER_SIZE                  512
 
+#define AT_CONTENT_DELIMITER            ','
+#define MAX_BUFFER_SIZE                  512
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)           sizeof(a)/sizeof(a[0])
 #endif
