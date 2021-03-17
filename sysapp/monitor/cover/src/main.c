@@ -49,9 +49,7 @@
 
 #define RT_MONITOR_LOG              "rt_monitor_log"
 // #define SECP256R1                   0
-#if SERVER_ADDR_EN
-#define SERVER_PATH                 "./data/redtea/server"
-#endif
+#define SERVER_PATH                 ".data.redtea.server"
 #ifdef CFG_SOFTWARE_TYPE_DEBUG
 #define RT_MONITOR_LOG_MAX_SIZE     (30 * 1024 * 1024)
 #endif
@@ -253,14 +251,7 @@ uint16_t monitor_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *
 
 static void ipc_socket_server_task(void)
 {
-#if SERVER_ADDR_EN    
-    MSG_PRINTF(LOG_INFO, "ipc_socket_server_task begin: %s\n", SERVER_PATH);
-
     ipc_socket_server(SERVER_PATH);
-#else
-	ipc_socket_server();	
-#endif	
-    MSG_PRINTF(LOG_INFO, "ipc_socket_server_task end\n");
 }
 
 static int32_t ipc_socket_server_start(void)

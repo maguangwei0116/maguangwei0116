@@ -26,11 +26,7 @@ int32_t lib_ipc_send_data(const char *server_addr, const uint8_t *data, uint16_t
         return RT_ERROR;
     }
 
-#if SERVER_ADDR_EN
     ret = socket_connect(server_addr, socket_id);
-#else
-    ret = socket_connect(socket_id);
-#endif    
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "connet server failed\n");
         goto end;

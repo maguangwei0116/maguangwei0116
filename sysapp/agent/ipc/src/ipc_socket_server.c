@@ -34,11 +34,7 @@ rt_bool ipc_server_check(void)
     return g_ipc_server_ok;
 }
 
-#if SERVER_ADDR_EN
 int32_t ipc_socket_server(const char *server_addr)
-#else
-int32_t ipc_socket_server(void)
-#endif
 {
     int32_t socket_id = -1;
     int32_t ret = RT_ERROR;
@@ -52,11 +48,7 @@ int32_t ipc_socket_server(void)
     if (socket_id <= 0) {
         return ret;
     }
-#if SERVER_ADDR_EN
     ret = socket_bind(server_addr, socket_id);
-#else
-	ret = socket_bind(socket_id);
-#endif	
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "socket bind failed, sock_id=%d, err(%d)=%s\n", socket_id, errno, strerror(errno));
         rt_os_sleep(2);

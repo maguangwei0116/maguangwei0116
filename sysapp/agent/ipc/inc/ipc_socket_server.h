@@ -15,11 +15,7 @@
 #define __IPC_SOCKET_SERVER_H__
 
 #include "rt_type.h"
-#if SERVER_ADDR_EN
 int32_t ipc_socket_server(const char *server_addr);
-#else
-int32_t ipc_socket_server(void);
-#endif
 void    ipc_regist_callback(void *fun);
 rt_bool ipc_server_check(void);
 

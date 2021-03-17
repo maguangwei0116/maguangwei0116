@@ -27,11 +27,6 @@ Unix domain socket without create server file (abstract namespace) !
 See docs in https://blog.csdn.net/tekenuo/article/details/87869272
 Or see [man 7 unix]
 */
-#if SERVER_ADDR_EN
-//#define SERVER_PATH                             ".data.redtea.server"
-#else
-#define SERVER_PATH                             ".data.redtea.server"
-#endif
 
 #define UNIX_DOMAIN_SOCKET_ABSTRACT_NAMESPACE   1
 
@@ -41,11 +36,7 @@ int32_t socket_create(void)
 }
 
 #if (UNIX_DOMAIN_SOCKET_ABSTRACT_NAMESPACE)
-#if SERVER_ADDR_EN
 int32_t socket_connect(const char *server_addr, int32_t socket_id)
-#else
-int32_t socket_connect(int32_t socket_id)
-#endif
 {
     struct sockaddr_un server_sai;
     socklen_t server_len;
@@ -53,20 +44,12 @@ int32_t socket_connect(int32_t socket_id)
     rt_os_memset(&server_sai, 0, sizeof(server_sai));
     server_sai.sun_family = AF_UNIX;
     server_sai.sun_path[0] = '\0';  // must be '\0'
-#if SERVER_ADDR_EN	
     rt_os_strcpy(server_sai.sun_path + 1, server_addr);
     server_len = rt_os_strlen(server_addr) + offsetof(struct sockaddr_un, sun_path);
-#else
-	rt_os_strcpy(server_sai.sun_path + 1, SERVER_PATH);
-    server_len = rt_os_strlen(SERVER_PATH) + offsetof(struct sockaddr_un, sun_path);
-#endif	
     return connect(socket_id, (struct sockaddr *)&server_sai, server_len);
 }
-#if SERVER_ADDR_EN
+
 int32_t socket_bind(const char *server_addr, int32_t socket_id)
-#else
-int32_t socket_bind(int32_t socket_id)
-#endif
 {
     int32_t on = 1;
     struct sockaddr_un server_sai;
@@ -75,13 +58,8 @@ int32_t socket_bind(int32_t socket_id)
     rt_os_memset(&server_sai, 0, sizeof(server_sai));
     server_sai.sun_family = AF_UNIX;
     server_sai.sun_path[0] = '\0';  // must be '\0'
-#if SERVER_ADDR_EN	
     rt_os_strcpy(server_sai.sun_path + 1, server_addr);
     server_len = rt_os_strlen(server_addr) + offsetof(struct sockaddr_un, sun_path);
-#else
-    rt_os_strcpy(server_sai.sun_path + 1, SERVER_PATH);
-    server_len = rt_os_strlen(SERVER_PATH) + offsetof(struct sockaddr_un, sun_path);
-#endif	
     setsockopt(socket_id, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     return bind(socket_id, (struct sockaddr *)&server_sai, server_len);

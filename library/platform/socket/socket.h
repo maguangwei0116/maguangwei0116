@@ -21,13 +21,8 @@ extern "C" {
 #include "rt_type.h"
 
 extern int32_t socket_create(void);
-#if SERVER_ADDR_EN
 extern int32_t socket_connect(const char *server_addr, int32_t socket_id);
 extern int32_t socket_bind(const char *server_addr, int32_t socket_id);
-#else
-extern int32_t socket_connect(int32_t socket_id);
-extern int32_t socket_bind(int32_t socket_id);
-#endif
 extern int32_t socket_listen(int32_t socket_id, int32_t num);
 extern int32_t socket_accept(int32_t socket_id);
 extern int32_t socket_recv(int32_t socket_id, uint8_t *buf, int32_t buf_size);

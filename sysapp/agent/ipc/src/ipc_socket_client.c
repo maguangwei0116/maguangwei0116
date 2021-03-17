@@ -15,11 +15,8 @@
 #include "socket.h"
 
 #define MAT_SOCKET_BUFFER   1024
-#if SERVER_ADDR_EN
+
 int32_t ipc_send_data(const char *server_addr, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
-#else
-int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
-#endif
 {
     int32_t socket_id = -1;
     int32_t ret = RT_ERROR;
@@ -28,11 +25,7 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
     if (socket_id <= 0) {
         return RT_ERROR;
     }
-#if SERVER_ADDR_EN
     ret = socket_connect(server_addr, socket_id);
-#else
-	ret = socket_connect(socket_id);
-#endif	
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "connet server failed\n");
         goto end;

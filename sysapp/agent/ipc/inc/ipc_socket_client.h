@@ -17,10 +17,6 @@
 #include "rt_type.h"
 
 int32_t init_ipc_client(void *arg);
-#if SERVER_ADDR_EN
 int32_t ipc_send_data(const char *server_addr, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
-#else
-int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
-#endif
 
 #endif // __IPC_SOCKET_CLIENT__

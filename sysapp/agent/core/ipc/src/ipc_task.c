@@ -17,17 +17,11 @@
 #include "ipc_socket_server.h"
 
 #ifdef CFG_OPEN_MODULE
-#if SERVER_ADDR_EN
 #define AGENT_SERVER_PATH                             "./data/redtea/agent_server"
-#else
-#endif
+
 static void ipc_server_task(void *arg)
 {
-#if SERVER_ADDR_EN
     ipc_socket_server(AGENT_SERVER_PATH);
-#else    
-    ipc_socket_server();
-#endif    
 }
 
 int32_t init_ipc_task(void *arg)

@@ -55,11 +55,7 @@ int32_t ipc_set_monitor_param(config_info_t *config_info)
         rt_qmi_exchange_apdu((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
     }
 #else
-#if SERVER_ADDR_EN
     ipc_send_data(SERVER_PATH, (const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#else
-	ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#endif	
     // init_trigger(info.vuicc_switch);
 #endif
 
@@ -86,11 +82,7 @@ int32_t ipc_get_monitor_version(char *name, int32_t n_size, char *version, \
     len = sizeof(atom_data_t) - sizeof(uint8_t *);
     rt_os_memcpy(&buf[0], &c_data, len);
     len += c_data.data_len;
-#if SERVER_ADDR_EN
     ipc_send_data(SERVER_PATH, (const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#else
-	ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#endif	
 
     if (ret_len == sizeof(monitor_version_t)) {
         rt_os_memcpy((uint8_t *)&m_version, (uint8_t *)buf, ret_len);
@@ -132,11 +124,7 @@ int32_t ipc_sign_verify_by_monitor(const char *hash, const char *sign)
     len += c_data.data_len;
 
     //MSG_HEXDUMP("send-buf", buf, len);
-#if SERVER_ADDR_EN	
     ipc_send_data(SERVER_PATH, (const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#else
-	ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#endif	
     //MSG_PRINTF(LOG_INFO, "len=%d, buf[0]=%02x\n", len, buf[0]);
 
     if (ret_len == 1 && buf[0] == RT_TRUE) {
@@ -283,11 +271,7 @@ int32_t ipc_restart_monitor(uint8_t delay)
     rt_os_memcpy(&buf[0], &c_data, len);
     rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
     len += c_data.data_len;
-#if SERVER_ADDR_EN
     ipc_send_data(SERVER_PATH, (const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#else
-	ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#endif	
 
     if (ret_len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;
@@ -309,11 +293,7 @@ int32_t ipc_select_profile_by_monitor(void)
     len = sizeof(atom_data_t) - sizeof(uint8_t *);
     rt_os_memcpy(&buf[0], &c_data, len);
     len += c_data.data_len;
-#if SERVER_ADDR_EN
     ipc_send_data(SERVER_PATH, (const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#else
-	ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#endif	
 
     if (len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;
@@ -337,11 +317,7 @@ int32_t ipc_start_vuicc(uint8_t delay)
     rt_os_memcpy(&buf[0], &c_data, len);
     rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
     len += c_data.data_len;
-#if SERVER_ADDR_EN
     ipc_send_data(SERVER_PATH, (const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#else
-	ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#endif	
 
     if (ret_len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;
@@ -365,11 +341,7 @@ int32_t ipc_remove_vuicc(uint8_t delay)
     rt_os_memcpy(&buf[0], &c_data, len);
     rt_os_memcpy(&buf[len], c_data.data, c_data.data_len);
     len += c_data.data_len;
-#if SERVER_ADDR_EN
     ipc_send_data(SERVER_PATH, (const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#else
-	ipc_send_data((const uint8_t *)buf, len, (uint8_t *)buf, &ret_len);
-#endif	
 
     if (ret_len == 1 && buf[0] == RT_TRUE) {
         return RT_SUCCESS;
