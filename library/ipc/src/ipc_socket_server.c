@@ -48,7 +48,6 @@ int32_t ipc_socket_server(const char *server_addr)
     if (socket_id <= 0) {
         return ret;
     }
-
     ret = socket_bind(server_addr, socket_id);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "socket bind failed, sock_id=%d, err(%d)=%s\n", socket_id, errno, strerror(errno));

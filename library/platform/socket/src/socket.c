@@ -36,7 +36,6 @@ int32_t socket_create(void)
 }
 
 #if (UNIX_DOMAIN_SOCKET_ABSTRACT_NAMESPACE)
-
 int32_t socket_connect(const char *server_addr, int32_t socket_id)
 {
     struct sockaddr_un server_sai;
