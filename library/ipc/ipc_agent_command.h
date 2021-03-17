@@ -26,6 +26,7 @@ typedef enum AGENT_CMD {
 typedef enum AGENT_CMD_PARAM_TYPE {
     AGENT_CMD_PARAM_CARD_TYPE       = 0x00,
     AGENT_CMD_PARAM_SIM_MONITOR    	= 0x01,
+    AGENT_CMD_PARAM_ICCID           = 0x02,
 } agent_cmd_param_type_e;
 
 typedef struct AGENT_CMD_SET_PARAM_DATA {

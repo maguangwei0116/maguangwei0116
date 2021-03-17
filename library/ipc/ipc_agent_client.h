@@ -30,6 +30,6 @@ int32_t ipc_agent_switch_card(agent_switch_card_param_e param);
 int32_t ipc_agent_set_sim_monitor(agent_set_sim_monitor_param_e param);
 int32_t ipc_agent_get_card_type(agent_switch_card_param_e *type);
 int32_t ipc_agent_get_sim_monitor(agent_set_sim_monitor_param_e *state);
-
+int32_t ipc_agent_get_iccid_list(char *iccid_list, int32_t *size); // max size 512
 
 #endif // __IPC_AGENT_CLIENT__

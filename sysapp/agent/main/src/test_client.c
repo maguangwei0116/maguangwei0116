@@ -5,7 +5,7 @@
 
 #include "ipc_agent_client.h"
 
-static const char *opt_string = "sviedgh?";
+static const char *opt_string = "sviedglh?";
 
 static void display_usage(void)
 {
@@ -17,16 +17,23 @@ static void display_usage(void)
     fprintf(stderr, "  -e\tEnable SIM Monitor\n");
     fprintf(stderr, "  -d\tDisable SIM Monitor\n");
     fprintf(stderr, "  -g\tGet SIM Monitor mode\n");    
+    fprintf(stderr, "  -l\tList ICCIDs\n");    
     fprintf(stderr, "  -h\tList this help\n");
     fprintf(stderr, "  -?\tThe same as -h\n");
 }
 
 int main(int argc, char **argv)
 {
-    int ret;
-    int opt = 0;
-    int value = 0;
-    
+    int  ret;
+    int  opt = 0;
+    int  value = 0;
+    char iccid_list[512];
+    int  size = 0;
+    int  i = 0;
+    int  cnt = 0;
+    char *p = NULL;
+    char *p1 = NULL;
+
     if (argc < 2) {
         display_usage();
         return -1;
@@ -85,7 +92,30 @@ int main(int argc, char **argv)
                 }
                 fprintf(stderr, "SIM monitor mode is: %s!\n", value == 0 ? "Disable" : "Enable");
                 break;            
+            case 'l':
+                memset(iccid_list, 0, sizeof(iccid_list));
+                size = sizeof(iccid_list);
+                ret = ipc_agent_get_iccid_list(iccid_list, &size);
+                if (ret != RT_SUCCESS) {
+                    fprintf(stderr, "Get ICCID list FAILED: %d\n", ret);
+                    goto end;
+                }
+                cnt = atoi(iccid_list);
+                fprintf(stderr, "count: %d\n", cnt);
+                //fprintf(stderr, "iccid_list: %s\n", iccid_list);
 
+                p = strchr(&iccid_list[0], ',');
+                for (i=0; i<cnt; i++) {
+                    p1 = p + 1; // iccid
+                    p = strchr(&p[1], ','); // class
+                    p = strchr(&p[1], ','); // state
+                    p = strchr(&p[1], ','); // next iccid
+                    if (p != NULL) {
+                        p[0] = 0x00;
+                    } 
+                    fprintf(stderr, "%s\n", p1);
+                }
+                break; 
             case 'h':   // fall-through
             case '?':
                 display_usage();

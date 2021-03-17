@@ -20,6 +20,9 @@
 
 #ifdef CFG_OPEN_MODULE
 
+#define AT_CONTENT_DELIMITER            ','
+#define MAX_BUFFER_SIZE                  512
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)           sizeof(a)/sizeof(a[0])
 #endif
@@ -89,6 +92,48 @@ static int32_t get_card_type(uint8_t *rsp, uint16_t *rsp_len)
     rsp[2] = 0x01;
     rsp[3] = (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) ? AGENT_CMD_SET_CARD_TYPE_SIM : AGENT_CMD_SET_CARD_TYPE_VSIM;
     *rsp_len = 4;
+
+    return RT_SUCCESS;
+}
+
+static int32_t get_iccids(uint8_t *rsp, uint16_t *rsp_len)
+{
+    int32_t ii = 0, tmp_len = 0, size = 0;
+    char num_string[8];
+    uint8_t buf[1024] = {0};
+    //MSG_PRINTF(LOG_INFO, "get_iccids enter\r\n");
+
+    rsp[0] = AGENT_RESULT_OK;
+    rsp[1] = 0x00;
+    rsp[2] = 0x00;
+    *rsp_len = 3;
+
+    //MSG_PRINTF(LOG_INFO, "card_info->num: %d\r\n", g_p_value_list->card_info->num);
+
+    snprintf(num_string, sizeof(num_string), "%d", g_p_value_list->card_info->num);
+    tmp_len = rt_os_strlen(num_string);
+    rt_os_memcpy(&buf[size], num_string, tmp_len);
+    size += tmp_len;
+
+    for (ii = 0; ii < g_p_value_list->card_info->num; ii++) {
+        buf[size++] = AT_CONTENT_DELIMITER;
+        tmp_len = rt_os_strlen(g_p_value_list->card_info->info[ii].iccid);
+        rt_os_memcpy(&buf[size], g_p_value_list->card_info->info[ii].iccid, tmp_len);
+        size += tmp_len;
+        buf[size++] = AT_CONTENT_DELIMITER;
+        buf[size++] = g_p_value_list->card_info->info[ii].class + '0';
+        buf[size++] = AT_CONTENT_DELIMITER;
+        buf[size++] = g_p_value_list->card_info->info[ii].state + '0';
+    }
+
+    //MSG_PRINTF(LOG_INFO, "size: %d\r\n", size);
+
+    tmp_len = snprintf(rsp + 3, MAX_BUFFER_SIZE - 3, "%s", buf);
+    //MSG_PRINTF(LOG_INFO, "tmp_len: %d\r\n", tmp_len);
+    rsp[1] = (uint8_t)(tmp_len >> 8) & 0xFF;
+    rsp[2] = (uint8_t)(tmp_len) & 0xFF;
+    *rsp_len = (uint16_t)(tmp_len + 3);
+    //MSG_PRINTF(LOG_INFO, "get_iccids exit, rsp_len: %d\r\n", *rsp_len);
 
     return RT_SUCCESS;
 }
@@ -174,6 +219,9 @@ static int32_t agent_get_param(const uint8_t *data, uint16_t len, uint8_t *rsp, 
     case AGENT_CMD_PARAM_SIM_MONITOR:
         ret = get_sim_monitor(rsp, rsp_len);
         break;
+    case AGENT_CMD_PARAM_ICCID:
+        ret = get_iccids(rsp, rsp_len);
+        break;
     default:
         MSG_PRINTF(LOG_ERR, "Parameter type is invalid\r\n");
         rsp[0] = AGENT_RESULT_ERR_PARAM_TYPE_UNKNOWN;
@@ -206,22 +254,26 @@ int32_t agent_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp
 
     *rsp_len = 0;
     if (len < 3) {
-        MSG_PRINTF(LOG_INFO, "agent_cmd length is invalid %d", len);
+        MSG_PRINTF(LOG_ERR, "agent_cmd length is invalid %d\r\n", len);
         goto end;
     }
     cmd = *data;
     cmd_len = (data[1] << 8) + data[2];
     if (len != (cmd_len + 3)) {
-        MSG_PRINTF(LOG_INFO, "agent_cmd length is invalid len:%d, cmd_len:%d", len, cmd_len);
+        MSG_PRINTF(LOG_ERR, "agent_cmd length is invalid len:%d, cmd_len:%d\r\n", len, cmd_len);
         goto end;
     }
     MSG_INFO_ARRAY("agent_cmd REQ: ", data, len);
     for (i = 0; i < ARRAY_SIZE(g_agent_cmd_objs); i++) {
         if (cmd == g_agent_cmd_objs[i].cmd) {
             ret = g_agent_cmd_objs[i].handle(&data[3], cmd_len, rsp, rsp_len);
-            MSG_PRINTF(LOG_INFO, "%s", g_agent_cmd_objs[i].name, !ret ? " OK " : " FAIL ");
-            MSG_INFO_ARRAY("agent_cmd RSP: ", rsp, *rsp_len);
-            ret = RT_SUCCESS;
+            if (ret != RT_SUCCESS) {
+                MSG_PRINTF(LOG_ERR, "%s FAIL\r\n", g_agent_cmd_objs[i].name);
+            } else {
+                //MSG_PRINTF(LOG_INFO, "%s %s\r\n", g_agent_cmd_objs[i].name, !ret ? " OK " : " FAIL ");
+                MSG_INFO_ARRAY("agent_cmd RSP: ", rsp, *rsp_len);
+            }
+            break;
         }
     }
     ret = RT_SUCCESS;
