@@ -136,6 +136,9 @@ SRC-y                                   += ./core/cardm/src/msg_enable_cmd.c
 SRC-y                                   += ./core/cardm/src/msg_update_cmd.c
 SRC-y                                   += ./core/networkd/src/upload_network.c
 
+# Factory module
+SRC-$(CFG_FACTORY_MODE_ON)              += ./core/factory/src/factory.c
+
 # Personalise module
 SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/personalise.c
 SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/device_info.c
@@ -182,6 +185,7 @@ INC-PATH-y 		                        += ./lpa/
 INC-PATH-y 		                        += ./core/upload/
 INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
+INC-PATH-$(CFG_FACTORY_MODE_ON)         += ./core/factory/inc/
 INC-PATH-y 		                        += ./core/logm/
 INC-PATH-y 		                        += ./core/agent2monitor/
 INC-PATH-y 		                        += ./core/at/

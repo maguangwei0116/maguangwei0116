@@ -21,10 +21,14 @@ REDTEA_SHELL_APP=../doc/shells/open/start_redtea_app
 REDTEA_SHELL_KEEP=../doc/shells/open/start_redtea_keep
 REDTEA_SKB_SO=../sysapp/monitor/vuicc/lib/libskb.so
 REDTEA_SHARE_PROFILES=../doc/share_profile/$(RELEASE_ENV_TYPE)/*.der
+ifeq ($(BR2_CFG_FACTORY_MODE_ON),y)
+REDTEA_FACTORY_PROFILES=../doc/share_profile/test/*.der
+REDTEA_FACTORY_PROFILE=rt_factory_profile.der
+endif
 REDTEA_SHARE_PROFILE=rt_share_profile.der
 REDTEA_ADB_PUSH_SHELL=adb-push.sh
 REDTEA_ADB_PUSH_BAT=adb-push.bat
-REDTEA_SHELL_ADB_PUSH=../doc/shells/open/$(REDTEA_ADB_PUSH_SHELL)
+REDTEA_SHELL_ADB_PUSH_SHELL=../doc/shells/open/$(REDTEA_ADB_PUSH_SHELL)
 REDTEA_SHELL_ADB_PUSH_BAT=../doc/shells/open/$(REDTEA_ADB_PUSH_BAT)
 RELEASE_AUTHOR=$(shell whoami)
 RELEASE_DATE=$(shell date +"%Y%m%d")
@@ -84,6 +88,14 @@ define CREATE_RELEASE_README
 	echo "" >>$(1)
 endef
 
+# Copy release factory profile
+define COPY_RELEASE_FACTORY_PROFILE
+	-$(Q)if [ -n "`ls $(REDTEA_FACTORY_PROFILES)`" ] ; \
+	then \
+		cp -rf $(REDTEA_FACTORY_PROFILES) $(REDTEA_RELEASE_APP_TARGETS)/$(REDTEA_FACTORY_PROFILE) ; \
+	fi;
+endef
+
 define COPY_RELEASE_TARGETS
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(REDTEA_RELEASE_APP_TARGETS)
 	-$(Q)cp -rf $(SYSAPP_INSTALL_PATH)/*agent* $(REDTEA_RELEASE_APP_TARGETS)/rt_agent
@@ -93,10 +105,11 @@ define COPY_RELEASE_TARGETS
 	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(REDTEA_RELEASE_APP_TARGETS)
 	-$(Q)cp -rf $(SDK_PATH)/lib/*-libcomm.so* $(REDTEA_RELEASE_APP_TARGETS)/libcomm.so
 	-$(Q)cp -rf $(REDTEA_SHARE_PROFILES) $(REDTEA_RELEASE_APP_TARGETS)/$(REDTEA_SHARE_PROFILE)
+	-$(Q)$(call COPY_RELEASE_FACTORY_PROFILE)
 	-$(Q)cp -rf $(REDTEA_SKB_SO) $(REDTEA_RELEASE_APP_TARGETS)
 	-$(Q)cp -rf $(REDTEA_SHELL_APP) $(REDTEA_RELEASE_APP_SHELLS)
 	-$(Q)cp -rf $(REDTEA_SHELL_KEEP) $(REDTEA_RELEASE_APP_SHELLS)
-	-$(Q)cp -rf $(REDTEA_SHELL_ADB_PUSH) $(RELEASE_INSTALL_PATH)
+	-$(Q)cp -rf $(REDTEA_SHELL_ADB_PUSH_SHELL) $(RELEASE_INSTALL_PATH)
 	-$(Q)cp -rf $(REDTEA_SHELL_ADB_PUSH_BAT) $(RELEASE_INSTALL_PATH)
 	-$(Q)cp -rf $(REDTEA_CHANGE_LOG) $(RELEASE_INSTALL_PATH)
 endef

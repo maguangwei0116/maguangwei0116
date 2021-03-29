@@ -24,6 +24,9 @@
 #include "at_command.h"
 #include "customer_at.h"
 #include "agent2monitor.h"
+#ifdef CFG_FACTORY_MODE_ON
+#include "factory.h"
+#endif
 
 #define AT_TYPE_GET_INFO                '0'
 #define AT_TYPE_CONFIG_UICC             '1'
@@ -153,7 +156,12 @@ static int32_t uicc_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 
         } else if ((cmd[1] == AT_TYPE_CONFIG_UICC) && (cmd[2] == AT_CONTENT_DELIMITER)) {
             MSG_PRINTF(LOG_INFO, "uicc cmd=%s\n", cmd);
-
+#ifdef CFG_FACTORY_MODE_ON
+            if (factory_get_mode() == FACTORY_ENABLE) {
+                MSG_PRINTF(LOG_ERR, "FACTORY mode is enable\n");
+                return RT_ERROR;
+            }
+#endif
             if (cmd[3] == AT_SWITCH_TO_PROVISIONING || cmd[3] == AT_SWITCH_TO_OPERATION) { // switch card
                 uint8_t iccid[THE_ICCID_LENGTH + 1] = {0};
 
@@ -359,6 +367,24 @@ static int32_t option_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
     return ret;
 }
 
+#ifdef CFG_FACTORY_MODE_ON
+static int32_t factory_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
+{
+    int32_t ret = RT_ERROR;
+    MSG_PRINTF(LOG_INFO, "factory cmd=%s\n", cmd);
+
+    if (*cmd == AT_CONTENT_DELIMITER) {
+        ret = factory_mode_operation(&cmd[1]); /* parse, fetch profile, update/insert profile */
+        if (ret == RT_SUCCESS) {
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Factory mode operation successed!");
+        } else {
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Factory mode operation failed!");
+        }
+    } 
+    return ret;
+}
+#endif
+
 int32_t init_at_command(void *arg)
 {
     g_p_value_list = ((public_value_list_t *)arg);
@@ -379,6 +405,10 @@ int32_t init_at_command(void *arg)
 
     /* install "Option" at command */
     AT_CMD_INSTALL(option);
+#ifdef CFG_FACTORY_MODE_ON
+    /* install "Factory" at command */
+    AT_CMD_INSTALL(factory);
+#endif
 
     return RT_SUCCESS;
 }

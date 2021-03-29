@@ -38,14 +38,13 @@
 #define RT_AGENT_NAME               "agent"
 #define RT_MONITOR_NAME             "monitor"
 
-#if (CFG_OPEN_MODULE)
+#if (CFG_OPEN_MODULE)  // open
 #define RT_AGENT_FILE               "/usr/bin/rt_agent"
 #define RT_MONITOR_FILE             "/usr/bin/rt_monitor"
-#define RT_DATA_PATH                "/data/redtea/"
 #elif (CFG_STANDARD_MODULE)  // standard
+#define RT_AGENT_FILE               CFG_AGENT_RUN_PATH"rt_agent"
 #define RT_OEMAPP_AGENT_FILE        "/oemapp/rt_agent"
 #define RT_MONITOR_FILE             "/oemapp/rt_monitor"
-#define RT_AGENT_FILE               CFG_AGENT_RUN_PATH"rt_agent"
 #endif
 
 #define RT_MONITOR_LOG              "rt_monitor_log"
@@ -458,7 +457,7 @@ int32_t main(int32_t argc, const char *argv[])
     rt_bool frist_start = RT_TRUE;
     int32_t cos_oid = 0;
     uint8_t atr[32] = {0};
-    uint16_t atr_size = 32;
+    uint8_t atr_size = 32;
     uint8_t cos_ver[128];
     uint16_t cos_ver_len = sizeof(cos_ver);
     uint16_t i = 0;

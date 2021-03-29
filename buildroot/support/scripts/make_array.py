@@ -5,9 +5,13 @@ import numpy
 import binascii
 import sys
 
-print sys.argv[0]
-print sys.argv[1]
-print sys.argv[2]
+# print sys.argv[0]
+# print sys.argv[1]
+# print sys.argv[2]
+
+if (len(sys.argv) != 3):
+    print "Wrong sys.argv(%d) != 3 input" % len(sys.argv)
+    exit(-1)
 
 if __name__=='__main__':
     i = 0

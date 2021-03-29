@@ -21,6 +21,9 @@
 #include "random.h"
 #include "agent2monitor.h"
 #include "ota.h"
+#ifdef CFG_FACTORY_MODE_ON
+#include "factory.h"
+#endif
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)                           (sizeof((a)) / sizeof((a)[0]))
@@ -51,7 +54,13 @@ static public_value_list_t * g_public_value     = NULL;
 static void bootstrap_network_timer_callback(void)
 {
     if (g_bootstrap_network == RT_FALSE) {  // network disconnected
+#ifdef CFG_FACTORY_MODE_ON
+        if (factory_get_mode() == FACTORY_DISABLE) {
+#endif
         msg_send_agent_queue(MSG_ID_BROAD_CAST_NETWORK, MSG_BOOTSTRAP_DISCONNECTED, NULL, 0);
+#ifdef CFG_FACTORY_MODE_ON
+        }
+#endif
     }
     g_network_timer_flag = RT_FALSE;
     MSG_PRINTF(LOG_TRACE, "%s, netwrok state: %d\r\n", __func__, g_bootstrap_network);

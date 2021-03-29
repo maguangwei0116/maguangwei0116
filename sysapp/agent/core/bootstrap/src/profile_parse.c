@@ -347,6 +347,16 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         swap_nibble(buffer, imsi_len);
         bytes2hexstring(buffer, imsi_len, select_buffer);
         MSG_PRINTF(LOG_DBG, "selected_imsi : %s\n", &select_buffer[3]);
+#ifdef CFG_FACTORY_MODE_ON
+        /* TODO: special process for RTN of profiles of China mobile */
+        if (rt_os_strncmp(&select_buffer[3], "46000", 5) == 0 || rt_os_strncmp(&select_buffer[3], "46004", 5) == 0) {
+            const uint8_t rtn[] = {0x20, 0x13, 0x2F, 0x49, 0x5B};
+            OCTET_STRING_fromBuf(bootstrap_request->tbhRequest.rotation, rtn, sizeof(rtn));
+            rt_os_memset(select_buffer, 0 ,sizeof(select_buffer));
+            bytes2hexstring(bootstrap_request->tbhRequest.rotation->buf, bootstrap_request->tbhRequest.rotation->size, select_buffer);
+            MSG_PRINTF(LOG_DBG, "update rtn : %s\n", &select_buffer[0]);
+        }
+#endif        
         rt_os_memset(buffer, 0 ,sizeof(buffer));
         rt_os_memcpy(buffer, profile_buffer + iccid_off, iccid_len);
         swap_nibble(buffer, iccid_len);
@@ -413,6 +423,14 @@ static uint32_t get_selecte_profile_index(uint32_t total_num)
     static uint32_t g_selected_index = 0xFFFFFFFF;
     uint32_t random;
     uint32_t index;
+
+#ifdef CFG_FACTORY_MODE_ON
+    g_selected_index = factory_get_profile_index();
+    if (g_selected_index != 0xFFFFFFFF) {
+        MSG_PRINTF(LOG_INFO, "The selected factory profile index = [%d]\n", g_selected_index+1);
+        return g_selected_index;
+    }
+#endif
 
     while (1) {
         random = (uint32_t)rt_get_random_num();
@@ -704,3 +722,146 @@ end:
     }
     return ret;
 }
+
+#ifdef CFG_FACTORY_MODE_ON
+
+static int32_t fetch_profile_iccid(uint8_t *profile_buffer, int32_t profile_len, uint32_t profile_index, BOOLEAN_t sequential, 
+                                  uint8_t *iccid)
+{
+    BootstrapRequest_t *bootstrap_request = NULL;
+    asn_dec_rval_t dc;
+    uint8_t buffer[21];
+    int32_t ret = RT_ERROR;
+
+    dc = ber_decode(NULL, &asn_DEF_BootstrapRequest, (void **) &bootstrap_request, profile_buffer, profile_len);
+    if (dc.code != RC_OK) {
+        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
+        goto end;
+    }
+    rt_os_memset(buffer, 0 ,sizeof(buffer));
+    rt_os_memcpy(buffer, bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
+    swap_nibble(buffer, bootstrap_request->tbhRequest.iccid.size);
+    rt_os_memcpy(iccid, buffer, bootstrap_request->tbhRequest.iccid.size);
+
+    ret = RT_SUCCESS;
+    
+end:
+    if (bootstrap_request != NULL) {
+        ASN_STRUCT_FREE(asn_DEF_BootstrapRequest, bootstrap_request);
+    }
+    return ret;
+}
+
+static int32_t parse_profile_iccid(rt_fshandle_t fp, uint32_t off, uint32_t profile_index, uint8_t *iccid)
+{
+    uint32_t profile_len, size;
+    uint8_t *profile_buffer = NULL;
+    ProfileInfo1_t *request = NULL;
+    uint8_t buf[100];
+    asn_dec_rval_t dc;
+    int32_t ret = RT_ERROR;
+
+    /* A3 */
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 100, fp);
+    off += get_length(buf, 1);
+
+    /* 30 */
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 100, fp);
+    size = get_length(buf, 0) + get_length(buf, 1);
+
+    if (buf[0] == 0xA0) {
+        /* replace 0xA0 with 0x30*/
+        buf[0] = 0x30;
+    }
+    dc = ber_decode(NULL, &asn_DEF_ProfileInfo1, (void **) &request, buf, size);
+    if (dc.code != RC_OK) {
+        MSG_PRINTF(LOG_ERR, "%ld\n", dc.consumed);
+        goto end;
+    }
+    off += size;
+    /* content */
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
+    off += get_length(buf, 1);
+
+    /* TODO: */
+    MSG_PRINTF(LOG_TRACE, "sequential = %d\n", request->sequential);
+    if (request->sequential == 0xFF) { // Successive profile: same iccid, successive imsi
+        profile_len = get_length(buf, 0);
+    } else { // non-successive profile
+        profile_len = get_length(buf, 0) / request->totalNum;
+        off += profile_index * profile_len;
+    }
+    profile_buffer = (uint8_t *) rt_os_malloc(profile_len);
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(profile_buffer, 1, profile_len, fp);
+    ret = fetch_profile_iccid(profile_buffer, profile_len, profile_index, request->sequential, iccid);
+    rt_os_free(profile_buffer);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "Fetch profile iccid is error\n");
+        goto end;        
+    }
+    ret = RT_SUCCESS;
+
+end:
+    if (request != NULL) {
+        ASN_STRUCT_FREE(asn_DEF_ProfileInfo1, request);
+    }
+    return ret;    
+}
+
+
+int32_t get_profile_iccid(uint32_t profile_index, uint8_t *iccid)
+{
+    rt_fshandle_t fp;
+    uint8_t buf[8];
+    uint32_t off = g_data.operator_info_offset;
+    int32_t ret = RT_ERROR;
+    int32_t i = 0;
+
+    fp = open_share_profile(g_share_profile, RT_FS_READ);
+    if (!fp) {
+        MSG_PRINTF(LOG_ERR, "Open file failed\n");
+        return RT_ERROR;
+    }
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
+    if (buf[0] != OPT_PROFILES) {
+        MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
+        goto end;
+    }
+    off += get_length(buf, 1);
+
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
+    if (buf[0] != SHARED_PROFILE) {
+        MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
+        goto end;
+    }
+    /* TODO: ? */
+    if (g_data.priority >= g_data.operator_num) {
+        g_data.priority = 0;
+    }
+    for (i = 0; i < g_data.priority; i++) {
+        off += get_length(buf, 1) + get_length(buf, 0);
+        linux_fseek(fp, off, RT_FS_SEEK_SET);
+        linux_fread(buf, 1, 8, fp);
+    }
+    ret = parse_profile_iccid(fp, off, profile_index, iccid);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "Parse profile iccid is error\n");
+        goto end;        
+    }
+    g_data.priority++;
+    ret = RT_SUCCESS;
+
+end:
+    if (fp) {
+        linux_fclose(fp);
+        fp = NULL;
+    }
+    return ret;  
+}
+#endif // CFG_FACTORY_MODE_ON
