@@ -9,11 +9,12 @@
 #include "convert.h"
 #include "lpa_https.h"
 #include "lpa_error_codes.h"
-#include "ProfileInfoListResponse.h"
-#include "ProfileInstallationResult.h"
-#include "MoreEIDOperateResponse.h"
+#include "ber_tlv.h"
 
 #define BUFFER_SIZE                10*1024
+
+uint8_t g_buf[10 * 1024];
+uint16_t g_buf_size;
 
 static rt_pthread_mutex_t *g_lpa_mutex;
 
@@ -96,57 +97,9 @@ end:
 
 int lpa_get_eid_list(uint8_t (*eid_list)[33])
 {
-    int ret = RT_SUCCESS;
-    uint8_t buf[500] = {0};
-    asn_dec_rval_t dc;
-    uint16_t size = sizeof(buf);
-    int i;
-    int num =0;
-    EIDInfo_t **p = NULL;
-    uint8_t channel = 0xFF;
-    MoreEIDOperateResponse_t *rsp = NULL;
+    // Reserved
 
-    linux_mutex_lock(g_lpa_mutex);
-
-    if (open_channel(&channel) != RT_SUCCESS) {
-        ret = RT_ERR_APDU_OPEN_CHANNEL_FAIL;
-        goto end;
-    }
-
-    get_eid_list(buf, &size, channel);
-    MSG_DUMP_ARRAY("get eid list:\n", buf, size);
-    dc = ber_decode(NULL, &asn_DEF_MoreEIDOperateResponse, (void **)&rsp, buf, size);
-    if (dc.code != RC_OK) {
-        MSG_ERR("Broken ProfileInfoListResponse decoding at byte %ld\n", (long)dc.consumed);
-        ret = RT_ERR_ASN1_DECODE_FAIL;
-        goto end;
-    }
-    if (rsp->present != MoreEIDOperateResponse__moreEIDOperateResult_ok) {
-        ret = RT_ERR_UNKNOWN_ERROR;
-        goto end;
-    }
-    num = rsp->choice.eidListinfo.list.count;
-    p = (EIDInfo_t **)(rsp->choice.eidListinfo.list.array);
-    MSG_INFO("count: %d, size: %d, present: %d\n", num,(p[0])->eidValue.size, rsp->present);
-    if (p != NULL) {
-        for (i = 0; i < num; i++) {
-            //memcpy(eid,(p[i])->eidValue.buf, (p[i])->eidValue.size);
-            bytes2hexstring((p[i])->eidValue.buf,(p[i])->eidValue.size,eid_list[i]);
-            MSG_INFO("eid%d: %s\n", i,eid_list[i]);
-        }
-    }
-
-end:
-
-    ASN_STRUCT_FREE(asn_DEF_MoreEIDOperateResponse, rsp);
-
-    if (ret != RT_ERR_APDU_OPEN_CHANNEL_FAIL) {
-        close_channel(channel);
-    }
-
-    linux_mutex_unlock(g_lpa_mutex);
-
-    return ret;
+    return RT_SUCCESS;
 }
 
 int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
@@ -154,10 +107,12 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
     int ret = RT_SUCCESS;
     uint8_t *buf = NULL;
     uint16_t size = 1024 * 10;
-    asn_dec_rval_t dc;
-    ProfileInfoListResponse_t *rsp = NULL;
-    ProfileInfo_t **p = NULL;
-    int i;
+    uint32_t i;
+    uint32_t offset;
+    uint32_t total_info_len;
+    uint32_t info_len;
+    uint16_t info_off;
+    uint16_t element_off;
     uint8_t channel = 0xFF;
 
     linux_mutex_lock(g_lpa_mutex);
@@ -181,34 +136,77 @@ int lpa_get_profile_info(profile_info_t *pi, uint8_t *num, uint8_t max_num)
 
     MSG_DUMP_ARRAY("profile info:\n", buf, size);
 
-    dc = ber_decode(NULL, &asn_DEF_ProfileInfoListResponse, (void **)&rsp, buf, size);
-    if (dc.code != RC_OK) {
-        MSG_ERR("Broken ProfileInfoListmResponse decoding at byte %ld\n", (long)dc.consumed);
-        ret = RT_ERR_ASN1_DECODE_FAIL;
-        goto end;
-    }
-    MSG_DBG("present: %d, count: %d\n", rsp->present, rsp->choice.profileInfoListOk.list.count);
+    /*
+    -- Definition of ProfileInfoListResponse 
+    ProfileInfoListResponse ::= [45] CHOICE { -- Tag 'BF2D' 
+        profileInfoListOk SEQUENCE OF ProfileInfo, 
+        profileInfoListError ProfileInfoListError 
+    } 
+    ProfileInfo ::= [PRIVATE 3] SEQUENCE { -- Tag 'E3' 
+        iccid Iccid OPTIONAL, 
+        isdpAid [APPLICATION 15] OctetTo16 OPTIONAL, -- AID of the ISD-P containing the Profile, tag '4F' 
+        profileState [112] ProfileState OPTIONAL, -- Tag '9F70' 
+        profileNickname [16] UTF8String (SIZE(0..64)) OPTIONAL, -- Tag '90' 
+        serviceProviderName [17] UTF8String (SIZE(0..32)) OPTIONAL, -- Tag '91' 
+        profileName [18] UTF8String (SIZE(0..64)) OPTIONAL, -- Tag '92' 
+        iconType [19] IconType OPTIONAL, -- Tag '93' 
+        icon [20] OCTET STRING (SIZE(0..1024)) OPTIONAL, -- Tag '94', see condition in ES10c:GetProfilesInfo 
+        profileClass [21] ProfileClass OPTIONAL, -- Tag '95' 
+        notificationConfigurationInfo [22] SEQUENCE OF NotificationConfigurationInformation OPTIONAL, -- Tag 'B6' 
+        profileOwner [23] OperatorId OPTIONAL, -- Tag 'B7' 
+        dpProprietaryData [24] DpProprietaryData OPTIONAL, -- Tag 'B8' 
+        profilePolicyRules [25] PprIds OPTIONAL -- Tag '99'
+    } 
+    
+    IconType ::= INTEGER { jpg(0), png(1) } 
+    ProfileState ::= INTEGER { disabled(0), enabled(1) } 
+    ProfileClass ::= INTEGER { test(0), provisioning(1), operational(2) } 
+    ProfileInfoListError ::= INTEGER { incorrectInputValues(1), undefinedError(127) }
+    */
 
-    if (rsp->present != ProfileInfoListResponse_PR_profileInfoListOk) {
+    //  ProfileInfoListResponse
+    offset = ber_tlv_get_tl_length(buf, NULL);
+
+    if (ber_tlv_get_tag(buf + offset, NULL) != 0xA0) {
         ret = RT_ERR_UNKNOWN_ERROR;
         goto end;
     }
 
-    p = (ProfileInfo_t **)(rsp->choice.profileInfoListOk.list.array);
-    *num = rsp->choice.profileInfoListOk.list.count;
-
-    if (*num > max_num) {
-        MSG_WARN("too many profile detected (%d > %d)\n", *num, max_num);
-        *num = max_num;
-    }
+    // profileInfoListOk SEQUENCE OF ProfileInfo
+    offset += ber_tlv_get_tl_length(buf + offset, &total_info_len);
 
     if (pi != NULL) {
-        for (i = 0; i < *num; i++) {
-            memcpy(buf, (p[i])->iccid->buf, (p[i])->iccid->size);
-            swap_nibble(buf, (p[i])->iccid->size);
-            bytes2hexstring(buf, (p[i])->iccid->size, pi[i].iccid);
-            pi[i].class = (uint8_t)*((p[i])->profileClass);
-            pi[i].state = (uint8_t)*((p[i])->profileState);
+        for (i = 0, *num = 0; i < total_info_len; (*num)++) {
+            if (*num >= max_num) {
+                MSG_WARN("too many profile detected (%d > %d)\n", *num, max_num);
+                break;
+            }
+            // ProfileInfo E3 TL
+            info_off = ber_tlv_get_tl_length(buf + offset + i, &info_len);
+
+            // find ICCID
+            element_off = ber_tlv_find_tag(buf + offset + i + info_off, info_len, 0x5A, 1);
+            if (element_off != BER_TLV_INVALID_OFFSET) {
+                // get ICCID value offset
+                element_off += ber_tlv_get_tl_length(buf + offset + i + info_off + element_off, NULL);
+                swap_nibble(buf + offset + i + info_off + element_off, 10);
+                bytes2hexstring(buf + offset + i + info_off + element_off, 10, pi[*num].iccid);
+            }
+
+            // find ProfileClass
+            element_off = ber_tlv_find_tag(buf + offset + i + info_off, info_len, 0x95, 1);
+            if (element_off != BER_TLV_INVALID_OFFSET) {
+                pi[*num].class = (uint8_t)ber_tlv_get_integer(buf + offset + i + info_off + element_off, NULL);
+            }
+
+            // find ProfileState
+            element_off = ber_tlv_find_tag(buf + offset + i + info_off, info_len, 0x9F70, 1);
+            if (element_off != BER_TLV_INVALID_OFFSET) {
+                pi[*num].state = (uint8_t)ber_tlv_get_integer(buf + offset + i + info_off + element_off, NULL);
+            }
+
+            // get next E3 TLV
+            i += ber_tlv_get_tlv_length(buf + offset + i);
         }
     }
 
@@ -217,8 +215,6 @@ end:
     if (buf != NULL) {
         free(buf);
     }
-
-    ASN_STRUCT_FREE(asn_DEF_ProfileInfoListResponse, rsp);
 
     if (ret != RT_ERR_APDU_OPEN_CHANNEL_FAIL) {
         close_channel(channel);
@@ -391,45 +387,168 @@ static int check_ac(const char *ac, uint16_t *smdp_addr_start, uint16_t *smdp_ad
     return RT_SUCCESS;
 }
 
-static int process_bpp_rsp(const uint8_t *pir, uint16_t pir_len,
-                        char *iccid, uint8_t *bppcid, uint8_t *error)
+static int process_bpp_rsp(const uint8_t* pir, uint16_t pir_len,
+                                char* iccid, uint8_t* bppcid, uint8_t* error)
 {
-    int ret = RT_SUCCESS;
-    asn_dec_rval_t dc;
-    ProfileInstallationResult_t *res = NULL;
-    Iccid_t *p_iccid = NULL;
-    ProfileInstallationResultData__finalResult_PR present;
+    uint8_t tmp[16];
+    uint16_t tag;
+    uint16_t result_data_offset = 0;
+    uint16_t iccid_offset = 0;
+    uint16_t final_result_offset = 0;
+    uint16_t bpp_id_off;
+    uint16_t error_reson_off;
+    uint16_t euicc_response_off;
+    uint32_t element_len;
+    uint32_t notify_metadata_len;
+    int ret = 0;
 
-    dc = ber_decode(NULL, &asn_DEF_ProfileInstallationResult, (void **)&res, pir, pir_len);
-    if (dc.code != RC_OK) {
-        MSG_ERR("Broken ProfileInstallationResult decoding at byte %ld\n", (long)dc.consumed);
-        ret = RT_ERR_ASN1_DECODE_FAIL;
-        goto end;
+    /*
+    ProfileInstallationResult ::= [55] SEQUENCE { -- Tag 'BF37'
+        profileInstallationResultData [39] ProfileInstallationResultData,
+        euiccSignPIR EuiccSignPIR
     }
 
-    p_iccid = res->profileInstallationResultData.notificationMetadata.iccid;
-    MSG_DUMP_ARRAY("ICCID: ", p_iccid->buf, p_iccid->size);
-    swap_nibble(p_iccid->buf, p_iccid->size);
-    ret = bytes2hexstring(p_iccid->buf, p_iccid->size, iccid);
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    ProfileInstallationResultData ::= [39] SEQUENCE { -- Tag 'BF27'
+        transactionId[0] TransactionId, -- The TransactionID generated by the SM-DP+
+        notificationMetadata[47] NotificationMetadata,
+        smdpOid OBJECT IDENTIFIER, -- SM-DP+ OID (same value as in CERT.DPpb.ECDSA)
+        finalResult [2] CHOICE {
+            successResult SuccessResult,
+            errorResult ErrorResult
+        }
+    }
 
-    present = res->profileInstallationResultData.finalResult.present;
-    MSG_INFO("present: %d\n", present);
+    EuiccSignPIR [APPLICATION 55] OCTET STRING -- Tag '5F37', eUICC¡¯s signature
 
-    if (present == ProfileInstallationResultData__finalResult_PR_successResult) {
+    SuccessResult ::= SEQUENCE {
+        aid [APPLICATION 15] OCTET STRING (SIZE (5..16)), -- AID of ISD-P
+        simaResponse OCTET STRING -- contains (multiple) 'EUICCResponse' as defined in [5]
+    }
+
+    ErrorResult ::= SEQUENCE {
+        bppCommandId BppCommandId,
+        errorReason ErrorReason,
+        simaResponse OCTET STRING OPTIONAL -- contains (multiple) 'EUICCResponse' as defined in [5]
+    }
+
+    BppCommandId ::= INTEGER {
+        initialiseSecureChannel(0),
+        configureISDP(1),
+        storeMetadata(2),
+        storeMetadata2(3),
+        replaceSessionKeys(4),
+        loadProfileElements(5)
+    }
+
+    ErrorReason ::= INTEGER {
+        incorrectInputValues(1),
+        invalidSignature(2),
+        invalidTransactionId(3),
+        unsupportedCrtValues(4),
+        unsupportedRemoteOperationType(5),
+        unsupportedProfileClass(6),
+        scp03tStructureError(7),
+        scp03tSecurityError(8),
+        installFailedDueToIccidAlreadyExistsOnEuicc(9),
+        installFailedDueToInsufficientMemoryForProfile(10),
+        installFailedDueToInterruption(11),
+        installFailedDueToPEProcessingError (12),
+        installFailedDueToDataMismatch(13),
+        testProfileInstallFailedDueToInvalidNaaKey(14),
+        pprNotAllowed(15),
+        installFailedDueToUnknownError(127)
+    }
+    */
+
+    // profileInstallationResultData [39] ProfileInstallationResultData
+    result_data_offset = ber_tlv_get_tl_length(pir, NULL);
+    if (ber_tlv_get_tag(pir + result_data_offset, NULL) != 0xBF27) {
+        MSG_ERR("Could not found profileInstallationResultData! \n");
+        return RT_ERROR;
+    }
+    element_len = ber_tlv_get_tlv_length(pir + result_data_offset);
+    MSG_INFO_ARRAY("ProfileInstallationResultData: ", pir + result_data_offset, element_len);
+
+    // get ProfileInstallationResultData value
+    result_data_offset += ber_tlv_get_tl_length(pir + result_data_offset, &element_len);
+    
+    // find notificationMetadata
+    iccid_offset = ber_tlv_find_tag(pir + result_data_offset, element_len, 0xBF2F, 1);
+    if (final_result_offset == BER_TLV_INVALID_OFFSET) {
+        MSG_ERR("Could not found notificationMetadata! \n");
+        return RT_ERROR;
+    }
+    iccid_offset += ber_tlv_get_tl_length(pir + result_data_offset + iccid_offset, &notify_metadata_len);
+
+    // find iccid OPTIONAL
+    iccid_offset += ber_tlv_find_tag(pir + result_data_offset + iccid_offset, notify_metadata_len, 0x5A, 1);
+    if (final_result_offset == BER_TLV_INVALID_OFFSET) {
+        MSG_ERR("Could not found iccid! \n");
+        utils_mem_clr(iccid, 20);
+    } else {
+        iccid_offset += ber_tlv_get_tl_length(pir + result_data_offset + iccid_offset, &notify_metadata_len);
+        MSG_DUMP_ARRAY("ICCID: ", pir + result_data_offset + iccid_offset, notify_metadata_len);
+        utils_mem_copy(tmp, pir + result_data_offset + iccid_offset, (uint16_t)notify_metadata_len);
+        swap_nibble(tmp, notify_metadata_len);
+        ret = bytes2hexstring(tmp, notify_metadata_len, iccid);
+        if (ret != RT_SUCCESS) {
+            MSG_ERR("iccid convert error! \n");
+            return ret;
+        }
+    }
+
+    // find finalResult
+    final_result_offset = ber_tlv_find_tag(pir + result_data_offset, element_len, 0xA2, 1);
+    if (final_result_offset == BER_TLV_INVALID_OFFSET) {
+        MSG_ERR("Could not found finalResult! \n");
+        return RT_ERROR;
+    }
+    final_result_offset += result_data_offset;
+
+    final_result_offset += ber_tlv_get_tl_length(pir + final_result_offset, NULL);
+
+    tag = ber_tlv_get_tag(pir + final_result_offset, NULL);
+    if (tag == 0xA0) {
+        // successResult SuccessResult
+        MSG_INFO("Profile intatll success. \n");
         *bppcid = 0;
         *error = 0;
-    } else if (present == ProfileInstallationResultData__finalResult_PR_errorResult) {
-        ErrorResult_t *er = NULL;
-        er = &(res->profileInstallationResultData.finalResult.choice.errorResult);
-        *bppcid = er->bppCommandId;
-        *error  = er->errorReason;
+        return RT_SUCCESS;
+    } else if (tag == 0xA1) {
+        // errorResult ErrorResult
+        final_result_offset += ber_tlv_get_tl_length(pir + final_result_offset, &element_len);
+
+        // bppCommandId BppCommandId
+        bpp_id_off = ber_tlv_find_tag(pir + final_result_offset, element_len, 0x80, 1);
+        if (final_result_offset == BER_TLV_INVALID_OFFSET) {
+            MSG_ERR("Profile intatll failed. bppCommandId not found! \n");
+            return RT_ERROR;
+        }
+        *bppcid = (uint8_t)ber_tlv_get_integer(pir + final_result_offset + bpp_id_off, NULL);
+
+        // errorReason ErrorReason
+        error_reson_off = ber_tlv_find_tag(pir + final_result_offset, element_len, 0x81, 1);
+        if (final_result_offset == BER_TLV_INVALID_OFFSET) {
+            MSG_ERR("Profile intatll failed. bppCommandId not found! \n");
+            return RT_ERROR;
+        }
+        *error = (uint8_t)ber_tlv_get_integer(pir + final_result_offset + error_reson_off, NULL);
+
+        MSG_ERR("Profile intatll failed. bppCommandId: %d, errorReason: %d. \n", *bppcid, *error);
+
+        // simaResponse
+        euicc_response_off = ber_tlv_find_tag(pir + final_result_offset, element_len, 0x82, 1);
+        if (final_result_offset == BER_TLV_INVALID_OFFSET) {
+            MSG_ERR("Profile intatll failed. simaResponse not found! \n");
+            return RT_ERROR;
+        }
+        element_len = ber_tlv_get_tlv_length(pir + final_result_offset + euicc_response_off);
+        MSG_DUMP_ARRAY("simaResponse: \n", pir + final_result_offset + euicc_response_off, element_len);
+        return RT_SUCCESS;
+    } else {
+        MSG_ERR("Profile intatll failed. Resutl not found! \n");
+        return RT_ERROR;
     }
-
-end:
-    ASN_STRUCT_FREE(asn_DEF_ProfileInstallationResult, res);
-
-    return ret;
 }
 
 int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t *server_url)
@@ -477,7 +596,7 @@ int lpa_download_profile(const char *ac, const char *cc, char iccid[21], uint8_t
     mid = calloc(1, matching_id_len + 1);
     RT_CHECK_GO(mid, RT_ERR_OUT_OF_MEMORY, end);
     memcpy(mid, ac+matching_id_start, matching_id_len);
-    mid[matching_id_len + 1] = '\0';
+    mid[matching_id_len] = '\0';
     MSG_DBG("AC_token:     %s\n", mid);
     MSG_DBG("SMDP_ADDRESS: %s\n", smdp_addr);
     MSG_DBG("Need CC:      %s\n", need_cc ? "Yes" : "No");

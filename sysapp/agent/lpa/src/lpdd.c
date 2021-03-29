@@ -1,19 +1,5 @@
 #include <openssl/sha.h>
-#include "ListNotificationRequest.h"
-#include "RetrieveNotificationsListRequest.h"
-#include "NotificationSentRequest.h"
-#include "GetEuiccChallengeRequest.h"
-#include "GetEuiccInfo1Request.h"
-#include "GetEuiccInfo2Request.h"
-#include "CtxParams1.h"
-#include "AuthenticateServerRequest.h"
-#include "AuthenticateServerResponse.h"
-#include "GetRatRequest.h"
-#include "PrepareDownloadRequest.h"
-#include "BoundProfilePackage.h"
-#include "ProfileInfoListRequest.h"
-#include "CancelSessionRequest.h"
-#include "LoadCRLRequest.h"
+#include <string.h>
 #include "cJSON.h"
 #include "lpdd.h"
 #include "lpa_config.h"
@@ -25,73 +11,46 @@
 #include "lpa_error_codes.h"
 #include "rt_os.h"
 #include "lpa_https.h"
+#include "lpa.h"
 #include "tlv.h"
-
-static uint8_t g_buf[10*1024];
-static uint16_t g_buf_size;
+#include "ber_tlv.h"
 
 static char g_transaction_id[33] = {0};
 
-int encode_cb(const void *buffer, size_t size, void *app_key)
-{
-    memcpy(g_buf + g_buf_size, buffer, size);
-    g_buf_size += size;
-    return 0;
-}
-
-void clean_cb_data(void)
-{
-    g_buf_size = 0;
-}
-
-uint8_t *get_cb_data(void)
-{
-    return g_buf;
-}
-
-uint16_t get_cb_size(void)
-{
-    return g_buf_size;
-}
-
 int list_notification(notification_t ne, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
-    asn_enc_rval_t ec;
-    uint8_t bit_string[1] = {0};
-    ListNotificationRequest_t req = {0};
-    NotificationEvent_t req_ne = {0};
+    /*
+    * ListNotificationRequest ::= [40] SEQUENCE { -- Tag 'BF28'
+        profileManagementOperation [1] NotificationEvent OPTIONAL }
+    */
 
     if (ne == NE_INSTALL) {
-        bit_string[0] = 0x80;
-        req_ne.bits_unused = 7;
+        g_buf[0] = 7;
+        g_buf[1] = 0x80;
     } else if (ne == NE_ENABLE) {
-        bit_string[0] = 0x40;
-        req_ne.bits_unused = 6;
+        g_buf[0] = 6;
+        g_buf[1] = 0x40;
     } else if (ne == NE_DISABLE) {
-        bit_string[0] = 0x20;
-        req_ne.bits_unused = 5;
+        g_buf[0] = 5;
+        g_buf[1] = 0x20;
     } else if (ne == NE_DELETE) {
-        bit_string[0] = 0x10;
-        req_ne.bits_unused = 4;
+        g_buf[0] = 4;
+        g_buf[1] = 0x10;
     }
 
     if (ne == NE_ALL) {
-        // Do nothing
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_LIST_NOTIFICATION_REQ, 0, NULL, g_buf);
     } else {
-        req_ne.buf = bit_string;
-        req_ne.size = 1;
-        req.profileManagementOperation = &req_ne;
+        // profileManagementOperation [1] NotificationEvent
+        g_buf_size = ber_tlv_build_tlv(0x81, 2, g_buf, g_buf);
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_LIST_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
     }
 
     *out_size = 0;
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_ListNotificationRequest, &req, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
+
+    MSG_DUMP_ARRAY("ListNotificationRequest: ", g_buf, g_buf_size);
+
+    RT_CHECK(cmd_store_data(g_buf, g_buf_size, out, out_size, channel));
     //*out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
@@ -110,8 +69,8 @@ int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_
     //     MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
     //     return RT_ERR_ASN1_ENCODE_FAIL;
     // }
-    // MSG_DUMP_ARRAY("LoadCRLRequest: ", get_cb_data(), get_cb_size());
-    // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size));
+    // MSG_DUMP_ARRAY("LoadCRLRequest: ", g_buf, g_buf_size);
+    // RT_CHECK(cmd_store_data(g_buf, g_buf_size, out, out_size));
     // *out_size -= 2;  // Remove sw 9000
 
     // Impl for crl prepared by caller
@@ -124,75 +83,64 @@ int load_crl(const uint8_t *crl, uint16_t crl_size, uint8_t *out, uint16_t *out_
 int retrieve_notification_list(notification_t ne, long *seq, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
-    asn_enc_rval_t ec;
-    uint8_t bit_string[1] = {0};
-    RetrieveNotificationsListRequest_t req = {0};
+
+    /*RetrieveNotificationsListRequest ::= [43] SEQUENCE { -- Tag 'BF2B'
+        searchCriteria CHOICE {
+            seqNumber [0] INTEGER,
+            profileManagementOperation [1] NotificationEvent
+        } OPTIONAL
+    }
+    */
 
     if (ne == NE_ALL) {
-        // Do nothing
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_RETRIEVE_NOTIFICATION_REQ, 0, NULL, g_buf);
     } else {
-        req.searchCriteria = calloc(1, sizeof(struct ProfileInfoListRequest__searchCriteria));
-        RT_CHECK_GO(req.searchCriteria, RT_ERR_OUT_OF_MEMORY, end);
         if (ne == NE_SEQ_NUM) {
-            req.searchCriteria->present = RetrieveNotificationsListRequest__searchCriteria_PR_seqNumber;
-            req.searchCriteria->choice.seqNumber = *seq;
+            // seqNumber [0] INTEGER,
+            g_buf_size = ber_tlv_build_integer_tlv(0x80, (uint32_t)*seq, g_buf);
         } else {
-            req.searchCriteria->present = RetrieveNotificationsListRequest__searchCriteria_PR_profileManagementOperation;
+            // profileManagementOperation [1] NotificationEvent
             if (ne == NE_INSTALL) {
-                bit_string[0] = 0x80;
-                req.searchCriteria->choice.profileManagementOperation.bits_unused = 7;
+                g_buf[0] = 7;
+                g_buf[1] = 0x80;
             } else if (ne == NE_ENABLE) {
-                bit_string[0] = 0x40;
-                req.searchCriteria->choice.profileManagementOperation.bits_unused = 6;
+                g_buf[0] = 6;
+                g_buf[1] = 0x40;
             } else if (ne == NE_DISABLE) {
-                bit_string[0] = 0x20;
-                req.searchCriteria->choice.profileManagementOperation.bits_unused = 5;
+                g_buf[0] = 5;
+                g_buf[1] = 0x20;
             } else if (ne == NE_DELETE) {
-                bit_string[0] = 0x10;
-                req.searchCriteria->choice.profileManagementOperation.bits_unused = 4;
+                g_buf[0] = 4;
+                g_buf[1] = 0x10;
             }
-            req.searchCriteria->choice.profileManagementOperation.buf = bit_string;
-            req.searchCriteria->choice.profileManagementOperation.size = 1;
+            g_buf_size = ber_tlv_build_tlv(0x81, 2, g_buf, g_buf);
         }
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_RETRIEVE_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
     }
 
     *out_size = 0;
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_RetrieveNotificationsListRequest, &req, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        ret = RT_ERR_ASN1_ENCODE_FAIL;
-        goto end;
-    }
-    MSG_DUMP_ARRAY("RetrieveNotificationsListRequest: ", get_cb_data(), get_cb_size());
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
+
+    MSG_DUMP_ARRAY("RetrieveNotificationsListRequest: ", g_buf, g_buf_size);
+    ret = cmd_store_data(g_buf, g_buf_size, out, out_size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*out_size -= 2;  // Remove sw 9000
 
 end:
-    if (req.searchCriteria != NULL) {
-        free(req.searchCriteria);
-    }
     return ret;
 }
 
 int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size, uint8_t channel)
 {
-    asn_enc_rval_t ec;
-    NotificationSentRequest_t req = {0};
-
-    req.seqNumber = seq;
-
+    /*
+    NotificationSentRequest ::= [48] SEQUENCE { -- Tag 'BF30' seqNumber [0] INTEGER }
+    */
     *out_size = 0;
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_NotificationSentRequest, &req, encode_cb, NULL);
-    MSG_ERR("ec.encoded: %d\n", (int)ec.encoded);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("ListNotificationRequest: ", get_cb_data(), get_cb_size());
-    RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel));
+
+    g_buf_size = ber_tlv_build_integer_tlv(0x80, (uint32_t)seq, g_buf);
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_REMOVE_NOTIFICATION_REQ, g_buf_size, g_buf, g_buf);
+
+    MSG_DUMP_ARRAY("ListNotificationRequest: ", g_buf, g_buf_size);
+    RT_CHECK(cmd_store_data(g_buf, g_buf_size, out, out_size, channel));
     *out_size -= 2;  // Remove sw 9000
 
     return RT_SUCCESS;
@@ -201,47 +149,35 @@ int remove_notification_from_list(long seq, uint8_t *out, uint16_t *out_size, ui
 int get_euicc_info(uint8_t *info1, uint16_t *size1, uint8_t *info2, uint16_t *size2, uint8_t channel)
 {
     int ret = RT_SUCCESS;
-    asn_enc_rval_t ec;
-    GetEuiccInfo1Request_t *req1 = NULL;
-    GetEuiccInfo2Request_t *req2 = NULL;
 
     if ((info1 == NULL) || (size1 == NULL) ) {
         ret = RT_ERR_NULL_POINTER;
         goto end;
     }
 
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_GetEuiccInfo1Request, req1, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo1Request, req1);
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo1Request, req1);
-    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
+    /*
+    GetEuiccInfo1Request ::= [32] SEQUENCE { -- Tag 'BF20' }
+    */
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_GET_EUICC_INFO1_REQ, 0, NULL, g_buf);
+    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), info1, size1, channel);
+    ret = cmd_store_data(g_buf, g_buf_size, info1, size1, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size1 -= 2;  // Remove sw 9000
 
-    if ((info2 != NULL) && (size2 != NULL) ) {
-        clean_cb_data();
-        ec = der_encode(&asn_DEF_GetEuiccInfo2Request, req2, encode_cb, NULL);
-        if(ec.encoded == -1) {
-            MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-            ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo1Request, req2);
-            return RT_ERR_ASN1_ENCODE_FAIL;
-        }
-        ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo1Request, req2);
-        MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
+    if ((info2 != NULL) && (size2 != NULL)) {
+        /*
+        GetEuiccInfo2Request ::= [34] SEQUENCE { -- Tag 'BF22' }
+        */
+        g_buf_size = ber_tlv_build_tlv(TAG_LPA_GET_EUICC_INFO2_REQ, 0, NULL, g_buf);
+        MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
 
-        ret = cmd_store_data(get_cb_data(), get_cb_size(), info2, size2, channel);
+        ret = cmd_store_data(g_buf, g_buf_size, info2, size2, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
         //*size2 -= 2;  // Remove sw 9000
     }
+
 end:
-    ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo1Request, req1);
-    ASN_STRUCT_FREE(asn_DEF_GetEuiccInfo2Request, req2);
     return ret;
 }
 
@@ -251,85 +187,75 @@ int get_euicc_challenge(uint8_t challenge[16], uint8_t channel)
     uint16_t rlen;
     uint8_t rsp[23];  // 8F2E128010-CHALLENAGE-9000
 
-    asn_enc_rval_t ec;
-    GetEuiccChallengeRequest_t *req = NULL;
+    /*
+    GetEuiccChallengeRequest ::= [46] SEQUENCE { -- Tag 'BF2E' }
+    */
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_GET_EUICC_CHALLENGE_REQ, 0, NULL, g_buf);
 
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_GetEuiccChallengeRequest, req, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        ASN_STRUCT_FREE(asn_DEF_GetEuiccChallengeRequest, req);
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    ASN_STRUCT_FREE(asn_DEF_GetEuiccChallengeRequest, req);
-
-    MSG_DUMP_ARRAY("GetEuiccChallengeRequest: ", get_cb_data(), get_cb_size());
-    // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), rsp, &rlen));
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), rsp, &rlen, channel);
+    MSG_DUMP_ARRAY("GetEuiccChallengeRequest: ", g_buf, g_buf_size);
+    // RT_CHECK(cmd_store_data(g_buf, g_buf_size, rsp, &rlen));
+    ret = cmd_store_data(g_buf, g_buf_size, rsp, &rlen, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
     memcpy(challenge, rsp + 5, 16);
 
 end:
-    ASN_STRUCT_FREE(asn_DEF_GetEuiccChallengeRequest, req);
     return ret;
 }
 
 int get_rat(uint8_t *rat, uint16_t *size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
-    asn_enc_rval_t ec;
-    GetRatRequest_t *req = NULL;
 
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_GetRatRequest, req, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        ASN_STRUCT_FREE(asn_DEF_GetRatRequest, req);
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    ASN_STRUCT_FREE(asn_DEF_GetRatRequest, req);
+    /*
+    GetRatRequest ::= [67] SEQUENCE { -- Tag ' BF43' 
+        -- No input data }
+    */
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_GET_RAT_REQ, 0, NULL, g_buf);
 
-    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", get_cb_data(), get_cb_size());
-    // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), rat, size));
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), rat, size, channel);
+    MSG_DUMP_ARRAY("GetEuiccInfo1Request: ", g_buf, g_buf_size);
+    // RT_CHECK(cmd_store_data(g_buf, g_buf_size, rat, size));
+    ret = cmd_store_data(g_buf, g_buf_size, rat, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
 end:
-    ASN_STRUCT_FREE(asn_DEF_GetRatRequest, req);
     return ret;
 }
 
 int cancel_session(const uint8_t *tid, uint8_t tid_size, uint8_t reason, uint8_t *csr, uint16_t *size, uint8_t channel)
 {
     int ret = RT_SUCCESS;
-    asn_enc_rval_t ec;
-    CancelSessionRequest_t *req = NULL;
-
-    req = calloc(1, sizeof(CancelSessionRequest_t));
-    RT_CHECK_GO(req, RT_ERR_OUT_OF_MEMORY, end);
-
-    ret = OCTET_STRING_fromBuf(&req->transactionId, (const char *)tid, tid_size);
-    RT_CHECK_GO(ret == 0, RT_ERR_OUT_OF_MEMORY, end);
-
-    req->reason = reason;
-
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_CancelSessionRequest, req, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        ret = RT_ERR_ASN1_ENCODE_FAIL;
-        goto end;
+    
+    /*
+    CancelSessionRequest ::= [65] SEQUENCE { -- Tag 'BF41' 
+        transactionId TransactionId, -- The TransactionID generated by the RSP Server 
+        reason CancelSessionReason 
     }
-    MSG_DUMP_ARRAY("CancelSessionRequest: ", get_cb_data(), get_cb_size());
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), csr, size, channel);
+    CancelSessionReason ::= INTEGER {
+        endUserRejection(0), 
+        postponed(1), 
+        timeout(2), 
+        pprNotAllowed(3), 
+        metadataMismatch(4), 
+        loadBppExecutionError(5), 
+        undefinedReason(127)
+    }
+    */
+
+    // transactionId TransactionId
+    g_buf_size = ber_tlv_build_tlv(0x80, tid_size, tid, g_buf);
+    // CancelSessionReason ::= INTEGER
+    g_buf_size += ber_tlv_build_integer_tlv(0x81, reason, g_buf + g_buf_size);
+    // CancelSessionRequest ::= [65] SEQUENCE { -- Tag 'BF41'
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_CACEL_SESSION_REQ, g_buf_size, g_buf, g_buf);
+
+    ret = cmd_store_data(g_buf, g_buf_size, csr, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
 end:
-    ASN_STRUCT_FREE(asn_DEF_CancelSessionRequest, req);
     return ret;
 }
 
@@ -362,7 +288,7 @@ static int get_status_codes(const char *in, char *sc, char *rc)
     RT_CHECK_GO(p1, RT_ERR_HTTPS_SMDP_ERROR, end);
 
     p1 += 1;  // Skip "
-    p2 = strstr(p1, "\"");  // Find the secoond " after :
+    p2 = strstr(p1, "\"");  // Find the second " after :
     RT_CHECK_GO(p2, RT_ERR_HTTPS_SMDP_ERROR, end);
     MSG_DBG("p1: %s\np2: %s\n", p1, p2);
 
@@ -448,21 +374,11 @@ end:
     return ret;
 }
 
-int gen_ctx_params1(const char *matching_id)
+int gen_ctx_params1(const char *matching_id, char* buff, uint16_t* len)
 {
     int ret = RT_SUCCESS;
-    asn_enc_rval_t ec;
-    CtxParams1_t ctx_params1 = {0};
-
-    UTF8String_t mid;
-    Octet4_t gsm;
-    Octet4_t utran;
-    Octet4_t cdma1x;
-    Octet4_t cdmahrpd;
-    Octet4_t cdmaehrpd;
-    Octet4_t eutran;
-    Octet4_t contract_less;
-    Octet4_t rsp_ctl;
+    uint32_t tac_len;
+    uint32_t dev_cap_len;
 
     uint8_t arr_tac[]           = {0x00, 0x00, 0x00, 0x00};
     uint8_t arr_gsm[]           = {0x05, 0x00, 0x00};
@@ -474,142 +390,110 @@ int gen_ctx_params1(const char *matching_id)
     uint8_t arr_contract_less[] = {0x09, 0x00, 0x00};
     uint8_t arr_rsp_ctl[]       = {0x02, 0x00, 0x00};
 
-    mid.buf         = (uint8_t *)matching_id;
-    mid.size        = strlen(matching_id);
-
-    gsm.buf         = arr_gsm;
-    gsm.size        = sizeof(arr_gsm);
-
-    utran.buf       = arr_utran;
-    utran.size      = sizeof(arr_utran);
-
-    cdma1x.buf      = arr_cdma1x;
-    cdma1x.size     = sizeof(arr_cdma1x);
-
-    cdmahrpd.buf        = arr_cdmahrpd;
-    cdmahrpd.size       = sizeof(arr_cdmahrpd);
-
-    cdmaehrpd.buf       = arr_cdmaehrpd;
-    cdmaehrpd.size      = sizeof(arr_cdmaehrpd);
-
-    eutran.buf          = arr_eutran;
-    eutran.size         = sizeof(arr_eutran);
-
-    contract_less.buf   = arr_contract_less;
-    contract_less.size  = sizeof(arr_contract_less);
-
-    rsp_ctl.buf         = arr_rsp_ctl;
-    rsp_ctl.size        = sizeof(arr_rsp_ctl);
-
-    ctx_params1.present = CtxParams1_PR_ctxParamsForCommonAuthentication;
-
-    ctx_params1.choice.ctxParamsForCommonAuthentication.matchingId = &mid;
-
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.tac.buf = arr_tac;
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.tac.size = sizeof(arr_tac);
-
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.deviceCapabilities.gsmSupportedRelease = &gsm;
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.deviceCapabilities.utranSupportedRelease = &utran;
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.deviceCapabilities.cdma2000onexSupportedRelease = &cdma1x;
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.deviceCapabilities.cdma2000hrpdSupportedRelease = &cdmahrpd;
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.deviceCapabilities.cdma2000ehrpdSupportedRelease = &cdmaehrpd;
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.deviceCapabilities.eutranSupportedRelease = &eutran;
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.deviceCapabilities.contactlessSupportedRelease = &contract_less;
-    ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.deviceCapabilities.rspCrlSupportedVersion = &rsp_ctl;
-
-    // ctx_params1.choice.ctxParamsForCommonAuthentication.deviceInfo.imei = NULL;
-
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_CtxParams1, &ctx_params1, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        g_buf[0] = '\0';
-        clean_cb_data();
-        return RT_ERR_ASN1_ENCODE_FAIL;
+    /*
+    CtxParams1 ::= CHOICE {
+        ctxParamsForCommonAuthentication CtxParamsForCommonAuthentication-- New contextual data objects MAY be defined for extensibility.
     }
 
-    return ret;
-}
-
-static int get_asn1_from_json(cJSON *json, const char *key,
-                    const struct asn_TYPE_descriptor_s *type_descriptor, void **req)
-{
-    int ret = RT_SUCCESS;
-    uint16_t len;
-    char *b64_str = NULL;
-    uint8_t *asn1 = NULL;
-    asn_dec_rval_t dc;
-
-    b64_str = cJSON_GetObjectItem(json, key)->valuestring;
-    RT_CHECK_GO(b64_str, RT_ERR_CJSON_ERROR, end);
-    MSG_DBG("%s: %s\n", key, b64_str);
-
-    asn1 = malloc(strlen(b64_str));
-    RT_CHECK_GO(asn1, RT_ERR_OUT_OF_MEMORY, end);
-
-    ret = rt_base64_decode(b64_str, asn1, &len);
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_DUMP_ARRAY("asn1: ", asn1, len);
-
-    dc = ber_decode(NULL, type_descriptor, req, asn1, len);
-    if (dc.code != RC_OK) {
-        MSG_ERR("Broken get_asn1_from_json decoding at byte %ld\n", (long)dc.consumed);
-        goto end;
+    CtxParamsForCommonAuthentication ::= SEQUENCE {
+        matchingId UTF8String OPTIONAL, -- The MatchingId could be the Activation code token or EventID or empty
+        deviceInfo DeviceInfo -- The Device information
+    }
+    DeviceInfo ::= SEQUENCE {
+        tac Octet4,
+        deviceCapabilities DeviceCapabilities,
+        imei Octet8 OPTIONAL
     }
 
-end:
-    if (asn1 != NULL) {
-        free(asn1);
+    DeviceCapabilities ::= SEQUENCE { -- Highest fully supported release for each definition 
+        -- The device SHALL set all the capabilities it supports 
+        gsmSupportedRelease VersionType OPTIONAL, 
+        utranSupportedRelease VersionType OPTIONAL, 
+        cdma2000onexSupportedRelease VersionType OPTIONAL, 
+        cdma2000hrpdSupportedRelease VersionType OPTIONAL, 
+        cdma2000ehrpdSupportedRelease VersionType OPTIONAL, 
+        eutranSupportedRelease VersionType OPTIONAL, 
+        contactlessSupportedRelease VersionType OPTIONAL, 
+        rspCrlSupportedVersion VersionType OPTIONAL 
     }
-    return ret;
-}
 
-static int get_signature_from_json(cJSON *json, const char *key, void **req)
-{
-    int ret = RT_SUCCESS;
-    uint16_t len;
-    char *b64_str = NULL;
-    uint8_t *asn1 = NULL;
+    VersionType ::= OCTET STRING(SIZE(3))
+    */
 
-    b64_str = cJSON_GetObjectItem(json, key)->valuestring;
-    RT_CHECK_GO(b64_str, RT_ERR_CJSON_ERROR, end);
-    MSG_DBG("%s: %s\n", key, b64_str);
-
-    asn1 = malloc(strlen(b64_str));
-    RT_CHECK_GO(asn1, RT_ERR_OUT_OF_MEMORY, end);
-
-    ret = rt_base64_decode(b64_str, asn1, &len);
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    MSG_DUMP_ARRAY("asn1: ", asn1, len);
-
-    if ((asn1[0] = 0x5F) && (asn1[1] = 0x37)) {
-        OCTET_STRING_fromBuf(*req, (char *)(asn1 + 3), asn1[2]);
+    // matchingId UTF8String OPTIONAL
+    if (matching_id != NULL) {
+        *len = ber_tlv_build_tlv(0x80, strlen(matching_id), matching_id, buff);
     } else {
-        MSG_ERR("Broken serverSignature1 decoding at byte 0\n");
-        ret = RT_ERR_ASN1_DECODE_FAIL;
-        goto end;
+        *len = 0;
     }
 
-end:
-    if (asn1 != NULL) {
-        free(asn1);
-    }
+    // tac Octet4,
+    tac_len = ber_tlv_build_tlv(0x80, sizeof(arr_tac), arr_tac, buff + *len);
+
+    dev_cap_len = ber_tlv_build_tlv(0x80, sizeof(arr_gsm), arr_gsm, buff + *len + tac_len);
+    dev_cap_len += ber_tlv_build_tlv(0x81, sizeof(arr_utran), arr_utran, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x82, sizeof(arr_cdma1x), arr_cdma1x, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x83, sizeof(arr_cdmahrpd), arr_cdmahrpd, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x84, sizeof(arr_cdmaehrpd), arr_cdmaehrpd, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x85, sizeof(arr_eutran), arr_eutran, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x86, sizeof(arr_contract_less), arr_contract_less, buff + *len + tac_len + dev_cap_len);
+    dev_cap_len += ber_tlv_build_tlv(0x87, sizeof(arr_rsp_ctl), arr_rsp_ctl, buff + *len + tac_len + dev_cap_len);
+    // DeviceCapabilities ::= SEQUENCE {
+    dev_cap_len = ber_tlv_build_tlv(0xA1, dev_cap_len, buff + *len + tac_len, buff + *len + tac_len);
+
+    // imei Octet8 OPTIONAL = NULL
+
+    // DeviceInfo ::= SEQUENCE
+    tac_len = ber_tlv_build_tlv(0xA1, tac_len + dev_cap_len, buff + *len, buff + *len);
+
+    // CtxParams1 ::= CHOICE ctxParamsForCommonAuthentication CtxParamsForCommonAuthentication
+    *len = ber_tlv_build_tlv(0xA0, *len + tac_len, buff, buff);
 
     return ret;
 }
 
-static int get_transaction_id(TransactionId_t *tid, uint8_t *transaction_id, uint8_t *size)
+static int get_data_from_json(cJSON* json, const char* key, char* buf, uint16_t *len)
 {
-    asn_enc_rval_t ec;
-    clean_cb_data();
-    // asn_fprint(stdout, &asn_DEF_TransactionId, tid);
-    ec = der_encode(&asn_DEF_TransactionId, tid, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
+    int ret = RT_SUCCESS;
+    char* b64_str = NULL;
+
+    b64_str = cJSON_GetObjectItem(json, key)->valuestring;
+    RT_CHECK_GO(b64_str, RT_ERR_CJSON_ERROR, end);
+    MSG_DBG("%s: %s\n", key, b64_str);
+
+    RT_CHECK_GO(buf, RT_ERR_OUT_OF_MEMORY, end);
+
+    ret = rt_base64_decode(b64_str, buf, len);
+    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    MSG_DUMP_ARRAY("data: ", buf, *len);
+
+end:
+    return ret;
+}
+
+static int get_transaction_id(uint8_t* server_signed, uint8_t *transaction_id, uint8_t *size)
+{
+    uint16_t offset;
+    uint16_t offset_2;
+    uint32_t value_len;
+
+    // get ServerSigned1 value
+    offset = ber_tlv_get_tl_length(server_signed, &value_len);
+    // find transactionId tag
+    offset_2 = (uint16_t)ber_tlv_find_tag(server_signed + offset, value_len, 0x80, 1);
+
+    if (offset_2 == BER_TLV_INVALID_OFFSET) {
+        MSG_ERR("Could not find transactionId !\n");
         return RT_ERR_ASN1_ENCODE_FAIL;
     }
-    *size = g_buf[1];
-    memcpy(transaction_id, &g_buf[2], *size);
+    offset += offset_2;
+
+    // get transactionId value
+    offset_2 = ber_tlv_get_tl_length(server_signed + offset, &value_len);
+    offset += offset_2;
+
+    *size = (uint8_t)value_len;
+    memcpy(transaction_id, server_signed + offset, *size);
 
     return RT_SUCCESS;
 }
@@ -638,69 +522,77 @@ static int get_cc_hash(const char *cc, const uint8_t *transaction_id, uint8_t id
 int authenticate_server(const char *matching_id, const char *auth_data,
                         uint8_t *response, uint16_t *size , uint8_t channel/* out */)
 {
+    uint8_t transaction_id[16];
+    uint8_t transaction_id_len;
+    uint16_t len = 0;
     int ret = RT_SUCCESS;
     void *p = NULL;
     cJSON *content = NULL;
 
-    asn_enc_rval_t ec;
-    asn_dec_rval_t dc;
-    AuthenticateServerRequest_t *req = NULL;
-    req = calloc(1, sizeof(AuthenticateServerRequest_t));
-    RT_CHECK_GO(req, RT_ERR_OUT_OF_MEMORY, end);
+    /*
+    AuthenticateServerRequest ::= [56] SEQUENCE { -- Tag 'BF38' 
+        serverSigned1 ServerSigned1, -- Signed information 
+        serverSignature1 [APPLICATION 55] OCTET STRING, -- tag ¡®5F37¡¯ 
+        euiccCiPKIdToBeUsed SubjectKeyIdentifier, -- CI Public Key Identifier to be used 
+        serverCertificate Certificate, -- RSP Server Certificate CERT.XXauth.ECDSA 
+        ctxParams1 CtxParams1 
+    }
+
+    ServerSigned1 ::= SEQUENCE { 
+        transactionId [0] TransactionId, -- The Transaction ID generated by the RSP Server 
+        euiccChallenge [1] Octet16, -- The eUICC Challenge 
+        serverAddress [3] UTF8String, -- The RSP Server address as an FQDN 
+        serverChallenge [4] Octet16 -- The RSP Server Challenge 
+    }
+    */
 
     content = cJSON_Parse(auth_data);
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
 
-    p = &(req->serverSigned1);
-    ret = get_asn1_from_json(content, "serverSigned1", &asn_DEF_ServerSigned1, (void **)&p);
+    // serverSigned1 ServerSigned1
+    ret = get_data_from_json(content, "serverSigned1", g_buf, &len);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    // asn_fprint(stdout, &asn_DEF_ServerSigned1, p);
+    g_buf_size = len;
 
-    ret = get_transaction_id((TransactionId_t *)&(req->serverSigned1.transactionId), g_buf, (uint8_t *)&g_buf_size);
+    ret = get_transaction_id(g_buf, transaction_id, &transaction_id_len);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    ret = bytes2hexstring(get_cb_data(), get_cb_size(), g_transaction_id);
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-
-    p = &(req->serverSignature1);
-    ret = get_signature_from_json(content, "serverSignature1", (void **)&p);
+    ret = bytes2hexstring(transaction_id, transaction_id_len, g_transaction_id);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
 
-    p = &(req->euiccCiPKIdToBeUsed);
-    ret = get_asn1_from_json(content, "euiccCiPKIdToBeUsed", &asn_DEF_SubjectKeyIdentifier, (void **)&p);
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    // asn_fprint(stdout, &asn_DEF_SubjectKeyIdentifier, p);
-
-    p = &(req->serverCertificate);
-    ret = get_asn1_from_json(content, "serverCertificate", &asn_DEF_Certificate, (void **)&p);
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    // asn_fprint(stdout, &asn_DEF_Certificate, p);
-
-
-    p = &(req->ctxParams1);
-    RT_CHECK(gen_ctx_params1(matching_id));  // ctxParams1 stored in g_buf
-    MSG_DUMP_ARRAY("ctxParams1:\n", get_cb_data(), get_cb_size());
-    dc = ber_decode(NULL, &asn_DEF_CtxParams1, (void **)&p, get_cb_data(), get_cb_size());
-    if (dc.code != RC_OK) {
-        MSG_ERR("Broken CtxParams1 decoding at byte %ld\n", (long)dc.consumed);
-        goto end;
+    // serverSignature1 [APPLICATION 55] OCTET STRING
+    ret = get_data_from_json(content, "serverSignature1", g_buf + g_buf_size, &len);
+    if (ber_tlv_get_tag(g_buf + g_buf_size, NULL) != 0x5F37) {
+        MSG_ERR("Broken serverSignature1 decoding at byte 0\n");
+        ret = RT_ERR_ASN1_DECODE_FAIL;
     }
+    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    g_buf_size += len;
 
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_AuthenticateServerRequest, req, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("AuthenticateServerRequest\n", get_cb_data(), get_cb_size());
+    // euiccCiPKIdToBeUsed SubjectKeyIdentifier
+    ret = get_data_from_json(content, "euiccCiPKIdToBeUsed", g_buf + g_buf_size, &len);
+    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    g_buf_size += len;
 
-    // RT_CHECK(cmd_store_data(get_cb_data(), get_cb_size(), response, size));
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), response, size, channel);
+    // serverCertificate Certificate
+    ret = get_data_from_json(content, "serverCertificate", g_buf + g_buf_size, &len);
+    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    g_buf_size += len;
+
+    // ctxParams1 CtxParams1
+    RT_CHECK(gen_ctx_params1(matching_id, g_buf + g_buf_size, &len));
+    MSG_DUMP_ARRAY("ctxParams1:\n", g_buf + g_buf_size, len);
+    g_buf_size += len;
+
+    // AuthenticateServerRequest
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_AUTH_SERVER_REQ, g_buf_size, g_buf, g_buf);
+    MSG_DUMP_ARRAY("AuthenticateServerRequest\n", g_buf, g_buf_size);
+
+    ret = cmd_store_data(g_buf, g_buf_size, response, size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*size -= 2;  // Remove sw 9000
 
 end:
     cJSON_Delete(content);
-    ASN_STRUCT_FREE(asn_DEF_AuthenticateServerRequest, req);
 
     return ret;
 }
@@ -761,59 +653,70 @@ int prepare_download(const char *req_str, const char *cc, uint8_t *out, uint16_t
 {
     int ret = RT_SUCCESS;
     cJSON *content = NULL;
-    void *p = NULL;
-    asn_enc_rval_t ec;
-    PrepareDownloadRequest_t *req = NULL;
+    uint8_t transaction_id[16];
+    uint8_t transaction_id_len;
+    uint8_t hash_cc[SHA256_DIGEST_LENGTH] = { 0 };
+    uint16_t len;
 
-    uint8_t hash_cc[SHA256_DIGEST_LENGTH] = {0};
+    /*
+    PrepareDownloadRequest ::= [33] SEQUENCE { -- Tag 'BF21' 
+        smdpSigned2 SmdpSigned2, -- Signed information 
+        smdpSignature2 [APPLICATION 55] OCTET STRING, -- tag '5F37' 
+        hashCc Octet32 OPTIONAL, -- Hash of confirmation code 
+        smdpCertificate Certificate -- CERT.DPpb.ECDSA 
+    } 
+    
+    SmdpSigned2 ::= SEQUENCE { 
+        transactionId [0] TransactionId, -- The TransactionID generated by the SM-DP+ 
+        ccRequiredFlag BOOLEAN, --Indicates if the Confirmation Code is required 
+        bppEuiccOtpk [APPLICATION 73] OCTET STRING OPTIONAL -- otPK.EUICC.ECKA already used for binding the BPP, tag '5F49' 
+    }
+    */
 
     content = cJSON_Parse(req_str);
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
 
-    req = calloc(1, sizeof(PrepareDownloadRequest_t));
-    RT_CHECK_GO(req, RT_ERR_OUT_OF_MEMORY, end);
-
-    p = &(req->smdpSigned2);
-    ret = get_asn1_from_json(content, "smdpSigned2", &asn_DEF_SmdpSigned2, (void **)&p);
+    // smdpSigned2 SmdpSigned2
+    ret = get_data_from_json(content, "smdpSigned2", g_buf, &len);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    // asn_fprint(stdout, &asn_DEF_SmdpSigned2, p);
+    g_buf_size = len;
 
-    p = &(req->smdpSignature2);
-    ret = get_signature_from_json(content, "smdpSignature2", (void **)&p);
+    // smdpSignature2 [APPLICATION 55] OCTET STRING
+    ret = get_data_from_json(content, "smdpSignature2", g_buf + g_buf_size, &len);
+    if (ber_tlv_get_tag(g_buf + g_buf_size, NULL) != 0x5F37) {
+        MSG_ERR("Broken serverSignature1 decoding at byte 0\n");
+        ret = RT_ERR_ASN1_DECODE_FAIL;
+    }
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    // xer_fprint(stdout, &asn_DEF_OCTET_STRING, p);
+    g_buf_size += len;
 
+    // hashCc Octet32 OPTIONAL
     if (cc != NULL) {
-        ret = get_transaction_id((TransactionId_t *)&(req->smdpSigned2.transactionId), g_buf, (uint8_t *)&g_buf_size);
+        ret = get_transaction_id(g_buf, transaction_id, &transaction_id_len);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-        ret = get_cc_hash(cc, get_cb_data(), get_cb_size(), hash_cc);
+
+        ret = get_cc_hash(cc, transaction_id, transaction_id_len, hash_cc);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-        req->hashCc = calloc(1, sizeof(Octet32_t));
-        RT_CHECK_GO(req->hashCc, RT_ERR_OUT_OF_MEMORY, end);
-        OCTET_STRING_fromBuf(req->hashCc, (char *)hash_cc, SHA256_DIGEST_LENGTH);
-        // asn_fprint(stdout, &asn_DEF_OCTET_STRING, req->hashCc);
+
+        len = ber_tlv_build_tlv(ASN1_TAG_OCTET_STRING, SHA256_DIGEST_LENGTH, hash_cc, g_buf + g_buf_size);
+        g_buf_size += len;
     }
 
-    p = &(req->smdpCertificate);
-    ret = get_asn1_from_json(content, "smdpCertificate", &asn_DEF_Certificate, (void **)&p);
+    // smdpCertificate Certificate
+    ret = get_data_from_json(content, "smdpCertificate", g_buf + g_buf_size, &len);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    // xer_fprint(stdout, &asn_DEF_Certificate, p);
+    g_buf_size += len;
 
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_PrepareDownloadRequest, req, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("PrepareDownloadRequest\n", get_cb_data(), get_cb_size());
+    // PrepareDownloadRequest
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_PREPARE_DOWNLOAD_REQ, g_buf_size, g_buf, g_buf);
+    MSG_DUMP_ARRAY("PrepareDownloadRequest\n", g_buf, g_buf_size);
 
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
+    ret = cmd_store_data(g_buf, g_buf_size, out, out_size, channel);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
     //*out_size -= 2;  // Remove sw 9000
 
 end:
     cJSON_Delete(content);
-    ASN_STRUCT_FREE(asn_DEF_PrepareDownloadRequest, req);
 
     return ret;
 }
@@ -875,227 +778,120 @@ int load_bound_profile_package(const char *smdp_addr, const char *get_bpp_rsp,
     cJSON *content = NULL;
     uint8_t *p = NULL;
     uint16_t len = 0;
-    asn_enc_rval_t ec;
-    BoundProfilePackage_t *bpp = NULL;
-    OCTET_STRING_t *req = NULL;
-    uint8_t cnt;
-    uint8_t *buf;
+    uint16_t offset;
+    uint16_t sub_off;
+    uint32_t value_len;
 
     *out_size = 0;
+
+    /*
+    BoundProfilePackage ::= [54] SEQUENCE { -- Tag 'BF36' 
+        initialiseSecureChannelRequest [35] InitialiseSecureChannelRequest, -- Tag 'BF23' 
+        firstSequenceOf87 [0] SEQUENCE OF [7] OCTET STRING, -- sequence of '87' TLVs 
+        sequenceOf88 [1] SEQUENCE OF [8] OCTET STRING, -- sequence of '88' TLVs 
+        secondSequenceOf87 [2] SEQUENCE OF [7] OCTET STRING OPTIONAL, -- sequence of '87' TLVs 
+        sequenceOf86 [3] SEQUENCE OF [6] OCTET STRING -- sequence of '86' TLVs 
+    }
+    */
 
     content = cJSON_Parse(get_bpp_rsp);
     RT_CHECK_GO(content, RT_ERR_CJSON_ERROR, end);
 
-    ret = get_asn1_from_json(content, "boundProfilePackage", &asn_DEF_BoundProfilePackage, (void **)&bpp);
+    ret = get_data_from_json(content, "boundProfilePackage", g_buf, &g_buf_size);
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    // asn_fprint(stdout, &asn_DEF_BoundProfilePackage, bpp);
+    MSG_DUMP_ARRAY("boundProfilePackage\n", g_buf, g_buf_size);
 
-    clean_cb_data();
-    ec = der_encode(&asn_DEF_BoundProfilePackage, bpp, encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("boundProfilePackage\n", get_cb_data(), get_cb_size());
-
+    // Tag and length fields of the BoundProfilePackage TLV plus the initialiseSecureChannelRequest TLV
     // ES8+ InitialiseSecureChannel
-    clean_cb_data();
-    g_buf_size += 5;  // Play a trick here, include the BPP TLV
-    ec = der_encode(&asn_DEF_InitialiseSecureChannelRequest, &(bpp->initialiseSecureChannelRequest), encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("initialiseSecureChannelRequest\n", get_cb_data(), get_cb_size());
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);  // Should only contain 9000
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf, NULL) == 0xBF36, ret, end);
+    len = ber_tlv_get_tl_length(g_buf, NULL);  // Play a trick here, include the BPP TLV
 
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf + len, NULL) == 0xBF23, ret, end);
+    len += ber_tlv_get_tlv_length(g_buf + len);  // TLV of InitialiseSecureChannel
+    MSG_DUMP_ARRAY("initialiseSecureChannelRequest\n", g_buf, len);
+    ret = cmd_store_data(g_buf, len, out, out_size, channel);  // Should only contain 9000
+    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    offset = len;
+
+    // Tag and length fields of the first sequenceOf87 TLV plus the first '87' TLV
     // ES8+ Configure ISDP
-    clean_cb_data();
-    ec = der_encode(asn_MBR_BoundProfilePackage_1[1].type, &(bpp->firstSequenceOf87), encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("firstSequenceOf87\n", get_cb_data(), get_cb_size());
-    ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);  // Should only contain 9000
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset, NULL) == 0xA0, ret, end);
+    len = ber_tlv_get_tlv_length(g_buf + offset);  // TLV of Configure ISDP
+    MSG_DUMP_ARRAY("firstSequenceOf87\n", g_buf + offset, len);
+    ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    if (*out_size > 0) {
+        goto end;
+    }
+    offset += len;
 
+    // Tag and length fields of the sequenceOf88 TLV
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset, NULL) == 0xA1, ret, end);
+    len = ber_tlv_get_tl_length(g_buf + offset, &value_len);
     // ES8+ Store Metadata
-    clean_cb_data();
-    ec = der_encode(asn_MBR_BoundProfilePackage_1[2].type, &(bpp->sequenceOf88), encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("sequenceOf88\n", get_cb_data(), get_cb_size());
-
-    // Send sequenceOf88 TL
-    buf = strchr(get_cb_data(),0x88);
-    p = get_cb_data();
-    len = buf-get_cb_data();  // TODO: Make it general
-    MSG_DBG("len: %d\n", len);
-    ret = cmd_store_data(p, len, out, out_size, channel);  // Should only contain 9000
+    MSG_DUMP_ARRAY("sequenceOf88\n", g_buf + offset, len + value_len);
+    ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
     RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    offset += len;
 
-    // Send sequenceOf88 Value
-    cnt = bpp->sequenceOf88.list.count;
-    // according to BF37
-    for (i = 0; i < cnt; i++) {
-        req = bpp->sequenceOf88.list.array[i];
-        clean_cb_data();
-        ec = der_encode(&asn_DEF_OS88, req, encode_cb, NULL);
-        if(ec.encoded == -1) {
-            MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-            return RT_ERR_ASN1_ENCODE_FAIL;
-        }
-        MSG_DUMP_ARRAY("sequenceOf88TLV\n", get_cb_data(), get_cb_size());
-        ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
+    // Each of the '88' TLVs
+    for (sub_off = 0; sub_off < value_len; ) {
+        RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset + sub_off, NULL) == 0x88, ret, end);
+        len = ber_tlv_get_tlv_length(g_buf + offset + sub_off);
+        MSG_DUMP_ARRAY("sequenceOf88TLV\n", g_buf + offset + sub_off, len);
+        ret = cmd_store_data(g_buf + offset + sub_off, len, out, out_size, channel);
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
+        sub_off += len;
 
         /* check result code */
         MSG_DUMP_ARRAY("sequenceOf88TLV out\n", out, *out_size);
-        if (*out_size >= 2) {
-            uint32_t profile_installation_result_data_len = 0;
-            uint8_t *profile_installation_result_data_buf = NULL;
-
-            profile_installation_result_data_len = get_length(out, 0);
-            profile_installation_result_data_buf = get_value_buffer(out);
-            MSG_INFO_ARRAY("ProfileInstallationResultData_buf: ", profile_installation_result_data_buf, profile_installation_result_data_len);
-
-            uint32_t metadata1_len = 0;
-            uint8_t *metadata1_buf = NULL;
-
-            metadata1_len = get_length(profile_installation_result_data_buf, 0);
-            metadata1_buf = get_value_buffer(profile_installation_result_data_buf);
-            // MSG_INFO_ARRAY("metadata1_buf: ", metadata1_buf, metadata1_len);
-
-            uint32_t metadata2_len = 0;
-            uint32_t metadata2_tag_len = 0;
-            uint8_t *metadata2_buf = NULL;
-
-            metadata2_len = get_length(metadata1_buf, 0);
-            metadata2_tag_len = get_length(metadata1_buf, 1);
-            metadata2_buf = get_value_buffer(metadata1_buf);
-            // MSG_INFO_ARRAY("metadata2_buf: ", metadata2_buf, metadata2_len);
-
-            uint32_t metadata3_len = 0;
-            uint32_t metadata3_tag_len = 0;
-            uint8_t *metadata3_buf = NULL;
-
-            metadata3_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len, 0);
-            metadata3_tag_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len, 1);
-            metadata3_buf = get_value_buffer(metadata1_buf+metadata2_len+metadata2_tag_len);
-            // MSG_INFO_ARRAY("metadata3_buf: ", metadata3_buf, metadata3_len);
-
-            uint32_t metadata4_len = 0;
-            uint32_t metadata4_tag_len = 0;
-            uint8_t *metadata4_buf = NULL;
-
-            metadata4_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len, 0);
-            metadata4_tag_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len, 1);
-            metadata4_buf = get_value_buffer(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len);
-            // MSG_INFO_ARRAY("metadata4_buf: ", metadata4_buf, metadata4_len);
-
-            uint32_t metadata5_len = 0;
-            uint32_t metadata5_tag_len = 0;
-            uint8_t *metadata5_buf = NULL;
-
-            metadata5_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len+metadata4_len+metadata4_tag_len, 0);
-            metadata5_tag_len = get_length(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len+metadata4_len+metadata4_tag_len, 1);
-            metadata5_buf = get_value_buffer(metadata1_buf+metadata2_len+metadata2_tag_len+metadata3_len+metadata3_tag_len+metadata4_len+metadata4_tag_len);
-            // MSG_INFO_ARRAY("metadata5_buf: ", metadata5_buf, metadata5_len);
-
-
-            uint32_t metadata6_len = 0;
-            uint8_t *metadata6_buf = NULL;
-
-            metadata6_len = get_length(metadata5_buf, 0);
-            metadata6_buf = get_value_buffer(metadata5_buf);
-            // MSG_INFO_ARRAY("metadata6_buf: ", metadata6_buf, metadata6_len);
-
-
-            uint32_t err_id_len = 0;
-            uint32_t err_id_tag_len = 0;
-            uint8_t *err_id_buf = NULL;
-
-            err_id_len = get_length(metadata6_buf, 0);
-            err_id_tag_len = get_length(metadata6_buf, 1);
-            err_id_buf = get_value_buffer(metadata6_buf);
-            // MSG_INFO_ARRAY("err_id_buf: ", err_id_buf, err_id_len);
-
-            uint32_t err_res_len = 0;
-            uint32_t err_res_tag_len = 0;
-            uint8_t *err_res_buf = NULL;
-
-            err_res_len = get_length(metadata6_buf+err_id_len+err_id_tag_len, 0);
-            err_res_tag_len = get_length(metadata6_buf+err_id_len+err_id_tag_len, 1);
-            err_res_buf = get_value_buffer(metadata6_buf+err_id_len+err_id_tag_len);
-            // MSG_INFO_ARRAY("err_res_buf: ", err_res_buf, err_res_len);
-
-            if ((*err_id_buf == 0x02) && (*err_res_buf == 0x09)) {
-                ret = RT_ERR_APDU_STORE_DATA_FAIL;
-                goto end;
-            }
+        if (*out_size > 0) {
+            goto end;
         }
     }
+    offset += value_len;
 
+    // Tag and length fields of the sequenceOf87 TLV plus the first '87' TLV
     // ES8+ Replace Session Keys
-    if (bpp->secondSequenceOf87 != NULL) {
-        clean_cb_data();
-        ec = der_encode(asn_MBR_BoundProfilePackage_1[3].type, bpp->secondSequenceOf87, encode_cb, NULL);
-        if(ec.encoded == -1) {
-            MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-            return RT_ERR_ASN1_ENCODE_FAIL;
-        }
-        MSG_DUMP_ARRAY("secondSequenceOf87\n", get_cb_data(), get_cb_size());
+    if (ber_tlv_get_tag(g_buf + offset, NULL) == 0xA2) {
+        len = ber_tlv_get_tlv_length(g_buf + offset);
+        MSG_DUMP_ARRAY("secondSequenceOf87\n", g_buf + offset, len);
         // TODO: Test this
-        ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);  // Should only contain 9000
+        ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
         RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-    }
-
-    // ES8+ Load Profile Elements
-    clean_cb_data();
-    ec = der_encode(asn_MBR_BoundProfilePackage_1[4].type, &(bpp->sequenceOf86), encode_cb, NULL);
-    if(ec.encoded == -1) {
-        MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-        return RT_ERR_ASN1_ENCODE_FAIL;
-    }
-    MSG_DUMP_ARRAY("sequenceOf86\n", get_cb_data(), get_cb_size());
-
-    // Send sequenceOf86 TL
-    buf = strchr(get_cb_data(), 0x86);
-    p = get_cb_data();
-    len = buf-get_cb_data();  // TODO: Make it general
-    MSG_DBG("len: %d\n", len);
-    ret = cmd_store_data(p, len, out, out_size, channel);  // Should only contain 9000
-    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
-
-    // Send sequenceOf86 Value
-    cnt = bpp->sequenceOf86.list.count;
-    MSG_DBG("cnt: %d\n", cnt);
-    for (i = 0; i < cnt; i++) {
-        req = bpp->sequenceOf86.list.array[i];
-        clean_cb_data();
-        ec = der_encode(&asn_DEF_OS86, req, encode_cb, NULL);
-        if(ec.encoded == -1) {
-            MSG_ERR("Could not encode: %s\n", ec.failed_type ? ec.failed_type->name : "unknow");
-            return RT_ERR_ASN1_ENCODE_FAIL;
+        if (*out_size > 0) {
+            goto end;
         }
-        MSG_DUMP_ARRAY("sequenceOf86TLV\n", get_cb_data(), get_cb_size());
-        ret = cmd_store_data(get_cb_data(), get_cb_size(), out, out_size, channel);
-        RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
+        offset += len;
     }
 
-    // Handle notification
-    if (*out_size > 0) {
-        int tmp = sizeof(g_buf);
-        // ret = handle_notification(smdp_addr, out, *out_size, (char *)g_buf, &tmp);
+    // Tag and length fields of the sequenceOf86 TLV
+    RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset, NULL) == 0xA3, ret, end);
+    len = ber_tlv_get_tl_length(g_buf + offset, &value_len);
+    // ES8+ Load Profile Elements
+    MSG_DUMP_ARRAY("sequenceOf86\n", g_buf + offset, len + value_len);
+    ret = cmd_store_data(g_buf + offset, len, out, out_size, channel);  // Should only contain 9000
+    RT_CHECK_GO(ret == RT_SUCCESS, ret, end);
+    offset += len;
+
+    // Each of the '86' TLVs
+    for (sub_off = 0; sub_off < value_len; ) {
+        RT_CHECK_GO(ber_tlv_get_tag(g_buf + offset + sub_off, NULL) == 0x86, ret, end);
+        len = ber_tlv_get_tlv_length(g_buf + offset + sub_off);
+        MSG_DUMP_ARRAY("sequenceOf86TLV\n", g_buf + offset + sub_off, len);
+        ret = cmd_store_data(g_buf + offset + sub_off, len, out, out_size, channel);
+        RT_CHECK_GO(ret == RT_SUCCESS, ret, end);  // Should only contain 9000
+        if (*out_size > 0) {
+            goto end;
+        }
+        sub_off += len;
     }
+
+    /* check result code */
+    MSG_DUMP_ARRAY("ProfileInstallationResult: \n", out, *out_size);
 
 end:
     cJSON_Delete(content);
-    ASN_STRUCT_FREE(asn_DEF_BoundProfilePackage, bpp);
 
     return ret;
 }

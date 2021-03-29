@@ -3,6 +3,28 @@
 
 #include <stdint.h>
 
+#define TAG_LPA_GET_EUICC_INFO1_REQ             0xBF20
+#define TAG_LPA_PREPARE_DOWNLOAD_REQ            0xBF21
+#define TAG_LPA_GET_EUICC_INFO2_REQ             0xBF22
+#define TAG_LPA_LIST_NOTIFICATION_REQ           0xBF28
+#define TAG_LPA_SET_NICK_NAME_REQ               0xBF29
+#define TAG_LPA_RETRIEVE_NOTIFICATION_REQ       0xBF2B
+#define TAG_LPA_PROFILE_INFO_LIST_REQ           0xBF2D
+#define TAG_LPA_GET_EUICC_CHALLENGE_REQ         0xBF2E
+#define TAG_LPA_REMOVE_NOTIFICATION_REQ         0xBF30
+#define TAG_LPA_ENABLE_PROFILE_REQ              0xBF31
+#define TAG_LPA_DISABLE_PROFILE_REQ             0xBF32
+#define TAG_LPA_DELETE_PROFILE_REQ              0xBF33
+#define TAG_LPA_EUICC_MEMORY_RESET_REQ          0xBF34
+#define TAG_LPA_AUTH_SERVER_REQ                 0xBF38
+#define TAG_LPA_GET_EUICC_CONFIG_ADDR_REQ       0xBF3C
+#define TAG_LPA_GET_EUICC_DATA_REQ              0xBF3E
+#define TAG_LPA_SET_DEFAULT_DP_ADDR_REQ         0xBF3F
+#define TAG_LPA_CACEL_SESSION_REQ               0xBF41
+#define TAG_LPA_GET_RAT_REQ                     0xBF43
+
+#define TAG_LPA_SET_ROOT_KEY_REQ                0xFF20
+
 typedef enum LPA_CHANNEL_TYPE {
     LPA_CHANNEL_BY_IPC = 0,     // vUICC mode
     LPA_CHANNEL_BY_QMI          // eUICC mode
@@ -14,6 +36,9 @@ typedef struct PROFILE_INFO {
     uint8_t class;              // 0 test, 1 provisioning, 2 operational
     uint8_t state;              // 0 disabled, 1 enabled
 } profile_info_t;
+
+extern uint8_t g_buf[10 * 1024];
+extern uint16_t g_buf_size;
 
 int init_lpa(void *arg);
 

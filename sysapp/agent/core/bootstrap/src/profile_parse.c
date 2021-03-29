@@ -13,12 +13,8 @@
 
 #include "profile_parse.h"
 #include "file.h"
-#include "ProfileInfo1.h"
-#include "FileInfo.h"
-#include "TBHRequest.h"
-#include "SetRootKeyRequest.h"
-#include "BootstrapRequest.h"
 #include "tlv.h"
+#include "ber_tlv.h"
 #include "agent_queue.h"
 #include "convert.h"
 #include "hash.h"
@@ -106,8 +102,6 @@ static const plmn_info_t g_rt_plmn[] = {
 };
 
 static profile_data_t g_data;
-static uint8_t *g_buf = NULL;
-static uint16_t g_buf_size = 0;
 static char g_share_profile[128];
 
 #define SHARED_PROFILE_NAME     "sharedprofile"
@@ -252,110 +246,93 @@ static int32_t rt_check_hash_code_offset(rt_fshandle_t fp)
     return RT_SUCCESS;
 }
 
-static int32_t decode_file_info(rt_fshandle_t fp)
+static int32_t calc_hash(uint8_t *tbh, int32_t tbh_len, uint8_t *profile_hash)
 {
-    uint8_t buf[100];
-    int32_t size;
-    asn_dec_rval_t dc;
-    FileInfo_t *request = NULL;
-
-    linux_fseek(fp, g_data.file_info_offset, RT_FS_SEEK_SET);
-    linux_fread(buf, 1, 100, fp);
-    size = get_length(buf, 0) + get_length(buf, 1);
-    buf[0] = 0x30;
-    dc = ber_decode(NULL, &asn_DEF_FileInfo, (void **) &request, buf, size);
-
-    if (dc.code != RC_OK) {
-        MSG_PRINTF(LOG_ERR, "%ld\n", dc.consumed);
-        return RT_ERROR;
-    }
-    if (request != NULL) {
-        ASN_STRUCT_FREE(asn_DEF_FileInfo, request);
-    }
-    return RT_SUCCESS;
-}
-
-static int32_t decode_profile(rt_fshandle_t fp, uint16_t off, int length)
-{
-    BootstrapRequest_t *request = NULL;
-    asn_dec_rval_t dc;
-    uint8_t *buf = NULL;
-
-    buf = (uint8_t *) rt_os_malloc(length);
-    if (!buf) {
-        MSG_PRINTF(LOG_ERR, "malloc failed!\n");
-        return RT_ERROR;
-    }
-    linux_fseek(fp, off, RT_FS_SEEK_SET);
-    linux_fread(buf, 1, length, fp);
-    dc = ber_decode(NULL, &asn_DEF_BootstrapRequest, (void **) &request, buf, length);
-    if (dc.code != RC_OK) {
-        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
-    }
-    if (request != NULL) {
-        ASN_STRUCT_FREE(asn_DEF_BootstrapRequest, request);
-    }
-    rt_os_free(buf);
-    return RT_SUCCESS;
-}
-
-static int32_t encode_cb_fun(const void *buffer, size_t size, void *app_key)
-{
-    g_buf = rt_os_realloc(g_buf, g_buf_size + size);
-    if (!g_buf) {
-        MSG_PRINTF(LOG_ERR, "realloc failed!!\n");
-        return RT_ERROR;
-    }
-    rt_os_memcpy(g_buf + g_buf_size, (void *) buffer, size);
-    g_buf_size += size;
-    return RT_SUCCESS;
-}
-
-static int32_t update_hash(uint8_t *buf, int32_t profile_len, uint8_t *profile_hash)
-{
-    uint8_t *p = NULL;
     sha256_ctx_t profile_ctx;
-    int32_t size = 0;
 
-    p = get_value_buffer(buf);
-    size = get_length(p, 0) + get_length(p, 1);
     sha256_init(&profile_ctx);
-    sha256_update(&profile_ctx, p, size);
+    sha256_update(&profile_ctx, tbh, tbh_len);
     sha256_final(&profile_ctx, profile_hash);
     MSG_INFO_ARRAY("Current profile_hash: ", profile_hash, 32);
     return RT_SUCCESS;
 }
 
 static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32_t selected_profile_index,
-                            BOOLEAN_t sequential, uint16_t mcc, uint8_t *profile, uint16_t *len_out)
+                            uint8_t sequential, uint16_t mcc, uint8_t *profile, uint16_t *len_out)
 {
-    BootstrapRequest_t *bootstrap_request = NULL;
-    asn_dec_rval_t dc;
-    asn_enc_rval_t ec;
     uint8_t jt[4] = {0x08, 0x29, 0x43, 0x05};
-    uint8_t profile_hash[32], imsi_buffer[2], bytes[10];
-    uint16_t length, imsi_len;
+    uint8_t profile_hash[32], imsi_buffer[2], bytes[12];
+    uint16_t length;
+    uint16_t tag;
     int32_t ret = RT_ERROR;
-    char imsi_buf[5] = {0};
     int32_t i, imsi;
+    uint32_t br_off, br_len;
+    uint32_t tbh_off, tbh_len;
+    uint32_t iccid_off, iccid_len;
+    uint32_t imsi_off, imsi_len;
+    uint32_t rplmn_off, rplmn_len;
 
-    dc = ber_decode(NULL, &asn_DEF_BootstrapRequest, (void **) &bootstrap_request, profile_buffer, profile_len);
-    if (dc.code != RC_OK) {
-        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
+    /*
+    BootstrapRequest ::= [PRIVATE 127] SEQUENCE { --Tag ‘FF7F’
+        tbhRequest TBHRequest,
+        hashCode [APPLICATION 1] OCTET STRING     -- sha256
+    }
+    TBHRequest ::= SEQUENCE {
+        iccid OCTET STRING,             -- ICCID为卡片文件存储格式，例：98680021436587092143, 20位
+        imsi OCTET STRING,              -- IMSI为卡片文件存储格式，例如 084906001111212299，18 位
+        key OCTET STRING,               -- 密文，32 位，Hex 格式
+        opc OCTET STRING,               -- 密文，32 位，Hex 格式
+        rotation OCTET STRING OPTIONAL, -- optional，遵从 SIM 格式，默认 4000204060，
+        xoring OCTET STRING OPTIONAL,   -- optional, 遵从 SIM 格式，默认
+        sqnFlag OCTET STRING OPTIONAL,  -- optional,
+        rplmn OCTET STRING OPTIONAL,    -- optional, 单个，SIM 卡片文件存储格式，64F010，默认 FFFFFF
+        fplmn OCTET STRING OPTIONAL,    -- optional, 多个，同上
+        hplmn OCTET STRING OPTIONAL,    -- optional, SIM 卡片文件存储格式，多个，例：64F0100000 64F000000，默认 FFFFFF0000
+        ehplmn OCTET STRING OPTIONAL,   -- optional, 同上
+        oplmn OCTET STRING OPTIONAL     -- optional, 同上
+    }
+    */
+
+    // BootstrapRequest value
+    br_off = ber_tlv_get_tl_length(profile_buffer, &br_len);
+
+    // tbhRequest value
+    tbh_off = ber_tlv_get_tl_length(profile_buffer + br_off, &tbh_len);
+    tbh_off += br_off;
+
+    // find ICCID in tbhRequest
+    iccid_off = ber_tlv_find_tag(profile_buffer + tbh_off, tbh_len, 0x80, 1);
+    if (iccid_off == BER_TLV_INVALID_OFFSET) {
+        MSG_PRINTF(LOG_ERR, "iccid not found!\n");
         goto end;
     }
+    iccid_off += tbh_off;
+    // iccid value
+    iccid_off += ber_tlv_get_tl_length(profile_buffer + iccid_off, &iccid_len);
+
+    // find IMSI in tbhRequest
+    imsi_off = ber_tlv_find_tag(profile_buffer + tbh_off, tbh_len, 0x81, 1);
+    if (imsi_off == BER_TLV_INVALID_OFFSET) {
+        MSG_PRINTF(LOG_ERR, "imsi not found!");
+        goto end;
+    }
+    imsi_off += tbh_off;
+    // imsi value
+    imsi_off += ber_tlv_get_tl_length(profile_buffer + imsi_off, &imsi_len);
+
+    // copy tbhRequest
+    utils_mem_copy(g_buf, profile_buffer + tbh_off, tbh_len);
+
     if (sequential == 0xFF) {
-        imsi_buffer[0] = bootstrap_request->tbhRequest.imsi.buf[7];
-        imsi_buffer[1] = bootstrap_request->tbhRequest.imsi.buf[8];
+        imsi_buffer[0] = g_buf[imsi_off - tbh_off + 7];
+        imsi_buffer[1] = g_buf[imsi_off - tbh_off + 8];
         swap_nibble(imsi_buffer, 2);
-        bytes2hexstring(imsi_buffer, 2, imsi_buf);
-        imsi_len = sizeof(imsi_buffer);
-        imsi = selected_profile_index + atoi(imsi_buf);
-        snprintf(imsi_buf, sizeof(imsi_buf), "%04d", imsi);
-        hexstring2bytes(imsi_buf, imsi_buffer, &imsi_len);
+        imsi = selected_profile_index + utils_u08s_to_u16(imsi_buffer);
+        utils_u16_to_u08s(imsi, imsi_buffer);
         swap_nibble(imsi_buffer, 2);
-        bootstrap_request->tbhRequest.imsi.buf[7] = imsi_buffer[0];
-        bootstrap_request->tbhRequest.imsi.buf[8] = imsi_buffer[1];
+        // update new IMSI
+        g_buf[imsi_off - tbh_off + 7] = imsi_buffer[0];
+        g_buf[imsi_off - tbh_off + 8] = imsi_buffer[1];
     }
 
     {
@@ -366,9 +343,9 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         //MSG_INFO_ARRAY("selected iccid: ", bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
 
         rt_os_memset(buffer, 0 ,sizeof(buffer));
-        rt_os_memcpy(buffer, bootstrap_request->tbhRequest.imsi.buf, bootstrap_request->tbhRequest.imsi.size);
-        swap_nibble(buffer, bootstrap_request->tbhRequest.imsi.size);
-        bytes2hexstring(buffer, bootstrap_request->tbhRequest.imsi.size, select_buffer);
+        rt_os_memcpy(buffer, profile_buffer + imsi_off, imsi_len);
+        swap_nibble(buffer, imsi_len);
+        bytes2hexstring(buffer, imsi_len, select_buffer);
         MSG_PRINTF(LOG_DBG, "selected_imsi : %s\n", &select_buffer[3]);
 #ifdef CFG_FACTORY_MODE_ON
         /* TODO: special process for RTN of profiles of China mobile */
@@ -381,52 +358,63 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         }
 #endif        
         rt_os_memset(buffer, 0 ,sizeof(buffer));
-        rt_os_memcpy(buffer, bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
-        swap_nibble(buffer, bootstrap_request->tbhRequest.iccid.size);
-        bytes2hexstring(buffer, bootstrap_request->tbhRequest.iccid.size, select_buffer);
+        rt_os_memcpy(buffer, profile_buffer + iccid_off, iccid_len);
+        swap_nibble(buffer, iccid_len);
+        bytes2hexstring(buffer, iccid_len, select_buffer);
         MSG_PRINTF(LOG_DBG, "selected_iccid: %s\n", select_buffer);
     }
 
-    if (rt_os_memcmp(bootstrap_request->tbhRequest.imsi.buf, jt, 4) == 0){
+    if (rt_os_memcmp(profile_buffer + imsi_off, jt, 4) == 0){
         for (i = 0; i < ARRAY_SIZE(g_rt_plmn); ++i) {
             if (mcc == g_rt_plmn[i].mcc) {
                 hexstring2bytes(g_rt_plmn[i].rplmn, bytes, &length); // must convert string to bytes
                 MSG_PRINTF(LOG_INFO, "selected_rplmn : %s\n", g_rt_plmn[i].rplmn);
-                bootstrap_request->tbhRequest.rplmn = OCTET_STRING_new_fromBuf(
-                    &asn_DEF_TBHRequest, bytes, length);
-                // bootstrap_request->tbhRequest.hplmn = OCTET_STRING_new_fromBuf(
-                //        &asn_DEF_TBHRequest, g_rt_plmn[i].hplmn, rt_os_strlen(g_rt_plmn[i].hplmn));
+                
+                // find rplmn in tbhRequest
+                rplmn_off = ber_tlv_find_tag(g_buf, tbh_len, 0x87, 1);
+                if (rplmn_off == BER_TLV_INVALID_OFFSET) {
+                    rplmn_len = 0;
+                    // find insert offset
+                    for (tag = 0x88; tag >= 0x8B; tag++) {
+                        rplmn_off = ber_tlv_find_tag(g_buf, tbh_len, tag, 1);
+                        if (rplmn_off != BER_TLV_INVALID_OFFSET) {
+                            break;
+                        }
+                    }
+                    // if tag from '88' fplmn to '8B' oplmn all not found, set to end of tlv list
+                    if (rplmn_off == BER_TLV_INVALID_OFFSET) {
+                        rplmn_off = tbh_len;
+                    }
+                } else {
+                    rplmn_len = ber_tlv_get_tlv_length(g_buf + rplmn_off);
+                }
+                // modify or insert it
+                if (length != 0) {
+                    length = ber_tlv_build_tlv(0x87, length, bytes, bytes);
+                }
+
+                utils_mem_copy(g_buf + rplmn_off + length, g_buf + rplmn_off + rplmn_len, tbh_len - rplmn_off - rplmn_len);
+                utils_mem_copy(g_buf + rplmn_off, bytes, length);
+                tbh_len = tbh_len + length - rplmn_len;  // new tbh length
+
                 break;
             }
         }
     }
 
-    g_buf_size = 0;
-    ec = der_encode(&asn_DEF_BootstrapRequest, bootstrap_request, encode_cb_fun, NULL);
-    if (ec.encoded == -1) {
-        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
-        goto end;
-    }
-    update_hash(g_buf, profile_len, profile_hash);
+    // build tbhRequest TLV
+    g_buf_size = ber_tlv_build_tlv(0x30, tbh_len, g_buf, g_buf);
+    calc_hash(g_buf, g_buf_size, profile_hash);
+    // build hash TLV
+    g_buf_size += ber_tlv_build_tlv(0x41, 32, profile_hash, g_buf + g_buf_size);
+    // build new BootstrapRequest
+    g_buf_size = ber_tlv_build_tlv(0xFF7F, g_buf_size, g_buf, g_buf);
 
-    rt_os_memcpy(bootstrap_request->hashCode.buf, profile_hash, bootstrap_request->hashCode.size);
-    g_buf_size = 0;
-    ec = der_encode(&asn_DEF_BootstrapRequest, bootstrap_request, encode_cb_fun, NULL);
-    if (ec.encoded == -1) {
-        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
-        goto end;
-    }
-
-    MSG_INFO_ARRAY("Current profile: ", g_buf, g_buf_size);
     rt_os_memcpy(profile, g_buf, g_buf_size);
     *len_out = g_buf_size;
     ret = RT_SUCCESS;
+
 end:
-    if (bootstrap_request != NULL) {
-        ASN_STRUCT_FREE(asn_DEF_BootstrapRequest, bootstrap_request);
-    }
-    rt_os_free(g_buf);
-    g_buf = NULL;
     return ret;
 }
 
@@ -468,10 +456,13 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
 {
     uint32_t selected_profile_index, profile_len, size;
     uint8_t *profile_buffer = NULL;
-    ProfileInfo1_t *request = NULL;
     uint8_t buf[100];
-    asn_dec_rval_t dc;
     int32_t ret = RT_ERROR;
+    uint32_t apn_off, apn_len;
+    uint32_t apn_name_off, apn_name_len;
+    uint32_t mcc_mnc_off, mcc_mnc_len;
+    uint32_t total_num_off, total_num, total_num_len;;
+    uint8_t sequential;
 
     linux_fseek(fp, off, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 100, fp);
@@ -481,44 +472,50 @@ static int32_t decode_profile_info(rt_fshandle_t fp, uint32_t off, uint16_t mcc,
     linux_fread(buf, 1, 100, fp);
     size = get_length(buf, 0) + get_length(buf, 1);
 
-    // 如果tag为A0则与子项tag重名导致无法解析
-    if (buf[0] == 0xA0) {
-        buf[0] = 0x30;
-    }
-    dc = ber_decode(NULL, &asn_DEF_ProfileInfo1, (void **) &request, buf, size);
+    MSG_INFO_ARRAY("Profile Info: ", buf, size);
 
-    if (dc.code != RC_OK) {
-        MSG_PRINTF(LOG_ERR, "%ld\n", dc.consumed);
-        goto end;
-    }
+    apn_off = ber_tlv_get_tl_length(buf, &apn_len);  // ProfileInfo1 A0 TL
+    apn_name_off = ber_tlv_get_tl_length(buf + apn_off, &apn_len);  // apn A0 TL
+    apn_name_off += apn_off;
+    apn_name_off += ber_tlv_get_tl_length(buf + apn_name_off, &apn_name_len);  // ApnList 30 TL
+    apn_name_off += ber_tlv_get_tl_length(buf + apn_name_off, &apn_name_len);  // apnName 80 TL
+
+    mcc_mnc_off = ber_tlv_get_tl_length(buf + apn_name_off + apn_name_len, &mcc_mnc_len);  // mccMnc 81 TL
+    mcc_mnc_off += apn_name_off + apn_name_len;
+    // get total number
+    total_num_off = ber_tlv_get_tlv_length(buf + apn_off);
+    total_num_off += apn_off;
+    total_num = ber_tlv_get_integer(buf + total_num_off, &total_num_len);
+    // get sequential BOOLEAN
+    sequential = (uint8_t)ber_tlv_get_integer(buf + total_num_off + total_num_len, NULL);
+
     off += size;
     linux_fseek(fp, off, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 8, fp);
     off += get_length(buf, 1);
 
-    rt_os_strcpy(apn, (char *)request->apn.list.array[0]->apnName.buf);
-    rt_os_strcpy(mcc_mnc, (char *)request->apn.list.array[0]->mccMnc.buf);
+    utils_mem_copy(apn, buf + apn_name_off, apn_name_len);
+    apn[apn_name_len] = '\0';
+    utils_mem_copy(mcc_mnc, buf + mcc_mnc_off, mcc_mnc_len);
+    mcc_mnc[mcc_mnc_len] = '\0';
     MSG_PRINTF(LOG_INFO, "apn:%s  mcc_mnc:%s\n", apn, mcc_mnc);
 
-    selected_profile_index = get_selecte_profile_index((uint32_t)request->totalNum);
+    selected_profile_index = get_selecte_profile_index(total_num);
 
-    if (request->sequential == 0xFF) { // Successive profile: same iccid, successive imsi
+    if (sequential == 0xFF) { // Successive profile: same iccid, successive imsi
         profile_len = get_length(buf, 0);
     } else { // non-successive profile
-        profile_len = get_length(buf, 0) / request->totalNum;
+        profile_len = get_length(buf, 0) / total_num;
         off += selected_profile_index * profile_len;
     }
     profile_buffer = (uint8_t *) rt_os_malloc(profile_len);
     linux_fseek(fp, off, RT_FS_SEEK_SET);
     linux_fread(profile_buffer, 1, profile_len, fp);
 
-    build_profile(profile_buffer, profile_len, selected_profile_index, request->sequential, mcc, profile, len_out);
+    build_profile(profile_buffer, profile_len, selected_profile_index, sequential, mcc, profile, len_out);
     rt_os_free(profile_buffer);
     ret = RT_SUCCESS;
 end:
-    if (request != NULL) {
-        ASN_STRUCT_FREE(asn_DEF_ProfileInfo1, request);
-    }
     return ret;
 }
 
@@ -556,29 +553,20 @@ int32_t bootstrap_get_key(void)
 {
     uint8_t data[512];
     int32_t data_len = 0;
-    asn_enc_rval_t ec;
     int32_t ret = RT_ERROR;
-    SetRootKeyRequest_t key_request = {0};
 
     get_specify_data(data, &data_len, g_data.root_sk_offset);
-    key_request.rootEccSk = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, data_len);
+    g_buf_size = ber_tlv_build_tlv(0x80, data_len, data, g_buf);
 
-    get_specify_data(data , &data_len, g_data.aes_key_offset);
-    key_request.rootAesKey = OCTET_STRING_new_fromBuf(&asn_DEF_SetRootKeyRequest, data, data_len);
+    get_specify_data(data, &data_len, g_data.aes_key_offset);
+    g_buf_size += ber_tlv_build_tlv(0x81, data_len, data, g_buf + g_buf_size);
 
-    g_buf_size = 0;
-    ec = der_encode(&asn_DEF_SetRootKeyRequest, &key_request, encode_cb_fun, NULL);
-    if (ec.encoded == -1) {
-        MSG_PRINTF(LOG_ERR, "encoded:%ld\n", ec.encoded);
-        goto end;
-    }
+    g_buf_size = ber_tlv_build_tlv(TAG_LPA_SET_ROOT_KEY_REQ, g_buf_size, g_buf, g_buf);
 
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_SETTING_KEY, g_buf, g_buf_size);
     ret = RT_SUCCESS;
 end:
     //ASN_STRUCT_FREE(asn_DEF_SetRootKeyRequest, &key_request);
-    rt_os_free(g_buf);
-    g_buf = NULL;
 
     return ret;
 }
