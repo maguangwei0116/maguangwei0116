@@ -28,6 +28,9 @@ static cJSON *upload_init_packer(void *arg)
     const char *deviceId= g_upload_device_info->device_id;
     const char *sn      = g_upload_device_info->sn;
     const char *model   = g_upload_device_info->model;
+    card_type_e cardType  = g_upload_device_info->card_type;
+    
+    MSG_PRINTF(LOG_INFO, "card_type:[%d] \n", cardType);
 
     deviceInfo = cJSON_CreateObject();
     if (!deviceInfo) {
@@ -40,7 +43,7 @@ static cJSON *upload_init_packer(void *arg)
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, deviceId);
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, sn);
     CJSON_ADD_NEW_STR_OBJ(deviceInfo, model);
-    
+    CJSON_ADD_NEW_INT_OBJ(deviceInfo, cardType);
     ret = 0;
     
 exit_entry:

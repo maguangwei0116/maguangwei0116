@@ -25,11 +25,17 @@ IMEI less than 15 bytes, model less than 8 bytes, serialNo less than 12 bytes; f
 #define MAX_DEVICE_MODEL_LEN            8
 #define MAX_DEVICE_SN_LEN               12
 
+typedef enum CARD_TYPE {
+    CARD_TYPE_vUICC               	= 0,
+    CARD_TYPE_eUICC               	= 1,
+} card_type_e;
+
 typedef struct DEVICE_INFO {
     uint8_t device_id[MAX_DEVICE_ID_LEN + 1];
     uint8_t imei[MAX_DEVICE_IMEI_LEN + 1];
     uint8_t sn[MAX_DEVICE_SN_LEN + 1];
     uint8_t model[MAX_DEVICE_MODEL_LEN*4 + 1];
+    card_type_e card_type;
 } devicde_info_t;
 
 int32_t init_device_info(void  *arg);

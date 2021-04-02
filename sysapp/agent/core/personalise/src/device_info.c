@@ -44,7 +44,15 @@ int32_t init_device_info(void *arg)
     }
     info.model[MAX_DEVICE_MODEL_LEN - 1] = '\0';
 
+    /* Init cardType(vUICC/eUICC) */
+    if (((public_value_list_t *)arg)->config_info->sim_mode == MODE_TYPE_EUICC) {
+        info.card_type = CARD_TYPE_eUICC;
+    } else {
+        info.card_type = CARD_TYPE_vUICC;
+    }
+
     MSG_PRINTF(LOG_INFO, "device_id:[%s] imei:[%s] model:[%s] sn:[%s]\n", info.device_id, info.imei, info.model, info.sn);
+    MSG_PRINTF(LOG_INFO, "card_type:[%d] \n", info.card_type);
 
     ((public_value_list_t *)arg)->device_info = &info;
 
