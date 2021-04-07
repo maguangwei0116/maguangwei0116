@@ -428,9 +428,9 @@ int https_post_raw(const char *addr, const char *api, const char *body, char *bu
     MSG_PRINTF(LOG_TRACE, "body is %s\n", body);
     ret = upload_https_post(addr, api, body, out_buffer, &out_size);
     if (200 == ret) {
-        cb(out_buffer);
         MSG_PRINTF(LOG_DBG, "out_buffer is %s\n", out_buffer);
-        return 0;
+        ret = cb(out_buffer);
+        return ret;
     } else {
         MSG_PRINTF(LOG_WARN, "upload_https_post return is %d the buffer is %s\n", ret, out_buffer);
         return ret;

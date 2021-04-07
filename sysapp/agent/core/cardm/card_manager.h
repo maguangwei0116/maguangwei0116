@@ -95,5 +95,6 @@ int32_t card_manager_install_profile_ok(void);
 int32_t card_get_avariable_profile_num(int32_t *avariable_num);
 int32_t card_switch_type(cJSON *switchparams);
 int32_t uicc_switch_card(profile_type_e type, uint8_t *iccid);
+int32_t card_update_last_eid(const char *eid);
 
 #endif // __CARD_MANAGER_H__

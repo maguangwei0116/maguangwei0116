@@ -74,9 +74,6 @@ static int32_t card_check_init_upload(const uint8_t *eid)
         ret = get_upload_event_result("INIT", NULL, 0, NULL);
         if (ret == RT_SUCCESS) {
             upload_event_report("INFO", NULL, 0, NULL);     // Request update and push ac events
-            snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
-            rt_write_eid(0, g_last_eid, sizeof(g_last_eid));
-            MSG_PRINTF(LOG_INFO, "EID updated : %s\n", g_last_eid);
         }
         msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
     }
@@ -442,6 +439,13 @@ int32_t uicc_switch_card(profile_type_e type, uint8_t *iccid)
         }
     }
     msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_CARD_ENABLE_EXIST_CARD, iccid, rt_os_strlen(iccid));
+    return RT_SUCCESS;
+}
+
+int32_t card_update_last_eid(const char *eid)
+{
+    snprintf(g_last_eid, sizeof(g_last_eid), "%s", (const char *)eid);
+    rt_write_eid(0, g_last_eid, sizeof(g_last_eid));
     return RT_SUCCESS;
 }
 

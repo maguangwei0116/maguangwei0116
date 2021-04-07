@@ -77,6 +77,82 @@ static int32_t upload_deal_rsp_msg(const char *msg)
     return state;
 }
 
+static int32_t parse_upload_event(const char *data, int32_t data_len, uint8_t *eid)
+{
+    int32_t ret = RT_ERROR;
+    cJSON *agent_msg = NULL;
+    cJSON *tran_id = NULL;
+    cJSON *topic = NULL;
+    cJSON *payload = NULL;
+    cJSON *event = NULL;
+    cJSON *content = NULL;
+    uint8_t *buf = NULL;    
+    int32_t len = 0;
+
+    do {
+        agent_msg = cJSON_Parse(data);
+        if (!agent_msg) {
+            MSG_PRINTF(LOG_ERR, "message parse failed!!\n");
+            break;
+        }
+        tran_id = cJSON_GetObjectItem(agent_msg, "tranId");
+        if (!tran_id) {
+            MSG_PRINTF(LOG_ERR, "Prase tranId failed!!\n");
+            break;
+        }
+        topic = cJSON_GetObjectItem(agent_msg, "topic");
+        if (!topic) {
+            MSG_PRINTF(LOG_ERR, "Prase topic failed!!\n");
+            break;
+        }
+        MSG_PRINTF(LOG_TRACE, "topic:%s\n", topic->valuestring);
+
+        payload = cJSON_GetObjectItem(agent_msg, "payload");
+        if (!payload) {
+            MSG_PRINTF(LOG_ERR, "Prase payload failed!!\n");
+            break;
+        }
+        len = rt_os_strlen(payload->valuestring);
+        buf = (uint8_t *)rt_os_malloc(len + 1);
+        if (!buf) {
+            MSG_PRINTF(LOG_ERR, "Malloc buf failed!!\n");
+            break;
+        }
+        rt_os_memcpy(buf, payload->valuestring, len);
+        buf[len] = '\0';
+        MSG_PRINTF(LOG_TRACE, "payload:%s,len:%d\n", buf, len);
+
+        payload = cJSON_Parse((uint8_t *)buf);
+        if (!payload) {
+            MSG_PRINTF(LOG_ERR, "Parse payload failed!!\n");
+            break;
+        }
+        event = cJSON_GetObjectItem(payload, "event");
+        if (!event) {
+            MSG_PRINTF(LOG_ERR, "Parse event failed!!\n");
+            break;
+        } 
+        MSG_PRINTF(LOG_TRACE, "event:%s\n", event->valuestring);
+        len = rt_os_strlen(event->valuestring);
+        if (rt_os_strcmp(event->valuestring, "INIT")) {
+            MSG_PRINTF(LOG_ERR, "unmatched INIT!!\n");
+            break;
+        }
+        len = rt_os_strlen(topic->valuestring);
+        rt_os_memcpy(eid, topic->valuestring, len);
+        eid[len] = '\0';
+        ret = RT_SUCCESS;
+    } while(0);
+    
+    if (agent_msg != NULL) {
+        cJSON_Delete(agent_msg);
+    }
+    if (buf != NULL) {
+        rt_os_free((void *)buf);
+    }
+    return ret;
+}
+
 static int32_t upload_send_http_request(const char *data, int32_t data_len)
 {
     int32_t ret = RT_ERROR;
@@ -85,14 +161,17 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
     char file[MAX_FILE_NAME_LEN] = {0};
     char host_addr[HOST_ADDRESS_LEN];
     uint8_t lpbuf[BUFFER_SIZE * 4] = {0};
+    uint8_t eid[MAX_EID_LEN + 1] = {0};
     int32_t send_len;
     int32_t port = 0;
+    int32_t is_init = RT_ERROR;
 
     if (!data) {
         // MSG_PRINTF(LOG_WARN, "out buffer error\n");
         ret = HTTP_PARAMETER_ERROR;
         return ret;
     }
+    is_init = parse_upload_event(data, data_len, eid);
 
     //MSG_PRINTF(LOG_WARN, "len=%d, Upload:%s\r\n", rt_os_strlen((const char *)out), (const char *)out);
 
@@ -118,7 +197,14 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
     ret = upload_http_post_single(host_addr, port, upload_deal_rsp_msg, lpbuf, send_len);
     // MSG_PRINTF(LOG_INFO, "send queue %d bytes, ret=%d\r\n", send_len, ret);
 #endif
-
+    if (is_init == RT_SUCCESS) {
+        if (ret == 0) {
+            card_update_last_eid((const char *)eid);
+            MSG_PRINTF(LOG_INFO, "EID updated : %s\n", eid);
+        } else {
+            MSG_PRINTF(LOG_INFO, "upload INIT failed!\n");
+        }
+    }
 exit_entry:
 
     return ret;
