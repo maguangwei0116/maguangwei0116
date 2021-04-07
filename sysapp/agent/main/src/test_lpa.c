@@ -7,6 +7,7 @@
 #include "lpa_config.h"
 #include "apdu.h"
 #include "log.h"
+#include "config.h"
 
 #define RT_DATA_PATH            CFG_AGENT_RUN_PATH
 
@@ -93,10 +94,11 @@ static int get_uicc_mode(void)
     if (ret > 0) {
         mode = atoi(rsp);
         fprintf(stderr, "Config UICC mode: %s\n", rsp);
-        if (mode == LPA_CHANNEL_BY_QMI || mode == LPA_CHANNEL_BY_IPC) {
-            g_chan_mode = mode;
-            // g_chan_mode = LPA_CHANNEL_BY_QMI;
-        } 
+        if (mode == MODE_TYPE_EUICC) {
+            g_chan_mode = LPA_CHANNEL_BY_QMI;
+        } else {
+            g_chan_mode = LPA_CHANNEL_BY_IPC;
+        }
     }
 
     return ret;
