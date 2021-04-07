@@ -16,6 +16,7 @@
 #include "ping_task.h"
 #include "agent_queue.h"
 #include "network_detection.h"
+#include "rt_qmi.h"
 
 static rt_bool                      g_sim_switch            = RT_TRUE;
 static proj_mode_e *                g_project_mode          = NULL;
@@ -192,6 +193,24 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
     }
 }
 
+static rt_bool is_operating_mode_online(void) 
+{
+    uint8_t mode = 0;
+    rt_bool ret = RT_FALSE;
+
+    if (rt_qmi_get_operating_mode(&mode) != RT_SUCCESS) {
+        MSG_PRINTF(LOG_DBG, "query operating mode failed\r\n");
+        goto exit;
+    }
+    MSG_PRINTF(LOG_DBG, "operating mode: %d\r\n", mode);
+    if (mode == RT_QMI_OP_MODE_ONLINE) {
+        ret = RT_TRUE;
+    }
+
+exit:    
+    return ret;  
+}
+
 static void network_ping_task(void *arg)
 {
     int32_t ii = 0;
@@ -242,10 +261,11 @@ static void network_ping_task(void *arg)
             if (*g_card_type == PROFILE_TYPE_PROVISONING || *g_card_type == PROFILE_TYPE_TEST) {
                 ret = rt_ping_provisoning_get_status();
 
-            } else if (*g_card_type == PROFILE_TYPE_OPERATIONAL 
+            } else if ((*g_card_type == PROFILE_TYPE_OPERATIONAL 
 #ifdef CFG_SIM_DETECT_ON
             || *g_card_type == PROFILE_TYPE_SIM
 #endif
+            ) && (is_operating_mode_online() == RT_TRUE)
             ) {
                 type = cJSON_GetObjectItem(network_detect, "type");
                 strategy_list = cJSON_GetObjectItem(network_detect, "strategies");

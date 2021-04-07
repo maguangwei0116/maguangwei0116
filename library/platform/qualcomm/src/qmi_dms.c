@@ -135,3 +135,28 @@ out:
     qmi_client_release(dms_client);
     return err;
 }
+
+int qmi_query_operating_mode(uint8_t *mode)
+{
+    qmi_client_error_type err;
+    qmi_client_type dms_client;
+    qmi_idl_service_object_type idl_service_object;
+    dms_get_operating_mode_req_msg_v01  req = { 0 };
+    dms_get_operating_mode_resp_msg_v01 resp = { 0 };
+
+    idl_service_object = dms_get_service_object_internal_v01(DMS_V01_IDL_MAJOR_VERS,RT_DMS_V01_IDL_MINOR_VERS,DMS_V01_IDL_TOOL_VERS);
+    err = qmi_ctrl_point_init(idl_service_object, &dms_client, NULL, NULL);
+    if (err != QMI_NO_ERR) {
+        MSG_PRINTF(LOG_WARN, "failed to initialize control point of DMS: %d\n", err);
+        goto out;
+    }
+    QMI_CLIENT_SEND_SYNC(err, dms_client, QMI_DMS_GET_OPERATING_MODE_REQ_V01, req, resp);
+    if (err != QMI_NO_ERR) {
+        MSG_PRINTF(LOG_WARN, "failed to get operating mode of DMS: %d\n", err);
+        goto out;
+    }
+    *mode = resp.operating_mode;
+out:
+    qmi_client_release(dms_client);
+    return err;  
+} 
