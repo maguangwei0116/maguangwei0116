@@ -13,8 +13,10 @@
 
 #ifndef __AGENT_2_MONITOR_H__
 #define __AGENT_2_MONITOR_H__
-
+#include "rt_type.h"
 #include "config.h"
+
+#define SERVER_PATH                             ".data.redtea.server"
 
 typedef enum AGENT_MONITOR_CMD {
     CMD_SET_PARAM       = 0x00,

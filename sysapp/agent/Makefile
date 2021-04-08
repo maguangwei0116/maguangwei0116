@@ -79,7 +79,6 @@ vpath %.c ./core/logm
 vpath %.c ./core/usrdata
 vpath %.c ./core/networkd
 vpath %.c ./main
-vpath %.c ./ipc
 vpath %.c ./lpa
 vpath %.c ./core/ota
 vpath %.c ./core/personalise
@@ -108,7 +107,6 @@ SRC-y                                   += src/card_manager.c
 SRC-y                                   += src/card_detection.c
 SRC-y                                   += src/card_flow_control.c
 SRC-y                                   += src/msg_process.c
-SRC-y                                   += src/ipc_socket_client.c
 SRC-y                                   += src/network_detection.c
 SRC-y                                   += src/ping_task.c
 SRC-y                                   += src/lpa.c
@@ -149,6 +147,9 @@ SRC-$(CFG_AGENT_PERSONALISE_ON)         += ./core/personalise/src/downstream_iss
 SRC-$(CFG_AGENT_OTA_ON)                 += ./core/ota/src/upgrade.c
 SRC-$(CFG_AGENT_OTA_ON)                 += ./core/ota/src/ota_upgrade.c
 
+SRC-y                                   += ./core/ipc/src/ipc_task.c
+SRC-y                                   += ./core/ipc/src/agent_command.c
+
 # logger manager module
 SRC-y                                   += ./core/logm/src/logm.c
 
@@ -180,12 +181,12 @@ INC-PATH-y 		                        += ./core/queue/
 INC-PATH-y 		                        += ./core/cardm/
 INC-PATH-y 		                        += ./core/networkd/
 INC-PATH-y 		                        += ./main/
-INC-PATH-y 		                        += ./ipc/
 INC-PATH-y 		                        += ./lpa/
 INC-PATH-y 		                        += ./core/upload/
 INC-PATH-y 		                        += ./core/ota/
 INC-PATH-y 		                        += ./core/downstream/
 INC-PATH-$(CFG_FACTORY_MODE_ON)         += ./core/factory/inc/
+INC-PATH-y 		                        += ./core/ipc/
 INC-PATH-y 		                        += ./core/logm/
 INC-PATH-y 		                        += ./core/agent2monitor/
 INC-PATH-y 		                        += ./core/at/

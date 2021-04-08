@@ -60,5 +60,7 @@ void    network_force_down(void);
 
 void network_update_switch(network_update_switch_e state);
 
+int32_t network_get_state(void);
+
 #endif // __NETWORK_DETECTION_H__
 

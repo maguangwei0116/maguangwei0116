@@ -105,8 +105,6 @@ static int32_t parse_upload_event(const char *data, int32_t data_len, uint8_t *e
             MSG_PRINTF(LOG_ERR, "Prase topic failed!!\n");
             break;
         }
-        MSG_PRINTF(LOG_TRACE, "topic:%s\n", topic->valuestring);
-
         payload = cJSON_GetObjectItem(agent_msg, "payload");
         if (!payload) {
             MSG_PRINTF(LOG_ERR, "Prase payload failed!!\n");
@@ -120,7 +118,6 @@ static int32_t parse_upload_event(const char *data, int32_t data_len, uint8_t *e
         }
         rt_os_memcpy(buf, payload->valuestring, len);
         buf[len] = '\0';
-        MSG_PRINTF(LOG_TRACE, "payload:%s,len:%d\n", buf, len);
 
         payload = cJSON_Parse((uint8_t *)buf);
         if (!payload) {
@@ -132,10 +129,8 @@ static int32_t parse_upload_event(const char *data, int32_t data_len, uint8_t *e
             MSG_PRINTF(LOG_ERR, "Parse event failed!!\n");
             break;
         } 
-        MSG_PRINTF(LOG_TRACE, "event:%s\n", event->valuestring);
         len = rt_os_strlen(event->valuestring);
         if (rt_os_strcmp(event->valuestring, "INIT")) {
-            MSG_PRINTF(LOG_ERR, "unmatched INIT!!\n");
             break;
         }
         len = rt_os_strlen(topic->valuestring);
@@ -202,7 +197,7 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
             card_update_last_eid((const char *)eid);
             MSG_PRINTF(LOG_INFO, "EID updated : %s\n", eid);
         } else {
-            MSG_PRINTF(LOG_INFO, "upload INIT failed!\n");
+            MSG_PRINTF(LOG_TRACE, "upload INIT failed!\n");
         }
     }
 exit_entry:

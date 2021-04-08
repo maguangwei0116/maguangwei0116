@@ -33,7 +33,9 @@
 #include "agent_main.h"
 #include "rt_timer.h"
 #include "ping_task.h"
-
+#ifdef CFG_OPEN_MODULE
+#include "ipc_task.h"
+#endif
 #include "usrdata.h"
 #ifdef CFG_STANDARD_MODULE
 #include "customer_at.h"
@@ -313,6 +315,9 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_ota,                  (void *)&g_value_list),
     INIT_OBJ(init_logm,                 (void *)&g_value_list),
     INIT_OBJ(init_ping_task,            (void *)&g_value_list),
+#ifdef CFG_OPEN_MODULE
+    INIT_OBJ(init_ipc_task,            (void *)&g_value_list),
+#endif
 };
 
 static int32_t agent_init_call(void)

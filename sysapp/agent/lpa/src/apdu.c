@@ -22,7 +22,7 @@ static int32_t local_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8
     extern int32_t rt_qmi_exchange_apdu(const uint8_t *data, uint16_t data_len, uint8_t *rsp, uint16_t *rsp_len);
     return rt_qmi_exchange_apdu(data, data_len, rsp, rsp_len);
 #else
-    return ipc_send_data(data, data_len, rsp, rsp_len);
+    return ipc_send_data(SERVER_PATH, data, data_len, rsp, rsp_len);
 #endif
 }
 

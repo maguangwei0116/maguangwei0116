@@ -27,5 +27,10 @@ if exist .\app_targets\test_lpa (
 	adb shell chmod +x /data/redtea/test_lpa
 )
 
+if exist .\app_targets\test_client (
+	adb push .\app_targets\test_client /data/redtea/test_client
+	adb shell chmod +x /data/redtea/test_client
+)
+
 adb shell rm -rf /etc/rc5.d/S99start_redtea_app
 adb shell ln -s /etc/init.d/start_redtea_app /etc/rc5.d/S99start_redtea_app

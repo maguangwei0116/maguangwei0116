@@ -1,7 +1,7 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : ipc_socket_server.c
+ * File name   : ipc_socket_client.c
  * Date        : 2019.08.07
  * Note        :
  * Description :
@@ -16,7 +16,7 @@
 
 #define MAT_SOCKET_BUFFER   1024
 
-int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
+int32_t ipc_send_data(const char *server_addr, const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
 {
     int32_t socket_id = -1;
     int32_t ret = RT_ERROR;
@@ -25,8 +25,7 @@ int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t 
     if (socket_id <= 0) {
         return RT_ERROR;
     }
-
-    ret = socket_connect(socket_id);
+    ret = socket_connect(server_addr, socket_id);
     if (ret < 0) {
         MSG_PRINTF(LOG_ERR, "connet server failed\n");
         goto end;

@@ -1,7 +1,7 @@
 
 /*******************************************************************************
  * Copyright (c) redtea mobile.
- * File name   : ipc_socket_server.h
+ * File name   : ipc_socket.h
  * Date        : 2019.08.07
  * Note        :
  * Description :
@@ -11,12 +11,14 @@
  * are made available under the terms of the Sublime text
  *******************************************************************************/
 
-#ifndef __IPC_SOCKET_CLIENT__
-#define __IPC_SOCKET_CLIENT__
+#ifndef __IPC_SOCKET_CLIENT_H__
+#define __IPC_SOCKET_CLIENT_H__
 
 #include "rt_type.h"
 
-int32_t init_ipc_client(void *arg);
-int32_t ipc_send_data(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
+int32_t ipc_socket_server(const char *server_addr);
+void    ipc_regist_callback(void *fun);
+rt_bool ipc_server_check(void);
 
-#endif // __IPC_SOCKET_CLIENT__
+#endif // __IPC_SOCKET_CLIENT_H__
+

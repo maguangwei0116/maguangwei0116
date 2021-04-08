@@ -23,6 +23,7 @@ static proj_mode_e *                g_project_mode          = NULL;
 static mode_type_e *                g_sim_mode              = NULL;
 static profile_type_e *             g_card_type             = NULL;
 static profile_sim_cpin_e *         g_sim_cpin              = NULL;
+static uint8_t *                    g_sim_monitor           = NULL;
 static uint8_t                      g_operation_num         = 0;
 static rt_bool                      g_network_state         = RT_FALSE;
 static rt_bool                      g_downstream_event      = RT_FALSE;
@@ -195,7 +196,7 @@ static void rt_judge_card_status(profile_type_e *last_card_type)
 
 static rt_bool is_operating_mode_online(void) 
 {
-    uint8_t mode = 0;
+    rt_qmi_operating_mode_e mode = 0;
     rt_bool ret = RT_FALSE;
 
     if (rt_qmi_get_operating_mode(&mode) != RT_SUCCESS) {
@@ -263,7 +264,7 @@ static void network_ping_task(void *arg)
 
             } else if ((*g_card_type == PROFILE_TYPE_OPERATIONAL 
 #ifdef CFG_SIM_DETECT_ON
-            || *g_card_type == PROFILE_TYPE_SIM
+            || ((*g_card_type == PROFILE_TYPE_SIM) && *g_sim_monitor)
 #endif
             ) && (is_operating_mode_online() == RT_TRUE)
             ) {
@@ -374,6 +375,7 @@ int32_t init_ping_task(void *arg)
     g_card_type     = (profile_type_e *)&(((public_value_list_t *)arg)->card_info->type);
     g_sim_cpin      = (profile_sim_cpin_e *)&(((public_value_list_t *)arg)->card_info->sim_info.state);
     g_operation_num = (((public_value_list_t *)arg)->card_info->operational_num);
+    g_sim_monitor   = (uint8_t *)&((public_value_list_t *)arg)->config_info->sim_monitor_enable;
 
     if (*g_project_mode == PROJECT_SV && (*g_sim_mode == MODE_TYPE_SIM_FIRST || *g_sim_mode == MODE_TYPE_VUICC || *g_sim_mode == MODE_TYPE_EUICC)) {
         ret = rt_create_task(&task_id, (void *)network_ping_task, NULL);

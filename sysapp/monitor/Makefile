@@ -46,7 +46,6 @@ VUICC-LIB                           = xUICC skb stdc++
 ############################################################################
 ### path
 ############################################################################
-vpath %.c ./ipc
 vpath %.c ./vuicc
 vpath %.c ./cover
 
@@ -57,7 +56,6 @@ INC-PATH	= ./inc
 SRC-y 		+= $(SRC-PATH)/vuicc_callback.c
 SRC-y 		+= $(SRC-PATH)/cb_io.c
 SRC-y 		+= $(SRC-PATH)/vuicc_apdu.c
-SRC-y 		+= $(SRC-PATH)/ipc_socket_server.c
 SRC-y 		+= $(SRC-PATH)/main.c
 
 SRC-y 		+= ./core/backup/src/parse_backup.c
@@ -66,8 +64,6 @@ SRC-y 		+= ./core/networkd/src/network_detection.c
 SRC-y 		+= ./core/download/src/download_file.c
 SRC-y 		+= ./core/inspect/src/inspect_file.c
 # Config your include file path by += xxx-inc
-INC-y 		+= ./ipc/
-INC-y 		+= ./ipc/$(INC-PATH)
 INC-y 		+= ./core/backup
 INC-y 		+= ./core/backup/$(INC-PATH)
 INC-y 		+= ./core/inspect

@@ -62,6 +62,9 @@
 #define STAG_ENV_MODE                       1
 #define MAX_LOG_SIZE                        5
 
+#define SIM_MONITOR_MODE_DISABLE            "0"
+#define SIM_MONITOR_MODE_ENABLE             "1"
+
 #if 0 // @ref cJSON.h
 /* cJSON Types: */
 #define cJSON_False                         0
@@ -215,6 +218,7 @@ ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG
 ITEM(USAGE_ENABLE,              config_switch_value,        INTEGER,        "0",                            "Whether enable upload user traffic (0:disable  1:enable)"),
 ITEM(USAGE_FREQ,                config_usage_freq,          INTEGER,        "60",                           "Frequency of upload user traffic (60 <= x <= 1440 Mins)"),
 ITEM(CARD_FLOW_SWITCH,          config_card_flow_switch,    INTEGER,        "1",                            "The switch of seed card flow control(0:close 1:open)"),
+ITEM(SIM_MONITOR_ENABLE,            NULL,                   INTEGER,        "1",                            "The switch of SIM card monitor(0:disable 1:enable)"),
 };
 
 static config_info_t g_config_info;
@@ -492,6 +496,8 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
 
     infos->flow_control_switch = msg_string_to_int(local_config_get_data("CARD_FLOW_SWITCH"));
 
+    infos->sim_monitor_enable = msg_string_to_int(local_config_get_data("SIM_MONITOR_ENABLE"));
+
     return RT_SUCCESS;
 }
 
@@ -516,6 +522,7 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_INFO, "USAGE_ENABLE          : %s\n",    local_config_get_data("USAGE_ENABLE"));
     MSG_PRINTF(LOG_INFO, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
     MSG_PRINTF(LOG_INFO, "CARD_FLOW_SWITCH      : %s\n",    local_config_get_data("CARD_FLOW_SWITCH"));
+    MSG_PRINTF(LOG_INFO, "SIM_MONITOR_ENABLE    : %s\n",    local_config_get_data("SIM_MONITOR_ENABLE"));
 }
 
 int32_t init_config(void *arg)
@@ -736,6 +743,35 @@ int32_t config_get_uicc_mode(const char *app_path, int32_t *mode)
     }
 
     return ret;
+}
+
+int32_t config_get_sim_monitor(int32_t *mode)
+{
+    const char *key = "SIM_MONITOR_ENABLE";
+    char value[256] = {0};
+    int32_t ret = RT_ERROR;
+
+    ret = config_get_key_value_fast(RT_DATA_PATH, key, value);
+    if (!ret && mode) {
+        *mode = msg_string_to_int(value);
+    }
+    
+    return ret;
+}
+
+int32_t config_update_sim_monitor(int32_t mode)
+{ 
+    const char *sim_monitor_key = "SIM_MONITOR_ENABLE";
+    const char *value = (mode == 0) ? SIM_MONITOR_MODE_DISABLE : SIM_MONITOR_MODE_ENABLE;
+
+    int32_t pair_num = ARRAY_SIZE(g_config_items);
+    config_item_t *items = g_config_items;
+
+    config_set_data(sim_monitor_key, value, pair_num, items);
+    config_write_file(CONFIG_FILE_PATH, pair_num, items);
+    rt_os_sync();
+
+    return RT_SUCCESS;
 }
 
 /* remote config error code list */
