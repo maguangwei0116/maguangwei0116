@@ -35,10 +35,8 @@ REDTEA_OEMAPP_SKB_SO=../sysapp/monitor/vuicc/lib/libskb.so
 REDTEA_OEMAPP_TOOLS=../doc/tools/
 REDTEA_OEMAPP_SHARE_PROFILES=../doc/share_profile/$(RELEASE_OEMAPP_ENV_TYPE)/*.der
 REDTEA_OEMAPP_SHARE_PROFILE=rt_share_profile.der
-ifeq ($(BR2_CFG_FACTORY_MODE_ON),y)
 REDTEA_OEMAPP_FACTORY_PROFILES=../doc/share_profile/test/*.der
 REDTEA_OEMAPP_FACTORY_PROFILE=rt_factory_profile.der
-endif
 REDTEA_OEMAPP_LOCAL_BUILD_DATE=$(shell date "+%Y%m%d")
 
 # Auto generate oemapp cfg file
