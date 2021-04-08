@@ -16,8 +16,6 @@
 
 #include "rt_type.h"
 
-#ifdef CFG_OPEN_MODULE
-
 typedef enum AGENT_CMD {
     AGENT_CMD_SET_PARAM       		= 0x00,
     AGENT_CMD_GET_PARAM       		= 0x01,
@@ -36,16 +34,16 @@ typedef struct AGENT_CMD_SET_PARAM_DATA {
     uint8_t         value[1];			// value of parameter
 } agent_cmd_set_param_data_t;
 
-typedef enum AGENT_CMD_SET_CARD_TYPE_PARAM {
-    AGENT_CMD_SET_CARD_TYPE_VSIM	= 0x00,
-    AGENT_CMD_SET_CARD_TYPE_SIM		= 0x01,
-} agent_cmd_set_card_type_param_e;
-
 typedef struct AGENT_CMD_GET_PARAM_DATA {
     uint8_t         type;               // type of parameter
     uint8_t         length[2];          // length of parameter
     uint8_t         value[1];           // value of parameter
 } agent_cmd_get_param_data_t;
+
+typedef enum AGENT_CMD_CARD_TYPE_PARAM {
+    AGENT_CMD_CARD_TYPE_VSIM        = 0x00,
+    AGENT_CMD_CARD_TYPE_SIM         = 0x01,
+} agent_cmd_card_type_param_e;
 
 typedef enum AGENT_RESULT {
     AGENT_RESULT_OK                             = 0x00,
@@ -66,7 +64,5 @@ typedef struct AGENT_RSP {
     uint8_t         length[2];	    	// length of resp
     uint8_t         value[1];			// data of resp
 } agent_rsp_t;
-
-#endif // CFG_OPEN_MODULE
 
 #endif // __AGENT_COMMAND_H__

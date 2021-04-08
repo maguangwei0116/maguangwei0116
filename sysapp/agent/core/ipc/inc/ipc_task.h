@@ -16,10 +16,6 @@
 
 #include "rt_type.h"
 
-#ifdef CFG_OPEN_MODULE
-
 int32_t init_ipc_task(void *arg);
-
-#endif
 
 #endif // __IPC_TASK_H__

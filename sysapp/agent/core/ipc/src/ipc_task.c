@@ -42,5 +42,3 @@ int32_t init_ipc_task(void *arg)
     return RT_SUCCESS;
 }
 
-#endif // CFG_OPEN_MODULE
-
