@@ -62,7 +62,13 @@ static int connect_tcp(const char *host_name, const char *addr)
             MSG_PRINTF(LOG_ERR, "setsockopt error\n");
             return RT_ERR_HTTPS_CONNECT_SOCKET_FAIL;
         }
-        error = connect(handle, (struct sockaddr *)&server, sizeof(server));
+        
+        do {
+            error = connect(handle, (struct sockaddr *)&server, sizeof(server));
+            if (error < 0) {
+                MSG_PRINTF(LOG_WARN, "connect fd=%d, error(%d)=%s\r\n", handle, errno, strerror(errno));
+            }
+        } while (error == -1 && errno == EINTR);        
         if (error < 0) {
             MSG_PRINTF(LOG_ERR, "Connect TCP failed\n");
             return RT_ERR_HTTPS_CONNECT_SOCKET_FAIL;
@@ -167,14 +173,30 @@ int https_init(https_ctx_t *https_ctx, const char *host, const char *port, const
 }
 
 int https_post(https_ctx_t *https_ctx, const char *request)
-{
+{    
+    int ret = -1;
+
     // MSG_PRINTF(LOG_TRACE, "request[%d]:\n%s\n\n\n", (int)rt_os_strlen(request), request);
-    return SSL_write(https_ctx->ssl, request, rt_os_strlen(request));
+
+    do {
+        ret = SSL_write(https_ctx->ssl, request, rt_os_strlen(request));
+    } while (ret == -1 && errno == EINTR);
+
+    return ret; 
 }
 
 int https_read(https_ctx_t *https_ctx, char *buffer, int buffer_size)
 {
-    return SSL_read(https_ctx->ssl, buffer, buffer_size);
+    int ret = -1;
+
+    do {
+        ret = SSL_read(https_ctx->ssl, buffer, buffer_size);
+		if (ret < 0) {
+        	MSG_PRINTF(LOG_WARN, "connect fd=%d, error(%d)=%s\r\n", https_ctx->socket, errno, strerror(errno));
+		}		
+    } while (ret == -1 && errno == EINTR);
+
+    return ret;    
 }
 
 void https_free(https_ctx_t *https_ctx)

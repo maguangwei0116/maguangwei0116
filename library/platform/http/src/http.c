@@ -46,6 +46,7 @@ void http_get_ip_addr(const char *domain, char *ip_addr)
 int32_t http_tcpclient_create(const char *addr, int32_t port)
 {
     int32_t socket_fd;
+    int32_t ret = RT_ERROR;
     char convert_ip[HOST_ADDRESS_LEN] = {0};
     struct in_addr ipAddr;
     struct sockaddr_in server_addr;
@@ -68,7 +69,13 @@ int32_t http_tcpclient_create(const char *addr, int32_t port)
     setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(struct timeval));
     setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(struct timeval));
 
-    if (connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) < 0) {
+    do {
+        ret = connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
+        if (ret < 0) {
+            MSG_PRINTF(LOG_WARN, "connect fd=%d, error(%d)=%s\r\n", socket_fd, errno, strerror(errno));
+        }
+    } while (ret == -1 && errno == EINTR);
+    if (ret < 0) {
         MSG_PRINTF(LOG_WARN, "connect fd=%d, error(%d)=%s\r\n", socket_fd, errno, strerror(errno));
         /* MUST: close this fd !!! */
         http_tcpclient_close(socket_fd);
