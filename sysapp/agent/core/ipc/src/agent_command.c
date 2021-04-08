@@ -18,8 +18,6 @@
 #include "agent_queue.h"
 #include "ipc_agent_command.h"
 
-#ifdef CFG_OPEN_MODULE
-
 #define AT_CONTENT_DELIMITER            ','
 #define MAX_BUFFER_SIZE                  512
 
@@ -58,7 +56,7 @@ static int32_t set_card_type(const uint8_t *param, uint16_t len, uint8_t *rsp, u
         rsp[0] = AGENT_RESULT_ERR_PARAM_LENGTH_INVALID;
         goto exit;
     }
-    if (param[0] == AGENT_CMD_SET_CARD_TYPE_SIM) {
+    if (param[0] == AGENT_CMD_CARD_TYPE_SIM) {
         if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM && g_p_value_list->card_info->sim_info.state == SIM_READY) {
             send_buf[0] = PROVISONING_NO_INTERNET;
             msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
@@ -70,7 +68,7 @@ static int32_t set_card_type(const uint8_t *param, uint16_t len, uint8_t *rsp, u
             /* nothing to do, just response error code */
             rsp[0] = AGENT_RESULT_ERR_SWITCH_CARD_NOTHING_DONE;
         }
-    } else if (param[0] == AGENT_CMD_SET_CARD_TYPE_VSIM) {
+    } else if (param[0] == AGENT_CMD_CARD_TYPE_VSIM) {
         if (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) {
             send_buf[0] = SIM_NO_INTERNET;
             msg_send_agent_queue(MSG_ID_CARD_MANAGER, MSG_SWITCH_CARD, send_buf, sizeof(send_buf));
@@ -90,7 +88,7 @@ static int32_t get_card_type(uint8_t *rsp, uint16_t *rsp_len)
     rsp[0] = AGENT_RESULT_OK;
     rsp[1] = 0x00;
     rsp[2] = 0x01;
-    rsp[3] = (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) ? AGENT_CMD_SET_CARD_TYPE_SIM : AGENT_CMD_SET_CARD_TYPE_VSIM;
+    rsp[3] = (g_p_value_list->card_info->type == PROFILE_TYPE_SIM) ? AGENT_CMD_CARD_TYPE_SIM : AGENT_CMD_CARD_TYPE_VSIM;
     *rsp_len = 4;
 
     return RT_SUCCESS;
@@ -101,14 +99,11 @@ static int32_t get_iccids(uint8_t *rsp, uint16_t *rsp_len)
     int32_t ii = 0, tmp_len = 0, size = 0;
     char num_string[8];
     uint8_t buf[1024] = {0};
-    //MSG_PRINTF(LOG_INFO, "get_iccids enter\r\n");
 
     rsp[0] = AGENT_RESULT_OK;
     rsp[1] = 0x00;
     rsp[2] = 0x00;
     *rsp_len = 3;
-
-    //MSG_PRINTF(LOG_INFO, "card_info->num: %d\r\n", g_p_value_list->card_info->num);
 
     snprintf(num_string, sizeof(num_string), "%d", g_p_value_list->card_info->num);
     tmp_len = rt_os_strlen(num_string);
@@ -126,14 +121,10 @@ static int32_t get_iccids(uint8_t *rsp, uint16_t *rsp_len)
         buf[size++] = g_p_value_list->card_info->info[ii].state + '0';
     }
 
-    //MSG_PRINTF(LOG_INFO, "size: %d\r\n", size);
-
     tmp_len = snprintf(rsp + 3, MAX_BUFFER_SIZE - 3, "%s", buf);
-    //MSG_PRINTF(LOG_INFO, "tmp_len: %d\r\n", tmp_len);
     rsp[1] = (uint8_t)(tmp_len >> 8) & 0xFF;
     rsp[2] = (uint8_t)(tmp_len) & 0xFF;
     *rsp_len = (uint16_t)(tmp_len + 3);
-    //MSG_PRINTF(LOG_INFO, "get_iccids exit, rsp_len: %d\r\n", *rsp_len);
 
     return RT_SUCCESS;
 }
@@ -176,10 +167,98 @@ static int32_t get_sim_monitor(uint8_t *rsp, uint16_t *rsp_len)
         rsp[3] = (uint8_t)mode;
         *rsp_len = 4;
     } else {
-        rsp[0] = AGENT_RESULT_ERR_GET_SET_SIM_MONITOR;
+        rsp[0] = AGENT_RESULT_ERR_GET_SET_PARAM;
     }
 
     return RT_SUCCESS;    
+}
+
+static int32_t del_all_operational_profiles(void)
+{
+    int32_t ii = 0;
+    int32_t code = RT_ERROR;
+    int32_t ret = RT_SUCCESS;
+    rt_bool opr_iccid_using = RT_FALSE;
+    judge_term_e bootstrap_flag = UPDATE_NOT_JUDGE_BOOTSTRAP;
+
+    for (ii = 0; ii < g_p_value_list->card_info->num; ii++) {
+        if (g_p_value_list->card_info->info[ii].class != PROFILE_TYPE_OPERATIONAL) {
+            continue;
+        }
+        code = msg_delete_profile(g_p_value_list->card_info->info[ii].iccid, &opr_iccid_using);
+        if (opr_iccid_using && code == RT_SUCCESS) {
+            MSG_PRINTF(LOG_TRACE, "delete using operational profile, start bootstrap ...\n");
+            bootstrap_flag = UPDATE_JUDGE_BOOTSTRAP;
+        } else if (code == 1) {
+            code = RT_SUCCESS;
+        }
+        MSG_PRINTF(LOG_TRACE, "msg_delete_profile ii=%d, code=%d, opr_iccid_using=%d\n", ii, code, opr_iccid_using);
+
+        ret |= code;
+    }
+
+    if (ret == RT_SUCCESS) {
+        if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM) {
+            if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+                card_force_enable_provisoning_profile();
+            }
+            rt_os_sleep(3);
+            card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+        }
+    }
+
+    return ret;
+}
+
+static int32_t set_vuicc_mode_and_remove_all_op_profiles(const uint8_t *param, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
+{
+    int32_t  ret = RT_ERROR;
+    uint8_t send_buf[1] = {0};
+
+    rsp[0] = AGENT_RESULT_OK;
+    rsp[1] = 0x00;
+    rsp[2] = 0x00;
+    *rsp_len = 3;
+
+    if (len != 0) {
+        rsp[0] = AGENT_RESULT_ERR_PARAM_LENGTH_INVALID;
+        goto exit;
+    }
+
+    ret = config_update_uicc_mode(MODE_TYPE_VUICC);
+    if (ret != RT_SUCCESS) {
+        rsp[0] = AGENT_RESULT_ERR_SET_UICC_MODE;
+        MSG_PRINTF(LOG_ERR, "update uicc mode to vUICC failed\r\n");
+    }
+    // remove all operational profile
+    ret = del_all_operational_profiles();
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "remove all operational profiles failed\r\n");
+        rsp[0] = AGENT_RESULT_ERR_DEL_ALL_OP_PROFILES;
+        goto exit;        
+    }
+exit:
+    return ret;
+}
+
+static int32_t get_uicc_mode(uint8_t *rsp, uint16_t *rsp_len)
+{
+    int32_t mode = 0;
+
+    rsp[0] = AGENT_RESULT_OK;
+    rsp[1] = 0x00;
+    rsp[2] = 0x00;
+    *rsp_len = 3;
+
+    if (config_get_uicc_mode(RT_DATA_PATH, &mode) == RT_SUCCESS) {
+        rsp[1] = 0x00;
+        rsp[2] = 0x01;
+        rsp[3] = (uint8_t)mode;
+        *rsp_len = 4;
+    } else {
+        rsp[0] = AGENT_RESULT_ERR_GET_SET_PARAM;
+    }
+    return RT_SUCCESS;
 }
 
 static int32_t agent_set_param(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
@@ -194,6 +273,9 @@ static int32_t agent_set_param(const uint8_t *data, uint16_t len, uint8_t *rsp, 
         break;
     case AGENT_CMD_PARAM_SIM_MONITOR:
         ret = set_sim_monitor(&param->value[0], param_length, rsp, rsp_len);
+        break;
+    case AGENT_CMD_PARAM_RESET:
+        ret = set_vuicc_mode_and_remove_all_op_profiles(&param->value[0], param_length, rsp, rsp_len);
         break;
     default:
         MSG_PRINTF(LOG_ERR, "Parameter type is invalid\r\n");
@@ -270,17 +352,12 @@ int32_t agent_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp
             if (ret != RT_SUCCESS) {
                 MSG_PRINTF(LOG_ERR, "%s FAIL\r\n", g_agent_cmd_objs[i].name);
             } else {
-                //MSG_PRINTF(LOG_INFO, "%s %s\r\n", g_agent_cmd_objs[i].name, !ret ? " OK " : " FAIL ");
                 MSG_INFO_ARRAY("agent_cmd RSP: ", rsp, *rsp_len);
             }
             break;
         }
     }
-    ret = RT_SUCCESS;
 
 end:
     return ret;    
 }
-
-#endif // CFG_OPEN_MODULE
-

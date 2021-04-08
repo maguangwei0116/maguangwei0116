@@ -5,7 +5,7 @@
 
 #include "ipc_agent_client.h"
 
-static const char *opt_string = "sviedglh?";
+static const char *opt_string = "sviedglrh?";
 
 static void display_usage(void)
 {
@@ -18,6 +18,7 @@ static void display_usage(void)
     fprintf(stderr, "  -d\tDisable SIM Monitor\n");
     fprintf(stderr, "  -g\tGet SIM Monitor mode\n");    
     fprintf(stderr, "  -l\tList ICCIDs\n");    
+    fprintf(stderr, "  -r\tReset vSIM(remove all operational profiles)\n");
     fprintf(stderr, "  -h\tList this help\n");
     fprintf(stderr, "  -?\tThe same as -h\n");
 }
@@ -115,7 +116,15 @@ int main(int argc, char **argv)
                     } 
                     fprintf(stderr, "%s\n", p1);
                 }
-                break; 
+                break;
+            case 'r':
+                ret = ipc_agent_reset();
+                if (ret != RT_SUCCESS) {
+                    fprintf(stderr, "RESET vSIM FAILED\n");
+                    goto end;
+                }
+                fprintf(stderr, "RESET vSIM SUCCESS\n");
+                break;
             case 'h':   // fall-through
             case '?':
                 display_usage();

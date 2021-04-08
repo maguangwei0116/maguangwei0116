@@ -16,12 +16,8 @@
 
 #include "rt_type.h"
 
-#ifdef CFG_OPEN_MODULE
-
 int32_t init_agent_cmd(void *arg);
 
 uint16_t agent_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
-
-#endif // CFG_OPEN_MODULE
 
 #endif // __AGENT_COMMAND_H__

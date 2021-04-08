@@ -16,7 +16,6 @@
 #include "agent_command.h"
 #include "ipc_socket_server.h"
 
-#ifdef CFG_OPEN_MODULE
 #define AGENT_SERVER_PATH                             "./data/redtea/agent_server"
 
 static void ipc_server_task(void *arg)
@@ -41,6 +40,4 @@ int32_t init_ipc_task(void *arg)
 
     return RT_SUCCESS;
 }
-
-#endif // CFG_OPEN_MODULE
 
