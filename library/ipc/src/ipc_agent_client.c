@@ -198,4 +198,31 @@ exit:
     return ret;
 }
 
+int32_t ipc_agent_reset(void)
+{
+    uint8_t  buf[256] = {0};
+    uint8_t  rsp[256] = {0};
+    uint16_t ret_len = 0;
+    int32_t  ret = RT_ERROR;
+
+    buf[0] = AGENT_CMD_SET_PARAM;
+    buf[1] = 0x00;
+    buf[2] = 0x03;
+    buf[3] = AGENT_CMD_PARAM_RESET;
+    buf[4] = 0x00;
+    buf[5] = 0x00;
+    if (ipc_send_data(AGENT_SERVER_PATH, buf, 6, rsp, &ret_len) != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "Command request failed\r\n");
+        goto exit;
+    }
+    if ((ret_len != 3) || (rsp[0] != AGENT_RESULT_OK)) {
+        MSG_PRINTF(LOG_ERR, "Command response is invalid len: %d, rsp[0]: %x\r\n", ret_len, rsp[0]);
+        goto exit;
+    }
+    ret = RT_SUCCESS;
+
+exit:
+    return ret;
+}
+
 #endif

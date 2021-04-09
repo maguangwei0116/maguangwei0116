@@ -5,7 +5,7 @@
 
 #include "ipc_agent_client.h"
 
-static const char *opt_string = "sviedglnh?";
+static const char *opt_string = "sviedglnrh?";
 
 static void display_usage(void)
 {
@@ -16,9 +16,10 @@ static void display_usage(void)
     fprintf(stderr, "  -i\tGet card type\n");
     fprintf(stderr, "  -e\tEnable SIM Monitor\n");
     fprintf(stderr, "  -d\tDisable SIM Monitor\n");
-    fprintf(stderr, "  -g\tGet SIM Monitor mode\n");    
-    fprintf(stderr, "  -l\tList ICCIDs\n");    
-    fprintf(stderr, "  -n\tGet network state\n");    
+    fprintf(stderr, "  -g\tGet SIM Monitor mode\n");
+    fprintf(stderr, "  -l\tList ICCIDs\n");
+    fprintf(stderr, "  -n\tGet network state\n");
+    fprintf(stderr, "  -r\tReset vSIM(remove all operational profiles)\n");
     fprintf(stderr, "  -h\tList this help\n");
     fprintf(stderr, "  -?\tThe same as -h\n");
 }
@@ -118,7 +119,7 @@ int main(int argc, char **argv)
                     } 
                     fprintf(stderr, "%s\n", p1);
                 }
-                break; 
+                break;
             case 'n':
                 ret = ipc_agent_get_network_state((agent_registration_state_e*)&reg_state, (agent_dsi_state_call_state_e*)&dial_up_state);
                 if (ret != RT_SUCCESS) {
@@ -126,7 +127,15 @@ int main(int argc, char **argv)
                     goto end;
                 }
                 fprintf(stderr, "registration state is: %d, dial-up state is: %d\n", reg_state, dial_up_state);
-                break;            
+                break;
+            case 'r':
+                ret = ipc_agent_reset();
+                if (ret != RT_SUCCESS) {
+                    fprintf(stderr, "RESET vSIM FAILED\n");
+                    goto end;
+                }
+                fprintf(stderr, "RESET vSIM SUCCESS\n");
+                break;
             case 'h':   // fall-through
             case '?':
                 display_usage();

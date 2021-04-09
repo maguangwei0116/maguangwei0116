@@ -179,6 +179,93 @@ static int32_t get_sim_monitor(uint8_t *rsp, uint16_t *rsp_len)
     return RT_SUCCESS;    
 }
 
+static int32_t del_all_operational_profiles(void)
+{
+    int32_t ii = 0;
+    int32_t code = RT_ERROR;
+    int32_t ret = RT_SUCCESS;
+    rt_bool opr_iccid_using = RT_FALSE;
+    judge_term_e bootstrap_flag = UPDATE_NOT_JUDGE_BOOTSTRAP;
+
+    for (ii = 0; ii < g_p_value_list->card_info->num; ii++) {
+        if (g_p_value_list->card_info->info[ii].class != PROFILE_TYPE_OPERATIONAL) {
+            continue;
+        }
+        code = msg_delete_profile(g_p_value_list->card_info->info[ii].iccid, &opr_iccid_using);
+        if (opr_iccid_using && code == RT_SUCCESS) {
+            MSG_PRINTF(LOG_TRACE, "delete using operational profile, start bootstrap ...\n");
+            bootstrap_flag = UPDATE_JUDGE_BOOTSTRAP;
+        } else if (code == 1) {
+            code = RT_SUCCESS;
+        }
+        MSG_PRINTF(LOG_TRACE, "msg_delete_profile ii=%d, code=%d, opr_iccid_using=%d\n", ii, code, opr_iccid_using);
+
+        ret |= code;
+    }
+
+    if (ret == RT_SUCCESS) {
+        if (g_p_value_list->card_info->type != PROFILE_TYPE_SIM) {
+            if (bootstrap_flag == UPDATE_JUDGE_BOOTSTRAP) {
+                card_force_enable_provisoning_profile();
+            }
+            rt_os_sleep(3);
+            card_update_profile_info(UPDATE_NOT_JUDGE_BOOTSTRAP);
+        }
+    }
+
+    return ret;
+}
+
+static int32_t set_vuicc_mode_and_remove_all_op_profiles(const uint8_t *param, uint16_t len, uint8_t *rsp, uint16_t *rsp_len)
+{
+    int32_t  ret = RT_ERROR;
+    uint8_t send_buf[1] = {0};
+
+    rsp[0] = AGENT_RESULT_OK;
+    rsp[1] = 0x00;
+    rsp[2] = 0x00;
+    *rsp_len = 3;
+
+    if (len != 0) {
+        rsp[0] = AGENT_RESULT_ERR_PARAM_LENGTH_INVALID;
+        goto exit;
+    }
+
+    ret = config_update_uicc_mode(MODE_TYPE_VUICC);
+    if (ret != RT_SUCCESS) {
+        rsp[0] = AGENT_RESULT_ERR_SET_UICC_MODE;
+        MSG_PRINTF(LOG_ERR, "update uicc mode to vUICC failed\r\n");
+    }
+    // remove all operational profile
+    ret = del_all_operational_profiles();
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "remove all operational profiles failed\r\n");
+        rsp[0] = AGENT_RESULT_ERR_DEL_ALL_OP_PROFILES;
+        goto exit;        
+    }
+exit:
+    return ret;
+}
+
+static int32_t get_uicc_mode(uint8_t *rsp, uint16_t *rsp_len)
+{
+    int32_t mode = 0;
+
+    rsp[0] = AGENT_RESULT_OK;
+    rsp[1] = 0x00;
+    rsp[2] = 0x00;
+    *rsp_len = 3;
+
+    if (config_get_uicc_mode(RT_DATA_PATH, &mode) == RT_SUCCESS) {
+        rsp[1] = 0x00;
+        rsp[2] = 0x01;
+        rsp[3] = (uint8_t)mode;
+        *rsp_len = 4;
+    } else {
+        rsp[0] = AGENT_RESULT_ERR_GET_SET_PARAM;
+    }
+    return RT_SUCCESS;
+}
 static int32_t get_network_state(uint8_t *rsp, uint16_t *rsp_len)
 {
     int32_t ret = RT_ERROR;
