@@ -16,6 +16,8 @@
 
 #include "rt_type.h"
 
+#ifdef CFG_OPEN_MODULE
+
 typedef enum AGENT_CMD {
     AGENT_CMD_SET_PARAM       		= 0x00,
     AGENT_CMD_GET_PARAM       		= 0x01,
@@ -67,5 +69,7 @@ typedef struct AGENT_RSP {
     uint8_t         length[2];	    	// length of resp
     uint8_t         value[1];			// data of resp
 } agent_rsp_t;
+
+#endif // CFG_OPEN_MODULE
 
 #endif // __AGENT_COMMAND_H__

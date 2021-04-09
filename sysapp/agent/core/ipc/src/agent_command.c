@@ -392,3 +392,5 @@ int32_t agent_cmd(const uint8_t *data, uint16_t len, uint8_t *rsp, uint16_t *rsp
 end:
     return ret;    
 }
+
+#endif
