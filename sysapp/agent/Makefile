@@ -218,6 +218,9 @@ endif
 ifeq ($(CFG_TEST_LPA_ON), y)
 -include $(REDTEA_SUPPORT_REDTEA_PATH)/test_lpa_sysapp.mk
 endif
+ifeq ($(CFG_TEST_CLIENT_ON), y)
+-include $(REDTEA_SUPPORT_REDTEA_PATH)/test_client_sysapp.mk
+endif
 ############################################################################################
 # Never modify end this line
 ############################################################################################
