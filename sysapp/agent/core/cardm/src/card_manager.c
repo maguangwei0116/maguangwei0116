@@ -72,10 +72,6 @@ static int32_t card_check_init_upload(const uint8_t *eid)
         MSG_PRINTF(LOG_INFO, "EID changed, upload INIT event\n");
 
         ret = get_upload_event_result("INIT", NULL, 0, NULL);
-        if (ret == RT_SUCCESS) {
-            upload_event_report("INFO", NULL, 0, NULL);     // Request update and push ac events
-        }
-        msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
     }
 
     return RT_SUCCESS;

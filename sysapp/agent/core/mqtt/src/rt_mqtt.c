@@ -616,6 +616,9 @@ static int32_t mqtt_state_subscribe_topics(void)
         }
         rt_os_sleep(1);
     }
+    if (ret == RT_SUCCESS) {
+        upload_event(NULL, 0, MSG_MQTT_SUBSCRIBE_EID);
+    }
 
     return ret;
 }

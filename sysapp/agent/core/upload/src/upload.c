@@ -84,9 +84,9 @@ static int32_t parse_upload_event(const char *data, int32_t data_len, uint8_t *e
     cJSON *tran_id = NULL;
     cJSON *topic = NULL;
     cJSON *payload = NULL;
+    cJSON *payload_json = NULL;
     cJSON *event = NULL;
     cJSON *content = NULL;
-    uint8_t *buf = NULL;    
     int32_t len = 0;
 
     do {
@@ -111,20 +111,12 @@ static int32_t parse_upload_event(const char *data, int32_t data_len, uint8_t *e
             break;
         }
         len = rt_os_strlen(payload->valuestring);
-        buf = (uint8_t *)rt_os_malloc(len + 1);
-        if (!buf) {
-            MSG_PRINTF(LOG_ERR, "Malloc buf failed!!\n");
-            break;
-        }
-        rt_os_memcpy(buf, payload->valuestring, len);
-        buf[len] = '\0';
-
-        payload = cJSON_Parse((uint8_t *)buf);
-        if (!payload) {
+        payload_json = cJSON_Parse((const char *)payload->valuestring);
+        if (!payload_json) {
             MSG_PRINTF(LOG_ERR, "Parse payload failed!!\n");
             break;
         }
-        event = cJSON_GetObjectItem(payload, "event");
+        event = cJSON_GetObjectItem(payload_json, "event");
         if (!event) {
             MSG_PRINTF(LOG_ERR, "Parse event failed!!\n");
             break;
@@ -141,9 +133,6 @@ static int32_t parse_upload_event(const char *data, int32_t data_len, uint8_t *e
     
     if (agent_msg != NULL) {
         cJSON_Delete(agent_msg);
-    }
-    if (buf != NULL) {
-        rt_os_free((void *)buf);
     }
     return ret;
 }
@@ -195,9 +184,11 @@ static int32_t upload_send_http_request(const char *data, int32_t data_len)
     if (is_init == RT_SUCCESS) {
         if (ret == 0) {
             card_update_last_eid((const char *)eid);
-            MSG_PRINTF(LOG_INFO, "EID updated : %s\n", eid);
+            MSG_PRINTF(LOG_TRACE, "EID updated : %s\n", eid);
+            upload_event_report("BOOT", NULL, 0, NULL);
+            msg_send_agent_queue(MSG_ID_MQTT, MSG_MQTT_SUBSCRIBE_EID, NULL, 0);
         } else {
-            MSG_PRINTF(LOG_TRACE, "upload INIT failed!\n");
+            MSG_PRINTF(LOG_ERR, "Upload INIT failed!\n");
         }
     }
 exit_entry:
@@ -601,8 +592,8 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
         MSG_PRINTF(LOG_DBG, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;
         g_upload_mqtt = RT_FALSE;
-    } else if (MSG_MQTT_CONNECTED == mode) {
-        MSG_PRINTF(LOG_DBG, "upload module recv mqtt connected\r\n");
+    } else if (MSG_MQTT_SUBSCRIBE_EID == mode) {
+        MSG_PRINTF(LOG_DBG, "upload module recv mqtt subscribed\r\n");
         g_upload_mqtt = RT_TRUE;
     } else if (MSG_MQTT_DISCONNECTED == mode) {
         MSG_PRINTF(LOG_DBG, "upload module recv mqtt disconnected\r\n");
