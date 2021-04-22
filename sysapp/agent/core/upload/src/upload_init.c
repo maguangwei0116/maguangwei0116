@@ -30,7 +30,7 @@ static cJSON *upload_init_packer(void *arg)
     const char *model   = g_upload_device_info->model;
     card_type_e cardType  = g_upload_device_info->card_type;
     
-    MSG_PRINTF(LOG_INFO, "card_type:[%d] \n", cardType);
+    MSG_PRINTF(LOG_TRACE, "cardType:[%d] \n", cardType);
 
     deviceInfo = cJSON_CreateObject();
     if (!deviceInfo) {

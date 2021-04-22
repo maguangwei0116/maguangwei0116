@@ -258,7 +258,6 @@ static void network_ping_task(void *arg)
             }
         }
 
-        MSG_PRINTF(LOG_INFO, "card type: %d, sim monitor: %d\r\n", *g_card_type, *g_sim_monitor);
         if (enabled->valueint == RT_TRUE) {
             if (*g_card_type == PROFILE_TYPE_PROVISONING || *g_card_type == PROFILE_TYPE_TEST) {
                 ret = rt_ping_provisoning_get_status();

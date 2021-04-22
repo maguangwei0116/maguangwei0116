@@ -371,7 +371,7 @@ static int32_t option_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 static int32_t factory_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
 {
     int32_t ret = RT_ERROR;
-    MSG_PRINTF(LOG_INFO, "factory cmd=%s\n", cmd);
+    MSG_PRINTF(LOG_TRACE, "factory cmd=%s\n", cmd);
 
     if (*cmd == AT_CONTENT_DELIMITER) {
         ret = factory_mode_operation(&cmd[1]); /* parse, fetch profile, update/insert profile */
