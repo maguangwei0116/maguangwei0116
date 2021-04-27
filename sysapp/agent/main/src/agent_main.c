@@ -290,7 +290,7 @@ static const init_obj_t g_init_objs[] =
 #endif
 #ifdef CFG_FACTORY_MODE_ON
     INIT_OBJ(init_factory,              (void *)&g_value_list),
-#endif    
+#endif
     INIT_OBJ(init_bootstrap,            (void *)&g_value_list),
     INIT_OBJ(init_qmi,                  NULL),
     INIT_OBJ(init_versions,             (void *)&g_value_list),

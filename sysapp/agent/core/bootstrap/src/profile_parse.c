@@ -158,7 +158,7 @@ static uint32_t get_offset(rt_fshandle_t fp, uint8_t type, uint32_t *size)
     return offset;
 }
 
-static uint16_t rt_init_file_info(rt_fshandle_t fp)
+static void rt_init_file_info(rt_fshandle_t fp)
 {
     uint8_t *p = NULL;
     uint8_t buf[100];
@@ -336,8 +336,8 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
     }
 
     {
-        uint8_t buffer[21];
-        char select_buffer[21];
+        uint8_t buffer[21] = {0};
+        char select_buffer[21] = {0};
 
         //MSG_INFO_ARRAY("selected imsi: ", bootstrap_request->tbhRequest.imsi.buf, bootstrap_request->tbhRequest.imsi.size);
         //MSG_INFO_ARRAY("selected iccid: ", bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
@@ -351,10 +351,44 @@ static int32_t build_profile(uint8_t *profile_buffer, int32_t profile_len, int32
         /* TODO: special process for RTN of profiles of China mobile */
         if (rt_os_strncmp(&select_buffer[3], "46000", 5) == 0 || rt_os_strncmp(&select_buffer[3], "46004", 5) == 0) {
             const uint8_t rtn[] = {0x20, 0x13, 0x2F, 0x49, 0x5B};
-            OCTET_STRING_fromBuf(bootstrap_request->tbhRequest.rotation, rtn, sizeof(rtn));
-            rt_os_memset(select_buffer, 0 ,sizeof(select_buffer));
-            bytes2hexstring(bootstrap_request->tbhRequest.rotation->buf, bootstrap_request->tbhRequest.rotation->size, select_buffer);
-            MSG_PRINTF(LOG_DBG, "update rtn : %s\n", &select_buffer[0]);
+            // find rotation tag
+            rplmn_off = ber_tlv_find_tag(g_buf, tbh_len, 0x84, 1);
+            if (rplmn_off == BER_TLV_INVALID_OFFSET) {
+                MSG_PRINTF(LOG_ERR, "imsi not found!");
+                goto end;
+            }
+            rplmn_off += get_length(g_buf + rplmn_off, 1);
+            rt_os_memcpy(g_buf + rplmn_off, rtn, sizeof(rtn));
+            bytes2hexstring(rtn, sizeof(rtn), select_buffer);
+			
+            // update rplmn
+            hexstring2bytes("64F000", bytes, &length); // must convert string to bytes            
+            // find rplmn in tbhRequest
+            rplmn_off = ber_tlv_find_tag(g_buf, tbh_len, 0x87, 1);
+            if (rplmn_off == BER_TLV_INVALID_OFFSET) {
+                rplmn_len = 0;
+                // find insert offset
+                for (tag = 0x88; tag >= 0x8B; tag++) {
+                    rplmn_off = ber_tlv_find_tag(g_buf, tbh_len, tag, 1);
+                    if (rplmn_off != BER_TLV_INVALID_OFFSET) {
+                        break;
+                    }
+                }
+                // if tag from '88' fplmn to '8B' oplmn all not found, set to end of tlv list
+                if (rplmn_off == BER_TLV_INVALID_OFFSET) {
+                    rplmn_off = tbh_len;
+                }
+            } else {
+                rplmn_len = ber_tlv_get_tlv_length(g_buf + rplmn_off);
+            }
+            // modify or insert it
+            if (length != 0) {
+                length = ber_tlv_build_tlv(0x87, length, bytes, bytes);
+            }
+
+            utils_mem_copy(g_buf + rplmn_off + length, g_buf + rplmn_off + rplmn_len, tbh_len - rplmn_off - rplmn_len);
+            utils_mem_copy(g_buf + rplmn_off, bytes, length);
+            tbh_len = tbh_len + length - rplmn_len;  // new tbh length
         }
 #endif        
         rt_os_memset(buffer, 0 ,sizeof(buffer));
@@ -656,7 +690,7 @@ int32_t init_profile_file(const char *file)
     }
 
     ret = rt_check_hash_code_offset(fp);
-    if (ret == RT_SUCCESS){
+    if (ret == RT_SUCCESS) {
         g_data.file_info_offset = rt_get_file_info_offset(fp, &len);
         rt_init_file_info(fp);
         g_data.root_sk_offset = rt_get_root_sk_offset(fp, &len);
@@ -725,30 +759,27 @@ end:
 
 #ifdef CFG_FACTORY_MODE_ON
 
-static int32_t fetch_profile_iccid(uint8_t *profile_buffer, int32_t profile_len, uint32_t profile_index, BOOLEAN_t sequential, 
-                                  uint8_t *iccid)
+static int32_t fetch_profile_iccid(uint8_t *profile_buffer, int32_t profile_len, uint8_t *iccid)
 {
-    BootstrapRequest_t *bootstrap_request = NULL;
-    asn_dec_rval_t dc;
-    uint8_t buffer[21];
     int32_t ret = RT_ERROR;
+    uint32_t off;
+    uint32_t value_off;
+    uint32_t value_len;
 
-    dc = ber_decode(NULL, &asn_DEF_BootstrapRequest, (void **) &bootstrap_request, profile_buffer, profile_len);
-    if (dc.code != RC_OK) {
-        MSG_PRINTF(LOG_ERR, "consumed:%ld\n", dc.consumed);
-        goto end;
-    }
-    rt_os_memset(buffer, 0 ,sizeof(buffer));
-    rt_os_memcpy(buffer, bootstrap_request->tbhRequest.iccid.buf, bootstrap_request->tbhRequest.iccid.size);
-    swap_nibble(buffer, bootstrap_request->tbhRequest.iccid.size);
-    rt_os_memcpy(iccid, buffer, bootstrap_request->tbhRequest.iccid.size);
+    /* FF7F */
+    off = get_length(profile_buffer, 1);
+    /* 30 */
+    off += get_length(profile_buffer + off, 1);
+    /* 80 */
+    value_off = get_length(profile_buffer + off, 1);
+    value_len = get_length(profile_buffer + off, 0);
+    off += value_off;
+    rt_os_memcpy(iccid, profile_buffer+off, value_len);
+    swap_nibble(iccid, value_len);
 
     ret = RT_SUCCESS;
     
 end:
-    if (bootstrap_request != NULL) {
-        ASN_STRUCT_FREE(asn_DEF_BootstrapRequest, bootstrap_request);
-    }
     return ret;
 }
 
@@ -756,60 +787,42 @@ static int32_t parse_profile_iccid(rt_fshandle_t fp, uint32_t off, uint32_t prof
 {
     uint32_t profile_len, size;
     uint8_t *profile_buffer = NULL;
-    ProfileInfo1_t *request = NULL;
-    uint8_t buf[100];
-    asn_dec_rval_t dc;
+    uint8_t buf[10];
     int32_t ret = RT_ERROR;
-
-    /* A3 */
-    linux_fseek(fp, off, RT_FS_SEEK_SET);
-    linux_fread(buf, 1, 100, fp);
-    off += get_length(buf, 1);
 
     /* 30 */
     linux_fseek(fp, off, RT_FS_SEEK_SET);
-    linux_fread(buf, 1, 100, fp);
+    linux_fread(buf, 1, 8, fp);
+    off += get_length(buf, 1);
+    /* A0 */
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
     size = get_length(buf, 0) + get_length(buf, 1);
 
-    if (buf[0] == 0xA0) {
-        /* replace 0xA0 with 0x30*/
-        buf[0] = 0x30;
-    }
-    dc = ber_decode(NULL, &asn_DEF_ProfileInfo1, (void **) &request, buf, size);
-    if (dc.code != RC_OK) {
-        MSG_PRINTF(LOG_ERR, "%ld\n", dc.consumed);
-        goto end;
-    }
     off += size;
-    /* content */
+    /* 81 */
     linux_fseek(fp, off, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 8, fp);
     off += get_length(buf, 1);
+    /* FF7F */
+    linux_fseek(fp, off, RT_FS_SEEK_SET);
+    linux_fread(buf, 1, 8, fp);
+    profile_len = get_length(buf, 0)+ get_length(buf, 1);
 
-    /* TODO: */
-    MSG_PRINTF(LOG_TRACE, "sequential = %d\n", request->sequential);
-    if (request->sequential == 0xFF) { // Successive profile: same iccid, successive imsi
-        profile_len = get_length(buf, 0);
-    } else { // non-successive profile
-        profile_len = get_length(buf, 0) / request->totalNum;
-        off += profile_index * profile_len;
-    }
-    profile_buffer = (uint8_t *) rt_os_malloc(profile_len);
+    off += profile_index * profile_len;
+    profile_buffer = (uint8_t*)rt_os_malloc(profile_len);
     linux_fseek(fp, off, RT_FS_SEEK_SET);
     linux_fread(profile_buffer, 1, profile_len, fp);
-    ret = fetch_profile_iccid(profile_buffer, profile_len, profile_index, request->sequential, iccid);
+    ret = fetch_profile_iccid(profile_buffer, profile_len, iccid);
     rt_os_free(profile_buffer);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Fetch profile iccid is error\n");
-        goto end;        
+        goto end;
     }
     ret = RT_SUCCESS;
 
 end:
-    if (request != NULL) {
-        ASN_STRUCT_FREE(asn_DEF_ProfileInfo1, request);
-    }
-    return ret;    
+    return ret;
 }
 
 
@@ -828,12 +841,15 @@ int32_t get_profile_iccid(uint32_t profile_index, uint8_t *iccid)
     }
     linux_fseek(fp, off, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 8, fp);
+
+    /* A3 */
     if (buf[0] != OPT_PROFILES) {
         MSG_PRINTF(LOG_ERR, "Operator tag is error\n");
         goto end;
     }
     off += get_length(buf, 1);
 
+    /* 30 */
     linux_fseek(fp, off, RT_FS_SEEK_SET);
     linux_fread(buf, 1, 8, fp);
     if (buf[0] != SHARED_PROFILE) {
@@ -852,7 +868,7 @@ int32_t get_profile_iccid(uint32_t profile_index, uint8_t *iccid)
     ret = parse_profile_iccid(fp, off, profile_index, iccid);
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Parse profile iccid is error\n");
-        goto end;        
+        goto end;
     }
     g_data.priority++;
     ret = RT_SUCCESS;
@@ -862,6 +878,6 @@ end:
         linux_fclose(fp);
         fp = NULL;
     }
-    return ret;  
+    return ret;
 }
 #endif // CFG_FACTORY_MODE_ON
