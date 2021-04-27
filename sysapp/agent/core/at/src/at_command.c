@@ -380,7 +380,14 @@ static int32_t factory_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
         } else {
             snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "Factory mode operation failed!");
         }
-    } 
+    } else {
+        if (factory_get_mode() == FACTORY_ENABLE) {
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "mode is enable!");
+        } else {
+            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "mode is disable!");
+        }
+        ret = RT_SUCCESS;
+    }
     return ret;
 }
 #endif
