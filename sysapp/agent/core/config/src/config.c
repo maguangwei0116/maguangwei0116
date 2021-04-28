@@ -218,7 +218,7 @@ ITEM(AGENT_LOG_LEVEL,           config_log_level,           STRING,         "LOG
 ITEM(USAGE_ENABLE,              config_switch_value,        INTEGER,        "0",                            "Whether enable upload user traffic (0:disable  1:enable)"),
 ITEM(USAGE_FREQ,                config_usage_freq,          INTEGER,        "60",                           "Frequency of upload user traffic (60 <= x <= 1440 Mins)"),
 ITEM(CARD_FLOW_SWITCH,          config_card_flow_switch,    INTEGER,        "1",                            "The switch of seed card flow control(0:close 1:open)"),
-ITEM(SIM_MONITOR_ENABLE,            NULL,                   INTEGER,        "1",                            "The switch of SIM card monitor(0:disable 1:enable)"),
+ITEM(SIM_MONITOR_ENABLE,        config_switch_value,        INTEGER,        "1",                            "The switch of SIM card monitor(0:disable 1:enable)"),
 };
 
 static config_info_t g_config_info;
@@ -485,8 +485,8 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
         config_log_max_size();
     }
 
-    infos->mbn_enable = msg_string_to_int(local_config_get_data("MBN_CONFIGURATION"));
-    infos->init_profile_type = msg_string_to_int(local_config_get_data("INIT_PROFILE_TYPE"));
+    infos->mbn_enable = (uint8_t)msg_string_to_int(local_config_get_data("MBN_CONFIGURATION"));
+    infos->init_profile_type = (uint8_t)msg_string_to_int(local_config_get_data("INIT_PROFILE_TYPE"));
 
     log_level = log_get_level(local_config_get_data("MONITOR_LOG_LEVEL"));
     infos->monitor_log_level = (LOG_UNKNOW == log_level) ? LOG_INFO : log_level;
@@ -494,9 +494,9 @@ static int32_t config_sync_global_info(config_info_t *infos, int32_t pair_num, c
     log_level = log_get_level(local_config_get_data("AGENT_LOG_LEVEL"));
     infos->agent_log_level = (LOG_UNKNOW == log_level) ? LOG_INFO : log_level;
 
-    infos->flow_control_switch = msg_string_to_int(local_config_get_data("CARD_FLOW_SWITCH"));
+    infos->flow_control_switch = (uint8_t)msg_string_to_int(local_config_get_data("CARD_FLOW_SWITCH"));
 
-    infos->sim_monitor_enable = msg_string_to_int(local_config_get_data("SIM_MONITOR_ENABLE"));
+    infos->sim_monitor_enable = (uint8_t)msg_string_to_int(local_config_get_data("SIM_MONITOR_ENABLE"));
 
     return RT_SUCCESS;
 }
@@ -956,7 +956,7 @@ static int32_t config_parser(const void *in, char *tran_id, void **out)
     rt_os_strncpy(param->tranId, tranId->valuestring, rt_os_strlen(tranId->valuestring));
 
     cJSON_GET_JSON_DATA(msg, payload);
-    CONFIG_CHK_PINTER_NULL(param, -5);
+    CONFIG_CHK_PINTER_NULL(payload, -5);
 
     payload_json = cJSON_Parse((const char *)payload->valuestring);
     CONFIG_CHK_PINTER_NULL(payload_json, -6);
