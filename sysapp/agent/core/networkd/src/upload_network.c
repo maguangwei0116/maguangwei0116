@@ -122,7 +122,7 @@ static int32_t detect_handler(const void *in, const char *event, void **out)
     cJSON *pong = NULL;
     char  *ptr = NULL;
     const char* PACK_LOSS_HEAD = "received, ";
-    const char* RTT_HEAD = "min/avg/max = ";
+    const char* RTT_HEAD = "min/avg/max";
 
     content_r = cJSON_CreateObject();
     if (!content_r) {
@@ -179,17 +179,16 @@ static int32_t detect_handler(const void *in, const char *event, void **out)
             if (!ptr) {
                 packet_loss = 100;
             } else {
-                packet_loss = strtod(ptr + strlen(PACK_LOSS_HEAD), &ptr);
+                packet_loss = strtod(ptr + rt_os_strlen(PACK_LOSS_HEAD), &ptr);
             }
-            ptr = strstr(buf, RTT_HEAD);
-            if (!ptr) {
-                min_latency = 0;
-                avg_latency = 0;
-                max_latency = 0;
-            } else {
-                min_latency = strtod(ptr + strlen(RTT_HEAD), &ptr);
-                avg_latency = strtod(ptr + 1, &ptr);
-                max_latency = strtod(ptr + 1, &ptr);                
+            ptr = rt_os_strstr(buf, RTT_HEAD);
+            if (ptr != NULL) {
+                ptr = rt_os_strstr(ptr, "=");
+                if (ptr != NULL) {
+                    min_latency = strtod(ptr + 1, &ptr);
+                    avg_latency = strtod(ptr + 1, &ptr);
+                    max_latency = strtod(ptr + 1, &ptr);
+                }
             }
             MSG_PRINTF(LOG_TRACE, "packet_loss:%f, min:%f, avg:%f, max:%f \n", packet_loss, min_latency, avg_latency, max_latency);
             cJSON_AddItemToObject(ping_info, "domain", cJSON_CreateString(domain->valuestring));
