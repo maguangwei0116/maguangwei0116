@@ -646,7 +646,7 @@ static mqtt_event_e mqtt_state_wait_events(void)
             break;
         }
 
-        rt_os_sleep(1);
+        rt_os_msleep(100);
     }
 
     return event;
