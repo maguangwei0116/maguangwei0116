@@ -554,12 +554,14 @@ static int32_t upload_boot_info_event(void)
 static void upload_boot_task(void)
 {
     while (1) {
+        if (g_upload_network == RT_FALSE) {
+            break;
+        }
         if (g_upload_mqtt == RT_TRUE) {
             upload_boot_info_event();
-            break;
-        } else {
-            rt_os_sleep(1);
-        }
+            g_upload_mqtt = RT_FALSE;
+        } 
+        rt_os_sleep(1);
     }
 
     rt_exit_task(NULL);
@@ -592,6 +594,9 @@ int32_t upload_event(const uint8_t *buf, int32_t len, int32_t mode)
         MSG_PRINTF(LOG_DBG, "upload module recv network disconnected\r\n");
         g_upload_network = RT_FALSE;
         g_upload_mqtt = RT_FALSE;
+    } else if (MSG_MQTT_CONNECTED == mode) {
+        MSG_PRINTF(LOG_DBG, "upload module recv mqtt connected\r\n");
+        g_upload_mqtt = RT_TRUE;
     } else if (MSG_MQTT_SUBSCRIBE_EID == mode) {
         MSG_PRINTF(LOG_DBG, "upload module recv mqtt subscribed\r\n");
         g_upload_mqtt = RT_TRUE;
