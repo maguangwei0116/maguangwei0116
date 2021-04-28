@@ -230,12 +230,6 @@ static int32_t set_vuicc_mode_and_remove_all_op_profiles(const uint8_t *param, u
         rsp[0] = AGENT_RESULT_ERR_PARAM_LENGTH_INVALID;
         goto exit;
     }
-
-    ret = config_update_uicc_mode(MODE_TYPE_VUICC);
-    if (ret != RT_SUCCESS) {
-        rsp[0] = AGENT_RESULT_ERR_SET_UICC_MODE;
-        MSG_PRINTF(LOG_ERR, "update uicc mode to vUICC failed\r\n");
-    }
     // remove all operational profile
     ret = del_all_operational_profiles();
     if (ret != RT_SUCCESS) {
