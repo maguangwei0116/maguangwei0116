@@ -20,7 +20,7 @@
 #include "card_flow_control.h"
 
 static card_info_t                         *g_p_info;
-static card_flow_switch_e                  *g_flow_switch = NULL;
+static uint8_t                             *g_flow_switch = NULL;
 
 #define INITIAL_WAIT_TIME                  3600         // 1H, ti
 #define INITIAL_SLEEP_TIME                 10           // 10s
@@ -129,7 +129,7 @@ int32_t init_flow_control(void *arg)
     int32_t ret = RT_SUCCESS;
 
     g_p_info = ((public_value_list_t *)arg)->card_info;
-    g_flow_switch = (card_flow_switch_e *)&(((public_value_list_t *)arg)->config_info->flow_control_switch);
+    g_flow_switch = (uint8_t *)&(((public_value_list_t *)arg)->config_info->flow_control_switch);
     MSG_PRINTF(LOG_INFO, "Flow control switch:%d\n", *g_flow_switch);
     if (*g_flow_switch == CARD_FLOW_ENABLE) {
         ret = flow_control_create_task();
