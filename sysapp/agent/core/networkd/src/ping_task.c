@@ -259,7 +259,7 @@ static void network_ping_task(void *arg)
         }
 
         if (enabled->valueint == RT_TRUE) {
-            if (*g_card_type == PROFILE_TYPE_PROVISONING || *g_card_type == PROFILE_TYPE_TEST) {
+            if (*g_card_type == PROFILE_TYPE_PROVISONING) {
                 ret = rt_ping_provisoning_get_status();
 
             } else if ((*g_card_type == PROFILE_TYPE_OPERATIONAL 
