@@ -79,6 +79,11 @@
 #define PROD_ENV_MODE                   0
 #define STAG_ENV_MODE                   1
 
+#ifdef CFG_FACTORY_MODE_ON
+#define AT_FACTORY_MODE_ENABLE          '1'
+#define AT_FACTORY_MODE_DISABLE         '0'
+#endif
+
 /*
 handle function name: xxx_at_cmd_handle
 */
@@ -382,9 +387,9 @@ static int32_t factory_at_cmd_handle(const char *cmd, char *rsp, int32_t len)
         }
     } else {
         if (factory_get_mode() == FACTORY_ENABLE) {
-            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "mode is enable!");
+            snprintf(rsp, len, "%c%c", AT_CONTENT_DELIMITER, AT_FACTORY_MODE_ENABLE);
         } else {
-            snprintf(rsp, len, "%c\"%s\"", AT_CONTENT_DELIMITER, "mode is disable!");
+            snprintf(rsp, len, "%c%c", AT_CONTENT_DELIMITER, AT_FACTORY_MODE_DISABLE);
         }
         ret = RT_SUCCESS;
     }
