@@ -87,10 +87,10 @@ static int32_t rt_ping_get_level(int8_t *ip, int32_t level)
     }
 
 #if (CFG_SOFTWARE_TYPE_RELEASE)
-    if (network_level < level) {
+    //if (network_level < level) {
         MSG_PRINTF(LOG_INFO, "%s ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", *g_card_type == PROFILE_TYPE_SIM ? "SIM" : "vUICC", \
                     ip, delay, lost, mdev, network_level);
-    }
+    //}
 #else
         MSG_PRINTF(LOG_DBG, "%s ping %s, delay/lost/mdev: %.2lf/%d/%.2lf, level: %d\n", *g_card_type == PROFILE_TYPE_SIM ? "SIM" : "vUICC", \
                     ip, delay, lost, mdev, network_level);
@@ -243,6 +243,11 @@ static void network_ping_task(void *arg)
 
         rt_judge_card_status(&last_card_type);
         rt_check_strategy_data(RT_RUN_CHECK);
+
+        if (g_downstream_event == RT_TRUE) {           // Detect messages sent by the platform
+            MSG_PRINTF(LOG_DBG, "External events do not interrupt ping befor execute it!\n");
+            g_downstream_event = RT_FALSE;
+        }
 
         ret = rt_read_strategy(0, tmp_buffer, RT_STRATEGY_LIST_LEN);
         if (ret == RT_SUCCESS) {
