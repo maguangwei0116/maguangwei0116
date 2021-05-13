@@ -187,6 +187,11 @@ void bootstrap_event(const uint8_t *buf, int32_t len, int32_t mode)
         if (mode == MSG_BOOTSTRAP_SELECT_CARD) {
             g_retry_times           = 0;
             g_single_interval_time  = DEFAULT_SINGLE_INTERVAL_TIME;
+            if (card_prov_ctrl_judgement(g_public_value->card_info->type) == RT_TRUE) {
+                /* provisioning control mode */
+                MSG_PRINTF(LOG_DBG, "Provisioning control is ongoing ...\r\n");
+                return;
+            }
             bootstrap_local_select_profile();
         } else if (mode == MSG_BOOTSTRAP_DISCONNECTED) {
             MSG_PRINTF(LOG_INFO, "wait interval time(%d)=%d to select card ...\r\n", g_retry_times, g_single_interval_time);

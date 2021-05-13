@@ -14,6 +14,7 @@
 #include "usrdata.h"
 #include "stdint.h"
 #include "rt_type.h"
+#include "config.h"
 
 #define DEFAULT_STRATEGY "{\"enabled\":true,\"interval\":10,\"type\":1,\"strategies\":[{\"domain\":\"cthulhu.easyiot.ai\",\"level\":1}]}"
 
@@ -63,6 +64,7 @@ int32_t init_run_config()
     if (!linux_rt_file_exist(RUN_CONFIG_FILE)) {
         rt_create_file(RUN_CONFIG_FILE);
         rt_write_data(RUN_CONFIG_FILE, 0, init_buff, RT_APN_LIST_OFFSET);
+        rt_write_prov_ctrl_counter(0, 0);
     }
 
     rt_check_strategy_data(RT_BOOT_CHECK);
@@ -126,6 +128,51 @@ int32_t rt_read_eid(int32_t offset, uint8_t *eid, int32_t len)
     if (ret != RT_SUCCESS) {
         MSG_PRINTF(LOG_ERR, "Read eid fail, ret : %d\n", ret);
     }
+
+    return ret;
+}
+
+int32_t rt_write_prov_ctrl_counter(int32_t offset, int32_t counter)
+{
+    int32_t ret = RT_ERROR;
+    uint8_t init_buf[RT_PROV_COUNTER_LEN + 1];
+
+    rt_os_memset(init_buf, 'F', RT_PROV_COUNTER_LEN);
+    init_buf[offset + 0] = (uint8_t)((counter >> 24) & 0xFF);
+    init_buf[offset + 1] = (uint8_t)((counter >> 16) & 0xFF);
+    init_buf[offset + 2] = (uint8_t)((counter >> 8) & 0xFF);
+    init_buf[offset + 3] = (uint8_t)(counter & 0xFF);
+    MSG_PRINTF(LOG_DBG, "counter : %d, size : %d\n", counter, sizeof(counter));
+    MSG_INFO_ARRAY("init_buf: ", init_buf, sizeof(counter));
+    ret = rt_write_data(RUN_CONFIG_FILE, RT_PROV_COUNTER_OFFSET, init_buf, RT_PROV_COUNTER_LEN);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "Write prov control counter fail, ret : %d\n", ret);
+    }
+
+    return ret;
+}
+
+int32_t rt_read_prov_ctrl_counter(int32_t offset, int32_t *counter)
+{
+    uint8_t init_buf[RT_PROV_COUNTER_LEN + 1];
+    int32_t count = 0;
+    int32_t ret = RT_ERROR;
+
+    rt_os_memset(init_buf, 'F', RT_PROV_COUNTER_LEN);
+    ret = rt_read_data(RUN_CONFIG_FILE, RT_PROV_COUNTER_OFFSET, init_buf, RT_PROV_COUNTER_LEN);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "Read prov control counter fail, ret : %d\n", ret);
+    }
+
+    count |= ((uint32_t)init_buf[offset + 0] << 24) & 0xFF000000;
+    count |= ((uint32_t)init_buf[offset + 1] << 16) & 0x00FF0000;
+    count |= ((uint32_t)init_buf[offset + 2] << 8) & 0x0000FF00;
+    count |= ((uint32_t)init_buf[offset + 3] & 0x000000FF);
+
+    MSG_INFO_ARRAY("init_buf: ", init_buf, sizeof(count));
+    MSG_PRINTF(LOG_DBG, "counter : %d, size : %d\n", count, sizeof(count));
+
+    *counter = count;
 
     return ret;
 }

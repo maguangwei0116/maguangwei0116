@@ -105,6 +105,7 @@ SRC-y                                   += src/agent_main.c
 SRC-y                                   += src/agent_queue.c
 SRC-y                                   += src/card_manager.c
 SRC-y                                   += src/card_detection.c
+SRC-y                                   += src/card_prov_ctrl.c
 SRC-y                                   += src/card_flow_control.c
 SRC-y                                   += src/msg_process.c
 SRC-y                                   += src/network_detection.c
