@@ -57,6 +57,9 @@
 #define UICC_MODE_SIMO                      "2"
 #define UICC_MODE_eUICC                     "3"
 
+#define MIN_PROV_CTRL_COUNTER               1
+#define MAX_PROV_CTRL_COUNTER               20
+
 #define MAX_LOG_SIZE_VALUE                  "5"
 #define PROD_ENV_MODE                       0
 #define STAG_ENV_MODE                       1
@@ -169,6 +172,18 @@ static int32_t config_uicc_mode(const void *in, char *out)
 }
 
 /* value: [0,1] */
+static int32_t config_prov_control_mode(const void *in, char *out)
+{
+    return config_range_int_value(in, 0, 1, out);
+}
+
+/* value: [MIN_PROV_CTRL_COUNTER, MAX_PROV_CTRL_COUNTER] */
+static int32_t config_prov_control_counter(const void *in, char *out)
+{
+    return config_range_int_value(in, MIN_PROV_CTRL_COUNTER, MAX_PROV_CTRL_COUNTER, out);
+}
+
+/* value: [0,1] */
 static int32_t config_proj_mode(const void *in, char *out)
 {
     return config_range_int_value(in, 0, 1, out);
@@ -207,6 +222,8 @@ ITEM(INIT_PROFILE_TYPE,         config_init_pro_type,       INTEGER,        "2",
 ITEM(RPLMN_ENABLE,                  NULL,                   INTEGER,        "1",                            "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,             config_log_size,            INTEGER,        "1",                            "The max size of rt_log file (0 < x <= 5 MB)"),
 ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "1",                            "The mode of UICC (0:vUICC  1:SIM first  2:SIM only  3: eUICC)"),
+ITEM(PROV_CONTROL_MODE,         config_prov_control_mode,   INTEGER,        "0",                            "The mode of Provisioning Control (0:Normal  1:Control)"),
+ITEM(PROV_CONTROL_COUNTER,      config_prov_control_counter,INTEGER,        "10",                           "The counter of Provisioning Control"),
 ITEM(PROJ_MODE,                 config_proj_mode,           INTEGER,        "0",                            "The mode of Project (0:Standard version  1:Enterprise version)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
 ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
@@ -516,6 +533,8 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n",    local_config_get_data("RPLMN_ENABLE"));
     MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
     MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n",    local_config_get_data("UICC_MODE"));
+    MSG_PRINTF(LOG_INFO, "PROV_CONTROL_MODE     : %s\n",    local_config_get_data("PROV_CONTROL_MODE"));
+    MSG_PRINTF(LOG_INFO, "PROV_CONTROL_COUNTER  : %s\n",    local_config_get_data("PROV_CONTROL_COUNTER"));
     MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_EV) ? "Enterprise version" : "Standard version");
     MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n",    local_config_get_data("MONITOR_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n",    local_config_get_data("AGENT_LOG_LEVEL"));
@@ -773,6 +792,33 @@ int32_t config_update_sim_monitor(int32_t mode)
 
     return RT_SUCCESS;
 }
+
+int32_t config_get_prov_ctrl_mode(int32_t *prov_ctrl_mode)
+{
+    const char *key = "PROV_CONTROL_MODE";
+    char value[256] = {0};
+    int32_t ret = RT_ERROR;
+
+    ret = config_get_key_value_fast(RT_DATA_PATH, key, value);
+    if (!ret && prov_ctrl_mode) {
+        *prov_ctrl_mode = msg_string_to_int(value);
+    }
+    return ret;
+}
+
+int32_t config_get_prov_ctrl_limit(int32_t *prov_ctrl_limit)
+{
+    const char *key = "PROV_CONTROL_COUNTER";
+    char value[256] = {0};
+    int32_t ret = RT_ERROR;
+
+    ret = config_get_key_value_fast(RT_DATA_PATH, key, value);
+    if (!ret && prov_ctrl_limit) {
+        *prov_ctrl_limit = msg_string_to_int(value);
+    }    
+    return ret;
+}
+
 
 /* remote config error code list */
 typedef enum CONFIG_RESULT {

@@ -374,6 +374,7 @@ int32_t init_ping_task(void *arg)
 {
     rt_task task_id = 0;
     int32_t ret = RT_ERROR;
+    rt_bool prov_ctrl_ongoing = RT_FALSE;
 
     g_project_mode  = (proj_mode_e *)&((public_value_list_t *)arg)->config_info->proj_mode;
     g_sim_mode      = (mode_type_e *)&((public_value_list_t *)arg)->config_info->sim_mode;
@@ -382,6 +383,12 @@ int32_t init_ping_task(void *arg)
     g_operation_num = (((public_value_list_t *)arg)->card_info->operational_num);
     g_sim_monitor   = (uint8_t *)&((public_value_list_t *)arg)->config_info->sim_monitor_enable;
 
+    /* provisioning control mode */
+    prov_ctrl_ongoing = card_prov_ctrl_judgement(((public_value_list_t *)arg)->card_info->type);
+    if (prov_ctrl_ongoing == RT_TRUE) {
+        MSG_PRINTF(LOG_DBG, "Provisioning control is ongoing ...\r\n");
+        return RT_ERROR;
+    }
     if (*g_project_mode == PROJECT_SV && (*g_sim_mode == MODE_TYPE_SIM_FIRST || *g_sim_mode == MODE_TYPE_VUICC || *g_sim_mode == MODE_TYPE_EUICC)) {
         ret = rt_create_task(&task_id, (void *)network_ping_task, NULL);
         if (ret != RT_SUCCESS) {

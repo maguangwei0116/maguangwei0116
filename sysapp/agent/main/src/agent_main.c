@@ -45,6 +45,7 @@
 #ifdef CFG_FACTORY_MODE_ON
 #include "factory.h"
 #endif
+#include "card_prov_ctrl.h"
 
 #define INIT_OBJ(func, arg)     {#func, func, arg}
 
@@ -283,6 +284,7 @@ static const init_obj_t g_init_objs[] =
     INIT_OBJ(init_log_file,             RT_AGENT_LOG),
     INIT_OBJ(init_config,               (void *)&g_value_list),
     INIT_OBJ(init_run_config,           NULL),
+    INIT_OBJ(init_card_prov_ctrl,       (void *)&g_value_list),
 #ifdef CFG_ENABLE_LIBUNWIND
     INIT_OBJ(init_backtrace,            agent_printf),
 #endif

@@ -327,6 +327,41 @@ exit_entry:
     return !ret ? software : NULL;
 }
 
+static cJSON *upload_event_general_settings_info(void)
+{
+    int32_t ret = RT_ERROR;
+    cJSON *general_settings = NULL;
+    int32_t provControlMode = 0;
+    int32_t provControlCounter = 0;
+
+    general_settings = cJSON_CreateObject();
+    if (!general_settings) {
+        MSG_PRINTF(LOG_WARN, "The generalSettings is error\n");
+        goto exit_entry;
+    }
+
+    ret = config_get_prov_ctrl_mode(&provControlMode);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Get ProvControlMode failed\n");
+        goto exit_entry;
+    }
+
+    ret = config_get_prov_ctrl_limit(&provControlCounter);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_WARN, "Get provControlCounter failed\n");
+        goto exit_entry;
+    }
+
+    CJSON_ADD_NEW_INT_OBJ(general_settings, provControlMode);
+    CJSON_ADD_NEW_INT_OBJ(general_settings, provControlCounter);
+
+    ret = RT_SUCCESS;
+
+exit_entry:
+
+    return !ret ? general_settings : NULL;
+}
+
 cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_network)
 {
     int32_t ret = RT_ERROR;
@@ -336,8 +371,9 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
     cJSON *profiles = NULL;
     cJSON *network = NULL;
     cJSON *software = NULL;
+    cJSON *generalSettings = NULL;
     const char *event = str_event;
-
+#if 0
     content = cJSON_CreateObject();
     if (!content) {
         MSG_PRINTF(LOG_WARN, "The content is error\n");
@@ -366,7 +402,7 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
             MSG_PRINTF(LOG_WARN, "The software is error\n");
         }
     }
-
+#endif
     content = cJSON_CreateObject();
     if (!content) {
         MSG_PRINTF(LOG_WARN, "The content is error\n");
@@ -388,6 +424,9 @@ cJSON *upload_event_boot_info(const char *str_event, rt_bool only_profile_networ
         software = upload_event_software_version_info();
         CJSON_ADD_STR_OBJ(content, software);
     }
+
+    generalSettings = upload_event_general_settings_info();
+    CJSON_ADD_STR_OBJ(content, generalSettings);
 
     ret = RT_SUCCESS;
     

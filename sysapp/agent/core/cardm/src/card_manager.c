@@ -637,6 +637,8 @@ int32_t init_card_manager(void *arg)
         }
     }
 
+    card_prov_ctrl_increase(g_p_info.type);
+
     ret = card_last_eid_init();
     if (ret) {
         MSG_PRINTF(LOG_WARN, "card update last eid fail, ret=%d\r\n", ret);

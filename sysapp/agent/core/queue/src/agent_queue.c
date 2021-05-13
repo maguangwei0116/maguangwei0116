@@ -20,6 +20,7 @@
 #include "rt_type.h"
 #include "rt_os.h"
 #include "ping_task.h"
+#include "card_prov_ctrl.h"
 
 /*
 queue msg type must large than 0, it's a nonpositive mtype value !
@@ -184,6 +185,7 @@ static void agent_queue_task(void)
                     card_detection_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     card_manager_event(que_t.data_buf, que_t.data_len, que_t.mode); // It will waste a few time
                     ping_task_network_event(que_t.data_buf, que_t.data_len, que_t.mode);
+                    card_prov_ctrl_event(que_t.data_buf, que_t.data_len, que_t.mode);
                     break;
 
                 case MSG_ID_MQTT:

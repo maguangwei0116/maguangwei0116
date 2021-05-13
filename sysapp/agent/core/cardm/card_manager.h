@@ -88,6 +88,7 @@ int32_t init_card_manager(void *arg);
 int32_t card_manager_event(const uint8_t *buf, int32_t len, int32_t mode);
 int32_t card_manager_update_profiles_event(const uint8_t *buf, int32_t len, int32_t mode);
 int32_t card_update_profile_info(judge_term_e bootstrap_flag);
+int32_t card_provisioning_ctrl_init(void);
 int32_t card_set_opr_profile_apn(void);
 int32_t card_force_enable_provisoning_profile(void);
 int32_t card_force_enable_provisoning_profile_update(void);
