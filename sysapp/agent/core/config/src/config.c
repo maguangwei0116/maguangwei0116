@@ -221,7 +221,7 @@ ITEM(MBN_CONFIGURATION,         config_switch_value,        INTEGER,        "1",
 ITEM(INIT_PROFILE_TYPE,         config_init_pro_type,       INTEGER,        "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
 ITEM(RPLMN_ENABLE,                  NULL,                   INTEGER,        "1",                            "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,             config_log_size,            INTEGER,        "1",                            "The max size of rt_log file (0 < x <= 5 MB)"),
-ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "3",                            "The mode of UICC (0:vUICC  1:SIM first  2:SIM only  3: eUICC)"),
+ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "1",                            "The mode of UICC (0:vUICC  1:SIM first  2:SIM only  3: eUICC)"),
 ITEM(PROJ_MODE,                 config_proj_mode,           INTEGER,        "0",                            "The mode of Project (0:Standard version  1:Enterprise version)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
 ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
