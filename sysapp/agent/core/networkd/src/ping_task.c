@@ -17,6 +17,7 @@
 #include "agent_queue.h"
 #include "network_detection.h"
 #include "rt_qmi.h"
+#include "card_prov_ctrl.h"
 
 static rt_bool                      g_sim_switch            = RT_TRUE;
 static proj_mode_e *                g_project_mode          = NULL;
@@ -261,6 +262,10 @@ static void network_ping_task(void *arg)
                 rt_write_default_strategy();
                 continue;
             }
+        } else {
+            MSG_PRINTF(LOG_ERR, "Read strategy fail, Use default monitor strategy !\n");
+            rt_write_default_strategy();
+            continue;
         }
 
         if (enabled->valueint == RT_TRUE) {
@@ -374,7 +379,6 @@ int32_t init_ping_task(void *arg)
 {
     rt_task task_id = 0;
     int32_t ret = RT_ERROR;
-    rt_bool prov_ctrl_ongoing = RT_FALSE;
 
     g_project_mode  = (proj_mode_e *)&((public_value_list_t *)arg)->config_info->proj_mode;
     g_sim_mode      = (mode_type_e *)&((public_value_list_t *)arg)->config_info->sim_mode;
@@ -384,11 +388,11 @@ int32_t init_ping_task(void *arg)
     g_sim_monitor   = (uint8_t *)&((public_value_list_t *)arg)->config_info->sim_monitor_enable;
 
     /* provisioning control mode */
-    prov_ctrl_ongoing = card_prov_ctrl_judgement(((public_value_list_t *)arg)->card_info->type);
-    if (prov_ctrl_ongoing == RT_TRUE) {
+    if (card_prov_ctrl_get() == RT_TRUE) {
         MSG_PRINTF(LOG_DBG, "Provisioning control is ongoing ...\r\n");
         return RT_ERROR;
     }
+
     if (*g_project_mode == PROJECT_SV && (*g_sim_mode == MODE_TYPE_SIM_FIRST || *g_sim_mode == MODE_TYPE_VUICC || *g_sim_mode == MODE_TYPE_EUICC)) {
         ret = rt_create_task(&task_id, (void *)network_ping_task, NULL);
         if (ret != RT_SUCCESS) {

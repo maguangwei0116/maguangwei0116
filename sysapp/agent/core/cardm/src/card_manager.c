@@ -638,6 +638,7 @@ int32_t init_card_manager(void *arg)
     }
 
     card_prov_ctrl_increase(g_p_info.type);
+    card_prov_ctrl_judgement(g_p_info.type);
 
     ret = card_last_eid_init();
     if (ret) {

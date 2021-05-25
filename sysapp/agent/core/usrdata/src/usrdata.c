@@ -55,6 +55,36 @@ void rt_check_strategy_data(inspect_strategy_e type)
     }
 }
 
+static rt_bool check_value(const void *buf, int32_t len, int32_t value)
+{
+    int32_t i = 0;
+    const uint8_t *p = (const uint8_t *)buf;
+
+    for (i = 0; i < len; i++) {
+        if (p[i] != value) {
+            return RT_FALSE;
+        }
+    }
+    return RT_TRUE;
+}
+
+static void check_prov_ctrl_counter(void)
+{
+    uint8_t init_buf[RT_PROV_COUNTER_LEN + 1];
+    int32_t count = 0;
+    int32_t ret = RT_ERROR;
+
+    rt_os_memset(init_buf, 'F', RT_PROV_COUNTER_LEN);
+    ret = rt_read_data(RUN_CONFIG_FILE, RT_PROV_COUNTER_OFFSET, init_buf, RT_PROV_COUNTER_LEN);
+    if (ret != RT_SUCCESS) {
+        MSG_PRINTF(LOG_ERR, "Read prov control counter fail, ret : %d\n", ret);
+    }
+    if (check_value(init_buf, RT_PROV_COUNTER_LEN, 'F') == RT_TRUE) {
+        MSG_PRINTF(LOG_DBG, "Prov control counter is initialized.\n");
+        rt_write_prov_ctrl_counter(0, 0);
+    }
+}
+
 int32_t init_run_config()
 {
     uint8_t init_buff[RT_APN_LIST_OFFSET + 1] = {0};                // init data before apn
@@ -65,6 +95,8 @@ int32_t init_run_config()
         rt_create_file(RUN_CONFIG_FILE);
         rt_write_data(RUN_CONFIG_FILE, 0, init_buff, RT_APN_LIST_OFFSET);
         rt_write_prov_ctrl_counter(0, 0);
+    } else {
+        check_prov_ctrl_counter();
     }
 
     rt_check_strategy_data(RT_BOOT_CHECK);

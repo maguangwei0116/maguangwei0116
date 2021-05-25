@@ -24,6 +24,7 @@
 #ifdef CFG_FACTORY_MODE_ON
 #include "factory.h"
 #endif
+#include "card_prov_ctrl.h"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)                           (sizeof((a)) / sizeof((a)[0]))

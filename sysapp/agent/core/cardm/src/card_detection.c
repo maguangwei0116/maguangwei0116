@@ -4,6 +4,7 @@
 #include "agent_queue.h"
 #include "card_manager.h"
 #include "card_detection.h"
+#include "card_prov_ctrl.h"
 #include "log.h"
 
 #define CARD_DETECT_INTERVAL                10  // unit: seconds
@@ -208,6 +209,11 @@ int32_t init_card_detection(void *arg)
     g_cur_profile_type  = &(((public_value_list_t *)arg)->card_info->type);
     g_cur_iccid         = (const char *)&(((public_value_list_t *)arg)->card_info->iccid);
     g_sim_iccid         = (const char *)&(((public_value_list_t *)arg)->card_info->sim_info.iccid);
+
+    if (card_prov_ctrl_get() == RT_TRUE) {
+        MSG_PRINTF(LOG_DBG, "Provisioning control is ongoing ...\r\n");
+        return RT_ERROR;
+    }
 
     ret = rt_create_task(&id_detection, (void *)card_detection_task, NULL);
     if (ret == RT_ERROR) {

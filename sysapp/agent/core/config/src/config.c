@@ -221,9 +221,7 @@ ITEM(MBN_CONFIGURATION,         config_switch_value,        INTEGER,        "1",
 ITEM(INIT_PROFILE_TYPE,         config_init_pro_type,       INTEGER,        "2",                            "The rules of the first boot option profile (0:Provisioning  1:Operational  2:last)"),
 ITEM(RPLMN_ENABLE,                  NULL,                   INTEGER,        "1",                            "Whether set rplmn (0:disable  1:enable)"),
 ITEM(LOG_FILE_SIZE,             config_log_size,            INTEGER,        "1",                            "The max size of rt_log file (0 < x <= 5 MB)"),
-ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "1",                            "The mode of UICC (0:vUICC  1:SIM first  2:SIM only  3: eUICC)"),
-ITEM(PROV_CONTROL_MODE,         config_prov_control_mode,   INTEGER,        "0",                            "The mode of Provisioning Control (0:Normal  1:Control)"),
-ITEM(PROV_CONTROL_COUNTER,      config_prov_control_counter,INTEGER,        "10",                           "The counter of Provisioning Control"),
+ITEM(UICC_MODE,                 config_uicc_mode,           INTEGER,        "3",                            "The mode of UICC (0:vUICC  1:SIM first  2:SIM only  3: eUICC)"),
 ITEM(PROJ_MODE,                 config_proj_mode,           INTEGER,        "0",                            "The mode of Project (0:Standard version  1:Enterprise version)"),
 #if (CFG_SOFTWARE_TYPE_RELEASE)
 ITEM(MONITOR_LOG_LEVEL,         config_log_level,           STRING,         "LOG_INFO",                     "The log level of monitor (LOG_NONE LOG_ERR LOG_WARN LOG_INFO LOG_DBG LOG_TRACE)"),
@@ -236,6 +234,8 @@ ITEM(USAGE_ENABLE,              config_switch_value,        INTEGER,        "0",
 ITEM(USAGE_FREQ,                config_usage_freq,          INTEGER,        "60",                           "Frequency of upload user traffic (60 <= x <= 1440 Mins)"),
 ITEM(CARD_FLOW_SWITCH,          config_card_flow_switch,    INTEGER,        "1",                            "The switch of seed card flow control(0:close 1:open)"),
 ITEM(SIM_MONITOR_ENABLE,        config_switch_value,        INTEGER,        "1",                            "The switch of SIM card monitor(0:disable 1:enable)"),
+ITEM(PROV_CONTROL_MODE,         config_prov_control_mode,   INTEGER,        "0",                            "The mode of Provisioning Control (0:Normal  1:Control)"),
+ITEM(PROV_CONTROL_COUNTER,      config_prov_control_counter,INTEGER,        "10",                           "The counter of Provisioning Control"),
 };
 
 static config_info_t g_config_info;
@@ -412,11 +412,14 @@ static int32_t config_read_file(const char *file, int32_t pair_num, config_item_
             rt_os_memset(value, 0, sizeof(value));
             if (RT_SUCCESS == config_get_key_value(line_data_out, key, value)) {
                 config_set_data((const char *)key, (const char *)value, pair_num, items);
+                if (rt_os_strlen(key) != 0) {
+                    i++;                    
+                }
             }
         }
     }
 
-    ret = RT_SUCCESS;
+    ret = i;
 
 exit_entry:
 
@@ -433,7 +436,18 @@ exit_entry:
 */
 static void config_parse_file(const char *file, int32_t pair_num, config_item_t *items)
 {
-    config_read_file(file, pair_num, items);
+    int32_t i = 0;
+    i = config_read_file(file, pair_num, items);
+    if (i < 0) {
+        MSG_PRINTF(LOG_ERR, "Parse config failed!\r\n");
+        return;
+    }
+    MSG_PRINTF(LOG_DBG, "Config pair num: %d, %d\r\n", i, pair_num);
+    if (i < pair_num) {
+        config_write_file(file, pair_num, items);
+        rt_os_sync();
+        MSG_PRINTF(LOG_DBG, "Update config file success!\r\n");
+    }
 }
 
 /**
@@ -456,10 +470,14 @@ static void config_create_default_file(const char *file, int32_t pair_num, confi
 
 static int32_t config_init_file(const char *file, int32_t pair_num, config_item_t *items)
 {
+    int32_t i = 0;
     if (!linux_rt_file_exist(file)) {
         config_create_default_file(file, pair_num, items);
+    } else {
+        for (i = 0; i < pair_num; i++) {
+            snprintf(items[i].value, sizeof(items[i].value), "%s", items[i].def_value);
+        }
     }
-
     config_parse_file(file, pair_num, items);
 
     return RT_SUCCESS;
@@ -533,8 +551,6 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_INFO, "RPLMN_ENABLE          : %s\n",    local_config_get_data("RPLMN_ENABLE"));
     MSG_PRINTF(LOG_INFO, "LOG_FILE_SIZE         : %s MB\n", local_config_get_data("LOG_FILE_SIZE"));
     MSG_PRINTF(LOG_INFO, "UICC_MODE             : %s\n",    local_config_get_data("UICC_MODE"));
-    MSG_PRINTF(LOG_INFO, "PROV_CONTROL_MODE     : %s\n",    local_config_get_data("PROV_CONTROL_MODE"));
-    MSG_PRINTF(LOG_INFO, "PROV_CONTROL_COUNTER  : %s\n",    local_config_get_data("PROV_CONTROL_COUNTER"));
     MSG_PRINTF(LOG_INFO, "PROJECT               : %s\n",    !rt_os_strcmp(local_config_get_data("PROJ_MODE"), PROJ_MODE_EV) ? "Enterprise version" : "Standard version");
     MSG_PRINTF(LOG_INFO, "MONITOR_LOG_LEVEL     : %s\n",    local_config_get_data("MONITOR_LOG_LEVEL"));
     MSG_PRINTF(LOG_INFO, "AGENT_LOG_LEVEL       : %s\n",    local_config_get_data("AGENT_LOG_LEVEL"));
@@ -542,6 +558,8 @@ static void config_debug_cur_param(int32_t pair_num, const config_item_t *items)
     MSG_PRINTF(LOG_INFO, "USAGE_FREQ            : %s Mins\n", local_config_get_data("USAGE_FREQ"));
     MSG_PRINTF(LOG_INFO, "CARD_FLOW_SWITCH      : %s\n",    local_config_get_data("CARD_FLOW_SWITCH"));
     MSG_PRINTF(LOG_INFO, "SIM_MONITOR_ENABLE    : %s\n",    local_config_get_data("SIM_MONITOR_ENABLE"));
+    MSG_PRINTF(LOG_INFO, "PROV_CONTROL_MODE     : %s\n",    local_config_get_data("PROV_CONTROL_MODE"));
+    MSG_PRINTF(LOG_INFO, "PROV_CONTROL_COUNTER  : %s\n",    local_config_get_data("PROV_CONTROL_COUNTER"));
 }
 
 int32_t init_config(void *arg)

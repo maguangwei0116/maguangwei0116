@@ -23,11 +23,6 @@ typedef enum PROJECT_MODE {
     PROJECT_EV                      = 1,
 } proj_mode_e;
 
-typedef enum PROV_CTRL_MODE {
-    PROV_CTRL_NORMAL                = 0,
-    PROV_CTRL_CONTROL               = 1,
-} prov_ctrl_mode_e;
-
 typedef struct CONFIG_INFO {
     char *              oti_addr;           // OTI server addr
     char *              emq_addr;           // EMQ server addr
@@ -42,8 +37,6 @@ typedef struct CONFIG_INFO {
     uint8_t             mbn_enable;         // 0: disable   1: enable
     uint8_t             flow_control_switch;// 0: close     1: open
     uint8_t             sim_monitor_enable; // 0: disable   1: enable
-    uint8_t             prov_ctrl_mode;     // 0: normal    1: control
-
 
     /* some config item which never changed dynamically */
     uint32_t            oti_port;           // port for OTI server

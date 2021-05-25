@@ -37,25 +37,25 @@ typedef enum INSPECT_STRATEGY {
 
 #define MAX_FILE_HASH_LEN                   64
 #define MAX_FILE_HASH_BYTE_LEN              32
-#define PROV_COUNTER_LEN                    16
+#define PROV_COUNTER_LEN                    4
 #define DEVICE_KEY_SIZE                     32
 #define DEVICE_KEY_LEN                      16
 #define CHECK_STRATEGY_HEAD                 16
 
 #define RT_CARD_TYPE_LEN                    64
 #define RT_LAST_EID_LEN                     64
-#define RT_PROV_COUNTER_LEN                 64
+#define RT_PROV_COUNTER_LEN                 16
 #define RT_DEVICE_KEY_LEN                   128
 #define RT_TICKET_SERVER_LEN                256
 #define RT_STRATEGY_LIST_LEN                512
 
 #define RT_CARD_TYPE_OFFSET                 0
 #define RT_LAST_EID_OFFSET                  RT_CARD_TYPE_OFFSET     + RT_CARD_TYPE_LEN          // 64
-#define RT_PROV_COUNTER_OFFSET              RT_LAST_EID_OFFSET      + RT_LAST_EID_LEN           // 64 + 64
-#define RT_DEVICE_KEY_OFFSET                RT_PROV_COUNTER_OFFSET  + RT_PROV_COUNTER_LEN       // 64 + 64 + 64
-#define RT_TICKET_SERVER_OFFSET             RT_DEVICE_KEY_OFFSET    + RT_DEVICE_KEY_LEN         // 64 + 64 + 64 + 128
-#define RT_STRATEGY_LIST_OFFSET             RT_TICKET_SERVER_OFFSET + RT_TICKET_SERVER_LEN      // 64 + 64 + 64 + 128 + 256
-#define RT_APN_LIST_OFFSET                  RT_STRATEGY_LIST_OFFSET + RT_STRATEGY_LIST_LEN      // 64 + 64 + 64 + 128 + 256 + 512
+#define RT_DEVICE_KEY_OFFSET                RT_LAST_EID_OFFSET  	+ RT_LAST_EID_LEN       	// 64 + 64
+#define RT_PROV_COUNTER_OFFSET              RT_DEVICE_KEY_OFFSET    + DEVICE_KEY_SIZE           // 64 + 64 + 32
+#define RT_TICKET_SERVER_OFFSET             RT_DEVICE_KEY_OFFSET    + RT_DEVICE_KEY_LEN         // 64 + 64 + 128
+#define RT_STRATEGY_LIST_OFFSET             RT_TICKET_SERVER_OFFSET + RT_TICKET_SERVER_LEN      // 64 + 64 + 128 + 256
+#define RT_APN_LIST_OFFSET                  RT_STRATEGY_LIST_OFFSET + RT_STRATEGY_LIST_LEN      // 64 + 64 + 128 + 256 + 512
 
 
 int32_t init_run_config();

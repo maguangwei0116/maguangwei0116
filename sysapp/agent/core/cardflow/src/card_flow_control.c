@@ -18,6 +18,7 @@
 #include "agent_queue.h"
 #include "network_detection.h"
 #include "card_flow_control.h"
+#include "card_prov_ctrl.h"
 
 static card_info_t                         *g_p_info;
 static uint8_t                             *g_flow_switch = NULL;
@@ -129,6 +130,11 @@ int32_t init_flow_control(void *arg)
     int32_t ret = RT_SUCCESS;
 
     g_p_info = ((public_value_list_t *)arg)->card_info;
+    if (card_prov_ctrl_get() == RT_TRUE) {
+        /* provisioning control mode */
+        MSG_PRINTF(LOG_DBG, "Provisioning control is ongoing ...\r\n");
+        return RT_ERROR;
+    }
     g_flow_switch = (uint8_t *)&(((public_value_list_t *)arg)->config_info->flow_control_switch);
     MSG_PRINTF(LOG_INFO, "Flow control switch:%d\n", *g_flow_switch);
     if (*g_flow_switch == CARD_FLOW_ENABLE) {

@@ -14,6 +14,7 @@
 #ifdef CFG_FACTORY_MODE_ON
 #include "factory.h"
 #endif
+#include "card_prov_ctrl.h"
 
 #define USE_ADAPTER_SERVER              1  // use mqtt ticket adapter proxy server ?
 
@@ -861,6 +862,11 @@ int32_t init_mqtt(void *arg)
     g_mqtt_info.type                = (const profile_type_e *)&(public_value_list->card_info->type);
 
     mqtt_init_param();
+    if (card_prov_ctrl_get() == RT_TRUE) {
+        /* provisioning control mode */
+        MSG_PRINTF(LOG_DBG, "Provisioning control is ongoing ...\r\n");
+        return RT_ERROR;
+    }
 
     ret = mqtt_create_task();
 

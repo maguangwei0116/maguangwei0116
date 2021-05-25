@@ -19,6 +19,7 @@
 #include "card_manager.h"
 #include "card_detection.h"
 #include "bootstrap.h"
+#include "card_prov_ctrl.h"
 
 #define MAX_INIT_RETRY_CNT              5
 #define DELAY_100MS                     100
@@ -206,7 +207,7 @@ int32_t init_network_detection(void *arg)
     g_task_param.type               = &(((public_value_list_t *)arg)->card_info->type);
     g_task_param.profile_damaged    = ((public_value_list_t *)arg)->profile_damaged;
 
-    if (card_prov_ctrl_judgement(*g_task_param.type) == RT_TRUE) {
+    if (card_prov_ctrl_get() == RT_TRUE) {
         /* provisioning control mode */
         MSG_PRINTF(LOG_DBG, "Provisioning control is ongoing ...\r\n");
         return RT_ERROR;

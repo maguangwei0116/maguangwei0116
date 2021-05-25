@@ -18,8 +18,9 @@
 #include "card_manager.h"
 
 int32_t init_card_prov_ctrl(void *arg);
+rt_bool card_prov_ctrl_get(void);
 int32_t card_prov_ctrl_event(const uint8_t *buf, int32_t len, int32_t mode);
-rt_bool card_prov_ctrl_increase(init_profile_type_e type);
-rt_bool card_prov_ctrl_judgement(init_profile_type_e type);
+rt_bool card_prov_ctrl_increase(profile_type_e type);
+rt_bool card_prov_ctrl_judgement(profile_type_e type);
 
 #endif // __CARD_PROV_CTRL_H__
